@@ -37,6 +37,7 @@ contract AMORxGuild is ERC20, Pausable, Ownable {
 
 
     /// @notice Allows a user to stake their AMOR and receive AMORxGuild in return
+    /// @dev    Front end must still call approve() on AMOR token to allow transferFrom()
     /// @param  to a parameter just like in doxygen (must be followed by parameter name)
     /// @param  amount uint256 amount of AMOR to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
@@ -55,6 +56,7 @@ contract AMORxGuild is ERC20, Pausable, Ownable {
     }
 
     /// @notice Allows the user to unstake their AMOR
+    /// @dev    Front end must still call approve() to allow burn
     /// @param  amount uint256 amount of AMORxGuild to exchange for AMOR
     /// @return uint256 the amount of AMOR returned from burning AMORxGuild
     function withdrawAmor(uint256 amount) public returns (uint256) {
