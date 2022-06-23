@@ -235,7 +235,7 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     /// @notice Sets the address which receives taxes
     /// @param  newTaxCollector address which must receive taxes
     /// @return bool returns true if successfully set
-    function setTaxCollector(address newTaxCollector) public virtual returns (bool) {
+    function setTaxCollector(address newTaxCollector) public virtual onlyAddress(owner) returns (bool) {
         require(newTaxCollector != taxCollector, "Already set");
         require(newTaxCollector != address(0), "Zero address");
         taxCollector = newTaxCollector;
