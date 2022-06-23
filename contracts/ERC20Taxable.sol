@@ -49,7 +49,6 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
 
     uint256 internal taxRate; 
     address internal taxCollector;
-    address internal owner;
 
     uint256 internal basisPoints = 10000;
 
@@ -65,14 +64,6 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     constructor(string memory name_, string memory symbol_) {
         _name = name_;
         _symbol = symbol_;
-        owner = msg.sender;
-    }
-
-    modifier onlyAddress(address authorizedAddress) {
-        if (msg.sender != authorizedAddress) {
-            revert Unauthorized();
-        }
-        _;
     }  
     
     /**
@@ -231,7 +222,7 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     /// @notice Sets the tax rate for transfer and transferFrom
     /// @dev    Rate should be expressed in basis points
     /// @param  newRate uint256 representing new tax rate
-    function setTaxRate(uint256 newRate) public virtual onlyAddress(owner) returns (bool) {
+    function setTaxRate(uint256 newRate) public virtual returns (bool) {
         taxRate = newRate;
         return true;
     }
@@ -244,7 +235,7 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     /// @notice Sets the address which receives taxes
     /// @param  newTaxCollector address which must receive taxes
     /// @return bool returns true if successfully set
-    function setTaxCollector(address newTaxCollector) public virtual onlyAddress(owner) returns (bool) {
+    function setTaxCollector(address newTaxCollector) public virtual returns (bool) {
         require(newTaxCollector != taxCollector, "Already set");
         require(newTaxCollector != address(0), "Zero address");
         taxCollector = newTaxCollector;
