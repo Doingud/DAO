@@ -230,7 +230,7 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     /// @notice Sets the tax rate for transfer and transferFrom
     /// @dev    Rate should be expressed in basis points
     /// @param  newRate uint256 representing new tax rate
-    function setTaxRate(uint256 newRate) public virtual returns (bool) {
+    function setTaxRate(uint256 newRate) public virtual onlyAddress(owner) returns (bool) {
         taxRate = newRate;
         return true;
     }
