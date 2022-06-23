@@ -66,6 +66,13 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
         _symbol = symbol_;
     }
 
+    modifier onlyAddress(address authorizedAddress) {
+        if (msg.sender != authorizedAddress) {
+            revert Unauthorized();
+        }
+        _;
+    }  
+    
     /**
      * @dev Returns the name of the token.
      */
