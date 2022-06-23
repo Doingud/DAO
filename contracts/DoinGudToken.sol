@@ -33,6 +33,14 @@ contract DoinGud is ERC20Taxable, Pausable, Ownable {
         setTaxRate(initTaxRate);
     }
     
+        modifier onlyAddress(address authorizedAddress) {
+        if (msg.sender != authorizedAddress) {
+            revert Unauthorized();
+        }
+        _;
+    }  
+
+
     /// @notice Sets the tax rate for transfer and transferFrom
     /// @dev    Rate is expressed in basis points, this must be divided by 10 000 to equal desired rate
     /// @param  newRate uint256 representing new tax rate, must be <= 500
