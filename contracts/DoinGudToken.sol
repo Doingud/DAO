@@ -36,7 +36,7 @@ contract DoinGud is ERC20Taxable, Pausable, Ownable {
     /// @notice Sets the tax rate for transfer and transferFrom
     /// @dev    Rate is expressed in basis points, this must be divided by 10 000 to equal desired rate
     /// @param  newRate uint256 representing new tax rate, must be <= 500
-    function setTaxRate(uint256 newRate) public override returns (bool) {
+    function setTaxRate(uint256 newRate) public override onlyAddress(taxManager) returns (bool) {
         require(newRate <= 500, "tax rate > 5%");
         ERC20Taxable.setTaxRate(newRate);
         return true;
