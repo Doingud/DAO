@@ -45,7 +45,7 @@ contract DoinGud is ERC20Taxable, Pausable, Ownable {
     /// @notice Sets the address which receives taxes
     /// @param  newTaxCollector address which must receive taxes
     /// @return bool returns true if successfully set
-    function setTaxCollector(address newTaxCollector) public override returns (bool) {
+    function setTaxCollector(address newTaxCollector) public override onlyAddress(taxManager) returns (bool) {
         require(newTaxCollector != address(this), "Cannot be token contract");
         ERC20Taxable.setTaxCollector(newTaxCollector);
         return true;
