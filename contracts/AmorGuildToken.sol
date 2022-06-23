@@ -14,7 +14,7 @@
  *  The setTaxCollector() and setTaxRate() functions should be set on deploy and are
  *  not immutable.
  */
-pragma solidity ^0.8.4;
+pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
