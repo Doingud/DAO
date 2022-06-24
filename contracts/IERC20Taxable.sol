@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
-/// @title  ERC20Taxable 
-/// @author @lourenslinde @daoism.systems
-/// @notice Implements a "tax"/"fee" on any token transfers
-/// @dev    "Tax" mechanism implemented within _transfer() function
-
 pragma solidity 0.8.14;
+/// @title  Interface for ERC20Taxable 
+/// @author @lourenslinde @daoism.systems
+
 
     interface IERC20Taxable {
         /**
@@ -82,13 +80,19 @@ pragma solidity 0.8.14;
         uint256 amount
     ) external returns (bool);
 
+
+    /// View the current tax rate in basis points
     function viewRate() external view returns (uint256);
 
+    /// @notice Sets the tax rate for transfer and transferFrom
     function setTaxRate(uint256 newRate) external view returns (bool);
 
+    /// Sets the address which receives taxes/fees
     function viewCollector() external view returns (address);
 
+    /// View the current tax collector address
     function setTaxCollector(address newTaxCollector) external view returns (bool);
 
+    /// View the basis points constant
     function viewBasisPoints() external view returns (uint256);
 }

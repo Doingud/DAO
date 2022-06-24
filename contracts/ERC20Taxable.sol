@@ -49,7 +49,6 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
 
     uint256 internal taxRate; 
     address internal taxCollector;
-
     uint256 constant basisPoints = 10000;
     
     /**
