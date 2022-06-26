@@ -3,12 +3,16 @@ pragma solidity 0.8.15;
 // import "./ERC20Taxable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract FXAMORxGuild is ERC20, Pausable, Ownable {
+contract FXAMORxGuild is ERC20, Ownable {
     mapping(address => uint256) private _balances;
+
+    // addres of user --> address of user called delegate --> delegated balance
+    // mapping(address => mapping(address => uint256)) private _allowedBalances;
+    mapping(address => uint256) private _allowedBalances;
+    mapping(address => uint256) private _delegatedBalances; //amount that was delegated and can't be used
+
 
     address public _owner; //GuildController
     address public AMORxGuild; 
@@ -47,8 +51,10 @@ contract FXAMORxGuild is ERC20, Pausable, Ownable {
     /// @param  amount uint256 amount of AMORxGuild to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
     function stake(address to, uint256 amount) public onlyAddress(_owner) returns (uint256) {
+        require(IERC20(AMORxGuild).balanceOf(msg.sender) >= amount, "Unsufficient AMORxGuild");
+
         // send to FXAMORxGuild contract to stake
-        require(IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount), "Unsufficient AMORxGuild");
+        IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount);
 
         // mint FXAMORxGuild tokens to staker
         // Tokens are minted 1:1.
@@ -64,6 +70,7 @@ contract FXAMORxGuild is ERC20, Pausable, Ownable {
     // When this tokens are burned, staked AMORxGuild is being transfered 
     // to the controller(contract that has a voting function)
     function burn(uint256 amount) public onlyAddress(_owner) {
+        require(_balances[msg.sender] >= amount, "Unsufficient FXAMORxGuild");
 
         //burn used FXAMORxGuild tokens from staker
         _burn(msg.sender, amount);
@@ -81,7 +88,7 @@ contract FXAMORxGuild is ERC20, Pausable, Ownable {
 
     // function that allows some external account to vote with your FXAMORxGuild tokens
     function delegate(address account) public {
-        
+        // create mapping // array ??
     }
 
 }
