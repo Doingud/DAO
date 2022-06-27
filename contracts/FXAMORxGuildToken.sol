@@ -6,10 +6,17 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract FXAMORxGuild is ERC20, Ownable {
-    mapping(address => uint256) private _balances;
+    // mapping(address => uint256) private _balances;
+    mapping(address => User) private users;
 
-    // addres of user --> address of user called delegate --> delegated balance
-    // mapping(address => mapping(address => uint256)) private _allowedBalances;
+    struct User {
+        uint256 weight;
+        uint256 balance; // = balanceOf(address(this)); // weight is accumulated by stacking balance
+        bool voted; // if true, that person already voted
+        address delegate; // person delegated to
+    }
+
+
     mapping(address => uint256) private _allowedBalances;
     mapping(address => uint256) private _delegatedBalances; //amount that was delegated and can't be used
 
@@ -60,7 +67,9 @@ contract FXAMORxGuild is ERC20, Ownable {
         // Tokens are minted 1:1.
         _mint(to, amount);
 
-        _balances[to] = amount;
+        users[to].balance = amount;
+
+        // _balances[to] = amount;
         emit Staked(msg.sender, amount);
 
         return amount;
@@ -70,11 +79,11 @@ contract FXAMORxGuild is ERC20, Ownable {
     // When this tokens are burned, staked AMORxGuild is being transfered 
     // to the controller(contract that has a voting function)
     function burn(uint256 amount) public onlyAddress(_owner) {
-        require(_balances[msg.sender] >= amount, "Unsufficient FXAMORxGuild");
+        require(users[msg.sender].balance >= amount, "Unsufficient FXAMORxGuild");
 
         //burn used FXAMORxGuild tokens from staker
         _burn(msg.sender, amount);
-        _balances[msg.sender] -= amount;
+        users[msg.sender].balance -= amount;
 
         IERC20(AMORxGuild).transferFrom(address(this), controller, amount);
 
@@ -83,12 +92,47 @@ contract FXAMORxGuild is ERC20, Ownable {
     
     // already exists in ERC20Taxable
     function balanceOf(address account) public view virtual override returns (uint256) {
-        return _balances[account];
+        return users[account].balance;
     }
 
+
     // function that allows some external account to vote with your FXAMORxGuild tokens
-    function delegate(address account) public {
-        // create mapping // array ??
+    // Delegate your FXAMORxGuild to the address `to`.
+    function delegate(address to) public {
+        // assigns reference
+        User storage sender = users[msg.sender];
+
+        require(!sender.voted, "You already voted.");
+        require(to != msg.sender, "Self-delegation is disallowed.");
+
+        // Forward the delegation as long as
+        // `to` also delegated.
+        // In general, such loops are very dangerous,
+        // because if they run too long, they might
+        // need more gas than is available in a block.
+        // In this case, the delegation will not be executed,
+        // but in other situations, such loops might
+        // cause a contract to get "stuck" completely.
+        while (users[to].delegate != address(0)) {
+            to = users[to].delegate;
+
+            // We found a loop in the delegation, not allowed.
+            require(to != msg.sender, "Found loop in delegation.");
+        }
+
+        User storage delegate_ = users[to];
+        require(!delegate_.voted, "User to delegate is already voted.");
+
+        sender.weight -= sender.balance; //upd weight info
+
+        // Since `sender` is a reference, this
+        // modifies `voters[msg.sender].voted`
+        sender.voted = true;
+        sender.delegate = to;
+
+        // If the delegate did not vote yet,
+        // add to their weight.
+        delegate_.weight += sender.weight;
     }
 
 }
