@@ -21,14 +21,6 @@ contract FXAMORxGuild is ERC20, Ownable {
     // list of delegations from one address
     mapping(address => mapping(address => uint256)) delegations;
 
-    struct User {
-        uint256 weight; // = balanceOf(address(this)); // weight is accumulated by stacking balance
-        uint256 balance; 
-        bool voted; // if true, that person already voted
-        address delegate; // person delegated to
-    }
-
-
     mapping(address => uint256) private _allowedBalances;
     mapping(address => uint256) private _delegatedBalances; //amount that was delegated and can't be used
 
@@ -86,9 +78,7 @@ contract FXAMORxGuild is ERC20, Ownable {
         _mint(to, amount);
 
         stakes[to] = amount;
-        // users[to].balance = amount;
 
-        // _balances[to] = amount;
         emit Staked(msg.sender, amount);
 
         return amount;
