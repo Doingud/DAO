@@ -12,13 +12,18 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract dAMORxGuild is ERC20, Ownable {
 
+    // staker => all staker balance
     mapping(address => uint256) stakes;
-    mapping(address => address) delegates;
+    // those who delegated to a specific address
+    mapping(address => address[]) delegators; 
+    // staker => delegated to (many accounts) => amount
+    // list of delegations from one address
+    mapping(address => mapping(address => uint256)) delegations;
 
+    // // staker => delegated to (many accounts) => amount
+    // mapping(address => mapping(address => uint256)) delegates;
 
-    mapping(address => uint256) private _allowedBalances;
-    mapping(address => uint256) private _delegatedBalances; //amount that was delegated and can't be used
-
+    // mapping(address => address) delegates;
 
     address public _owner; //GuildController
     address public AMORxGuild; 
@@ -36,6 +41,12 @@ contract dAMORxGuild is ERC20, Ownable {
         uint256 amount
     );
 
+    event Delegated(
+        address indexed from,
+        address indexed to,
+        uint256 amount
+    );
+    
     constructor(address owner) ERC20("DoinGud MetaDAO", "FXAMORxGuild") {
         _owner = msg.sender;
     }
@@ -112,17 +123,60 @@ contract dAMORxGuild is ERC20, Ownable {
     }
     
     function balanceOf(address account) public view virtual override returns (uint256) {
-        return stakes[msg.sender];
+        return stakes[account];
     }
 
 
     // Delegate your dAMORxGuild to the address `account`.
-    function delegate(address account) public {
-        require(account != msg.sender, "Self-delegation is disallowed.");
-        require(account != address(0), "Zero address delagation.");
-        // require(delegates[msg.sender] == address(0), "Already delegated.");
+    // function delegate(address account) public {
+    //     require(account != msg.sender, "Self-delegation is disallowed.");
+    //     require(account != address(0), "Zero address delagation.");
+    //     // require(delegates[msg.sender] == address(0), "Already delegated.");
 
-        delegates[msg.sender] = account;
+    //     delegates[msg.sender] = account;
+    // }
+
+    function delegate(address to, uint256 amount) public {
+        require(stakes[msg.sender] >= amount, "Unsufficient FXAMORxGuild");
+        require(to != msg.sender, "Self-delegation is disallowed.");
+
+        // Forward the delegation as long as
+        // `to` also delegated.
+        // In general, such loops are very dangerous,
+        // because if they run too long, they might
+        // need more gas than is available in a block.
+        // In this case, the delegation will not be executed,
+        // but in other situations, such loops might
+        // cause a contract to get "stuck" completely.
+        while (delegators[to] != address(0)) {
+            to = delegators[to];
+            
+            // We found a loop in the delegation, not allowed.
+            require(to != msg.sender, "Found loop in delegation.");
+        }
+
+        uint256 alreadyDelegated = 0;
+
+        if((delegators[msg.sender]).length > 0){
+            // check all delegated amounts to check if current delegation is possible
+            for (uint256 i = 0; i < delegators[msg.sender]).length; i++) {
+                address j = ??? how to get it??
+                alreadyDelegated += delegators[msg.sender][j];
+            }
+        }
+
+        uint256 availableAmount = stakes[msg.sender] - alreadyDelegated;
+        require(availableAmount >= amount, "Unavailable amount of FXAMORxGuild");
+
+        delegators[msg.sender].push(to);
+
+        if(delegations[msg.sender][to] > 0){
+            delegations[msg.sender][to] += amount;
+        }else{
+            delegations[msg.sender][to] = amount;
+        }
+        
+        emit Delegated(msg.sender, to, amount);
     }
 
     function undelegate(address account) public {
