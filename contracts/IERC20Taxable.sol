@@ -6,7 +6,7 @@
 /// @notice Implements a "tax"/"fee" on any token transfers
 /// @dev    "Tax" mechanism implemented within _transfer() function
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.14;
 
     interface IERC20Taxable {
         /**
