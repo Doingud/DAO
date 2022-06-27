@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: MIT
+// Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
+
+/// @title  dAMORxGuild 
+/// @notice Implements a dAMORxGuild token
+
 pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
