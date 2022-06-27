@@ -5,16 +5,16 @@
 /// @notice ERC20 implementation for DoinGudDAO
 
 /**
- *  @dev Implementation of the AMOR token for DoinGud MetaDAO
+ *  @dev Implementation of the AMORxGuild token for DoinGud
  *   
- *  The contract extends the ERC20Taxable contract and exposes the setTaxCollector() and
- *  setTaxRate() functions from the ERC20Taxable contract and allows for custom 
- *  require() statements within these functions. 
+ *  The contract houses the token logic for AMORxGuild. 
  *
- *  The setTaxCollector() and setTaxRate() functions should be set on deploy and are
- *  not immutable.
+ *  It varies from traditional ERC20 implementations by:
+ *  1) Allowing the token name to be set with an `init()` function
+ *  2) Allowing the token symbol to be set with an `init()` function
+ *  3) Enables upgrades through updating the proxy
  */
-pragma solidity ^0.8.4;
+pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -32,14 +32,36 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
 
     bool private _initialized;
 
-    //  The proxy contract address for AMOR
+    /// The proxy contract address for AMOR
     IERC20Taxable private tokenAmor;
+    /// The token logic for AMORxGuild
+    address private _implementation;
 
-    function init(address proxyAddress, string memory name, string memory symbol) public {
+    /// Events
+    /// Emitted once token has been initialized
+    event Initialized(string name, string symbol, address amorToken);
+    
+    /// AMOR has been staked
+    event Stake(address indexed from, address to, uint256 indexed amount);
+    
+    /// AMOR has been withdrawn
+    event Unstake(address indexed from, uint256 indexed amount);
+
+    /// Proxy Address Change
+    event ProxyAddressChange(address indexed newProxyAddress);
+
+    /// @notice Initializes the AMORxGuild contract
+    /// @dev    Sets the token details as well as the required addresses for token logic
+    /// @param  amorAddress the address of the AMOR token proxy
+    /// @param  name the token name (e.g AMORxIMPACT)
+    /// @param  symbol the token symbol
+    function init(address amorAddress, string memory name, string memory symbol) public {
         require(!_initialized, "already initialized");
-        _setProxyAddress(proxyAddress);
+        _setAmorAddress(amorAddress);
+        //_setImplementationAddress(implementationAddress);
         _setTokenDetail(name, symbol);
         _initialized = true;
+        emit Initialized(name, symbol, amorAddress);
     }
 
 
@@ -48,16 +70,20 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
     /// @param  amount uint256 amount of AMOR to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
     function stakeAmor(address to, uint256 amount) public returns (uint256) {
-        // Must calculate stakedAmor prior to transferFrom()
+        //  Must calculate stakedAmor prior to transferFrom()
         uint256 stakedAmor = tokenAmor.balanceOf(address(this));
 
-        require(tokenAmor.transferFrom(msg.sender, address(this), amount), "Unsufficient AMOR");
+        //  Must has enough AMOR to stake
+        //  Note that this transferFrom() is taxed
+        require(tokenAmor.transferFrom(tx.origin, address(this), amount), "Unsufficient AMOR");
 
+        //  Calculate mint amount and mint this to the address `to`
         uint256 mintAmount;
         mintAmount = (amount + stakedAmor).sqrtu() - stakedAmor.sqrtu();
-
         _mint(to, mintAmount);
 
+        //  Emit the `Stake` event
+        emit Stake(tx.origin, to, amount);
         return mintAmount;
     }
 
@@ -69,22 +95,35 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
         uint256 currentSupply = totalSupply();
         amorReturned = (currentSupply ** 2) - ((currentSupply - amount) ** 2);
         
-        _burn(msg.sender, amount);
+        //  Burn the AMORxGuild of the tx.origin
+        _burn(tx.origin, amount);
 
-        /// Correct for the tax on transfer
+        //  Correct for the tax on transfer
         uint256 taxCorrection = (amorReturned * tokenAmor.viewRate()) / tokenAmor.viewBasisPoints();
-        require(tokenAmor.transfer(msg.sender, amorReturned - taxCorrection), "transfer unsuccessful");
-
-        return amorReturned;
+        //  Transfer AMOR to the tx.origin, but note: this is taxed!
+        require(tokenAmor.transfer(tx.origin, amorReturned - taxCorrection), "transfer unsuccessful");
+        //  Emit the `Unstake` event
+        emit Unstake(tx.origin, amount);
+        //  Return the amount of AMOR returned to the user 
+        return amorReturned-taxCorrection;
     }
 
-    function updateProxyAddress(address newProxyAddress) public onlyOwner returns (bool) {
-        _setProxyAddress(newProxyAddress);
-        return true;
-    }
+    /*  Note    This is required for upgrade functionality.
+     *          This function should be accessible only by a multisig,
+     *          with time-delay logic (on the multisig), to facilitate trust in the token.
+     *          Its use must be transparent.
+     */
+    /// @notice Points the contract to a different implementation address
+    /// @dev    Changes _implementation to `newProxyAddress`
+    ///  the address which houses the token logic to be executed when this contract is called.
+    //function updateImplementationAddress(address newProxyAddress) public onlyOwner returns (bool) {
+    //    _setImplementationAddress(newProxyAddress);
+    //    emit ProxyAddressChange(newProxyAddress);
+    //    return true;
+    //}
 
-    function _setProxyAddress(address _proxy) internal {
-        tokenAmor = IERC20Taxable(_proxy);
+    function _setAmorAddress(address _token) internal {
+        tokenAmor = IERC20Taxable(_token);
     }
 
     function pause() public onlyOwner {
