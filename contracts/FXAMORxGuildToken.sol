@@ -1,17 +1,15 @@
 pragma solidity 0.8.15;
 
-// import "./ERC20Taxable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract FXAMORxGuild is ERC20, Ownable {
-    // mapping(address => uint256) private _balances;
-    mapping(address => User) private users;
+=    mapping(address => User) private users;
 
     struct User {
-        uint256 weight;
-        uint256 balance; // = balanceOf(address(this)); // weight is accumulated by stacking balance
+        uint256 weight; // = balanceOf(address(this)); // weight is accumulated by stacking balance
+        uint256 balance; 
         bool voted; // if true, that person already voted
         address delegate; // person delegated to
     }
