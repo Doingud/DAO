@@ -5,7 +5,7 @@
 /// @notice ERC20 implementation for DoinGudDAO
 
 /**
- *  @dev Implementation of the AMORxGuild token for DoinGud
+ *  @dev Implementation of the AMORXGuild token for DoinGud
  *   
  *  The contract houses the token logic for AMORxGuild. 
  *
