@@ -6,7 +6,7 @@
 /// @notice To be used in clones
 /// @dev    No constructor, but has a setToken detail function which can only be called once
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
