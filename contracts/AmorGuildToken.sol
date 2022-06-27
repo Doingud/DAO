@@ -5,7 +5,7 @@
 /// @notice ERC20 implementation for DoinGudDAO
 
 /**
- *  @dev Implementation of the AMOR token for DoinGud MetaDAO
+ *  @dev Implementation of the AMORXGuild token for DoinGud
  *   
  *  The contract extends the ERC20Taxable contract and exposes the setTaxCollector() and
  *  setTaxRate() functions from the ERC20Taxable contract and allows for custom 
@@ -14,7 +14,7 @@
  *  The setTaxCollector() and setTaxRate() functions should be set on deploy and are
  *  not immutable.
  */
-pragma solidity ^0.8.4;
+pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -34,10 +34,14 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
 
     //  The proxy contract address for AMOR
     IERC20Taxable private tokenAmor;
+    address private _implementation;
 
-    function init(address proxyAddress, string memory name, string memory symbol) public {
+    event Stake(address indexed from, address to, uint256 indexed amount);
+
+    function init(address implementationAddress, address amorAddress, string memory name, string memory symbol) public {
         require(!_initialized, "already initialized");
-        _setProxyAddress(proxyAddress);
+        _setAmorAddress(amorAddress);
+        _setImplementationAddress(implementationAddress);
         _setTokenDetail(name, symbol);
         _initialized = true;
     }
@@ -51,13 +55,13 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
         // Must calculate stakedAmor prior to transferFrom()
         uint256 stakedAmor = tokenAmor.balanceOf(address(this));
 
-        require(tokenAmor.transferFrom(msg.sender, address(this), amount), "Unsufficient AMOR");
+        require(tokenAmor.transferFrom(tx.origin, address(this), amount), "Unsufficient AMOR");
 
         uint256 mintAmount;
         mintAmount = (amount + stakedAmor).sqrtu() - stakedAmor.sqrtu();
 
         _mint(to, mintAmount);
-
+        emit Stake(tx.origin, to, amount);
         return mintAmount;
     }
 
@@ -69,22 +73,26 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
         uint256 currentSupply = totalSupply();
         amorReturned = (currentSupply ** 2) - ((currentSupply - amount) ** 2);
         
-        _burn(msg.sender, amount);
+        _burn(tx.origin, amount);
 
         /// Correct for the tax on transfer
         uint256 taxCorrection = (amorReturned * tokenAmor.viewRate()) / tokenAmor.viewBasisPoints();
-        require(tokenAmor.transfer(msg.sender, amorReturned - taxCorrection), "transfer unsuccessful");
+        require(tokenAmor.transfer(tx.origin, amorReturned - taxCorrection), "transfer unsuccessful");
 
         return amorReturned;
     }
 
-    function updateProxyAddress(address newProxyAddress) public onlyOwner returns (bool) {
-        _setProxyAddress(newProxyAddress);
+    function updateImplementationAddress(address newProxyAddress) public onlyOwner returns (bool) {
+        _setImplementationAddress(newProxyAddress);
         return true;
     }
 
-    function _setProxyAddress(address _proxy) internal {
-        tokenAmor = IERC20Taxable(_proxy);
+    function _setAmorAddress(address _token) internal {
+        tokenAmor = IERC20Taxable(_token);
+    }
+
+    function _setImplementationAddress(address implementation) internal {
+        _implementation = implementation;
     }
 
     function pause() public onlyOwner {

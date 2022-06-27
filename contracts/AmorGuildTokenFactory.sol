@@ -21,10 +21,12 @@ import "./AmorGuildToken.sol";
 
 contract GuildTokenFactory {
     address internal _implementation;
+    address internal _tokenAmor;
     address[] public tokenClones;
 
-    constructor(address _cloneTarget) {
+    constructor(address _cloneTarget, address _tokenTarget) {
         _implementation = _cloneTarget;
+        _tokenAmor = _tokenTarget;
     }
 
     function deployTokens(string[] memory _names, string[] memory _symbols ) public returns (address[] memory) {
@@ -36,8 +38,12 @@ contract GuildTokenFactory {
 
             require(address(guildToken) != address(0), "Clone deployment failed");
             tokenClones.push(address(guildToken));
-            guildToken.init(_implementation, _names[i], _symbols[i]);
+            guildToken.init(_implementation, _tokenAmor, _names[i], _symbols[i]);
         }
+        return tokenClones;
+    }
+
+    function viewGuilds() public view returns (address[] memory) {
         return tokenClones;
     }
 }
