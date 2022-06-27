@@ -1,11 +1,18 @@
-pragma solidity 0.8.15;
+// SPDX-License-Identifier: MIT
+// Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
+
+/// @title  FXAMORxGuild 
+/// @notice Implements a FXAMORxGuild token
+/// @dev    Non transferable
+
+pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract FXAMORxGuild is ERC20, Ownable {
-=    mapping(address => User) private users;
+    mapping(address => User) private users;
 
     struct User {
         uint256 weight; // = balanceOf(address(this)); // weight is accumulated by stacking balance
