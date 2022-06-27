@@ -14,6 +14,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract FXAMORxGuild is ERC20, Ownable {
     mapping(address => User) private users;
 
+    // staker => all staker balance
+    mapping(address => uint256) stakes;
+    // those who delegated to a specific address
+    mapping(address => address[]) delegators; 
+    // list of delegations from one address
+    mapping(address => mapping(address => uint256)) delegations;
+
     struct User {
         uint256 weight; // = balanceOf(address(this)); // weight is accumulated by stacking balance
         uint256 balance; 
@@ -39,6 +46,12 @@ contract FXAMORxGuild is ERC20, Ownable {
     
     event Burned(
         address indexed user,
+        uint256 amount
+    );
+
+    event Delegated(
+        address indexed from,
+        address indexed to,
         uint256 amount
     );
 
@@ -72,7 +85,8 @@ contract FXAMORxGuild is ERC20, Ownable {
         // Tokens are minted 1:1.
         _mint(to, amount);
 
-        users[to].balance = amount;
+        stakes[to] = amount;
+        // users[to].balance = amount;
 
         // _balances[to] = amount;
         emit Staked(msg.sender, amount);
@@ -84,11 +98,11 @@ contract FXAMORxGuild is ERC20, Ownable {
     // When this tokens are burned, staked AMORxGuild is being transfered 
     // to the controller(contract that has a voting function)
     function burn(uint256 amount) public onlyAddress(_owner) {
-        require(users[msg.sender].balance >= amount, "Unsufficient FXAMORxGuild");
+        require(stakes[msg.sender] >= amount, "Unsufficient FXAMORxGuild");
 
         //burn used FXAMORxGuild tokens from staker
         _burn(msg.sender, amount);
-        users[msg.sender].balance -= amount;
+        stakes[msg.sender] -= amount;
 
         IERC20(AMORxGuild).transferFrom(address(this), controller, amount);
 
@@ -97,17 +111,14 @@ contract FXAMORxGuild is ERC20, Ownable {
     
     // already exists in ERC20Taxable
     function balanceOf(address account) public view virtual override returns (uint256) {
-        return users[account].balance;
+        return stakes[account];
     }
 
 
     // function that allows some external account to vote with your FXAMORxGuild tokens
     // Delegate your FXAMORxGuild to the address `to`.
-    function delegate(address to) public {
-        // assigns reference
-        User storage sender = users[msg.sender];
-
-        require(!sender.voted, "You already voted.");
+    function delegate(address to, uint256 amount) public {
+        require(stakes[msg.sender] >= amount, "Unsufficient FXAMORxGuild");
         require(to != msg.sender, "Self-delegation is disallowed.");
 
         // Forward the delegation as long as
@@ -118,26 +129,34 @@ contract FXAMORxGuild is ERC20, Ownable {
         // In this case, the delegation will not be executed,
         // but in other situations, such loops might
         // cause a contract to get "stuck" completely.
-        while (users[to].delegate != address(0)) {
-            to = users[to].delegate;
-
+        while (delegators[to] != address(0)) {
+            to = delegators[to];
+            
             // We found a loop in the delegation, not allowed.
             require(to != msg.sender, "Found loop in delegation.");
         }
 
-        User storage delegate_ = users[to];
-        require(!delegate_.voted, "User to delegate is already voted.");
+        uint256 alreadyDelegated = 0;
 
-        sender.weight -= sender.balance; //upd weight info
+        if((delegators[msg.sender]).length > 0){
+            // check all delegated amounts to check if current delegation is possible
+            for (uint256 i = 0; i < delegators[msg.sender]).length; i++) {
+                address j = ??? how to get it??
+                alreadyDelegated += delegators[msg.sender][j];
+            }
+        }
 
-        // Since `sender` is a reference, this
-        // modifies `voters[msg.sender].voted`
-        sender.voted = true;
-        sender.delegate = to;
+        uint256 availableAmount = stakes[msg.sender] - alreadyDelegated;
+        require(availableAmount >= amount, "Unavailable amount of FXAMORxGuild");
 
-        // If the delegate did not vote yet,
-        // add to their weight.
-        delegate_.weight += sender.weight;
+        delegators[msg.sender].push(to);
+
+        if(delegations[msg.sender][to] > 0){
+            delegations[msg.sender][to] += amount;
+        }else{
+            delegations[msg.sender][to] = amount;
+        }
     }
 
+    emit Delegated(msg.sender, to, amount);
 }
