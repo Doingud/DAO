@@ -81,10 +81,8 @@ contract dAMORxGuild is ERC20, Ownable {
 
         // mint AMORxGuild tokens to staker
         // Tokens are by following formula
-        // 1 year - 2*n tokens staked
         uint256 koef = time/MAX_LOCK_TIME;
-        // uint256 newAmount = (1 + koef)*amount;  // v1
-        uint256 newAmount = (koef)^2 *amount; //NdAMOR = f(t)^2 *nAMOR // v2
+        uint256 newAmount = (koef)^2 *amount; //NdAMOR = f(t)^2 *nAMOR
         stakesTimes[msg.sender] = block.timestamp + time;
 
         _mint(msg.sender, newAmount);
@@ -103,13 +101,11 @@ contract dAMORxGuild is ERC20, Ownable {
         IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount);
 
         // mint AMORxGuild tokens to staker
-        // Tokens are by following formula
-        //  TODO: different formula //msg.sender receives funds, based on the amount of time remaining until the end of his stake
+        // msg.sender receives funds, based on the amount of time remaining until the end of his stake
         uint256 time = stakesTimes[msg.sender] - block.timestamp;
 
         uint256 koef = time/MAX_LOCK_TIME;
-        // uint256 newAmount = (1 + koef)*amount;  // v1
-        uint256 newAmount = (koef)^2 *amount; //NdAMOR = f(t)^2 *nAMOR // v2
+        uint256 newAmount = (koef)^2 *amount; //NdAMOR = f(t)^2 *nAMOR
 
         _mint(msg.sender, newAmount);
 
@@ -179,11 +175,6 @@ contract dAMORxGuild is ERC20, Ownable {
                 alreadyDelegated += delegations[msg.sender][j];
             }
         }
-/*
-    // staker => delegated to (many accounts) => amount
-    // list of delegations from one address
-    mapping(address => mapping(address => uint256)) delegations;
-*/
 
         uint256 availableAmount = stakes[msg.sender] - alreadyDelegated;
         require(availableAmount >= amount, "Unavailable amount of FXAMORxGuild");
