@@ -25,10 +25,10 @@ describe("DoinGud MetaDAO", function () {
   const BASIS_POINTS = 10000;
 
     describe("Implementation deployment", function() {
-      it("Should deploy DoinGudToken", async function () {
+      it("Should deploy AMORToken", async function () {
         const [address1, address2, address3] = await ethers.getSigners();
   
-        const DoinGudToken = await ethers.getContractFactory("DoinGud");
+        const DoinGudToken = await ethers.getContractFactory("AMORToken");
   
         const token = await DoinGudToken.deploy();
   
@@ -40,7 +40,7 @@ describe("DoinGud MetaDAO", function () {
         //  Deploy the proxy contract and point it to the correct implementation
       it("Should deploy DoinGudProxy", async function () {
 
-        const DoinGudProxy = await ethers.getContractFactory("DoinGudProxy");
+        const DoinGudProxy = await ethers.getContractFactory("AMORTokenProxy");
 
         const token = await DoinGudProxy.deploy(IMPLEMENTATION.address, []);
         PROXY_CONTRACT = token;
@@ -65,7 +65,8 @@ describe("DoinGud MetaDAO", function () {
           TOKEN_NAME,
           TOKEN_SYMBOL,
           address2.address,
-          RATE
+          RATE,
+          address1.address
         )).
           to.emit(PROXY, "Initialized")
             .withArgs(true, address2.address, RATE);
@@ -141,7 +142,7 @@ describe("DoinGud MetaDAO", function () {
         expect(await PROXY.balanceOf(address2.address)).to.equal(ethers.utils.parseEther(taxAmount.toString()));
       })
 
-      it("User should have tax deducted amout in his account", async function () {
+      it("User should have tax deducted amount in his account", async function () {
         const taxAmount = TEST_TRANSFER*(1-(RATE/BASIS_POINTS));
         const [address1, address2, address3] = await ethers.getSigners();
 

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
 /// @title  DoinGud MetaDAO Token Logic
-/// @author @daoism.systems, lourenslinde
+/// @author Daoism Systems
 /// @notice ERC20 implementation for DoinGudDAO
+/// @custom security-contact contact@daoism.systems
 
 /**
  *  @dev Implementation of the AMOR token Logic for DoinGud MetaDAO
@@ -25,8 +26,7 @@ import "./ERC20Taxable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-/// @custom:security-contact someone@daoism.systems
-contract DoinGud is ERC20Taxable, Pausable, Ownable {
+contract AMORToken is ERC20Taxable, Pausable, Ownable {
 
     event Initialized(bool success, address taxCollector, uint256 rate);
 
@@ -39,15 +39,17 @@ contract DoinGud is ERC20Taxable, Pausable, Ownable {
         string memory name, 
         string memory symbol, 
         address _initCollector, 
-        uint256 _initTaxRate
+        uint256 _initTaxRate,
+        address _multisig
     ) external returns (bool) {
         require(!_initialized, "Already initialized");
+        //  Set the owner to the Multisig
+        _transferOwnership(_multisig);
         //  Set the name and symbol
         _name = name;
         _symbol = symbol;
-        //  Pre-mint to the token address
-        //  Replace tx.origin with MultiSig or account which must own the tokens
-        _mint(tx.origin, 10000000 * 10 ** decimals());
+        //  Pre-mint to the multisig address
+        _mint(_multisig, 10000000 * 10 ** decimals());
         //  Set the tax collector address 
         setTaxCollector(_initCollector);
         //  Set the tax rate
@@ -60,7 +62,7 @@ contract DoinGud is ERC20Taxable, Pausable, Ownable {
     /// @notice Sets the tax rate for transfer and transferFrom
     /// @dev    Rate is expressed in basis points, this must be divided by 10 000 to equal desired rate
     /// @param  newRate uint256 representing new tax rate, must be <= 500
-    function setTaxRate(uint256 newRate) public override returns (bool) {
+    function setTaxRate(uint256 newRate) public override onlyOwner returns (bool) {
         require(newRate <= 500, "tax rate > 5%");
         ERC20Taxable.setTaxRate(newRate);
         return true;
@@ -69,7 +71,7 @@ contract DoinGud is ERC20Taxable, Pausable, Ownable {
     /// @notice Sets the address which receives taxes
     /// @param  newTaxCollector address which must receive taxes
     /// @return bool returns true if successfully set
-    function setTaxCollector(address newTaxCollector) public override returns (bool) {
+    function setTaxCollector(address newTaxCollector) public override onlyOwner returns (bool) {
         require(newTaxCollector != address(this), "Cannot be token contract");
         ERC20Taxable.setTaxCollector(newTaxCollector);
         return true;

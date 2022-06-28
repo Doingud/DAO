@@ -3,7 +3,7 @@
 
 pragma solidity 0.8.14;
 /// @title  Interface for ERC20Taxable 
-/// @author @lourenslinde @daoism.systems
+/// @author Daoism Systems Team
 
 
     interface IERC20Taxable {
