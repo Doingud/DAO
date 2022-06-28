@@ -185,7 +185,7 @@ contract dAMORxGuild is ERC20, Ownable {
             amountDelegated[msg.sender] = 0;
         }
 
-        delegates[msg.sender] = address(0);
+        delegates[msg.sender] = address(0); //TODO: need to remove only exact address somehow
         amountDelegated[msg.sender] = amount;
     }
 
