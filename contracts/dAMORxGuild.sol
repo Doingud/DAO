@@ -173,12 +173,29 @@ contract dAMORxGuild is ERC20, Ownable {
         emit Delegated(msg.sender, to, amount);
     }
 
-    function undelegate(address account) public {
+    function undelegate(address account, address from, uint256 amount) public {
         require(account != msg.sender, "Self-delegation is disallowed.");
         require(delegates[msg.sender] != address(0), "Already delegated.");
 
+        if(delegations[msg.sender][to] >= amount){
+            delegations[msg.sender][to] -= amount;
+            amountDelegated[msg.sender] -= amount;
+        }else{
+            delegations[msg.sender][to] = 0;
+            amountDelegated[msg.sender] = 0;
+        }
+
         delegates[msg.sender] = address(0);
+        amountDelegated[msg.sender] = amount;
     }
 
+    function undelegateAll(address account) public { //question: do we need it?
+        require(account != msg.sender, "Self-delegation is disallowed.");
+        require(delegates[msg.sender] != address(0), "Already delegated.");
+
+        // TODO: remove addresses of delegated-to adresses
+        delegates[msg.sender] = address(0);
+        amountDelegated[msg.sender] = 0;
+    }
 
 }
