@@ -21,6 +21,8 @@ contract dAMORxGuild is ERC20, Ownable {
     // staker => delegated to (many accounts) => amount
     // list of delegations from one address
     mapping(address => mapping(address => uint256)) delegations;
+    // amount of all delegated tokens from staker
+    mapping(address => uint256) amountDelegated;
 
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     uint256 public constant MIN_LOCK_TIME = 7 days; // 1 week is the time for the new deposided tokens to be locked until they can be withdrawn
@@ -135,14 +137,6 @@ contract dAMORxGuild is ERC20, Ownable {
 
 
     // Delegate your dAMORxGuild to the address `account`.
-    // function delegate(address account) public {
-    //     require(account != msg.sender, "Self-delegation is disallowed.");
-    //     require(account != address(0), "Zero address delagation.");
-    //     // require(delegates[msg.sender] == address(0), "Already delegated.");
-
-    //     delegates[msg.sender] = account;
-    // }
-
     function delegate(address to, uint256 amount) public {
         require(stakes[msg.sender] >= amount, "Unsufficient FXAMORxGuild");
         require(to != msg.sender, "Self-delegation is disallowed.");
@@ -161,19 +155,8 @@ contract dAMORxGuild is ERC20, Ownable {
             // We found a loop in the delegation, not allowed.
             require(to != msg.sender, "Found loop in delegation.");
         }
-
-        uint256 alreadyDelegated = 0;
-
-        if(delegations[msg.sender]){
-            
-            address[] delegationsTo = delegators[msg.sender];
-            // check all delegated amounts to check if current delegation is possible
-            for (uint256 i = 0; i < delegationsTo.length; i++) {
-                address delegatedTo = delegationsTo[i];
-                alreadyDelegated += delegations[msg.sender][delegatedTo];
-            }
-        }
-
+        
+        uint256 alreadyDelegated = amountDelegated[msg.sender]
         uint256 availableAmount = stakes[msg.sender] - alreadyDelegated;
         require(availableAmount >= amount, "Unavailable amount of FXAMORxGuild");
 
@@ -181,8 +164,10 @@ contract dAMORxGuild is ERC20, Ownable {
 
         if(delegations[msg.sender][to] > 0){
             delegations[msg.sender][to] += amount;
+            amountDelegated[msg.sender] += amount;
         }else{
             delegations[msg.sender][to] = amount;
+            amountDelegated[msg.sender] = amount;
         }
         
         emit Delegated(msg.sender, to, amount);
@@ -194,5 +179,6 @@ contract dAMORxGuild is ERC20, Ownable {
 
         delegates[msg.sender] = address(0);
     }
+
 
 }
