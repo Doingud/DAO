@@ -12,6 +12,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract dAMORxGuild is ERC20, Ownable {
 
+    // staker => time staked for
+    mapping(address => uint256) stakesTimes;
     // staker => all staker balance
     mapping(address => uint256) stakes;
     // those who delegated to a specific address
@@ -20,6 +22,8 @@ contract dAMORxGuild is ERC20, Ownable {
     // list of delegations from one address
     mapping(address => mapping(address => uint256)) delegations;
 
+    uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
+    uint256 public constant MIN_LOCK_TIME = 7 days; // 1 week is the time for the new deposided tokens to be locked until they can be withdrawn
     // // staker => delegated to (many accounts) => amount
     // mapping(address => mapping(address => uint256)) delegates;
 
@@ -46,7 +50,7 @@ contract dAMORxGuild is ERC20, Ownable {
         address indexed to,
         uint256 amount
     );
-    
+
     constructor(address owner) ERC20("DoinGud MetaDAO", "FXAMORxGuild") {
         _owner = msg.sender;
     }
@@ -68,6 +72,8 @@ contract dAMORxGuild is ERC20, Ownable {
     /// @param  time uint256
     /// @return uint256 the amount of dAMORxGuild received from staking
     function stake(uint256 amount, uint256 time) public returns (uint256) {
+        require(time > MIN_LOCK_TIME , "Time too small");
+        require(time < MAX_LOCK_TIME, "Time too big");
         require(IERC20(AMORxGuild).balanceOf(msg.sender) >= amount, "Unsufficient AMORxGuild");
 
         // send to AMORxGuild contract to stake
@@ -76,32 +82,18 @@ contract dAMORxGuild is ERC20, Ownable {
         // mint AMORxGuild tokens to staker
         // Tokens are by following formula
         //  TODO: formula
-        _mint(msg.sender, amount);
+        uint256 newAmount = amount;
 
-        stakes[msg.sender] = amount;
+        stakesTimes[msg.sender] = time;
+        
+        _mint(msg.sender, newAmount);
 
-        emit Staked(msg.sender, amount);
+        stakes[msg.sender] = newAmount;
 
-        return amount;
+        emit Staked(msg.sender, newAmount);
+
+        return newAmount;
     }
-
-    // function withdraws AMORxGuild tokens; burns dAMORxGuild
-    // When this tokens are burned, staked AMORxGuild is being transfered 
-    // to the controller(contract that has a voting function)
-    function withdraw() public returns (uint256) {
-        uint256 amount = stakes[msg.sender];
-        require(amount > 0, "Nothing to withdraw");
-
-        //burn used dAMORxGuild tokens from staker
-        _burn(msg.sender, amount);
-        stakes[msg.sender] = 0;
-
-        IERC20(AMORxGuild).transferFrom(address(this), msg.sender, amount);
-
-        emit Burned(msg.sender, amount);
-        return amount;
-    }
-
 
     function increaseStake(uint256 amount) public returns (uint256) {
         require(IERC20(AMORxGuild).balanceOf(msg.sender) >= amount, "Unsufficient AMORxGuild");
@@ -120,6 +112,23 @@ contract dAMORxGuild is ERC20, Ownable {
         emit Staked(msg.sender, newAmount);
 
         return newAmount;
+    }
+
+    // function withdraws AMORxGuild tokens; burns dAMORxGuild
+    // When this tokens are burned, staked AMORxGuild is being transfered 
+    // to the controller(contract that has a voting function)
+    function withdraw() public returns (uint256) {
+        uint256 amount = stakes[msg.sender];
+        require(amount > 0, "Nothing to withdraw");
+
+        //burn used dAMORxGuild tokens from staker
+        _burn(msg.sender, amount);
+        stakes[msg.sender] = 0;
+
+        IERC20(AMORxGuild).transferFrom(address(this), msg.sender, amount);
+
+        emit Burned(msg.sender, amount);
+        return amount;
     }
     
     function balanceOf(address account) public view virtual override returns (uint256) {
