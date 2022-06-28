@@ -47,9 +47,6 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
     /// AMOR has been withdrawn
     event Unstake(address indexed from, uint256 indexed amount);
 
-    /// Proxy Address Change
-    event ProxyAddressChange(address indexed newProxyAddress);
-
     /// @notice Initializes the AMORxGuild contract
     /// @dev    Sets the token details as well as the required addresses for token logic
     /// @param  amorAddress the address of the AMOR token proxy
@@ -107,20 +104,6 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
         //  Return the amount of AMOR returned to the user 
         return amorReturned-taxCorrection;
     }
-
-    /*  Note    This is required for upgrade functionality.
-     *          This function should be accessible only by a multisig,
-     *          with time-delay logic (on the multisig), to facilitate trust in the token.
-     *          Its use must be transparent.
-     */
-    /// @notice Points the contract to a different implementation address
-    /// @dev    Changes _implementation to `newProxyAddress`
-    ///  the address which houses the token logic to be executed when this contract is called.
-    //function updateImplementationAddress(address newProxyAddress) public onlyOwner returns (bool) {
-    //    _setImplementationAddress(newProxyAddress);
-    //    emit ProxyAddressChange(newProxyAddress);
-    //    return true;
-    //}
 
     function _setAmorAddress(address _token) internal {
         tokenAmor = IERC20Taxable(_token);
