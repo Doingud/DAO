@@ -21,7 +21,7 @@ contract FXAMORxGuild is ERC20, Ownable {
     mapping(address => mapping(address => uint256)) delegations;
     // amount of all delegated tokens from staker
     mapping(address => uint256) amountDelegated;
-    
+
     address public _owner; //GuildController
     address public AMORxGuild; 
     address public controller; //contract that has a voting function
@@ -134,11 +134,7 @@ contract FXAMORxGuild is ERC20, Ownable {
         }else{
             delegations[msg.sender][to] = amount;
         }
-<<<<<<< HEAD
-
-=======
         
->>>>>>> 7c595e69dfffdbbe35c0aa3d0d5b5be19137c8b8
         emit Delegated(msg.sender, to, amount);
     }
 
