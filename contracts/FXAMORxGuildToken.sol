@@ -134,7 +134,11 @@ contract FXAMORxGuild is ERC20, Ownable {
         }else{
             delegations[msg.sender][to] = amount;
         }
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 7c595e69dfffdbbe35c0aa3d0d5b5be19137c8b8
         emit Delegated(msg.sender, to, amount);
     }
 
