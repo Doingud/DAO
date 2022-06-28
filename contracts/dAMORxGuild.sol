@@ -24,10 +24,6 @@ contract dAMORxGuild is ERC20, Ownable {
 
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     uint256 public constant MIN_LOCK_TIME = 7 days; // 1 week is the time for the new deposided tokens to be locked until they can be withdrawn
-    // // staker => delegated to (many accounts) => amount
-    // mapping(address => mapping(address => uint256)) delegates;
-
-    // mapping(address => address) delegates;
 
     address public _owner; //GuildController
     address public AMORxGuild; 
@@ -168,11 +164,13 @@ contract dAMORxGuild is ERC20, Ownable {
 
         uint256 alreadyDelegated = 0;
 
-        if((delegations[msg.sender]).length > 0){
+        if(delegations[msg.sender]){
+            
+            address[] delegationsTo = delegators[msg.sender];
             // check all delegated amounts to check if current delegation is possible
-            for (uint256 i = 0; i < delegations[msg.sender]).length; i++) {
-                address j = ??? how to get it??
-                alreadyDelegated += delegations[msg.sender][j];
+            for (uint256 i = 0; i < delegationsTo.length; i++) {
+                address delegatedTo = delegationsTo[i];
+                alreadyDelegated += delegations[msg.sender][delegatedTo];
             }
         }
 
