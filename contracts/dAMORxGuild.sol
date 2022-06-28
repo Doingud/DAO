@@ -193,8 +193,15 @@ contract dAMORxGuild is ERC20, Ownable {
         require(account != msg.sender, "Self-delegation is disallowed.");
         require(delegates[msg.sender] != address(0), "Already delegated.");
 
-        // TODO: remove addresses of delegated-to adresses
-        delegates[msg.sender] = address(0);
+        if(delegations[msg.sender]){
+            address[] delegationsTo = delegators[msg.sender];
+            for (uint256 i = 0; i < delegationsTo.length; i++) {
+                address delegatedTo = delegationsTo[i];
+                delegations[msg.sender][delegatedTo] = 0;
+            }
+        }
+
+        delegates[msg.sender] = [];
         amountDelegated[msg.sender] = 0;
     }
 
