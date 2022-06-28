@@ -3,7 +3,7 @@
 pragma solidity 0.8.14;
 
 /// @title  Proxy Factory for AMORxGuild Tokens
-/// @author daoism.systems, lourenslinde,
+/// @author Daoism Systems
 /// @notice Creates clones of a target contract
 /// @dev    ERC1167
 

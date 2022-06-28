@@ -2,7 +2,7 @@
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
 /// @title  ERC20Taxable 
-/// @author @lourenslinde @daoism.systems
+/// @author Daoism Systems
 /// @notice Implements a "tax"/"fee" on any token transfers
 /// @dev    "Tax" mechanism implemented within _transfer() function
 

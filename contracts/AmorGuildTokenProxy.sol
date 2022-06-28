@@ -3,7 +3,7 @@
 pragma solidity 0.8.14;
 
 /// @title  Proxy (Storage Implementation) for AMORxGuild Tokens
-/// @author daoism.systems, lourenslinde,
+/// @author Daoism Systems
 /// @notice Data storage for the DoingGud Guild (AMORxGuild) tokens
 /// @dev    ERC1967 compliant, upgradeable proxy implementation
 
