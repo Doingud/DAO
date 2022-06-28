@@ -19,7 +19,9 @@ contract FXAMORxGuild is ERC20, Ownable {
     mapping(address => address[]) delegators; 
     // list of delegations from one address
     mapping(address => mapping(address => uint256)) delegations;
-
+    // amount of all delegated tokens from staker
+    mapping(address => uint256) amountDelegated;
+    
     address public _owner; //GuildController
     address public AMORxGuild; 
     address public controller; //contract that has a voting function
@@ -121,18 +123,7 @@ contract FXAMORxGuild is ERC20, Ownable {
             require(to != msg.sender, "Found loop in delegation.");
         }
 
-        uint256 alreadyDelegated = 0;
-
-        if(delegations[msg.sender]){
-            
-            address[] delegationsTo = delegators[msg.sender];
-            // check all delegated amounts to check if current delegation is possible
-            for (uint256 i = 0; i < delegationsTo.length; i++) {
-                address delegatedTo = delegationsTo[i];
-                alreadyDelegated += delegations[msg.sender][delegatedTo];
-            }
-        }
-
+        uint256 alreadyDelegated = amountDelegated[msg.sender]
         uint256 availableAmount = stakes[msg.sender] - alreadyDelegated;
         require(availableAmount >= amount, "Unavailable amount of FXAMORxGuild");
 
