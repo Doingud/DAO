@@ -12,7 +12,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract FXAMORxGuild is ERC20, Ownable {
-    mapping(address => User) private users;
 
     // staker => all staker balance
     mapping(address => uint256) stakes;
@@ -20,10 +19,6 @@ contract FXAMORxGuild is ERC20, Ownable {
     mapping(address => address[]) delegators; 
     // list of delegations from one address
     mapping(address => mapping(address => uint256)) delegations;
-
-    mapping(address => uint256) private _allowedBalances;
-    mapping(address => uint256) private _delegatedBalances; //amount that was delegated and can't be used
-
 
     address public _owner; //GuildController
     address public AMORxGuild; 
@@ -128,11 +123,13 @@ contract FXAMORxGuild is ERC20, Ownable {
 
         uint256 alreadyDelegated = 0;
 
-        if((delegators[msg.sender]).length > 0){
+        if(delegations[msg.sender]){
+            
+            address[] delegationsTo = delegators[msg.sender];
             // check all delegated amounts to check if current delegation is possible
-            for (uint256 i = 0; i < delegators[msg.sender]).length; i++) {
-                address j = ??? how to get it??
-                alreadyDelegated += delegators[msg.sender][j];
+            for (uint256 i = 0; i < delegationsTo.length; i++) {
+                address delegatedTo = delegationsTo[i];
+                alreadyDelegated += delegations[msg.sender][delegatedTo];
             }
         }
 
@@ -146,7 +143,8 @@ contract FXAMORxGuild is ERC20, Ownable {
         }else{
             delegations[msg.sender][to] = amount;
         }
+
+        emit Delegated(msg.sender, to, amount);
     }
 
-    emit Delegated(msg.sender, to, amount);
 }
