@@ -83,9 +83,9 @@ contract dAMORxGuild is ERC20, Ownable {
         // Tokens are by following formula
         // 1 year - 2*n tokens staked
         uint256 koef = time/MAX_LOCK_TIME;
-        uint256 newAmount = (1 + koef)*amount;  // v1
+        // uint256 newAmount = (1 + koef)*amount;  // v1
         uint256 newAmount = (koef)^2 *amount; //NdAMOR = f(t)^2 *nAMOR // v2
-        stakesTimes[msg.sender] = time;
+        stakesTimes[msg.sender] = block.timestamp + time;
 
         _mint(msg.sender, newAmount);
 
@@ -105,7 +105,12 @@ contract dAMORxGuild is ERC20, Ownable {
         // mint AMORxGuild tokens to staker
         // Tokens are by following formula
         //  TODO: different formula //msg.sender receives funds, based on the amount of time remaining until the end of his stake
-        uint256 newAmount = amount;
+        uint256 time = stakesTimes[msg.sender] - block.timestamp;
+
+        uint256 koef = time/MAX_LOCK_TIME;
+        // uint256 newAmount = (1 + koef)*amount;  // v1
+        uint256 newAmount = (koef)^2 *amount; //NdAMOR = f(t)^2 *nAMOR // v2
+
         _mint(msg.sender, newAmount);
 
         stakes[msg.sender] += newAmount;
