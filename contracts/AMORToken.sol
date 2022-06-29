@@ -62,19 +62,17 @@ contract AMORToken is ERC20Taxable, Pausable, Ownable {
     /// @notice Sets the tax rate for transfer and transferFrom
     /// @dev    Rate is expressed in basis points, this must be divided by 10 000 to equal desired rate
     /// @param  newRate uint256 representing new tax rate, must be <= 500
-    function setTaxRate(uint256 newRate) public override onlyOwner returns (bool) {
+    function setTaxRate(uint256 newRate) public override onlyOwner {
         require(newRate <= 500, "tax rate > 5%");
         ERC20Taxable.setTaxRate(newRate);
-        return true;
     }
 
     /// @notice Sets the address which receives taxes
     /// @param  newTaxCollector address which must receive taxes
     /// @return bool returns true if successfully set
-    function setTaxCollector(address newTaxCollector) public override onlyOwner returns (bool) {
+    function setTaxCollector(address newTaxCollector) public override onlyOwner {
         require(newTaxCollector != address(this), "Cannot be token contract");
         ERC20Taxable.setTaxCollector(newTaxCollector);
-        return true;
     }
     
     /// @notice Pause functionality for AMOR

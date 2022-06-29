@@ -209,9 +209,8 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     /// @dev    Should be overridden in derived contracts for access control
     /// @dev    Rate should be expressed in basis points
     /// @param  newRate uint256 representing new tax rate
-    function setTaxRate(uint256 newRate) public virtual returns (bool) {
+    function setTaxRate(uint256 newRate) public virtual {
         taxRate = newRate;
-        return true;
     }
 
     /// View the current tax rate in basis points
@@ -223,11 +222,10 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     /// @dev    Should be overridden in derived contracts to add access control
     /// @param  newTaxCollector address which must receive taxes
     /// @return bool returns true if successfully set
-    function setTaxCollector(address newTaxCollector) public virtual returns (bool) {
+    function setTaxCollector(address newTaxCollector) public virtual {
         require(newTaxCollector != taxCollector, "Already set");
         require(newTaxCollector != address(0), "Zero address");
         taxCollector = newTaxCollector;
-        return true;
     }
 
     /// View the current tax collector address
