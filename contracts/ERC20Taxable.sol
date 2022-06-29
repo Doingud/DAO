@@ -221,8 +221,7 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     /// @notice Sets the address which receives taxes
     /// @dev    Should be overridden in derived contracts to add access control
     /// @param  newTaxCollector address which must receive taxes
-    /// @return bool returns true if successfully set
-    function setTaxCollector(address newTaxCollector) public virtual {
+    function setTaxCollector(address newTaxCollector) internal virtual {
         require(newTaxCollector != taxCollector, "Already set");
         require(newTaxCollector != address(0), "Zero address");
         taxCollector = newTaxCollector;

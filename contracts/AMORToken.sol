@@ -28,6 +28,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract AMORToken is ERC20Taxable, Pausable, Ownable {
 
+    error InvalidRate();
+
+    error InvalidTaxCollector();
+
     event Initialized(bool success, address taxCollector, uint256 rate);
 
     bool private _initialized;
@@ -63,15 +67,18 @@ contract AMORToken is ERC20Taxable, Pausable, Ownable {
     /// @dev    Rate is expressed in basis points, this must be divided by 10 000 to equal desired rate
     /// @param  newRate uint256 representing new tax rate, must be <= 500
     function setTaxRate(uint256 newRate) public override onlyOwner {
-        require(newRate <= 500, "tax rate > 5%");
+        if(newRate > 500) {
+            revert InvalidRate();
+        }
         ERC20Taxable.setTaxRate(newRate);
     }
 
     /// @notice Sets the address which receives taxes
     /// @param  newTaxCollector address which must receive taxes
-    /// @return bool returns true if successfully set
-    function setTaxCollector(address newTaxCollector) public override onlyOwner {
-        require(newTaxCollector != address(this), "Cannot be token contract");
+    function updateController(address newTaxCollector) public onlyOwner {
+        if(newTaxCollector == address(this)) {
+            revert InvalidTaxCollector();
+        }
         ERC20Taxable.setTaxCollector(newTaxCollector);
     }
     
