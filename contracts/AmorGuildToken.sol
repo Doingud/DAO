@@ -23,7 +23,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IERC20Taxable.sol";
 
 /// Advanced math functions for bonding curve
-import "./ABDKMath64x64.sol";
+import "./utils/ABDKMath64x64.sol";
 
 import "./ERC20Base.sol";
 
