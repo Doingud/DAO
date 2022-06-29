@@ -57,7 +57,12 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
             expect(await FXAMORxGuild.controller()).to.equal(authorizer_adaptor.address);
         });
 
-        it('burn FXAMORxGuild tokens and returns AMORxGuild', async function () {
+        it('delegated FXAMORxGuild tokens', async function () {
+            await FXAMORxGuild.connect(operator).delegate(staker.address, FIFTY_ETHER);    
+            expect((await FXAMORxGuild.delagetedBalanceOf(operator.address)).toString()).to.equal(FIFTY_ETHER.toString());
+        });
+
+        it('burn FXAMORxGuild tokens and returns AMORxGuild', async function () {            
             await FXAMORxGuild.connect(operator).burn(operator.address, FIFTY_ETHER);    
             expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(FIFTY_ETHER.toString());
         });
