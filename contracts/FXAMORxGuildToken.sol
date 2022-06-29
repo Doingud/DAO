@@ -22,6 +22,9 @@ contract FXAMORxGuild is ERC20, Ownable {
     // amount of all delegated tokens from staker
     mapping(address => uint256) amountDelegated;
 
+    string public constant name = "DoinGud MetaDAO";
+    string public constant symbol = "FXAMORxGuild";
+
     address public _owner; //GuildController
     address public AMORxGuild; 
     address public controller; //contract that has a voting function
@@ -29,7 +32,7 @@ contract FXAMORxGuild is ERC20, Ownable {
     error Unauthorized();
     
 
-    constructor(address owner) ERC20("DoinGud MetaDAO", "FXAMORxGuild") {
+    constructor(address owner) ERC20(name, symbol) {
         _owner = msg.sender;
     }
 
