@@ -30,20 +30,18 @@ describe('unit - Contract: FXAMORxGuild Token', async () => {
         );
     });
 
-    it('stakes AMORxGuild tokens and mints FXAMORxGuild', async function () {
-        console.log("await AMORxGuild.balanceOf(operator); is %s", await AMORxGuild.balanceOf(operator.address));
-        
+    it('fait to stakes AMORxGuild tokens if not enough AMORxGuild', async function () {
         await expect(FXAMORxGuild.connect(operator).stake(operator.address, ONE_HUNDRED_ETHER)).to.be.revertedWith(
             'Unsufficient AMORxGuild'
         );
+    });
 
+    it('stakes AMORxGuild tokens and mints FXAMORxGuild', async function () {
+        await AMORxGuild.connect(root).mint(operator.address, ONE_HUNDRED_ETHER);
+        await AMORxGuild.connect(operator).approve(FXAMORxGuild.address, ONE_HUNDRED_ETHER);
 
-        // await AMORxGuild.connect(root).mint(root.address, ONE_HUNDRED_ETHER);
-
-        // await FXAMORxGuild.connect(root).stake(staker.address, ONE_HUNDRED_ETHER);
-        
-        // await expect(FXAMORxGuild.stakes(staker)).to.equal(ONE_HUNDRED_ETHER);
-
+        await FXAMORxGuild.connect(operator).stake(operator.address, ONE_HUNDRED_ETHER);        
+        expect((await FXAMORxGuild.balanceOf(operator.address)).toString()).to.equal(ONE_HUNDRED_ETHER.toString());
     });
 
 });
