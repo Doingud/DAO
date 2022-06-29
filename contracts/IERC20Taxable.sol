@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
+pragma solidity 0.8.14;
 /// @title  Interface for ERC20Taxable 
-/// @author @lourenslinde @daoism.systems
+/// @author Daoism Systems Team
 
-pragma solidity ^0.8.0;
 
     interface IERC20Taxable {
         /**
@@ -79,6 +79,7 @@ pragma solidity ^0.8.0;
         address to,
         uint256 amount
     ) external returns (bool);
+
 
     /// View the current tax rate in basis points
     function viewRate() external view returns (uint256);
