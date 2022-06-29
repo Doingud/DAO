@@ -1,8 +1,7 @@
 const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants.js');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { FIFTY_ETHER } = require('../helpers/constants.js');
-const { ONE_HUNDRED_ETHER } = require('../helpers/constants.js');
+const { TWO_HUNDRED_ETHER, ONE_HUNDRED_ETHER, FIFTY_ETHER } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
 let AMORxGuild;
@@ -57,9 +56,39 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
             expect(await FXAMORxGuild.controller()).to.equal(authorizer_adaptor.address);
         });
 
-        it('delegated FXAMORxGuild tokens', async function () {
+        it('it fails to delegate FXAMORxGuild tokens if not enough FXAMORxGuild', async function () {
+            await expect(FXAMORxGuild.connect(operator).delegate(operator.address, TWO_HUNDRED_ETHER)).to.be.revertedWith(
+                'Unsufficient FXAMORxGuild'
+            ); 
+        });
+
+        it('it fails to delegate FXAMORxGuild tokens if delegation to themself', async function () {
+            await expect(FXAMORxGuild.connect(operator).delegate(operator.address, FIFTY_ETHER)).to.be.revertedWith(
+                'Self-delegation is disallowed.'
+            ); 
+        });
+
+        it('it fails to delegate FXAMORxGuild tokens if delegation to address(0)', async function () {
+            await expect(FXAMORxGuild.connect(operator).delegate(ZERO_ADDRESS, FIFTY_ETHER)).to.be.revertedWith(
+                'Delegation to zero address is disallowed.'
+            ); 
+        });
+
+        it('delegate FXAMORxGuild tokens', async function () {
             await FXAMORxGuild.connect(operator).delegate(staker.address, FIFTY_ETHER);    
             expect((await FXAMORxGuild.delagetedBalanceOf(operator.address)).toString()).to.equal(FIFTY_ETHER.toString());
+        });
+
+        it('it fails to delegate FXAMORxGuild tokens if Unavailable amount of FXAMORxGuild', async function () {
+            await expect(FXAMORxGuild.connect(operator).delegate(staker.address, ONE_HUNDRED_ETHER)).to.be.revertedWith(
+                'Unavailable amount of FXAMORxGuild'
+            ); 
+        });
+
+        it('it fails to burn FXAMORxGuild tokens if not enough FXAMORxGuild', async function () {        
+            await expect(FXAMORxGuild.connect(operator).burn(operator.address, TWO_HUNDRED_ETHER)).to.be.revertedWith(
+                'Unsufficient FXAMORxGuild'
+            ); 
         });
 
         it('burn FXAMORxGuild tokens and returns AMORxGuild', async function () {        
