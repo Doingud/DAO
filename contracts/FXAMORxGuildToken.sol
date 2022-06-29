@@ -28,21 +28,6 @@ contract FXAMORxGuild is ERC20, Ownable {
 
     error Unauthorized();
     
-    event Staked(
-        address indexed user,
-        uint256 amount
-    );
-    
-    event Burned(
-        address indexed user,
-        uint256 amount
-    );
-
-    event Delegated(
-        address indexed from,
-        address indexed to,
-        uint256 amount
-    );
 
     constructor(address owner) ERC20("DoinGud MetaDAO", "FXAMORxGuild") {
         _owner = msg.sender;
@@ -64,7 +49,7 @@ contract FXAMORxGuild is ERC20, Ownable {
     /// @param  to a parameter just like in doxygen (must be followed by parameter name)
     /// @param  amount uint256 amount of AMORxGuild to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
-    function stake(address to, uint256 amount) public onlyAddress(_owner) returns (uint256) {
+    function stake(address to, uint256 amount) external onlyAddress(_owner) returns (uint256) {
         require(IERC20(AMORxGuild).balanceOf(msg.sender) >= amount, "Unsufficient AMORxGuild");
 
         // send to FXAMORxGuild contract to stake
@@ -76,15 +61,13 @@ contract FXAMORxGuild is ERC20, Ownable {
 
         stakes[to] = amount;
 
-        emit Staked(msg.sender, amount);
-
         return amount;
     }
 
     // function burns FXAMORxGuild tokens if they are being used for voting. 
     // When this tokens are burned, staked AMORxGuild is being transfered 
     // to the controller(contract that has a voting function)
-    function burn(uint256 amount) public onlyAddress(_owner) {
+    function burn(uint256 amount) external onlyAddress(_owner) {
         require(stakes[msg.sender] >= amount, "Unsufficient FXAMORxGuild");
 
         //burn used FXAMORxGuild tokens from staker
@@ -92,50 +75,28 @@ contract FXAMORxGuild is ERC20, Ownable {
         stakes[msg.sender] -= amount;
 
         IERC20(AMORxGuild).transferFrom(address(this), controller, amount);
-
-        emit Burned(msg.sender, amount);
     }
     
     // already exists in ERC20Taxable
-    function balanceOf(address account) public view virtual override returns (uint256) {
+    function balanceOf(address account) view override returns (uint256) {
         return stakes[account];
     }
 
 
     // function that allows some external account to vote with your FXAMORxGuild tokens
     // Delegate your FXAMORxGuild to the address `to`.
-    function delegate(address to, uint256 amount) public {
+    function delegate(address to, uint256 amount) external {
         require(stakes[msg.sender] >= amount, "Unsufficient FXAMORxGuild");
         require(to != msg.sender, "Self-delegation is disallowed.");
-
-        // Forward the delegation as long as
-        // `to` also delegated.
-        // In general, such loops are very dangerous,
-        // because if they run too long, they might
-        // need more gas than is available in a block.
-        // In this case, the delegation will not be executed,
-        // but in other situations, such loops might
-        // cause a contract to get "stuck" completely.
-        while (delegators[to] != address(0)) {
-            to = delegators[to];
-            
-            // We found a loop in the delegation, not allowed.
-            require(to != msg.sender, "Found loop in delegation.");
-        }
+        require(to != address(0), "Delegation to zero address is disallowed.");
 
         uint256 alreadyDelegated = amountDelegated[msg.sender]
         uint256 availableAmount = stakes[msg.sender] - alreadyDelegated;
         require(availableAmount >= amount, "Unavailable amount of FXAMORxGuild");
 
-        delegators[msg.sender].push(to);
-
-        if(delegations[msg.sender][to] > 0){
-            delegations[msg.sender][to] += amount;
-        }else{
-            delegations[msg.sender][to] = amount;
-        }
-        
-        emit Delegated(msg.sender, to, amount);
+        delegators[to].push(msg.sender);
+        delegations[msg.sender][to] += amount;
+        amountDelegated[msg.sender] += amount;
     }
 
 }
