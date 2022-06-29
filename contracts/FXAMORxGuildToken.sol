@@ -89,6 +89,9 @@ contract FXAMORxGuild is ERC20, Ownable {
         return stakes[account];
     }
 
+    function delagetedBalanceOf(address account) public view returns (uint256) {
+        return amountDelegated[account];
+    }
 
     // function that allows some external account to vote with your FXAMORxGuild tokens
     // Delegate your FXAMORxGuild to the address `to`.
