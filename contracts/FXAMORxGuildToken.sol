@@ -81,7 +81,7 @@ contract FXAMORxGuild is ERC20, Ownable {
         //burn used FXAMORxGuild tokens from staker
         _burn(account, amount);
         stakes[account] -= amount;
-        IERC20(AMORxGuild).transferFrom(address(this), controller, amount);
+        IERC20(AMORxGuild).transfer(controller, amount);
     }
     
     // already exists in ERC20Taxable
