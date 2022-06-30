@@ -40,12 +40,6 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
     /// Events
     /// Emitted once token has been initialized
     event Initialized(string name, string symbol, address amorToken);
-    
-    /// AMOR has been staked
-    event Stake(address indexed from, address to, uint256 indexed amount);
-    
-    /// AMOR has been withdrawn
-    event Unstake(address indexed from, uint256 indexed amount);
 
     /// @notice Initializes the AMORxGuild contract
     /// @dev    Sets the token details as well as the required addresses for token logic
@@ -72,15 +66,13 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
 
         //  Must has enough AMOR to stake
         //  Note that this transferFrom() is taxed
-        require(tokenAmor.transferFrom(tx.origin, address(this), amount), "Unsufficient AMOR");
+        require(tokenAmor.transferFrom(msg.sender, address(this), amount), "Unsufficient AMOR");
 
         //  Calculate mint amount and mint this to the address `to`
         uint256 mintAmount;
         mintAmount = (amount + stakedAmor).sqrtu() - stakedAmor.sqrtu();
         _mint(to, mintAmount);
 
-        //  Emit the `Stake` event
-        emit Stake(tx.origin, to, amount);
         return mintAmount;
     }
 
@@ -98,9 +90,7 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
         //  Correct for the tax on transfer
         uint256 taxCorrection = (amorReturned * tokenAmor.viewRate()) / tokenAmor.viewBasisPoints();
         //  Transfer AMOR to the tx.origin, but note: this is taxed!
-        require(tokenAmor.transfer(tx.origin, amorReturned - taxCorrection), "transfer unsuccessful");
-        //  Emit the `Unstake` event
-        emit Unstake(tx.origin, amount);
+        require(tokenAmor.transfer(msg.sender, amorReturned - taxCorrection), "transfer unsuccessful");
         //  Return the amount of AMOR returned to the user 
         return amorReturned-taxCorrection;
     }
