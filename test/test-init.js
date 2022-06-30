@@ -8,8 +8,8 @@ const initialize = async (accounts) => {
   setup.roles = {
     root: accounts[0],
     doingud_multisig: accounts[1],
-    buyer1: accounts[2],
-    buyer2: accounts[3]
+    user1: accounts[2],
+    user2: accounts[3]
   };
 
   return setup;
@@ -20,28 +20,28 @@ const getTokens = async (setup) => {
 
     const AmorTokenProxyFactory = await ethers.getContractFactory('AMORTokenProxy', setup.roles.root);
 
-    const AmorGuildTokenFactory = await ethers.getContractFactory('AmorGuildToken', setup.roles.root);
+    //const AmorGuildTokenFactory = await ethers.getContractFactory('AmorGuildToken', setup.roles.root);
 
-    const AmorGuildTokenProxyFactory = await ethers.getContractFactory('AmorGuildTokenProxy', setup.roles.root);
+    //const AmorGuildTokenProxyFactory = await ethers.getContractFactory('AmorGuildTokenProxy', setup.roles.root);
 
-    const GuildTokenFactory = await ethers.getContractFactory('GuildTokenFactory', setup.roles.root);
+    //const GuildTokenFactory = await ethers.getContractFactory('GuildTokenFactory', setup.roles.root);
 
     //  Tokens
     //  Amor Tokens
     const AmorTokenImplementation = await AmorTokenFactory.deploy();
     const AmorTokenProxy = await AmorTokenProxyFactory.deploy(AmorTokenImplementation.address, []);
     //  AmorGuild Tokens
-    const AmorGuildToken = await AmorGuildTokenFactory.deploy();
-    const AmorGuildTokenProxy = await AmorGuildTokenProxyFactory.deploy();
-    const AmorGuildCloneFactory = await GuildTokenFactory.deploy(AmorGuildTokenProxy.address, AmorGuildToken.address, AmorTokenProxy.address );
+    //const AmorGuildToken = await AmorGuildTokenFactory.deploy();
+    //const AmorGuildTokenProxy = await AmorGuildTokenProxyFactory.deploy();
+    //const AmorGuildCloneFactory = await GuildTokenFactory.deploy(AmorGuildTokenProxy.address, AmorGuildToken.address, AmorTokenProxy.address );
 
 
     const tokens = {
       AmorTokenImplementation,
-      AmorTokenProxy,
-      AmorGuildToken,
-      AmorGuildTokenProxy,
-      AmorGuildCloneFactory
+      AmorTokenProxy
+      //AmorGuildToken,
+      //AmorGuildTokenProxy,
+      //AmorGuildCloneFactory
     };
 
     setup.tokens = tokens;
