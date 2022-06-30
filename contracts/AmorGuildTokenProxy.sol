@@ -34,6 +34,17 @@ contract AmorGuildProxy is Proxy, ERC1967Upgrade {
         _initialized = true;
     }
 
+    //  Uprade the token implementation
+    //  Still needs access control
+    function upgradeImplementation(address _newImplementation) public {
+        _upgradeTo(_newImplementation);
+    }
+
+    //  View the current implementation
+    function viewImplementation() public view returns (address) {
+        return _getImplementation();
+    }
+
     /**
      * @dev Returns the current implementation address.
      */
