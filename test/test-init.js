@@ -20,25 +20,28 @@ const getTokens = async (setup) => {
 
     const AmorTokenProxyFactory = await ethers.getContractFactory('AMORTokenProxy', setup.roles.root);
 
-    //const AmorGuildTokenFactory = await ethers.getContractFactory('AmorGuildToken', setup.roles.root);
+    /* Constants for AmorGuild tokens - Still to be merged
+    const AmorGuildTokenFactory = await ethers.getContractFactory('AmorGuildToken', setup.roles.root);
 
-    //const AmorGuildTokenProxyFactory = await ethers.getContractFactory('AmorGuildTokenProxy', setup.roles.root);
+    const AmorGuildTokenProxyFactory = await ethers.getContractFactory('AmorGuildTokenProxy', setup.roles.root);
 
-    //const GuildTokenFactory = await ethers.getContractFactory('GuildTokenFactory', setup.roles.root);
+    const GuildTokenFactory = await ethers.getContractFactory('GuildTokenFactory', setup.roles.root);
+    */
 
-    //  Tokens
     //  Amor Tokens
     const AmorTokenImplementation = await AmorTokenFactory.deploy();
     const AmorTokenProxy = await AmorTokenProxyFactory.deploy(AmorTokenImplementation.address, []);
-    //  AmorGuild Tokens
-    //const AmorGuildToken = await AmorGuildTokenFactory.deploy();
-    //const AmorGuildTokenProxy = await AmorGuildTokenProxyFactory.deploy();
-    //const AmorGuildCloneFactory = await GuildTokenFactory.deploy(AmorGuildTokenProxy.address, AmorGuildToken.address, AmorTokenProxy.address );
-
+    
+    /*  AmorGuild Tokens
+    const AmorGuildToken = await AmorGuildTokenFactory.deploy();
+    const AmorGuildTokenProxy = await AmorGuildTokenProxyFactory.deploy();
+    const AmorGuildCloneFactory = await GuildTokenFactory.deploy(AmorGuildTokenProxy.address, AmorGuildToken.address, AmorTokenProxy.address );
+    */
 
     const tokens = {
       AmorTokenImplementation,
       AmorTokenProxy
+      //Uncomment the Amor Guild Tokens once contracts are merged
       //AmorGuildToken,
       //AmorGuildTokenProxy,
       //AmorGuildCloneFactory
