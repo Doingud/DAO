@@ -40,19 +40,19 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
 
         it('it fails to stakes AMORxGuild tokens if not enough AMORxGuild', async function () {
             await expect(FXAMORxGuild.connect(operator).stake(staker.address, ONE_HUNDRED_ETHER)).to.be.revertedWith(
-                'Unsufficient AMORxGuild'
+                'InvalidAmount(100000000000000000000, 0)'
             );
         });
 
         it('it fails to stakes AMORxGuild tokens if stakes to zero address', async function () {
             await expect(FXAMORxGuild.connect(operator).stake(ZERO_ADDRESS, ONE_HUNDRED_ETHER)).to.be.revertedWith(
-                'Stakes to zero address is disallowed.'
+                'AddressZero()'
             );
         });
 
         it('it fails to stakes AMORxGuild tokens if stakes to itself', async function () {
             await expect(FXAMORxGuild.connect(operator).stake(operator.address, ONE_HUNDRED_ETHER)).to.be.revertedWith(
-                'Stake to itself is disallowed.'
+                'InvalidSender()'
             );
         });
 
@@ -74,19 +74,19 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
 
         it('it fails to delegate FXAMORxGuild tokens if not enough FXAMORxGuild', async function () {
             await expect(FXAMORxGuild.connect(staker).delegate(operator.address, TWO_HUNDRED_ETHER)).to.be.revertedWith(
-                'Unavailable amount of FXAMORxGuild'
+                'InvalidAmount(200000000000000000000, 100000000000000000000)'
             ); 
         });
 
         it('it fails to delegate FXAMORxGuild tokens if delegation to itself', async function () {
             await expect(FXAMORxGuild.connect(staker).delegate(staker.address, FIFTY_ETHER)).to.be.revertedWith(
-                'Self-delegation is disallowed.'
+                'InvalidSender()'
             ); 
         });
 
         it('it fails to delegate FXAMORxGuild tokens if delegation to address(0)', async function () {
             await expect(FXAMORxGuild.connect(staker).delegate(ZERO_ADDRESS, FIFTY_ETHER)).to.be.revertedWith(
-                'Delegation to zero address is disallowed.'
+                'AddressZero()'
             ); 
         });
 
@@ -97,7 +97,7 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
 
         it('it fails to delegate FXAMORxGuild tokens if Unavailable amount of FXAMORxGuild', async function () {
             await expect(FXAMORxGuild.connect(staker).delegate(operator.address, ONE_HUNDRED_ETHER)).to.be.revertedWith(
-                'Unavailable amount of FXAMORxGuild'
+                'InvalidAmount(100000000000000000000, 50000000000000000000)'
             ); 
         });
     });
@@ -106,7 +106,7 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
 
         it('it fails to burn FXAMORxGuild tokens if not enough FXAMORxGuild', async function () {        
             await expect(FXAMORxGuild.connect(operator).burn(operator.address, TWO_HUNDRED_ETHER)).to.be.revertedWith(
-                'Unsufficient FXAMORxGuild'
+                'InvalidAmount(200000000000000000000, 0)'
             ); 
         });
 
