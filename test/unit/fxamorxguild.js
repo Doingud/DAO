@@ -50,9 +50,9 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
             );
         });
 
-        it('it fails to stakes AMORxGuild tokens if stakes to FXAMORxGuild address', async function () {
+        it('it fails to stakes AMORxGuild tokens if stakes to itself', async function () {
             await expect(FXAMORxGuild.connect(operator).stake(operator.address, ONE_HUNDRED_ETHER)).to.be.revertedWith(
-                'Stake to themself is disallowed.'
+                'Stake to itself is disallowed.'
             );
         });
 
@@ -78,7 +78,7 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
             ); 
         });
 
-        it('it fails to delegate FXAMORxGuild tokens if delegation to themself', async function () {
+        it('it fails to delegate FXAMORxGuild tokens if delegation to itself', async function () {
             await expect(FXAMORxGuild.connect(staker).delegate(staker.address, FIFTY_ETHER)).to.be.revertedWith(
                 'Self-delegation is disallowed.'
             ); 
