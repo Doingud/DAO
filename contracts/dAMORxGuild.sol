@@ -17,7 +17,7 @@ contract dAMORxGuild is ERC20, Ownable {
     // staker => all staker balance
     mapping(address => uint256) stakes;
     // those who delegated to a specific address
-    mapping(address => address[]) delegators; 
+    mapping(address => address[]) delegators;
     // staker => delegated to (many accounts) => amount
     // list of delegations from one address
     mapping(address => mapping(address => uint256)) delegations;
@@ -27,17 +27,35 @@ contract dAMORxGuild is ERC20, Ownable {
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     uint256 public constant MIN_LOCK_TIME = 7 days; // 1 week is the time for the new deposided tokens to be locked until they can be withdrawn
 
+    string private _name;
+    string private _symbol;
+
     address public _owner; //GuildController
-    address public AMORxGuild; 
+    address public AMORxGuild;
     address public controller; //contract that has a voting function
 
     error Unauthorized();
+    error EmptyArray();
+
+    /// Invalid balance to transfer. Needed `minRequired` but sent `amount`
+    /// @param sent sent amount.
+    /// @param minRequired minimum amount to send.
+    error InvalidAmount (uint256 sent, uint256 minRequired);
+
+    /// Invalid address. Needed address != address(0)
+    error AddressZero();
+
+    /// Invalid address to transfer. Needed `to` != msg.sender
+    error InvalidSender();
     
+    error TimeTooSmall();
+    error TimeTooBig();
+
     event Staked(
         address indexed user,
         uint256 amount
     );
-    
+
     event Burned(
         address indexed user,
         uint256 amount
@@ -49,8 +67,10 @@ contract dAMORxGuild is ERC20, Ownable {
         uint256 amount
     );
 
-    constructor(address owner) ERC20("DoinGud MetaDAO", "FXAMORxGuild") {
+    constructor(string memory name_, string memory symbol_, address owner) ERC20(name_, symbol_) {
         _owner = msg.sender;
+        _name = name_;
+        _symbol = symbol_;
     }
 
     modifier onlyAddress(address authorizedAddress) {
@@ -70,10 +90,15 @@ contract dAMORxGuild is ERC20, Ownable {
     /// @param  time uint256
     /// @return uint256 the amount of dAMORxGuild received from staking
     function stake(uint256 amount, uint256 time) public returns (uint256) {
-        require(time > MIN_LOCK_TIME , "Time too small");
-        require(time < MAX_LOCK_TIME, "Time too big");
-        require(IERC20(AMORxGuild).balanceOf(msg.sender) >= amount, "Unsufficient AMORxGuild");
-
+        if(time <= MIN_LOCK_TIME) {
+            revert TimeTooSmall();
+        }
+        if(time >= MAX_LOCK_TIME) {
+           revert TimeTooBig();
+        }
+        if(IERC20(AMORxGuild).balanceOf(msg.sender) < amount){
+            revert InvalidAmount(amount, IERC20(AMORxGuild).balanceOf(msg.sender));
+        }
         // send to AMORxGuild contract to stake
         IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount);
 
@@ -93,8 +118,9 @@ contract dAMORxGuild is ERC20, Ownable {
     }
 
     function increaseStake(uint256 amount) public returns (uint256) {
-        require(IERC20(AMORxGuild).balanceOf(msg.sender) >= amount, "Unsufficient AMORxGuild");
-
+        if(IERC20(AMORxGuild).balanceOf(msg.sender) < amount){
+            revert InvalidAmount(amount, IERC20(AMORxGuild).balanceOf(msg.sender));
+        }
         // send to AMORxGuild contract to stake
         IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount);
 
@@ -119,7 +145,9 @@ contract dAMORxGuild is ERC20, Ownable {
     // to the controller(contract that has a voting function)
     function withdraw() public returns (uint256) {
         uint256 amount = stakes[msg.sender];
-        require(amount > 0, "Nothing to withdraw");
+        if(amount <= 0) {
+            revert InvalidAmount(amount, 0);
+        }
 
         //burn used dAMORxGuild tokens from staker
         _burn(msg.sender, amount);
@@ -138,27 +166,18 @@ contract dAMORxGuild is ERC20, Ownable {
 
     // Delegate your dAMORxGuild to the address `account`.
     function delegate(address to, uint256 amount) public {
-        require(stakes[msg.sender] >= amount, "Unsufficient FXAMORxGuild");
-        require(to != msg.sender, "Self-delegation is disallowed.");
-
-        // Forward the delegation as long as
-        // `to` also delegated.
-        // In general, such loops are very dangerous,
-        // because if they run too long, they might
-        // need more gas than is available in a block.
-        // In this case, the delegation will not be executed,
-        // but in other situations, such loops might
-        // cause a contract to get "stuck" completely.
-        while (delegators[to] != address(0)) {
-            to = delegators[to];
-            
-            // We found a loop in the delegation, not allowed.
-            require(to != msg.sender, "Found loop in delegation.");
+        if(stakes[msg.sender] < amount) {
+            revert InvalidAmount(amount, stakes[msg.sender]);
+        }
+        if(to == msg.sender) {
+            revert InvalidSender();
         }
         
-        uint256 alreadyDelegated = amountDelegated[msg.sender]
+        uint256 alreadyDelegated = amountDelegated[msg.sender];
         uint256 availableAmount = stakes[msg.sender] - alreadyDelegated;
-        require(availableAmount >= amount, "Unavailable amount of FXAMORxGuild");
+        if(availableAmount < amount) {
+            revert InvalidAmount(amount, availableAmount);
+        }
 
         delegators[msg.sender].push(to);
 
@@ -173,35 +192,40 @@ contract dAMORxGuild is ERC20, Ownable {
         emit Delegated(msg.sender, to, amount);
     }
 
-    function undelegate(address account, address from, uint256 amount) public {
-        require(account != msg.sender, "Self-delegation is disallowed.");
-        require(delegates[msg.sender] != address(0), "Already delegated.");
+    function undelegate(address account, uint256 amount) public {
+        if(account == msg.sender) {
+            revert InvalidSender();
+        }
 
-        if(delegations[msg.sender][to] >= amount){
-            delegations[msg.sender][to] -= amount;
+        if(delegators[msg.sender].length == 0) { //Nothing to undelegate
+            revert EmptyArray();
+        }
+
+        if(delegations[msg.sender][account] >= amount){
+            delegations[msg.sender][account] -= amount;
             amountDelegated[msg.sender] -= amount;
         }else{
-            delegations[msg.sender][to] = 0;
+            delegations[msg.sender][account] = 0;
             amountDelegated[msg.sender] = 0;
         }
 
-        delegates[msg.sender] = address(0); //TODO: need to remove only exact address somehow
         amountDelegated[msg.sender] = amount;
     }
 
-    function undelegateAll(address account) public { //question: do we need it?
-        require(account != msg.sender, "Self-delegation is disallowed.");
-        require(delegates[msg.sender] != address(0), "Already delegated.");
+    function undelegateAll() public {
+        if(delegators[msg.sender].length == 0) { //Nothing to undelegate
+            revert EmptyArray();
+        }
 
-        if(delegations[msg.sender]){
-            address[] delegationsTo = delegators[msg.sender];
+        if(delegators[msg.sender].length > 0){
+            address[] memory delegationsTo = delegators[msg.sender];
             for (uint256 i = 0; i < delegationsTo.length; i++) {
                 address delegatedTo = delegationsTo[i];
                 delegations[msg.sender][delegatedTo] = 0;
             }
         }
 
-        delegates[msg.sender] = [];
+        delete delegators[msg.sender]; //clear array
         amountDelegated[msg.sender] = 0;
     }
 
