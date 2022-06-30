@@ -20,21 +20,22 @@ contract FXAMORxGuild is ERC20, Ownable {
     // list of delegations from one address
     mapping(address => mapping(address => uint256)) delegations;
     // amount of all delegated tokens from staker
-    mapping(address => uint256) amountDelegated;
+    mapping(address => uint256) public amountDelegated;
 
-    string private _name = "DoinGud MetaDAO";
-    string private _symbol = "FXAMORxGuild";
+    string private _name;
+    string private _symbol;
 
     address public _owner; //GuildController
     address public AMORxGuild; 
     address public controller; //contract that has a voting function
 
     error Unauthorized();
-    
 
-    constructor(address owner, address _AMORxGuild) ERC20(_name, _symbol) {
+    constructor(string memory name_, string memory symbol_, address owner, address AMORxGuild_) ERC20(name_, symbol_) {
         _owner = msg.sender;
-        AMORxGuild = _AMORxGuild;
+        AMORxGuild = AMORxGuild_;
+        _name = name_;
+        _symbol = symbol_;
     }
 
     function setController(address _controller) external onlyAddress(_owner) {
@@ -47,7 +48,7 @@ contract FXAMORxGuild is ERC20, Ownable {
             revert Unauthorized();
         }
         _;
-    }  
+    }
 
     //  receives ERC20 AMORxGuild tokens, which are getting locked 
     //  and generate FXAMORxGuild tokens in return. 
@@ -59,7 +60,10 @@ contract FXAMORxGuild is ERC20, Ownable {
     /// @param  amount uint256 amount of AMORxGuild to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
     function stake(address to, uint256 amount) external onlyAddress(_owner) returns (uint256) {
-         require(IERC20(AMORxGuild).balanceOf(msg.sender) >= amount, "Unsufficient AMORxGuild");
+        require(to != msg.sender, "Stake to themself is disallowed.");
+        require(to != address(0), "Stakes to zero address is disallowed.");
+
+        require(IERC20(AMORxGuild).balanceOf(msg.sender) >= amount, "Unsufficient AMORxGuild");
         // send to FXAMORxGuild contract to stake
         IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount);
 
@@ -83,20 +87,15 @@ contract FXAMORxGuild is ERC20, Ownable {
         stakes[account] -= amount;
         IERC20(AMORxGuild).transfer(controller, amount);
     }
-    
+
     // already exists in ERC20Taxable
     function balanceOf(address account) public view override returns (uint256) {
         return stakes[account];
     }
 
-    function delagetedBalanceOf(address account) public view returns (uint256) {
-        return amountDelegated[account];
-    }
-
     // function that allows some external account to vote with your FXAMORxGuild tokens
     // Delegate your FXAMORxGuild to the address `to`.
     function delegate(address to, uint256 amount) external {
-        require(stakes[msg.sender] >= amount, "Unsufficient FXAMORxGuild");
         require(to != msg.sender, "Self-delegation is disallowed.");
         require(to != address(0), "Delegation to zero address is disallowed.");
 
