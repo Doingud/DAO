@@ -34,10 +34,11 @@ contract GuildTokenFactory {
     address[] public guilds;
 
     error InvalidArray();
+    error CloneDeploymentFailure();
 
     constructor(address _cloneTarget, address _logic, address _tokenTarget) {
         /// `_logic` refers to the AmorGuildToken address
-        _implementation = _logic;
+        _implementationAmorGuildToken = _logic;
         /// `_cloneTarget` refers to the AmorGuildTokenProxy
         _cloneAddress = _cloneTarget;
         /// `_tokenTarget` refers to the proxy address for the AMOR token
@@ -49,7 +50,7 @@ contract GuildTokenFactory {
     /// @param  _names an array of Guild names
     /// @param  _symbols an array of token symbols
     /// Note    Arrays must be equal in length
-    function deployTokens(string[] memory _names, string[] memory _symbols ) public returns (address[] memory) {
+    function deployAmorGuildTokens(string[] memory _names, string[] memory _symbols ) public returns (address[] memory) {
         /// Check array length
         if (_names.length != _symbols.length) {
             revert InvalidArray();
@@ -60,7 +61,9 @@ contract GuildTokenFactory {
             AmorxGuildProxy proxyGuildToken;
             proxyGuildToken = AmorxGuildProxy(Clones.clone(_cloneAddress));
             /// Ensure Guild creation succeeded
-            require(address(proxyGuildToken) != address(0), "Clone deployment failed");
+            if (address(proxyGuildToken) == address(0)) {
+                revert CloneDeploymentFailure();
+            }
             /// Add this Guild to the 
             guilds.push(address(proxyGuildToken));
             /// Encode the low-level init() call to be called within the proxyInit() initialization
