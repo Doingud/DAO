@@ -64,9 +64,9 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
         //  Must calculate stakedAmor prior to transferFrom()
         uint256 stakedAmor = tokenAmor.balanceOf(address(this));
 
-        //  Must has enough AMOR to stake
+        //  Must have enough AMOR to stake
         //  Note that this transferFrom() is taxed
-        require(tokenAmor.transferFrom(msg.sender, address(this), amount), "Unsufficient AMOR");
+        tokenAmor.transferFrom(msg.sender, address(this), amount);
 
         //  Calculate mint amount and mint this to the address `to`
         uint256 mintAmount;
@@ -85,12 +85,12 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
         amorReturned = (currentSupply ** 2) - ((currentSupply - amount) ** 2);
         
         //  Burn the AMORxGuild of the tx.origin
-        _burn(tx.origin, amount);
+        _burn(msg.sender, amount);
 
         //  Correct for the tax on transfer
         uint256 taxCorrection = (amorReturned * tokenAmor.viewRate()) / tokenAmor.viewBasisPoints();
         //  Transfer AMOR to the tx.origin, but note: this is taxed!
-        require(tokenAmor.transfer(msg.sender, amorReturned - taxCorrection), "transfer unsuccessful");
+        tokenAmor.transfer(msg.sender, amorReturned - taxCorrection);
         //  Return the amount of AMOR returned to the user 
         return amorReturned-taxCorrection;
     }

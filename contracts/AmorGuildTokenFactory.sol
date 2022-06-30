@@ -33,6 +33,8 @@ contract GuildTokenFactory {
     address internal _tokenAmor;
     address[] public guilds;
 
+    error InvalidArray();
+
     constructor(address _cloneTarget, address _logic, address _tokenTarget) {
         /// `_logic` refers to the AmorGuildToken address
         _implementation = _logic;
@@ -49,7 +51,9 @@ contract GuildTokenFactory {
     /// Note    Arrays must be equal in length
     function deployTokens(string[] memory _names, string[] memory _symbols ) public returns (address[] memory) {
         /// Check array length
-        require(_names.length == _symbols.length, "Input arrays mismatch");
+        if (_names.length != _symbols.length) {
+            revert InvalidArray();
+        }
         /// Loop through the input arrays and deploy minimal proxy clones and initialize the Guilds
         for (uint256 i = 0; i < _names.length; i++) {
             /// Create a new instance of the Guild
