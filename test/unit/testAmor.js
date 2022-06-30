@@ -13,6 +13,11 @@ use(solidity);
   //  The PROXY_CONTRACT with the implemenation
   let PROXY;
 
+  let root;
+  let multisig;
+  let user1;
+  let user2;
+
   const TEST_TRANSFER = 100;
   //const BASIS_POINTS = 10000;
 
@@ -27,6 +32,9 @@ describe("unit - AMOR Token", function () {
     PROXY_CONTRACT = setup.tokens.AmorTokenProxy;
     
     root = setup.roles.root;
+    multisig = setup.roles.doingud_multisig;
+    user1 = setup.roles.user1;
+    user2 = setup.roles.user2;
     
 });
 
@@ -48,17 +56,16 @@ describe("unit - AMOR Token", function () {
       });
 
       it("function: init()", async function () {
-        const [address1, address2] = await ethers.getSigners();
         
         expect(await PROXY.init(
           AMOR_TOKEN_NAME,
           AMOR_TOKEN_SYMBOL,
-          address2.address,
+          multisig.address,
           TAX_RATE,
-          address1.address
+          root.address
         )).
           to.emit(PROXY, "Initialized")
-            .withArgs(true, address2.address, TAX_RATE);
+            .withArgs(true, multisig.address, TAX_RATE);
         });
       });
 
@@ -69,9 +76,8 @@ describe("unit - AMOR Token", function () {
       });
 
       it("function: balanceOf()", async function () {
-        const [address1] = await ethers.getSigners();
 
-        expect(await PROXY.balanceOf(address1.address)).
+        expect(await PROXY.balanceOf(root.address)).
           to.equal(ethers.utils.parseEther("10000000"));
       });
 
@@ -86,21 +92,19 @@ describe("unit - AMOR Token", function () {
       });
 
       it("function: approve()", async function () {
-        const [address1] = await ethers.getSigners();
         //  Approve AMOR to be transferred
-        expect(await PROXY.approve(address1.address, ethers.utils.parseEther(TEST_TRANSFER.toString()))).
+        expect(await PROXY.approve(root.address, ethers.utils.parseEther(TEST_TRANSFER.toString()))).
           to.emit(PROXY, "Approval").
-            withArgs(address1.address, address1.address, ethers.utils.parseEther(TEST_TRANSFER.toString()));
+            withArgs(root.address, root.address, ethers.utils.parseEther(TEST_TRANSFER.toString()));
       })
 
       it("function: transfer()", async function () {
-        const [address1, address2, address3] = await ethers.getSigners();
         const taxDeducted = TEST_TRANSFER*(1-TAX_RATE/BASIS_POINTS);
         
         
-        expect(await PROXY.transferFrom(address1.address, address3.address, ethers.utils.parseEther(TEST_TRANSFER.toString())))
+        expect(await PROXY.transferFrom(root.address, user1.address, ethers.utils.parseEther(TEST_TRANSFER.toString())))
           .to.emit(PROXY, "Transfer")
-            .withArgs(address1.address, address3.address,ethers.utils.parseEther(taxDeducted.toString()));
+            .withArgs(root.address, user1.address,ethers.utils.parseEther(taxDeducted.toString()));
       })
 
     });
@@ -112,23 +116,20 @@ describe("unit - AMOR Token", function () {
       });
 
       it("function: viewCollector()", async function () {
-        const [address1, address2] = await ethers.getSigners();
         expect(await PROXY.viewCollector()).
-          to.equal(address2.address);
+          to.equal(multisig.address);
       });
 
       it("correct tax collector balance", async function () {
         const taxAmount = TEST_TRANSFER*(TAX_RATE/BASIS_POINTS);
-        const [address1, address2, address3] = await ethers.getSigners();
 
-        expect(await PROXY.balanceOf(address2.address)).to.equal(ethers.utils.parseEther(taxAmount.toString()));
+        expect(await PROXY.balanceOf(multisig.address)).to.equal(ethers.utils.parseEther(taxAmount.toString()));
       })
 
       it("correct user balance", async function () {
         const taxAmount = TEST_TRANSFER*(1-(TAX_RATE/BASIS_POINTS));
-        const [address1, address2, address3] = await ethers.getSigners();
 
-        expect(await PROXY.balanceOf(address3.address)).to.equal(ethers.utils.parseEther(taxAmount.toString()));
+        expect(await PROXY.balanceOf(user1.address)).to.equal(ethers.utils.parseEther(taxAmount.toString()));
       });
     });
 
