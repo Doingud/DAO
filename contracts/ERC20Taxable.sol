@@ -2,7 +2,7 @@
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
 /// @title  ERC20Taxable 
-/// @author Daoism Systems
+/// @author Daoism Systems Team
 /// @notice Implements a "tax"/"fee" on any token transfers
 /// @dev    "Tax" mechanism implemented within _transfer() function
 
@@ -44,27 +44,13 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
 
     uint256 private _totalSupply;
 
-    string private _name;
-    string private _symbol;
+    string internal _name;
+    string internal _symbol;
 
     uint256 internal taxRate; 
     address internal taxCollector;
 
-    uint256 internal basisPoints = 10000;
-
-    /**
-     * @dev Sets the values for {name} and {symbol}.
-     *
-     * The default value of {decimals} is 18. To select a different value for
-     * {decimals} you should overload it.
-     *
-     * All two of these values are immutable: they can only be set once during
-     * construction.
-     */
-    constructor(string memory name_, string memory symbol_) {
-        _name = name_;
-        _symbol = symbol_;
-    }  
+    uint256 constant public BASIS_POINTS = 10000;
     
     /**
      * @dev Returns the name of the token.
@@ -220,11 +206,11 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     }
 
     /// @notice Sets the tax rate for transfer and transferFrom
+    /// @dev    Should be overridden in derived contracts for access control
     /// @dev    Rate should be expressed in basis points
     /// @param  newRate uint256 representing new tax rate
-    function setTaxRate(uint256 newRate) public virtual returns (bool) {
+    function setTaxRate(uint256 newRate) public virtual {
         taxRate = newRate;
-        return true;
     }
 
     /// View the current tax rate in basis points
@@ -233,13 +219,12 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     }
 
     /// @notice Sets the address which receives taxes
+    /// @dev    Should be overridden in derived contracts to add access control
     /// @param  newTaxCollector address which must receive taxes
-    /// @return bool returns true if successfully set
-    function setTaxCollector(address newTaxCollector) public virtual returns (bool) {
+    function setTaxCollector(address newTaxCollector) internal virtual {
         require(newTaxCollector != taxCollector, "Already set");
         require(newTaxCollector != address(0), "Zero address");
         taxCollector = newTaxCollector;
-        return true;
     }
 
     /// View the current tax collector address
@@ -248,8 +233,8 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     }
 
     /// View the basis points constant
-    function viewBasisPoints() public view returns (uint256) {
-        return basisPoints;
+    function viewBasisPoints() public pure returns (uint256) {
+        return BASIS_POINTS;
     }
 
     /**
@@ -288,7 +273,7 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
         }
 
         if (taxRate > 0) {
-            uint256 taxAmount = amount * taxRate/ basisPoints;
+            uint256 taxAmount = amount * taxRate/ BASIS_POINTS;
             uint256 afterTaxAmount = amount - taxAmount;
             _balances[taxCollector] += taxAmount;
 
