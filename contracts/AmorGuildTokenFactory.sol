@@ -20,10 +20,9 @@ pragma solidity 0.8.14;
 */
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
-import "./IAmorGuildToken.sol";
 import "./AmorGuildToken.sol";
 
-interface AmorxGuildProxy is IAmorxGuild {
+interface AmorxGuildProxy is AMORxGuild {
     function initProxy(address _logic, bytes memory _data) external;
 }
 

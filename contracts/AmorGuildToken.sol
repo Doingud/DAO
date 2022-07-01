@@ -36,6 +36,8 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
     IERC20Taxable private tokenAmor;
     /// The token logic for AMORxGuild
     address private _implementation;
+    /// Co-efficient
+    uint256 constant private CO_EFFICIENT = 10*10**9;
 
     /// Events
     /// Emitted once token has been initialized
@@ -70,7 +72,8 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
 
         //  Calculate mint amount and mint this to the address `to`
         uint256 mintAmount;
-        mintAmount = (amount + stakedAmor).sqrtu() - stakedAmor.sqrtu();
+        //  Add co-efficient
+        mintAmount = CO_EFFICIENT*((amount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
         _mint(to, mintAmount);
 
         return mintAmount;
