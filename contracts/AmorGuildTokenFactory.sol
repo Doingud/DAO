@@ -20,11 +20,7 @@ pragma solidity 0.8.14;
 */
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
-import "./AmorGuildToken.sol";
-
-interface AmorxGuildProxy is AMORxGuild {
-    function initProxy(address _logic, bytes memory _data) external;
-}
+import "./IAmorGuildToken.sol";
 
 contract GuildTokenFactory {
     address internal _implementation;
@@ -37,7 +33,7 @@ contract GuildTokenFactory {
 
     constructor(address _cloneTarget, address _logic, address _tokenTarget) {
         /// `_logic` refers to the AmorGuildToken address
-        _implementationAmorGuildToken = _logic;
+        _implementation = _logic;
         /// `_cloneTarget` refers to the AmorGuildTokenProxy
         _cloneAddress = _cloneTarget;
         /// `_tokenTarget` refers to the proxy address for the AMOR token
@@ -57,8 +53,8 @@ contract GuildTokenFactory {
         /// Loop through the input arrays and deploy minimal proxy clones and initialize the Guilds
         for (uint256 i = 0; i < _names.length; i++) {
             /// Create a new instance of the Guild
-            AmorxGuildProxy proxyGuildToken;
-            proxyGuildToken = AmorxGuildProxy(Clones.clone(_cloneAddress));
+            IAmorxGuild proxyGuildToken;
+            proxyGuildToken = IAmorxGuild(Clones.clone(_cloneAddress));
             /// Ensure Guild creation succeeded
             if (address(proxyGuildToken) == address(0)) {
                 revert CloneDeploymentFailure();
