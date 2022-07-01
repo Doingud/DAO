@@ -33,6 +33,11 @@ use(solidity);
 
   let AMOR_TOKEN;
   let CLONE_TARGET;
+  let AMOR_GUILD_TOKEN;
+
+  const TEST_TAX_AMOUNT = 5000000000000000000n;
+  const TEST_TAX_DEDUCTED_AMOUNT = 95000000000000000000n;
+  const TEST_BALANCE_ROOT = 9999900000000000000000000n;
 
 describe("unit - AMORxGuild", function () {
 
@@ -91,13 +96,25 @@ describe("unit - AMORxGuild", function () {
   context("stakeAmor()", () => {
     describe("staking behaviour", function () {
       it("Should allow a user to stake 100 AMOR", async function () {
+        //console.log(balanceAmor.toString());
+        // Not working as expected
+        // The emitted arguments are <> but balances check out
         await AMOR_TOKEN.approve(AMOR_GUILD_TOKEN.address, MOCK_TEST_AMOUNT);
-        await expect(AMOR_GUILD_TOKEN.stakeAmor(root.address, MOCK_TEST_AMOUNT)).
-         to.emit(AMOR_TOKEN, "Transfer").withArgs(
-          root.address, 
-          AMOR_GUILD_TOKEN.address, 
-          (MOCK_TEST_AMOUNT*(TAX_RATE/BASIS_POINTS))
-        );
+        expect(await AMOR_GUILD_TOKEN.stakeAmor(root.address, MOCK_TEST_AMOUNT)).
+         to.emit(AMOR_TOKEN, "Transfer").
+          withArgs(
+            root.address, 
+            AMOR_GUILD_TOKEN.address, 
+            TEST_TAX_DEDUCTED_AMOUNT 
+          );
+      });
+
+      it("Should decrease the staker's balance by the test amount", async function () {
+         expect(await AMOR_TOKEN.balanceOf(root.address)).to.equal(TEST_BALANCE_ROOT);
+      });
+
+      it("Should increase the staker's AmorxGuild balanceOf by the expected amount", async function () {
+        expect(await AMOR_GUILD_TOKEN.balanceOf(root.address)).to.equal(ethers.utils.parseEther((10).toString()))
       });
     });
   });

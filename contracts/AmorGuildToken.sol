@@ -37,7 +37,7 @@ contract AMORGuildToken is ERC20Base, Pausable, Ownable {
     /// The token logic for AMORxGuild
     address private _implementation;
     /// Co-efficient
-    uint256 constant private CO_EFFICIENT = 10*10**9;
+    uint256 constant private CO_EFFICIENT = 10**9;
 
     error AlreadyInitialized();
 
