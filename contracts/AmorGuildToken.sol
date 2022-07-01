@@ -27,7 +27,7 @@ import "./utils/ABDKMath64x64.sol";
 
 import "./ERC20Base.sol";
 
-contract AMORxGuild is ERC20Base, Pausable, Ownable {
+contract AMORGuildToken is ERC20Base, Pausable, Ownable {
     using ABDKMath64x64 for uint256;
 
     bool private _initialized;
@@ -39,6 +39,8 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
     /// Co-efficient
     uint256 constant private CO_EFFICIENT = 10*10**9;
 
+    error AlreadyInitialized();
+
     /// Events
     /// Emitted once token has been initialized
     event Initialized(string name, string symbol, address amorToken);
@@ -49,7 +51,9 @@ contract AMORxGuild is ERC20Base, Pausable, Ownable {
     /// @param  name the token name (e.g AMORxIMPACT)
     /// @param  symbol the token symbol
     function init(address amorAddress, string memory name, string memory symbol) public {
-        require(!_initialized, "already initialized");
+        if (_initialized) {
+            revert AlreadyInitialized();
+        }
         _setAmorAddress(amorAddress);
         //_setImplementationAddress(implementationAddress);
         _setTokenDetail(name, symbol);
