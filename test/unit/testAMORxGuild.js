@@ -115,8 +115,24 @@ describe("unit - AMORxGuild", function () {
 
       it("Should increase the staker's AmorxGuild balanceOf by the expected amount", async function () {
         expect(await AMOR_GUILD_TOKEN.balanceOf(root.address)).to.equal(ethers.utils.parseEther((10).toString()))
+        const AmorGuildTokens = await AMOR_GUILD_TOKEN.balanceOf(root.address);
+        console.log(AmorGuildTokens.toString());
+      });
+
+      it("Should revert if unsufficient AMOR", async function () {
+        await expect(AMOR_GUILD_TOKEN.stakeAmor(root.address, ethers.utils.parseEther(MOCK_TEST_AMOUNT.toString()))).to.be.reverted;
       });
     });
   });
+
+  context("withdrawAmor()", () => {
+    describe("unstaking behaviour", function () {
+      it("Should allow the user to withdraw their AMOR", async function () {
+        expect(await AMOR_GUILD_TOKEN.withdrawAmor(ethers.utils.parseEther("10"))).
+          to.emit(AMOR_TOKEN, "Transfer").
+          to.emit(AMOR_GUILD_TOKEN, "Transfer");
+      });
+    })
+  })
 
 });

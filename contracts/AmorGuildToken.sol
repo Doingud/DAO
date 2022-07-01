@@ -40,6 +40,7 @@ contract AMORGuildToken is ERC20Base, Pausable, Ownable {
     uint256 constant private CO_EFFICIENT = 10**9;
 
     error AlreadyInitialized();
+    error UnsufficientAmor();
 
     /// Events
     /// Emitted once token has been initialized
@@ -67,6 +68,10 @@ contract AMORGuildToken is ERC20Base, Pausable, Ownable {
     /// @param  amount uint256 amount of AMOR to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
     function stakeAmor(address to, uint256 amount) public returns (uint256) {
+        uint256 userAmor = tokenAmor.balanceOf(msg.sender);
+        if (userAmor < amount ) {
+            revert UnsufficientAmor();
+        }
         //  Must calculate stakedAmor prior to transferFrom()
         uint256 stakedAmor = tokenAmor.balanceOf(address(this));
 
@@ -89,7 +94,7 @@ contract AMORGuildToken is ERC20Base, Pausable, Ownable {
     function withdrawAmor(uint256 amount) public returns (uint256) {
         uint256 amorReturned;
         uint256 currentSupply = totalSupply();
-        amorReturned = (currentSupply ** 2) - ((currentSupply - amount) ** 2);
+        amorReturned = ((currentSupply ** 2) - ((currentSupply - amount) ** 2))/(CO_EFFICIENT**2);
         
         //  Burn the AMORxGuild of the tx.origin
         _burn(msg.sender, amount);
