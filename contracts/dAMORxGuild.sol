@@ -25,8 +25,8 @@ contract dAMORxGuild is ERC20, Ownable {
     mapping(address => uint256) public amountDelegated;
 
     uint256 guardianThreshold;// minimal amount of dAMORxGuild(dAMOR) to become guardian
-    address[] guardians;
-    address[] delegateGuardians; //array of delegated guardians(based on the popular vote)
+    address[] public guardians;
+    address[] public delegateGuardians; //array of delegated guardians(based on the popular vote)
 
     uint256 public constant TIME_DENOMINATOR = 1000000000000000000;
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
@@ -57,11 +57,12 @@ contract dAMORxGuild is ERC20, Ownable {
     error TimeTooSmall();
     error TimeTooBig();
 
-    constructor(string memory name_, string memory symbol_, address owner, address AMORxGuild_) ERC20(name_, symbol_) {
+    constructor(string memory name_, string memory symbol_, address owner, address AMORxGuild_, uint256 amount) ERC20(name_, symbol_) {
         _owner = msg.sender;
         AMORxGuild = AMORxGuild_;
         _name = name_;
         _symbol = symbol_;
+        guardianThreshold = amount;
     }
 
     modifier onlyAddress(address authorizedAddress) {
@@ -70,6 +71,10 @@ contract dAMORxGuild is ERC20, Ownable {
         }
         _;
     }  
+
+    function setGuardianThreshold(uint256 _guardianThreshold) external onlyAddress(_owner) {
+        guardianThreshold = _guardianThreshold;
+    }
 
     //  receives ERC20 AMORxGuild tokens, which are getting locked 
     //  and generate dAMORxGuild tokens in return. 
@@ -103,6 +108,8 @@ contract dAMORxGuild is ERC20, Ownable {
 
         stakes[msg.sender] = newAmount;
 
+        setGuardian(stakes[msg.sender]);
+
         return newAmount;
     }
 
@@ -123,6 +130,8 @@ contract dAMORxGuild is ERC20, Ownable {
         _mint(msg.sender, newAmount);
 
         stakes[msg.sender] += newAmount;
+
+        setGuardian(stakes[msg.sender]);
 
         return newAmount;
     }
@@ -195,7 +204,14 @@ contract dAMORxGuild is ERC20, Ownable {
         }
     }
 
+    //sets msg.sender as a guardian if a new amount of dAMORxGuild(dAMOR) tokens > guardianThreshold
     function setGuardian(uint256 amount) internal {
+        if(balanceOf(msg.sender) > guardianThreshold) {      
+            guardians.push(msg.sender);
+        }
+    }
+
+    function addDelegateGuardians(address[] memory _delegateGuardians) public onlyAddress(_owner) {
 
         guardians.push(msg.sender);
     }

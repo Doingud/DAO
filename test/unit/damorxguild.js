@@ -15,6 +15,7 @@ let root;
 let authorizer_adaptor;
 let operator;
 let staker;
+let buyer1;
 let timeTooSmall;
 let timeTooBig;
 let normalTime;
@@ -34,6 +35,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
         authorizer_adaptor = setup.roles.authorizer_adaptor;
         operator = setup.roles.operator;
         staker = setup.roles.staker;
+        buyer1 = setup.roles.buyer1;
     });
 
     before('>>> setup', async function() {
@@ -95,13 +97,18 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             await AMORxGuild.connect(staker).approve(dAMORxGuild.address, ONE_HUNDRED_ETHER);
 
             koef = normalTime/MAX_LOCK_TIME;
-            const expectedAmount = (koef*koef) *ONE_HUNDRED_ETHER; // (koef)^2 *amount | NdAMOR = f(t)^2 *nAMOR
-                        
-            await dAMORxGuild.connect(staker).stake(ONE_HUNDRED_ETHER, normalTime);        
-            const newRealAmount = (await dAMORxGuild.balanceOf(staker.address)).toString();
-            const roundedRealAmount = Math.round(newRealAmount * 100) / 100;
+            const newAmount = (koef*koef) *ONE_HUNDRED_ETHER; // (koef)^2 *amount | NdAMOR = f(t)^2 *nAMOR
+            const expectedAmount =  ethers.BigNumber.from(realAmount).add(ethers.BigNumber.from(newAmount.toString()));
+            const roundedRealAmount = Math.round(expectedAmount * 100) / 100;
+
+            await dAMORxGuild.connect(staker).increaseStake(ONE_HUNDRED_ETHER);        
+            const newRealAmount = await dAMORxGuild.balanceOf(staker.address);
+            const roundedNewRealAmount = Math.round(newRealAmount.toString() * 100) / 100;
+
+            expect(roundedNewRealAmount.toString()).to.be.gt(ethers.BigNumber.from(realAmount));
+            expect(expectedAmount.toString()).to.be.gt(newRealAmount);
             
-            expect(roundedRealAmount.toString()).to.equal(expectedAmount.toString());
+            realAmount = newRealAmount;
         });
 
     });
@@ -177,4 +184,36 @@ describe('unit - Contract: dAMORxGuild Token', function () {
         });        
     });
 
+    context('» setGuardian testing', () => {
+
+
+        it('it fails to set guardian of dAMORxGuild in not enouth dAMORxGuild', async function () {
+            await AMORxGuild.connect(root).mint(buyer1.address, ONE_HUNDRED_ETHER);
+            await AMORxGuild.connect(buyer1).approve(dAMORxGuild.address, ONE_HUNDRED_ETHER);
+    
+            await dAMORxGuild.connect(buyer1).stake(1, normalTime);        
+            const newRealAmount = (await dAMORxGuild.balanceOf(buyer1.address)).toString();
+            const roundedRealAmount = Math.round(newRealAmount * 100) / 100;
+            
+            expect(roundedRealAmount.toString()).to.equal(expectedAmount.toString());
+        });
+
+        it('set guardian of dAMORxGuild', async function () {
+            await dAMORxGuild.connect(staker).setGuardian();
+            expect((await dAMORxGuild.guardians(0))).to.equal(staker.address);
+        });        
+    });
+
+    context('» addDelegateGuardians testing', () => {
+
+        it('it fails to add delegate guardians of dAMORxGuild if ', async function () {
+            await expect(dAMORxGuild.connect(root).addDelegateGuardians()).to.be.revertedWith(
+                'InvalidAmount(0, 0)'
+            ); 
+        });  
+
+        it('add delegate guardians of dAMORxGuild', async function () {
+            await dAMORxGuild.connect(staker).addDelegateGuardians();        
+        });        
+    });
 });
