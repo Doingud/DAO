@@ -186,7 +186,6 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
     context('» setGuardian testing', () => {
 
-
         it('it fails to set guardian of dAMORxGuild in not enouth dAMORxGuild', async function () {
             await AMORxGuild.connect(root).mint(buyer1.address, ONE_HUNDRED_ETHER);
             await AMORxGuild.connect(buyer1).approve(dAMORxGuild.address, ONE_HUNDRED_ETHER);
@@ -195,13 +194,18 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             const newRealAmount = (await dAMORxGuild.balanceOf(buyer1.address)).toString();
             const roundedRealAmount = Math.round(newRealAmount * 100) / 100;
             
-            expect(roundedRealAmount.toString()).to.equal(expectedAmount.toString());
+            expect(roundedRealAmount.toString()).to.equal("0");
         });
 
         it('set guardian of dAMORxGuild', async function () {
-            await dAMORxGuild.connect(staker).setGuardian();
+            await AMORxGuild.connect(root).mint(buyer1.address, FIFTY_ETHER);
+            await AMORxGuild.connect(buyer1).approve(dAMORxGuild.address, FIFTY_ETHER);
+
+            // increaseStake() or stake() --> setGuardian
+            await dAMORxGuild.connect(buyer1).increaseStake(FIFTY_ETHER);
             expect((await dAMORxGuild.guardians(0))).to.equal(staker.address);
-        });        
+            expect((await dAMORxGuild.guardians(2))).to.equal(buyer1.address);
+        });
     });
 
     context('» addDelegateGuardians testing', () => {
