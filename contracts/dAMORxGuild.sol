@@ -212,8 +212,12 @@ contract dAMORxGuild is ERC20, Ownable {
     }
 
     function addDelegateGuardians(address[] memory _delegateGuardians) public onlyAddress(_owner) {
+        delete delegateGuardians;
 
-        guardians.push(msg.sender);
+        for (uint256 i = 0; i < _delegateGuardians.length; i++) {
+            address newAddress = _delegateGuardians[i];
+            delegateGuardians.push(newAddress);
+        }
     }
 
 }
