@@ -42,6 +42,8 @@ describe('unit - Contract: dAMORxGuild Token', function () {
         timeTooSmall = (await time.duration.days(6)).toNumber();
         timeTooBig = (await time.duration.days(366)).toNumber();
         normalTime = (await time.duration.days(36)).toNumber();
+
+        await AMORxGuild.connect(root).mint(dAMORxGuild.address, ONE_HUNDRED_ETHER);
     });
 
     context('» stake testing', () => {
@@ -80,6 +82,30 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
     });
 
+    context('» increaseStake testing', () => {
+
+        it('it fails to increase stake AMORxGuild tokens if not enough AMORxGuild', async function () {
+            await expect(dAMORxGuild.connect(staker).increaseStake(ONE_HUNDRED_ETHER)).to.be.revertedWith(
+                'InvalidAmount(100000000000000000000, 0)'
+            );
+        });
+
+        it('increases stake AMORxGuild tokens and mints dAMORxGuild', async function () {
+            await AMORxGuild.connect(root).mint(staker.address, ONE_HUNDRED_ETHER);
+            await AMORxGuild.connect(staker).approve(dAMORxGuild.address, ONE_HUNDRED_ETHER);
+
+            koef = normalTime/MAX_LOCK_TIME;
+            const expectedAmount = (koef*koef) *ONE_HUNDRED_ETHER; // (koef)^2 *amount | NdAMOR = f(t)^2 *nAMOR
+                        
+            await dAMORxGuild.connect(staker).stake(ONE_HUNDRED_ETHER, normalTime);        
+            const newRealAmount = (await dAMORxGuild.balanceOf(staker.address)).toString();
+            const roundedRealAmount = Math.round(newRealAmount * 100) / 100;
+            
+            expect(roundedRealAmount.toString()).to.equal(expectedAmount.toString());
+        });
+
+    });
+
     context('» delegate testing', () => {
 
         it('it fails to undelegate dAMORxGuild tokens if nothing to undelegate', async function () {
@@ -107,7 +133,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
         it('it fails to delegate dAMORxGuild tokens if Unavailable amount of dAMORxGuild', async function () {
             await expect(dAMORxGuild.connect(staker).delegate(operator.address, ONE_HUNDRED_ETHER)).to.be.revertedWith(
-                'InvalidAmount(100000000000000000000, 0'
+                'InvalidAmount(100000000000000000000, ' + realAmount.toString()
             ); 
         });
     });
@@ -126,16 +152,29 @@ describe('unit - Contract: dAMORxGuild Token', function () {
         });
 
         it('it undelegates dAMORxGuild tokens if amount > balance dAMORxGuild', async function () {
-            await dAMORxGuild.connect(staker).delegate(operator.address, FIFTY_ETHER);
+            await dAMORxGuild.connect(staker).delegate(operator.address, realAmount);
+            expect((await dAMORxGuild.amountDelegated(staker.address)).toString()).to.equal(realAmount.toString());
+
             await dAMORxGuild.connect(staker).undelegate(operator.address, TWO_HUNDRED_ETHER);
             expect((await dAMORxGuild.amountDelegated(staker.address)).toString()).to.equal("0");
-        });
-        
-        it('it fails to undelegate dAMORxGuild tokens if nothing to undelegate', async function () {
-            await expect(dAMORxGuild.connect(staker).undelegate(operator.address, FIFTY_ETHER)).to.be.revertedWith(
-                'NotDelegatedAny()'
+        });        
+    });
+
+    context('» withdraw testing', () => {
+
+        it('it fails to withdraw dAMORxGuild tokens if amount <= 0', async function () {
+            await expect(dAMORxGuild.connect(root).withdraw()).to.be.revertedWith(
+                'InvalidAmount(0, 0)'
             ); 
-        });
+        });  
+
+        it('withdraw dAMORxGuild tokens', async function () {
+            const currentAmount = (await dAMORxGuild.balanceOf(staker.address)).toString();
+            await dAMORxGuild.connect(staker).withdraw();        
+            const withdrawedTokens = (await AMORxGuild.balanceOf(staker.address)).toString();
+            
+            expect(withdrawedTokens).to.equal(currentAmount);
+        });        
     });
 
 });

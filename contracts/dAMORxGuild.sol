@@ -140,7 +140,7 @@ contract dAMORxGuild is ERC20, Ownable {
         _burn(msg.sender, amount);
         stakes[msg.sender] = 0;
 
-        IERC20(AMORxGuild).transferFrom(address(this), msg.sender, amount);
+        IERC20(AMORxGuild).transfer(msg.sender, amount);
 
         return amount;
     }
@@ -182,7 +182,7 @@ contract dAMORxGuild is ERC20, Ownable {
             revert InvalidSender();
         }
 
-        if(delegators[msg.sender].length == 0) { //Nothing to undelegate
+        if(delegations[msg.sender][account] == 0) { //Nothing to undelegate
             revert NotDelegatedAny();
         }
 
@@ -193,25 +193,6 @@ contract dAMORxGuild is ERC20, Ownable {
             delegations[msg.sender][account] = 0;
             amountDelegated[msg.sender] = 0;
         }
-
-        amountDelegated[msg.sender] = amount;
-    }
-
-    function undelegateAll() public {
-        if(delegators[msg.sender].length == 0) { //Nothing to undelegate
-            revert EmptyArray();
-        }
-
-        if(delegators[msg.sender].length > 0){
-            address[] memory delegationsTo = delegators[msg.sender];
-            for (uint256 i = 0; i < delegationsTo.length; i++) {
-                address delegatedTo = delegationsTo[i];
-                delegations[msg.sender][delegatedTo] = 0;
-            }
-        }
-
-        delete delegators[msg.sender]; //clear array
-        amountDelegated[msg.sender] = 0;
     }
 
     function setGuardian(uint256 amount) internal {
