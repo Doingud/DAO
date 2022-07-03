@@ -153,11 +153,6 @@ contract dAMORxGuild is ERC20, Ownable {
 
         return amount;
     }
-    
-    function balanceOf(address account) public view override returns (uint256) {
-        return stakes[account];
-    }
-
 
     // Delegate your dAMORxGuild to the address `account`.
     function delegate(address to, uint256 amount) public {
