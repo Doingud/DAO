@@ -22,7 +22,7 @@ const getTokens = async (setup) => {
   const dAMORxGuildFactory = await ethers.getContractFactory('dAMORxGuild', setup.roles.operator);
 
   const ERC20Token = await ERC20Factory.deploy('ERC20Token', 'ERC20Token'); // test token
-  const dAMORxGuild = await dAMORxGuildFactory.deploy("DoinGud MetaDAO", "FXAMORxGuild", setup.roles.operator.address);
+  const dAMORxGuild = await dAMORxGuildFactory.deploy("DoinGud MetaDAO", "FXAMORxGuild", setup.roles.operator.address, ERC20Token.address);
 
   const tokens = {
     ERC20Token,

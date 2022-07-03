@@ -22,8 +22,13 @@ contract dAMORxGuild is ERC20, Ownable {
     // list of delegations from one address
     mapping(address => mapping(address => uint256)) delegations;
     // amount of all delegated tokens from staker
-    mapping(address => uint256) amountDelegated;
+    mapping(address => uint256) public amountDelegated;
 
+    uint256 guardianThreshold;// minimal amount of dAMORxGuild(dAMOR) to become guardian
+    address[] guardians;
+    address[] delegateGuardians; //array of delegated guardians(based on the popular vote)
+
+    uint256 public constant TIME_DENOMINATOR = 1000000000000000000;
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     uint256 public constant MIN_LOCK_TIME = 7 days; // 1 week is the time for the new deposided tokens to be locked until they can be withdrawn
 
@@ -32,10 +37,11 @@ contract dAMORxGuild is ERC20, Ownable {
 
     address public _owner; //GuildController
     address public AMORxGuild;
-    address public controller; //contract that has a voting function
+    address public guardian;
 
     error Unauthorized();
     error EmptyArray();
+    error NotDelegatedAny();
 
     /// Invalid balance to transfer. Needed `minRequired` but sent `amount`
     /// @param sent sent amount.
@@ -51,24 +57,9 @@ contract dAMORxGuild is ERC20, Ownable {
     error TimeTooSmall();
     error TimeTooBig();
 
-    event Staked(
-        address indexed user,
-        uint256 amount
-    );
-
-    event Burned(
-        address indexed user,
-        uint256 amount
-    );
-
-    event Delegated(
-        address indexed from,
-        address indexed to,
-        uint256 amount
-    );
-
-    constructor(string memory name_, string memory symbol_, address owner) ERC20(name_, symbol_) {
+    constructor(string memory name_, string memory symbol_, address owner, address AMORxGuild_) ERC20(name_, symbol_) {
         _owner = msg.sender;
+        AMORxGuild = AMORxGuild_;
         _name = name_;
         _symbol = symbol_;
     }
@@ -90,10 +81,10 @@ contract dAMORxGuild is ERC20, Ownable {
     /// @param  time uint256
     /// @return uint256 the amount of dAMORxGuild received from staking
     function stake(uint256 amount, uint256 time) public returns (uint256) {
-        if(time <= MIN_LOCK_TIME) {
+        if(time < MIN_LOCK_TIME) {
             revert TimeTooSmall();
         }
-        if(time >= MAX_LOCK_TIME) {
+        if(time > MAX_LOCK_TIME) {
            revert TimeTooBig();
         }
         if(IERC20(AMORxGuild).balanceOf(msg.sender) < amount){
@@ -103,16 +94,14 @@ contract dAMORxGuild is ERC20, Ownable {
         IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount);
 
         // mint AMORxGuild tokens to staker
-        // Tokens are by following formula
-        uint256 koef = time/MAX_LOCK_TIME;
-        uint256 newAmount = (koef)^2 *amount; //NdAMOR = f(t)^2 *nAMOR
+        // Tokens are by following formula: NdAMOR = f(t)^2 *nAMOR
+        uint256 koef = (time * TIME_DENOMINATOR) / MAX_LOCK_TIME;
+        uint256 newAmount = (koef*koef) *amount / (TIME_DENOMINATOR * TIME_DENOMINATOR);
+        
         stakesTimes[msg.sender] = block.timestamp + time;
-
         _mint(msg.sender, newAmount);
 
         stakes[msg.sender] = newAmount;
-
-        emit Staked(msg.sender, newAmount);
 
         return newAmount;
     }
@@ -128,14 +117,12 @@ contract dAMORxGuild is ERC20, Ownable {
         // msg.sender receives funds, based on the amount of time remaining until the end of his stake
         uint256 time = stakesTimes[msg.sender] - block.timestamp;
 
-        uint256 koef = time/MAX_LOCK_TIME;
-        uint256 newAmount = (koef)^2 *amount; //NdAMOR = f(t)^2 *nAMOR
-
+        // Tokens are by following formula: NdAMOR = f(t)^2 *nAMOR
+        uint256 koef = (time * TIME_DENOMINATOR) / MAX_LOCK_TIME;
+        uint256 newAmount = (koef*koef) *amount / (TIME_DENOMINATOR * TIME_DENOMINATOR);
         _mint(msg.sender, newAmount);
 
         stakes[msg.sender] += newAmount;
-
-        emit Staked(msg.sender, newAmount);
 
         return newAmount;
     }
@@ -155,24 +142,23 @@ contract dAMORxGuild is ERC20, Ownable {
 
         IERC20(AMORxGuild).transferFrom(address(this), msg.sender, amount);
 
-        emit Burned(msg.sender, amount);
         return amount;
     }
     
-    function balanceOf(address account) public view virtual override returns (uint256) {
+    function balanceOf(address account) public view override returns (uint256) {
         return stakes[account];
     }
 
 
     // Delegate your dAMORxGuild to the address `account`.
     function delegate(address to, uint256 amount) public {
-        if(stakes[msg.sender] < amount) {
-            revert InvalidAmount(amount, stakes[msg.sender]);
-        }
         if(to == msg.sender) {
             revert InvalidSender();
         }
-        
+        if(stakes[msg.sender] < amount) {
+            revert InvalidAmount(amount, stakes[msg.sender]);
+        }
+
         uint256 alreadyDelegated = amountDelegated[msg.sender];
         uint256 availableAmount = stakes[msg.sender] - alreadyDelegated;
         if(availableAmount < amount) {
@@ -189,7 +175,6 @@ contract dAMORxGuild is ERC20, Ownable {
             amountDelegated[msg.sender] = amount;
         }
         
-        emit Delegated(msg.sender, to, amount);
     }
 
     function undelegate(address account, uint256 amount) public {
@@ -198,7 +183,7 @@ contract dAMORxGuild is ERC20, Ownable {
         }
 
         if(delegators[msg.sender].length == 0) { //Nothing to undelegate
-            revert EmptyArray();
+            revert NotDelegatedAny();
         }
 
         if(delegations[msg.sender][account] >= amount){
@@ -227,6 +212,11 @@ contract dAMORxGuild is ERC20, Ownable {
 
         delete delegators[msg.sender]; //clear array
         amountDelegated[msg.sender] = 0;
+    }
+
+    function setGuardian(uint256 amount) internal {
+
+        guardians.push(msg.sender);
     }
 
 }
