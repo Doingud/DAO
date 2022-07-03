@@ -72,6 +72,12 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
 
     context('» delegate testing', () => {
 
+        it('it fails to undelegate FXAMORxGuild tokens if nothing to undelegate', async function () {
+            await expect(FXAMORxGuild.connect(staker).undelegate(operator.address, FIFTY_ETHER)).to.be.revertedWith(
+                'NotDelegatedAny()'
+            ); 
+        });
+        
         it('it fails to delegate FXAMORxGuild tokens if not enough FXAMORxGuild', async function () {
             await expect(FXAMORxGuild.connect(staker).delegate(operator.address, TWO_HUNDRED_ETHER)).to.be.revertedWith(
                 'InvalidAmount(200000000000000000000, 100000000000000000000)'
@@ -98,6 +104,32 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
         it('it fails to delegate FXAMORxGuild tokens if Unavailable amount of FXAMORxGuild', async function () {
             await expect(FXAMORxGuild.connect(staker).delegate(operator.address, ONE_HUNDRED_ETHER)).to.be.revertedWith(
                 'InvalidAmount(100000000000000000000, 50000000000000000000)'
+            ); 
+        });
+    });
+
+    context('» undelegate testing', () => {
+
+        it('it fails to undelegate FXAMORxGuild tokens if try to undelegate itself', async function () {
+            await expect(FXAMORxGuild.connect(staker).undelegate(staker.address, FIFTY_ETHER)).to.be.revertedWith(
+                'InvalidSender()'
+            ); 
+        });
+
+        it('it undelegates FXAMORxGuild tokens', async function () {
+            await FXAMORxGuild.connect(staker).undelegate(operator.address, FIFTY_ETHER);
+            expect((await FXAMORxGuild.amountDelegated(staker.address)).toString()).to.equal("0");
+        });
+
+        it('it undelegates FXAMORxGuild tokens if amount > balance FXAMORxGuild', async function () {
+            await FXAMORxGuild.connect(staker).delegate(operator.address, FIFTY_ETHER);
+            await FXAMORxGuild.connect(staker).undelegate(operator.address, TWO_HUNDRED_ETHER);
+            expect((await FXAMORxGuild.amountDelegated(staker.address)).toString()).to.equal("0");
+        });
+        
+        it('it fails to undelegate FXAMORxGuild tokens if nothing to undelegate', async function () {
+            await expect(FXAMORxGuild.connect(staker).undelegate(operator.address, FIFTY_ETHER)).to.be.revertedWith(
+                'NotDelegatedAny()'
             ); 
         });
     });

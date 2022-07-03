@@ -30,6 +30,8 @@ contract FXAMORxGuild is ERC20, Ownable {
     address public controller; //contract that has a voting function
 
     error Unauthorized();
+    error EmptyArray();
+    error NotDelegatedAny();
 
     /// Invalid balance to transfer. Needed `minRequired` but sent `amount`
     /// @param sent sent amount.
@@ -132,6 +134,24 @@ contract FXAMORxGuild is ERC20, Ownable {
         delegators[to].push(msg.sender);
         delegations[msg.sender][to] += amount;
         amountDelegated[msg.sender] += amount;
+    }
+
+    function undelegate(address account, uint256 amount) public {
+        if(account == msg.sender) {
+            revert InvalidSender();
+        }
+
+        if(delegations[msg.sender][account] == 0) { //Nothing to undelegate
+            revert NotDelegatedAny();
+        }
+
+        if(delegations[msg.sender][account] >= amount){
+            delegations[msg.sender][account] -= amount;
+            amountDelegated[msg.sender] -= amount;
+        }else{
+            delegations[msg.sender][account] = 0;
+            amountDelegated[msg.sender] = 0;
+        }
     }
 
 }
