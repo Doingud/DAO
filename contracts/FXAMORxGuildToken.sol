@@ -110,11 +110,6 @@ contract FXAMORxGuild is ERC20, Ownable {
         IERC20(AMORxGuild).transfer(controller, amount);
     }
 
-    // already exists in ERC20Taxable
-    function balanceOf(address account) public view override returns (uint256) {
-        return stakes[account];
-    }
-
     // function that allows some external account to vote with your FXAMORxGuild tokens
     // Delegate your FXAMORxGuild to the address `to`.
     function delegate(address to, uint256 amount) external {
