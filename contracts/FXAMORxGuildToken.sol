@@ -10,8 +10,9 @@ pragma solidity 0.8.14;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+ import "./utils/ERC20Base.sol";
 
-contract FXAMORxGuild is ERC20, Ownable {
+contract FXAMORxGuild is ERC20Base, Ownable {
 
     // staker => all staker balance
     mapping(address => uint256) stakes;
@@ -22,8 +23,9 @@ contract FXAMORxGuild is ERC20, Ownable {
     // amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
 
-    string private _name;
-    string private _symbol;
+    event Initialized(bool success, address owner, address AMORxGuild);
+
+    bool private _initialized;
 
     address public _owner; //GuildController
     address public AMORxGuild; 
@@ -44,11 +46,24 @@ contract FXAMORxGuild is ERC20, Ownable {
     /// Invalid address to transfer. Needed `to` != msg.sender
     error InvalidSender();
 
-    constructor(string memory name_, string memory symbol_, address owner, address AMORxGuild_) ERC20(name_, symbol_) {
-        _owner = msg.sender;
+    function init(
+        string memory name_, 
+        string memory symbol_, 
+        address initOwner_, 
+        address AMORxGuild_
+    ) external returns (bool) {
+        require(!_initialized, "Already initialized");
+
+        _transferOwnership(initOwner_);
+
+        _owner = initOwner_;
         AMORxGuild = AMORxGuild_;
         _name = name_;
         _symbol = symbol_;
+
+        _initialized = true;
+        emit Initialized(_initialized, initOwner_, AMORxGuild_);
+        return true;
     }
 
     function setController(address _controller) external onlyAddress(_owner) {

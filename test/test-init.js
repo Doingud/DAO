@@ -19,10 +19,17 @@ const initialize = async (accounts) => {
 
 const getTokens = async (setup) => {
   const ERC20Factory = await ethers.getContractFactory('ERC20Mock', setup.roles.root);
-  const FXAMORxGuildFactory = await ethers.getContractFactory('FXAMORxGuild', setup.roles.operator);
-
   const ERC20Token = await ERC20Factory.deploy('ERC20Token', 'ERC20Token'); // test token
-  const FXAMORxGuild = await FXAMORxGuildFactory.deploy("DoinGud MetaDAO", "FXAMORxGuild", setup.roles.operator.address, ERC20Token.address);
+
+  const FXAMORxGuildFactory = await ethers.getContractFactory('FXAMORxGuild');
+  const FXAMORxGuild = await FXAMORxGuildFactory.deploy();
+  await FXAMORxGuild.init(
+    "DoinGud MetaDAO", 
+    "FXAMORxGuild", 
+    setup.roles.operator.address, 
+    ERC20Token.address
+  ); 
+
 
   const tokens = {
     ERC20Token,
