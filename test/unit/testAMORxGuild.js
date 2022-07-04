@@ -116,7 +116,6 @@ describe("unit - AMORxGuild", function () {
       it("Should increase the staker's AmorxGuild balanceOf by the expected amount", async function () {
         expect(await AMOR_GUILD_TOKEN.balanceOf(root.address)).to.equal(ethers.utils.parseEther((10).toString()))
         const AmorGuildTokens = await AMOR_GUILD_TOKEN.balanceOf(root.address);
-        console.log(AmorGuildTokens.toString());
       });
 
       it("Should revert if unsufficient AMOR", async function () {

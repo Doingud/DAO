@@ -20,12 +20,12 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /// Interface to expose ERC20Taxable functions
-import "./IERC20Taxable.sol";
+import "./utils/interfaces/IERC20Taxable.sol";
 
 /// Advanced math functions for bonding curve
 import "./utils/ABDKMath64x64.sol";
 
-import "./ERC20Base.sol";
+import "./utils/ERC20Base.sol";
 
 contract AMORGuildToken is ERC20Base, Pausable, Ownable {
     using ABDKMath64x64 for uint256;
@@ -37,7 +37,7 @@ contract AMORGuildToken is ERC20Base, Pausable, Ownable {
     /// The token logic for AMORxGuild
     address private _implementation;
     /// Co-efficient
-    uint256 constant private CO_EFFICIENT = 10**9;
+    uint256 constant private COEFFICIENT = 10**9;
 
     error AlreadyInitialized();
     error UnsufficientAmor();
@@ -82,7 +82,7 @@ contract AMORGuildToken is ERC20Base, Pausable, Ownable {
         //  Calculate mint amount and mint this to the address `to`
         uint256 mintAmount;
         //  Add co-efficient
-        mintAmount = CO_EFFICIENT*((amount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
+        mintAmount = COEFFICIENT*((amount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
         _mint(to, mintAmount);
 
         return mintAmount;
@@ -94,7 +94,7 @@ contract AMORGuildToken is ERC20Base, Pausable, Ownable {
     function withdrawAmor(uint256 amount) public returns (uint256) {
         uint256 amorReturned;
         uint256 currentSupply = totalSupply();
-        amorReturned = ((currentSupply ** 2) - ((currentSupply - amount) ** 2))/(CO_EFFICIENT**2);
+        amorReturned = ((currentSupply ** 2) - ((currentSupply - amount) ** 2))/(COEFFICIENT**2);
         
         //  Burn the AMORxGuild of the tx.origin
         _burn(msg.sender, amount);

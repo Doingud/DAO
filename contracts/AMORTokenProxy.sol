@@ -15,8 +15,6 @@ pragma solidity 0.8.14;
  *
  *  This proxy contract acts as the storage contract for the implementation contract.
 */
-
-import "./AMORToken.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 

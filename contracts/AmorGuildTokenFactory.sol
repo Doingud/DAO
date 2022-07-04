@@ -20,7 +20,7 @@ pragma solidity 0.8.14;
 */
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
-import "./IAmorGuildToken.sol";
+import "./utils/interfaces/IAmorGuildToken.sol";
 
 contract GuildTokenFactory {
     address internal _implementation;

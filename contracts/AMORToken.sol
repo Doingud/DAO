@@ -22,7 +22,7 @@
 
 pragma solidity 0.8.14;
 
-import "./ERC20Taxable.sol";
+import "./utils/ERC20Taxable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
