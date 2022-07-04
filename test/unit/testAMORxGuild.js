@@ -131,6 +131,10 @@ describe("unit - AMORxGuild", function () {
           to.emit(AMOR_TOKEN, "Transfer").
           to.emit(AMOR_GUILD_TOKEN, "Transfer");
       });
+      it("Should revert if unsufficient AMORxGuild", async function () {
+        await expect(AMOR_GUILD_TOKEN.withdrawAmor(ethers.utils.parseEther("100"))).
+          to.be.reverted;
+      });
     })
   })
 

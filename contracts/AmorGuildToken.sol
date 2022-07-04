@@ -40,7 +40,7 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     uint256 constant private COEFFICIENT = 10**9;
 
     error AlreadyInitialized();
-    error UnsufficientAmor();
+    error UnsufficientAmount();
 
     /// Events
     /// Emitted once token has been initialized
@@ -70,7 +70,7 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     function stakeAmor(address to, uint256 amount) public returns (uint256) {
         uint256 userAmor = tokenAmor.balanceOf(msg.sender);
         if (userAmor < amount ) {
-            revert UnsufficientAmor();
+            revert UnsufficientAmount();
         }
         //  Must calculate stakedAmor prior to transferFrom()
         uint256 stakedAmor = tokenAmor.balanceOf(address(this));
@@ -92,6 +92,9 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// @param  amount uint256 amount of AMORxGuild to exchange for AMOR
     /// @return uint256 the amount of AMOR returned from burning AMORxGuild
     function withdrawAmor(uint256 amount) public returns (uint256) {
+        if (amount > balanceOf(msg.sender)) {
+            revert UnsufficientAmount();
+        }
         uint256 amorReturned;
         uint256 currentSupply = totalSupply();
         amorReturned = ((currentSupply ** 2) - ((currentSupply - amount) ** 2))/(COEFFICIENT**2);
