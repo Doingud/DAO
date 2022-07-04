@@ -1,7 +1,7 @@
 const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants.js');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { TWO_HUNDRED_ETHER, ONE_HUNDRED_ETHER, FIFTY_ETHER } = require('../helpers/constants.js');
+const { TWO_HUNDRED_ETHER, ONE_HUNDRED_ETHER, FIFTY_ETHER, MOCK_GUILD_NAMES, MOCK_GUILD_SYMBOLS } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
 let AMORxGuild;
@@ -30,6 +30,17 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
         await setupTests();
     });
 
+    context('» init testing', () => {
+
+        it("Should fail if called more than once", async function () {
+            await expect(FXAMORxGuild.init(
+                AMORxGuild.address, 
+                MOCK_GUILD_NAMES[0], 
+                MOCK_GUILD_SYMBOLS[0]
+            )).to.be.reverted;
+        });
+    });
+    
     context('» stake testing', () => {
 
         it('it fails to stakes AMORxGuild tokens if not an owner', async function () {

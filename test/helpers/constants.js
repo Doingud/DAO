@@ -8,4 +8,6 @@ module.exports = {
   FIFTY_ETHER: ethers.utils.parseEther('50'),
   SECONDS_IN_DAY: 60 * 60 * 24, // seconds * minutes * hours
   MOCK_INITIAL_SUPPLY: ethers.utils.parseEther('100000'), // ERC20Mock.INITIAL_SUPPLY
+  MOCK_GUILD_NAMES: ['GUILD_ONE', 'GUILD_TWO', 'GUILD_THREE'],
+  MOCK_GUILD_SYMBOLS: ['TOKEN_ONE', 'TOKEN_TWO', 'TOKEN_THREE'],
 };
