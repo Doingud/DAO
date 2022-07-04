@@ -3,7 +3,7 @@ const { time, BN } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { FIFTY_ETHER } = require('../helpers/constants.js');
-const { ONE_HUNDRED_ETHER, TWO_HUNDRED_ETHER } = require('../helpers/constants.js');
+const { ONE_HUNDRED_ETHER, TWO_HUNDRED_ETHER, MOCK_GUILD_NAMES, MOCK_GUILD_SYMBOLS } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
 const MIN_LOCK_TIME = 604800; // 1 week
@@ -48,6 +48,18 @@ describe('unit - Contract: dAMORxGuild Token', function () {
         await AMORxGuild.connect(root).mint(dAMORxGuild.address, ONE_HUNDRED_ETHER);
     });
 
+    context('» init testing', () => {
+
+        it("Should fail if called more than once", async function () {
+            await expect(dAMORxGuild.init(
+                AMORxGuild.address, 
+                MOCK_GUILD_NAMES[0], 
+                MOCK_GUILD_SYMBOLS[0],
+                ONE_HUNDRED_ETHER
+            )).to.be.reverted;
+        });
+    });
+    
     context('» stake testing', () => {
 
         it('it fails to stakes AMORxGuild tokens if Time is Too Small', async function () {
