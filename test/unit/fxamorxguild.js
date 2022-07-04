@@ -31,6 +31,12 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
     });
 
     context('» init testing', () => {
+        it('initialized variables check', async function () {
+            expect(await FXAMORxGuild.name()).to.equals("DoinGud MetaDAO");
+            expect(await FXAMORxGuild.symbol()).to.equals("FXAMORxGuild");
+            expect(await FXAMORxGuild.owner()).to.equals(operator.address);
+            expect(await FXAMORxGuild.AMORxGuild()).to.equals(AMORxGuild.address);
+        });
 
         it("Should fail if called more than once", async function () {
             await expect(FXAMORxGuild.init(
