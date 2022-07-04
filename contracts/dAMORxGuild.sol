@@ -6,11 +6,10 @@
 
 pragma solidity 0.8.14;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./utils/ERC20Base.sol";
 
-contract dAMORxGuild is ERC20, Ownable {
+contract dAMORxGuild is ERC20Base, Ownable {
 
     // staker => time staked for
     mapping(address => uint256) stakesTimes;
@@ -24,6 +23,10 @@ contract dAMORxGuild is ERC20, Ownable {
     // amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
 
+    event Initialized(bool success, address owner, address AMORxGuild, uint256 amount);
+
+    bool private _initialized;
+
     uint256 guardianThreshold;// minimal amount of dAMORxGuild(dAMOR) to become guardian
     address[] public guardians;
     address[] public delegateGuardians; //array of delegated guardians(based on the popular vote)
@@ -31,9 +34,6 @@ contract dAMORxGuild is ERC20, Ownable {
     uint256 public constant TIME_DENOMINATOR = 1000000000000000000;
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     uint256 public constant MIN_LOCK_TIME = 7 days; // 1 week is the time for the new deposided tokens to be locked until they can be withdrawn
-
-    string private _name;
-    string private _symbol;
 
     address public _owner; //GuildController
     address public AMORxGuild;
@@ -57,12 +57,26 @@ contract dAMORxGuild is ERC20, Ownable {
     error TimeTooSmall();
     error TimeTooBig();
 
-    constructor(string memory name_, string memory symbol_, address owner, address AMORxGuild_, uint256 amount) ERC20(name_, symbol_) {
-        _owner = msg.sender;
+    function init(
+        string memory name_, 
+        string memory symbol_, 
+        address initOwner_, 
+        address AMORxGuild_,
+        uint256 amount
+    ) external returns (bool) {
+        require(!_initialized, "Already initialized");
+
+        _transferOwnership(initOwner_);
+
+        _owner = initOwner_;
         AMORxGuild = AMORxGuild_;
         _name = name_;
         _symbol = symbol_;
         guardianThreshold = amount;
+
+        _initialized = true;
+        emit Initialized(_initialized, initOwner_, AMORxGuild_, amount);
+        return true;
     }
 
     modifier onlyAddress(address authorizedAddress) {

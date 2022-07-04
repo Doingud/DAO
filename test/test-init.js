@@ -19,11 +19,18 @@ const initialize = async (accounts) => {
 
 const getTokens = async (setup) => {
   const ERC20Factory = await ethers.getContractFactory('ERC20Mock', setup.roles.root);
-  const dAMORxGuildFactory = await ethers.getContractFactory('dAMORxGuild', setup.roles.operator);
-
   const ERC20Token = await ERC20Factory.deploy('ERC20Token', 'ERC20Token'); // test token
+  
   const guardianThreshold = 10;
-  const dAMORxGuild = await dAMORxGuildFactory.deploy("DoinGud MetaDAO", "FXAMORxGuild", setup.roles.operator.address, ERC20Token.address, guardianThreshold);
+  const dAMORxGuildFactory = await ethers.getContractFactory('dAMORxGuild');
+  const dAMORxGuild = await dAMORxGuildFactory.deploy();
+  await dAMORxGuild.init(
+    "DoinGud MetaDAO", 
+    "FXAMORxGuild", 
+    setup.roles.operator.address, 
+    ERC20Token.address, 
+    guardianThreshold
+  ); 
 
   const tokens = {
     ERC20Token,
