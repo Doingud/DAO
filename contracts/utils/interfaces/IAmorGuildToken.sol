@@ -21,12 +21,6 @@ interface IAmorxGuild {
     /// Events
     /// Emitted once token has been initialized
     event Initialized(string name, string symbol, address amorToken);
-    
-    /// AMOR has been staked
-    event Stake(address indexed from, address to, uint256 indexed amount);
-    
-    /// AMOR has been withdrawn
-    event Unstake(address indexed from, uint256 indexed amount);
 
     /// Proxy Address Change
     event ProxyAddressChange(address indexed newProxyAddress);

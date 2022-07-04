@@ -21,7 +21,7 @@ const getTokens = async (setup) => {
     const AmorTokenProxyFactory = await ethers.getContractFactory('AMORTokenProxy', setup.roles.root);
 
     // Constants for AmorGuild tokens - Still to be merged
-    const AmorGuildTokenFactory = await ethers.getContractFactory('AMORGuildToken', setup.roles.root);
+    const AmorGuildTokenFactory = await ethers.getContractFactory('AMORxGuildToken', setup.roles.root);
 
     const AmorGuildTokenProxyFactory = await ethers.getContractFactory('AmorGuildProxy', setup.roles.root);
 

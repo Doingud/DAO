@@ -27,7 +27,7 @@ import "./utils/ABDKMath64x64.sol";
 
 import "./utils/ERC20Base.sol";
 
-contract AMORGuildToken is ERC20Base, Pausable, Ownable {
+contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     using ABDKMath64x64 for uint256;
 
     bool private _initialized;

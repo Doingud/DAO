@@ -25,6 +25,8 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
     string internal _symbol;
     bool internal _detailsSet;
 
+    error AlreadySet();
+
     /**
      * @dev Sets the values for {name} and {symbol}.
      *
@@ -35,7 +37,9 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
      * construction.
      */
     function _setTokenDetail(string memory name_, string memory symbol_) internal {
-        require(!_detailsSet, "Token detail already set");
+        if (_detailsSet) {
+            revert AlreadySet();
+        }
         _name = name_;
         _symbol = symbol_;
         _detailsSet = true;

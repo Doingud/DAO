@@ -32,6 +32,8 @@ contract AMORToken is ERC20Taxable, Pausable, Ownable {
 
     error InvalidTaxCollector();
 
+    error AlreadyInitialized();
+
     event Initialized(bool success, address taxCollector, uint256 rate);
 
     bool private _initialized;
@@ -46,7 +48,9 @@ contract AMORToken is ERC20Taxable, Pausable, Ownable {
         uint256 _initTaxRate,
         address _multisig
     ) external returns (bool) {
-        require(!_initialized, "Already initialized");
+        if (_initialized) {
+            revert AlreadyInitialized();
+        }
         //  Set the owner to the Multisig
         _transferOwnership(_multisig);
         //  Set the name and symbol

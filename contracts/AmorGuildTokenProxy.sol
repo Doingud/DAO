@@ -21,6 +21,8 @@ import "@openzeppelin/contracts/proxy/Proxy.sol";
 
 contract AmorGuildProxy is Proxy, ERC1967Upgrade {
     bool private _initialized;
+
+    error Initialized();
     /**
      * @dev Initializes the upgradeable proxy with an initial implementation specified by `_logic`.
      *
@@ -28,7 +30,9 @@ contract AmorGuildProxy is Proxy, ERC1967Upgrade {
      * function call, and allows initializing the storage of the proxy like a Solidity constructor.
      */
     function initProxy(address _logic, bytes memory _data) public payable {
-        require(!_initialized, "Already initialized");
+        if (_initialized) {
+            revert Initialized();
+        }
         _upgradeToAndCall(_logic, _data, false);
         _initialized = true;
     }
