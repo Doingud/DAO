@@ -27,7 +27,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
     bool private _initialized;
 
-    uint256 guardianThreshold;// minimal amount of dAMORxGuild(dAMOR) to become guardian
+    uint256 public guardianThreshold;// minimal amount of dAMORxGuild(dAMOR) to become guardian
     address[] public guardians;
     address[] public delegateGuardians; //array of delegated guardians(based on the popular vote)
 
