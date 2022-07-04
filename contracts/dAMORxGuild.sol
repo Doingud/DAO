@@ -70,8 +70,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
         _owner = initOwner_;
         AMORxGuild = AMORxGuild_;
-        _name = name_;
-        _symbol = symbol_;
+        _setTokenDetail(name_, symbol_);
         guardianThreshold = amount;
 
         _initialized = true;
@@ -227,6 +226,27 @@ contract dAMORxGuild is ERC20Base, Ownable {
             address newAddress = _delegateGuardians[i];
             delegateGuardians.push(newAddress);
         }
+    }
+
+
+    // non-transferable 
+    function transfer(address to, uint256 amount) public virtual override returns (bool) {
+        return false;
+    }
+
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public virtual override returns (bool) {
+        return false;
+    }
+
+    function _transfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual override {
     }
 
 }
