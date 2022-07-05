@@ -19,11 +19,7 @@ interface IERC20Taxable {
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 
     /**
      * @dev Returns the amount of tokens in existence.
@@ -51,10 +47,7 @@ interface IERC20Taxable {
      *
      * This value changes when {approve} or {transferFrom} are called.
      */
-    function allowance(address owner, address spender)
-        external
-        view
-        returns (uint256);
+    function allowance(address owner, address spender) external view returns (uint256);
 
     /**
      * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
@@ -97,10 +90,7 @@ interface IERC20Taxable {
     function viewCollector() external view returns (address);
 
     /// View the current tax collector address
-    function setTaxCollector(address newTaxCollector)
-        external
-        view
-        returns (bool);
+    function setTaxCollector(address newTaxCollector) external view returns (bool);
 
     /// View the basis points constant
     function viewBasisPoints() external view returns (uint256);

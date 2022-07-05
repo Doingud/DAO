@@ -24,10 +24,7 @@ contract AMORTokenProxy is ERC1967Proxy, Ownable {
     /// @param  _logic the address of the implementation contract (DoinGudToken in this case)
     /// @param  _data if non-zero this data is forwarded in the delegateCall() to the implementation contract
     ///         this may be used to call the init() function in DoinGudToken.sol
-    constructor(address _logic, bytes memory _data)
-        payable
-        ERC1967Proxy(_logic, _data)
-    {
+    constructor(address _logic, bytes memory _data) payable ERC1967Proxy(_logic, _data) {
         _transferOwnership(msg.sender);
     }
 
@@ -39,11 +36,7 @@ contract AMORTokenProxy is ERC1967Proxy, Ownable {
 
     /// @notice Upgrades the proxy to point to a new implementation address
     /// @param  _newImplementation The address of the upgraded logic contract
-    function upgradeTo(address _newImplementation)
-        public
-        onlyOwner
-        returns (bool)
-    {
+    function upgradeTo(address _newImplementation) public onlyOwner returns (bool) {
         _upgradeTo(_newImplementation);
         return true;
     }
