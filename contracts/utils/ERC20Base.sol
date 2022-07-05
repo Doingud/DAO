@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
-/// @title  ERC20Base 
+/// @title  ERC20Base
 /// @author Daoism Systems
 /// @notice To be used in clones
 /// @dev    No constructor, but has a setToken detail function which can only be called once
@@ -233,7 +233,6 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
         _afterTokenTransfer(from, to, amount);
     }
 
-
     /** @dev Creates `amount` tokens and assigns them to `account`, increasing
      * the total supply.
      *
@@ -369,4 +368,4 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
         address to,
         uint256 amount
     ) internal virtual {}
-} 
+}
