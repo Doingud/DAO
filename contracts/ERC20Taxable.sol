@@ -6,7 +6,7 @@
 /// @notice Implements a "tax"/"fee" on any token transfers
 /// @dev    "Tax" mechanism implemented within _transfer() function
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
