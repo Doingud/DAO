@@ -1,25 +1,30 @@
 const { ethers } = require("hardhat");
 const { use, expect } = require("chai");
 const { solidity } = require("ethereum-waffle");
-const { TAX_RATE, BASIS_POINTS, AMOR_TOKEN_NAME, AMOR_TOKEN_SYMBOL } = require('../helpers/constants.js');
+const { TAX_RATE,
+        TEST_TRANSFER, 
+        BASIS_POINTS, 
+        AMOR_TOKEN_NAME, 
+        AMOR_TOKEN_SYMBOL 
+      } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
 use(solidity);
 
-  //  The contract with the execution logic
-  let IMPLEMENTATION;
-  //  The contract which stores the data
-  let PROXY_CONTRACT;
-  //  The PROXY_CONTRACT with the implemenation
-  let PROXY;
+//  The contract with the execution logic
+let IMPLEMENTATION;
+//  Mock upgrade contract for proxy tests
+let MOCK_UPGRADE_IMPLEMENTATION;
+//  The contract with exposed ABI for proxy specific functions
+let PROXY_CONTRACT;
+//  The PROXY_CONTRACT with the implemenation
+let PROXY;
 
-  let root;
-  let multisig;
-  let user1;
-  let user2;
-
-  const TEST_TRANSFER = 100;
-  //const BASIS_POINTS = 10000;
+let root;
+let multisig;
+let user1;
+let user2;
+//const BASIS_POINTS = 10000;
 
 describe("unit - AMOR Token", function () {
 
@@ -29,6 +34,7 @@ describe("unit - AMOR Token", function () {
     await init.getTokens(setup);
 
     IMPLEMENTATION = setup.tokens.AmorTokenImplementation;
+    MOCK_UPGRADE_IMPLEMENTATION = setup.tokens.AmorTokenMockUpgrade;
     PROXY_CONTRACT = setup.tokens.AmorTokenProxy;
     
     root = setup.roles.root;
@@ -43,23 +49,19 @@ describe("unit - AMOR Token", function () {
   });
 
   
-  context("Proxy test", () => {
-    describe("exposing the implementation functions", function () {
+  context("proxy test", () => {
       //  Deploy the proxy contract and point it to the correct implementation
       it("attaches the ABI to proxy", async function () {
         //  Attach the AmorToken contract's ABI to the proxy, so that the correct function selector is called
         PROXY = IMPLEMENTATION.attach(PROXY_CONTRACT.address);
       });
       //  Make sure the proxy contract is linked to the implementation address
-    });
   });
 
   context("function: init()", () => {
-    describe("proxy initialization", function () {
-      it("initializes the proxy's storage", async function () {
-        
+    it("initializes the proxy's storage", async function () {
         expect(await PROXY.init(
-            AMOR_TOKEN_NAME,
+          AMOR_TOKEN_NAME,
           AMOR_TOKEN_SYMBOL,
           multisig.address,
           TAX_RATE,
@@ -67,81 +69,114 @@ describe("unit - AMOR Token", function () {
           )).
            to.emit(PROXY, "Initialized")
              .withArgs(true, multisig.address, TAX_RATE);
-        });
+      });
+    it("does not allow multiple init() calls", async function () {
+      await expect(PROXY.init(
+        AMOR_TOKEN_NAME,
+          AMOR_TOKEN_SYMBOL,
+          multisig.address,
+          TAX_RATE,
+          root.address
+      )).
+      to.be.reverted;
     });
   });
 
     context("function: getImplementation()", () => {
-      describe("the implementation logic address", function () {
         it("retrieves the correct contract address", async function () {
-          expect(await PROXY_CONTRACT.getImplementation()).to.equal(IMPLEMENTATION.address);
+          expect(await PROXY_CONTRACT.getImplementation()).
+            to.equal(IMPLEMENTATION.address);
         });
+    });
+
+    context("function: totalSupply()", () => {
+      it("returns the total token supply", async function () {
+        expect(await PROXY.totalSupply()).
+          to.equal(ethers.utils.parseEther("10000000"));
       });
     });
 
-    context("proxy behaves as an ERC20 token", () => {
-      describe("ERC20 functions", function () {
-        it("function: totalSupply()", async function () {
-          expect(await PROXY.totalSupply()).
-            to.equal(ethers.utils.parseEther("10000000"));
-        });
+    context("function: balanceOf()", () => {
+      it("returns the user's correct balance", async function () {
+        expect(await PROXY.balanceOf(root.address)).
+          to.equal(ethers.utils.parseEther("10000000"));
+      });
+      it("returns the correct balance for a user with no funds", async function () {
+        expect(await PROXY.balanceOf(user2.address)).
+          to.equal(0);
+      });
+    });
 
-        it("function: balanceOf()", async function () {
-          expect(await PROXY.balanceOf(root.address)).
-            to.equal(ethers.utils.parseEther("10000000"));
-        });
+    context("function: name()", () => {
+      it("returns the token's name", async function () {
+        expect(await PROXY.name()).
+          to.equal(AMOR_TOKEN_NAME);
+      });
+    });
+    
+    context("function: symbol", () => {
+      it("returns the token's symbol", async function () {
+        expect(await PROXY.symbol()).
+          to.equal(AMOR_TOKEN_SYMBOL);
+      });
+    });
 
-        it("function: name()", async function () {
-          expect(await PROXY.name()).
-            to.equal(AMOR_TOKEN_NAME);
-        });
-
-        it("function: symbol()", async function () {
-          expect(await PROXY.symbol()).
-            to.equal(AMOR_TOKEN_SYMBOL);
-        });
-
-        it("function: approve()", async function () {
+    context("function: approve()", () => {
+      it("allows funds to be approved for spending", async function () {
         //  Approve AMOR to be transferred
-          expect(await PROXY.approve(root.address, ethers.utils.parseEther(TEST_TRANSFER.toString()))).
-            to.emit(PROXY, "Approval").
-              withArgs(root.address, root.address, ethers.utils.parseEther(TEST_TRANSFER.toString()));
-        });
-
-        it("function: transfer()", async function () {
-          const taxDeducted = TEST_TRANSFER*(1-TAX_RATE/BASIS_POINTS);
-        
-          expect(await PROXY.transferFrom(root.address, user1.address, ethers.utils.parseEther(TEST_TRANSFER.toString())))
-            .to.emit(PROXY, "Transfer")
-              .withArgs(root.address, user1.address,ethers.utils.parseEther(taxDeducted.toString()));
-        });
+        expect(await PROXY.approve(root.address, ethers.utils.parseEther(TEST_TRANSFER.toString()))).
+          to.emit(PROXY, "Approval").
+            withArgs(root.address, root.address, ethers.utils.parseEther(TEST_TRANSFER.toString()));
+      });
+      
+      it("shows the correct allowance", async function () {
+        expect(await PROXY.allowance(root.address, root.address)).to.equal(ethers.utils.parseEther(TEST_TRANSFER.toString()));
       });
     });
 
-      context("ERC20Taxable", () => {
-        describe("proxy behaves as an ERC20Taxable token", async function () {
-          it("function: viewRate()", async function () {
-            expect(await PROXY.viewRate()).
-              to.equal(TAX_RATE);
-          });
-    
-          it("function: viewCollector()", async function () {
-            expect(await PROXY.viewCollector()).
-              to.equal(multisig.address);
-          });
-    
-          it("correct tax collector balance", async function () {
-            const taxAmount = TEST_TRANSFER*(TAX_RATE/BASIS_POINTS);
-    
-            expect(await PROXY.balanceOf(multisig.address)).to.equal(ethers.utils.parseEther(taxAmount.toString()));
-          })
-    
-          it("correct user balance", async function () {
-            const taxAmount = TEST_TRANSFER*(1-(TAX_RATE/BASIS_POINTS));
-    
-            expect(await PROXY.balanceOf(user1.address)).to.equal(ethers.utils.parseEther(taxAmount.toString()));
-          });
-        });
+    context("function: transferFrom()", () => {
+      it("transfers from one user to another", async function () {
+        const taxDeducted = TEST_TRANSFER*(1-TAX_RATE/BASIS_POINTS);
+      
+        expect(await PROXY.transferFrom(root.address, user1.address, ethers.utils.parseEther(TEST_TRANSFER.toString())))
+          .to.emit(PROXY, "Transfer")
+            .withArgs(root.address, user1.address,ethers.utils.parseEther(taxDeducted.toString()));
       });
+      it("allocates the fees to the collector", async function () {
+        const taxAmount = TEST_TRANSFER*(TAX_RATE/BASIS_POINTS);
 
+        expect(await PROXY.balanceOf(multisig.address)).to.equal(ethers.utils.parseEther(taxAmount.toString()));
+      })
+      it("correctly substracts the fees from the sender", async function () {
+        const taxAmount = TEST_TRANSFER*(1-(TAX_RATE/BASIS_POINTS));
+
+        expect(await PROXY.balanceOf(user1.address)).to.equal(ethers.utils.parseEther(taxAmount.toString()));
+      });
+    });
+
+    context("function: viewRate()", () => {
+      it("returns the current tax rate", async function () {
+        expect(await PROXY.viewRate()).
+          to.equal(TAX_RATE);
+      });
+    });
+
+    context("function: viewCollector()", () => {
+      it("returns the current fee collector", async function () {
+        expect(await PROXY.viewCollector()).
+          to.equal(multisig.address);
+      });
+    });
+
+    context("function: upgradeTo()", () => {
+      it("upgrades the implementation used for the proxy", async function () {
+        expect(await PROXY_CONTRACT.upgradeTo(MOCK_UPGRADE_IMPLEMENTATION.address)).
+          to.emit(PROXY_CONTRACT, "Upgraded").
+            withArgs(MOCK_UPGRADE_IMPLEMENTATION.address);
+      });
+      it("returns the new implementation address", async function () {
+        expect(await PROXY_CONTRACT.getImplementation()).
+          to.equal(MOCK_UPGRADE_IMPLEMENTATION.address);
+      });
+    })
 });

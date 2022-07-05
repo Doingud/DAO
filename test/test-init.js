@@ -30,6 +30,7 @@ const getTokens = async (setup) => {
 
     //  Amor Tokens
     const AmorTokenImplementation = await AmorTokenFactory.deploy();
+    const AmorTokenMockUpgrade = await AmorTokenFactory.deploy();
     const AmorTokenProxy = await AmorTokenProxyFactory.deploy(AmorTokenImplementation.address, []);
     
     /*  AmorGuild Tokens
@@ -40,7 +41,8 @@ const getTokens = async (setup) => {
 
     const tokens = {
       AmorTokenImplementation,
-      AmorTokenProxy
+      AmorTokenProxy,
+      AmorTokenMockUpgrade
       /*AmorGuildToken,
       AmorGuildTokenProxy,
       AmorGuildCloneFactory*/
