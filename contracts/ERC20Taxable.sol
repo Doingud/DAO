@@ -128,7 +128,7 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
      */
     function allowance(address owner, address spender)
         public
-        virtual
+        view
         override
         returns (uint256)
     {
