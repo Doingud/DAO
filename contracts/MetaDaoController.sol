@@ -47,4 +47,12 @@ contract MetaDaoController {
 
     }
 
+    function claim(uint16 guild) public {
+
+    }
+
+    function createGuild(string name, string tokenSymbol) public {
+        
+    }
+
 }
