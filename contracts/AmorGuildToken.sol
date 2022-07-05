@@ -14,7 +14,7 @@
  *  2) Allowing the token symbol to be set with an `init()` function
  *  3) Enables upgrades through updating the proxy
  */
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
