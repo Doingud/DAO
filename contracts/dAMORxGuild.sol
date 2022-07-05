@@ -83,10 +83,19 @@ contract dAMORxGuild is ERC20Base, Ownable {
             revert Unauthorized();
         }
         _;
-    }  
+    }
 
     function setGuardianThreshold(uint256 _guardianThreshold) external onlyAddress(_owner) {
         guardianThreshold = _guardianThreshold;
+    }
+
+    function _stake(uint256 amount, uint256 time) internal returns (uint256) {
+        // mint AMORxGuild tokens to staker
+        // Tokens are by following formula: NdAMOR = f(t)^2 *nAMOR
+        uint256 koef = (time * TIME_DENOMINATOR) / MAX_LOCK_TIME;
+        uint256 newAmount = (koef*koef) *amount / (TIME_DENOMINATOR * TIME_DENOMINATOR);
+        _mint(msg.sender, newAmount);
+        return newAmount;
     }
 
     //  receives ERC20 AMORxGuild tokens, which are getting locked 
@@ -111,14 +120,9 @@ contract dAMORxGuild is ERC20Base, Ownable {
         // send to AMORxGuild contract to stake
         IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount);
 
-        // mint AMORxGuild tokens to staker
-        // Tokens are by following formula: NdAMOR = f(t)^2 *nAMOR
-        uint256 koef = (time * TIME_DENOMINATOR) / MAX_LOCK_TIME;
-        uint256 newAmount = (koef*koef) *amount / (TIME_DENOMINATOR * TIME_DENOMINATOR);
-        
-        stakesTimes[msg.sender] = block.timestamp + time;
-        _mint(msg.sender, newAmount);
+        uint256 newAmount = _stake(amount, time);
 
+        stakesTimes[msg.sender] = block.timestamp + time;
         stakes[msg.sender] = newAmount;
 
         setGuardian(stakes[msg.sender]);
@@ -137,10 +141,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         // msg.sender receives funds, based on the amount of time remaining until the end of his stake
         uint256 time = stakesTimes[msg.sender] - block.timestamp;
 
-        // Tokens are by following formula: NdAMOR = f(t)^2 *nAMOR
-        uint256 koef = (time * TIME_DENOMINATOR) / MAX_LOCK_TIME;
-        uint256 newAmount = (koef*koef) *amount / (TIME_DENOMINATOR * TIME_DENOMINATOR);
-        _mint(msg.sender, newAmount);
+        uint256 newAmount = _stake(amount, time);
 
         stakes[msg.sender] += newAmount;
 
