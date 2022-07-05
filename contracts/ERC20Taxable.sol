@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
-/// @title  ERC20Taxable 
+/// @title  ERC20Taxable
 /// @author Daoism Systems Team
 /// @notice Implements a "tax"/"fee" on any token transfers
 /// @dev    "Tax" mechanism implemented within _transfer() function
@@ -47,11 +47,11 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     string internal _name;
     string internal _symbol;
 
-    uint256 internal taxRate; 
+    uint256 internal taxRate;
     address internal taxCollector;
 
-    uint256 constant public BASIS_POINTS = 10000;
-    
+    uint256 public constant BASIS_POINTS = 10000;
+
     /**
      * @dev Returns the name of the token.
      */
@@ -244,9 +244,9 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
      * This is a non-standard implementation
      * It uses the tax rate to calculate a "tax" which is transferred
      * to the tax collector
-     * 
+     *
      * - implemented for Daoism Systems
-     * - be aware that for extremely small transfers the tax rate becomes 0 
+     * - be aware that for extremely small transfers the tax rate becomes 0
      *
      * Emits TWO {Transfer} events.
      *
@@ -273,7 +273,7 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
         }
 
         if (taxRate > 0) {
-            uint256 taxAmount = amount * taxRate/ BASIS_POINTS;
+            uint256 taxAmount = (amount * taxRate) / BASIS_POINTS;
             uint256 afterTaxAmount = amount - taxAmount;
             _balances[taxCollector] += taxAmount;
 
