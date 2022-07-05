@@ -20,6 +20,10 @@ contract Controller {
     address public FXAMORxGuild;
     address public guild;
 
+    uint256 public constant FEE_DENOMINATOR = 1000;
+    uint256 public impactFees = 800; //80% // FEE_DENOMINATOR/100*80
+    uint256 public projectFees = 200; //20%
+
     event Initialized(bool success, address owner, address AMORxGuild);
 
     bool private _initialized;
@@ -72,17 +76,23 @@ contract Controller {
 
     /// @notice allows to donate AMORxGuild tokens to the Guild
     /// @param amount The amount to donate
-    // It automatically distributes tokens between Impact and 
-    // project polls(which are both multisigs and governed by the owners of dAMOR) 
-    // in the 80%-20% distribution. 10% of the tokens in the impact pool 
-    // are getting staked in the FXAMORxGuild tokens, which are going to be owned by the user.
+    // It automatically distributes tokens between Impact and project polls
+    // (which are both multisigs and governed by the owners of dAMOR) in the 80%-20% distribution. 
+    // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens, 
+    // which are going to be owned by the user.
     function donate(uint256 amount) public {
 
+        address impactPoll = 
+        address projectPoll = 
 
-        IERC20(AMORxGuild).transfer(guild, amount);
+        uint256 ipAmount = (amount * impactFees) / FEE_DENOMINATOR; // amount to Impact poll
+        uint256 ppAmount = (amount * projectFees) / FEE_DENOMINATOR; // amount to project poll
+
+        IERC20(AMORxGuild).transfer(impactPoll, ipAmount);
+        IERC20(AMORxGuild).transfer(projectPoll, ppAmount);
 
 
-        uint256 FxGAmount = amount / 10; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = AMORxGuildAmount * 100 / 10
+        uint256 FxGAmount = (amount * 100) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = AMORxGuildAmount * 100 / 10
         // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens, 
         // which are going to be owned by the user.
         IERC20(FXAMORxGuild).transfer(msg.sender, amount);
