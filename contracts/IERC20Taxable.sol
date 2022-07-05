@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
-/// @title  Interface for ERC20Taxable 
-/// @author @lourenslinde @daoism.systems
+pragma solidity 0.8.14;
 
-pragma solidity ^0.8.0;
+/// @title  Interface for ERC20Taxable
+/// @author Daoism Systems Team
 
-    interface IERC20Taxable {
-        /**
+interface IERC20Taxable {
+    /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
      * another (`to`).
      *
