@@ -2,12 +2,12 @@
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
 pragma solidity 0.8.14;
-/// @title  Interface for ERC20Taxable 
+
+/// @title  Interface for ERC20Taxable
 /// @author Daoism Systems Team
 
-
-    interface IERC20Taxable {
-        /**
+interface IERC20Taxable {
+    /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
      * another (`to`).
      *
@@ -19,7 +19,11 @@ pragma solidity 0.8.14;
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 
     /**
      * @dev Returns the amount of tokens in existence.
@@ -47,7 +51,10 @@ pragma solidity 0.8.14;
      *
      * This value changes when {approve} or {transferFrom} are called.
      */
-    function allowance(address owner, address spender) external view returns (uint256);
+    function allowance(address owner, address spender)
+        external
+        view
+        returns (uint256);
 
     /**
      * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
@@ -80,7 +87,6 @@ pragma solidity 0.8.14;
         uint256 amount
     ) external returns (bool);
 
-
     /// View the current tax rate in basis points
     function viewRate() external view returns (uint256);
 
@@ -91,7 +97,10 @@ pragma solidity 0.8.14;
     function viewCollector() external view returns (address);
 
     /// View the current tax collector address
-    function setTaxCollector(address newTaxCollector) external view returns (bool);
+    function setTaxCollector(address newTaxCollector)
+        external
+        view
+        returns (bool);
 
     /// View the basis points constant
     function viewBasisPoints() external view returns (uint256);

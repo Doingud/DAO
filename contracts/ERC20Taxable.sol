@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
-/// @title  ERC20Taxable 
+/// @title  ERC20Taxable
 /// @author Daoism Systems Team
 /// @notice Implements a "tax"/"fee" on any token transfers
 /// @dev    "Tax" mechanism implemented within _transfer() function
@@ -47,11 +47,11 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     string internal _name;
     string internal _symbol;
 
-    uint256 internal taxRate; 
+    uint256 internal taxRate;
     address internal taxCollector;
 
-    uint256 constant public BASIS_POINTS = 10000;
-    
+    uint256 public constant BASIS_POINTS = 10000;
+
     /**
      * @dev Returns the name of the token.
      */
@@ -94,7 +94,13 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     /**
      * @dev See {IERC20-balanceOf}.
      */
-    function balanceOf(address account) public view virtual override returns (uint256) {
+    function balanceOf(address account)
+        public
+        view
+        virtual
+        override
+        returns (uint256)
+    {
         return _balances[account];
     }
 
@@ -106,7 +112,12 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
      * - `to` cannot be the zero address.
      * - the caller must have a balance of at least `amount`.
      */
-    function transfer(address to, uint256 amount) public virtual override returns (bool) {
+    function transfer(address to, uint256 amount)
+        public
+        virtual
+        override
+        returns (bool)
+    {
         address owner = _msgSender();
         _transfer(owner, to, amount);
         return true;
@@ -115,7 +126,12 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     /**
      * @dev See {IERC20-allowance}.
      */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
+    function allowance(address owner, address spender)
+        public
+        virtual
+        override
+        returns (uint256)
+    {
         return _allowances[owner][spender];
     }
 
@@ -129,7 +145,12 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
      *
      * - `spender` cannot be the zero address.
      */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
+    function approve(address spender, uint256 amount)
+        public
+        virtual
+        override
+        returns (bool)
+    {
         address owner = _msgSender();
         _approve(owner, spender, amount);
         return true;
@@ -174,7 +195,11 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
      *
      * - `spender` cannot be the zero address.
      */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+    function increaseAllowance(address spender, uint256 addedValue)
+        public
+        virtual
+        returns (bool)
+    {
         address owner = _msgSender();
         _approve(owner, spender, allowance(owner, spender) + addedValue);
         return true;
@@ -194,10 +219,17 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
      * - `spender` must have allowance for the caller of at least
      * `subtractedValue`.
      */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+    function decreaseAllowance(address spender, uint256 subtractedValue)
+        public
+        virtual
+        returns (bool)
+    {
         address owner = _msgSender();
         uint256 currentAllowance = allowance(owner, spender);
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
+        require(
+            currentAllowance >= subtractedValue,
+            "ERC20: decreased allowance below zero"
+        );
         unchecked {
             _approve(owner, spender, currentAllowance - subtractedValue);
         }
@@ -244,9 +276,9 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
      * This is a non-standard implementation
      * It uses the tax rate to calculate a "tax" which is transferred
      * to the tax collector
-     * 
+     *
      * - implemented for Daoism Systems
-     * - be aware that for extremely small transfers the tax rate becomes 0 
+     * - be aware that for extremely small transfers the tax rate becomes 0
      *
      * Emits TWO {Transfer} events.
      *
@@ -267,13 +299,16 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
         _beforeTokenTransfer(from, to, amount);
 
         uint256 fromBalance = _balances[from];
-        require(fromBalance >= amount, "ERC20: transfer amount exceeds balance");
+        require(
+            fromBalance >= amount,
+            "ERC20: transfer amount exceeds balance"
+        );
         unchecked {
             _balances[from] = fromBalance - amount;
         }
 
         if (taxRate > 0) {
-            uint256 taxAmount = amount * taxRate/ BASIS_POINTS;
+            uint256 taxAmount = (amount * taxRate) / BASIS_POINTS;
             uint256 afterTaxAmount = amount - taxAmount;
             _balances[taxCollector] += taxAmount;
 
@@ -380,7 +415,10 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     ) internal virtual {
         uint256 currentAllowance = allowance(owner, spender);
         if (currentAllowance != type(uint256).max) {
-            require(currentAllowance >= amount, "ERC20: insufficient allowance");
+            require(
+                currentAllowance >= amount,
+                "ERC20: insufficient allowance"
+            );
             unchecked {
                 _approve(owner, spender, currentAllowance - amount);
             }
@@ -421,6 +459,7 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
      *
      * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
      */
+
     function _afterTokenTransfer(
         address from,
         address to,
