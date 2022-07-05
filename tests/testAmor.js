@@ -25,9 +25,7 @@ describe("DoinGud MetaDAO", function () {
   const BASIS_POINTS = 10000;
 
     describe("Implementation deployment", function() {
-      it("Should deploy AMORToken", async function () {
-        const [address1, address2, address3] = await ethers.getSigners();
-  
+      it("Should deploy AMORToken", async function () {  
         const DoinGudToken = await ethers.getContractFactory("AMORToken");
   
         const token = await DoinGudToken.deploy();
@@ -101,7 +99,7 @@ describe("DoinGud MetaDAO", function () {
       });
 
       it("Should show the tax collector", async function () {
-        const [address1, address2] = await ethers.getSigners();
+        const [address2] = await ethers.getSigners();
         expect(await PROXY.viewCollector()).
           to.equal(address2.address);
       });
@@ -123,7 +121,7 @@ describe("DoinGud MetaDAO", function () {
     //  ERC20 transfer function
     describe("transfer()", function () {
       it("Should transfer 100 AMOR", async function () {
-        const [address1, address2, address3] = await ethers.getSigners();
+        const [address1, address3] = await ethers.getSigners();
         const taxDeducted = TEST_TRANSFER*(1-RATE/BASIS_POINTS);
         
         
@@ -137,14 +135,14 @@ describe("DoinGud MetaDAO", function () {
     describe("tax collection", function () {
       it("Tax collector should have collected 5% tax", async function () {
         const taxAmount = TEST_TRANSFER*(RATE/BASIS_POINTS);
-        const [address1, address2, address3] = await ethers.getSigners();
+        const [address2] = await ethers.getSigners();
 
         expect(await PROXY.balanceOf(address2.address)).to.equal(ethers.utils.parseEther(taxAmount.toString()));
       })
 
       it("User should have tax deducted amount in his account", async function () {
         const taxAmount = TEST_TRANSFER*(1-(RATE/BASIS_POINTS));
-        const [address1, address2, address3] = await ethers.getSigners();
+        const [address3] = await ethers.getSigners();
 
         expect(await PROXY.balanceOf(address3.address)).to.equal(ethers.utils.parseEther(taxAmount.toString()));
       })
