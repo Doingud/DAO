@@ -1,5 +1,3 @@
-const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants');
-const { ethers } = require('hardhat');
 
 const initialize = async (accounts) => {
   const setup = {};
