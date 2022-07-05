@@ -1,12 +1,11 @@
-const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants.js');
-const { time, BN } = require("@openzeppelin/test-helpers");
+const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { FIFTY_ETHER } = require('../helpers/constants.js');
-const { ONE_HUNDRED_ETHER, TWO_HUNDRED_ETHER, MOCK_GUILD_NAMES, MOCK_GUILD_SYMBOLS } = require('../helpers/constants.js');
+const { FIFTY_ETHER } = require('../helpers/constants.js.js');
+const { ONE_HUNDRED_ETHER, TWO_HUNDRED_ETHER, MOCK_GUILD_NAMES, MOCK_GUILD_SYMBOLS } = require('../helpers/constants.js.js');
 const init = require('../test-init.js');
 
-const MIN_LOCK_TIME = 604800; // 1 week
+// const MIN_LOCK_TIME = 604800; // 1 week
 const MAX_LOCK_TIME = 31536000; // 1 year = 60 * 60 * 24 * 365
 
 let AMORxGuild;
@@ -119,7 +118,6 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             koef = normalTime/MAX_LOCK_TIME;
             const newAmount = (koef*koef) *ONE_HUNDRED_ETHER; // (koef)^2 *amount | NdAMOR = f(t)^2 *nAMOR
             const expectedAmount =  ethers.BigNumber.from(realAmount).add(ethers.BigNumber.from(newAmount.toString()));
-            const roundedRealAmount = Math.round(expectedAmount * 100) / 100;
 
             await dAMORxGuild.connect(staker).increaseStake(ONE_HUNDRED_ETHER);        
             const newRealAmount = await dAMORxGuild.balanceOf(staker.address);
