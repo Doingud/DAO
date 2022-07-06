@@ -14,11 +14,13 @@ contract Controller {
     mapping(uint => address[]) voters; // voters mapping(uint report => address [] voters)
     int[] reportsVoting; // results of the vote for the report with specific id
     mapping(address => bool) impactMakers;
-    
-    address public _owner;
+
+    address public owner;
     address public AMORxGuild; 
     address public FXAMORxGuild;
     address public guild;
+    address public impactPoll; 
+    address public projectPoll;
 
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public impactFees = 800; //80% // FEE_DENOMINATOR/100*80
@@ -44,23 +46,23 @@ contract Controller {
     error InvalidSender();
 
     function init(
-        string memory name_, 
-        string memory symbol_, 
         address initOwner_,
         address AMORxGuild_,
         address FXAMORxGuild_,
-        address guild_
+        address guild_,
+        address impactPoll_,
+        address projectPoll_
     ) external returns (bool) {
         require(!_initialized, "Already initialized");
 
-        _transferOwnership(initOwner_);
+        // _transferOwnership(initOwner_);
 
-        _owner = initOwner_;
+        owner = initOwner_;
         AMORxGuild = AMORxGuild_;
         FXAMORxGuild = FXAMORxGuild_;
-        _name = name_;
-        _symbol = symbol_;
         guild = guild_;
+        impactPoll = impactPoll_;
+        projectPoll = projectPoll_;
 
         _initialized = true;
         emit Initialized(_initialized, initOwner_, AMORxGuild_);
@@ -80,10 +82,10 @@ contract Controller {
     // (which are both multisigs and governed by the owners of dAMOR) in the 80%-20% distribution. 
     // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens, 
     // which are going to be owned by the user.
-    function donate(uint256 amount) public {
-
-        address impactPoll = 
-        address projectPoll = 
+    function donate(uint256 amount) public returns (uint256) {
+        if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
+            revert InvalidAmount(amount, IERC20(AMORxGuild).balanceOf(msg.sender));
+        }
 
         uint256 ipAmount = (amount * impactFees) / FEE_DENOMINATOR; // amount to Impact poll
         uint256 ppAmount = (amount * projectFees) / FEE_DENOMINATOR; // amount to project poll
@@ -91,12 +93,12 @@ contract Controller {
         IERC20(AMORxGuild).transfer(impactPoll, ipAmount);
         IERC20(AMORxGuild).transfer(projectPoll, ppAmount);
 
-
         uint256 FxGAmount = (amount * 100) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = AMORxGuildAmount * 100 / 10
         // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens, 
         // which are going to be owned by the user.
-        IERC20(FXAMORxGuild).transfer(msg.sender, amount);
-
+        IERC20(FXAMORxGuild).transfer(msg.sender, FxGAmount);
+        
+        return amount;
     }
 
 }
