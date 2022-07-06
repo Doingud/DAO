@@ -43,6 +43,9 @@ contract FXAMORxGuild is ERC20Base, Ownable {
     /// Invalid address to transfer. Needed `to` != msg.sender
     error InvalidSender();
 
+    /*  @dev    The init() function takes the place of the constructor.
+     *          It can only be run once.
+     */
     function init(
         string memory name_,
         string memory symbol_,
@@ -109,9 +112,11 @@ contract FXAMORxGuild is ERC20Base, Ownable {
         return amount;
     }
 
-    // function burns FXAMORxGuild tokens if they are being used for voting.
-    // When this tokens are burned, staked AMORxGuild is being transfered
-    // to the controller(contract that has a voting function)
+    /// @notice Burns FXAMORxGuild tokens if they are being used for voting
+    /// @dev When this tokens are burned, staked AMORxGuild is being transfered
+    //       to the controller(contract that has a voting function)
+    /// @param  account address from which must burn tokens
+    /// @param  amount uint256 representing amount of burning tokens
     function burn(address account, uint256 amount) external onlyAddress(_owner) {
         if (stakes[account] < amount) {
             revert InvalidAmount(amount, stakes[account]);
@@ -122,8 +127,11 @@ contract FXAMORxGuild is ERC20Base, Ownable {
         IERC20(AMORxGuild).transfer(controller, amount);
     }
 
-    // function that allows some external account to vote with your FXAMORxGuild tokens
-    // Delegate your FXAMORxGuild to the address `to`.
+    /// @notice Allows some external account to vote with your FXAMORxGuild tokens
+    /// @dev When this tokens are burned, staked AMORxGuild is being transfered
+    //       to the controller(contract that has a voting function)
+    /// @param  to address to which delegate users FXAMORxGuild
+    /// @param  amount uint256 representing amount of delegating tokens
     function delegate(address to, uint256 amount) external {
         if (to == msg.sender) {
             revert InvalidSender();
@@ -143,6 +151,9 @@ contract FXAMORxGuild is ERC20Base, Ownable {
         amountDelegated[msg.sender] += amount;
     }
 
+    /// @notice Unallows some external account to vote with your delegated FXAMORxGuild tokens
+    /// @param  account address from which delegating will be taken away
+    /// @param  amount uint256 representing amount of undelegating tokens
     function undelegate(address account, uint256 amount) public {
         if (account == msg.sender) {
             revert InvalidSender();
