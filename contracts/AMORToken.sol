@@ -122,7 +122,10 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         _beforeTokenTransfer(from, to, amount);
 
         uint256 fromBalance = _balances[from];
-        require(fromBalance >= amount, "ERC20: transfer amount exceeds balance");
+        if (fromBalance >= amount) {
+            revert InvalidTransfer();
+        }
+
         unchecked {
             _balances[from] = fromBalance - amount;
         }
@@ -148,11 +151,11 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
 
     /// @notice Pause functionality for AMOR
     /// @dev    For security purposes, should there be an exploit.    
-    function pause() public onlyOwner {
+    function pause() external onlyOwner {
         _pause();
     }
 
-    function unpause() public onlyOwner {
+    function unpause() external onlyOwner {
         _unpause();
     }
 
