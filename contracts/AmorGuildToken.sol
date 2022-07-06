@@ -114,11 +114,11 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
         tokenAmor = IERC20Taxable(_token);
     }
 
-    function pause() public onlyOwner {
+    function pause() external onlyOwner {
         _pause();
     }
 
-    function unpause() public onlyOwner {
+    function unpause() external onlyOwner {
         _unpause();
     }
 
