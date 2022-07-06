@@ -49,9 +49,12 @@ describe('unit - Contract: Controller', function () {
 
         it("Should fail if called more than once", async function () {
             await expect(controller.init(
-                AMORxGuild.address, 
-                MOCK_GUILD_NAMES[0], 
-                MOCK_GUILD_SYMBOLS[0]
+                root.address, // owner
+                AMORxGuild.address,
+                FXAMORxGuild.address,
+                authorizer_adaptor.address, // guild
+                impactPoll.address,
+                projectPoll.address
             )).to.be.reverted;
         });
     });
@@ -59,7 +62,7 @@ describe('unit - Contract: Controller', function () {
     context('» donate testing', () => {
 
         it('it fails to donate AMORxGuild tokens if not enough AMORxGuild', async function () {
-            await expect(controller.connect(operator).donate(staker.address, ONE_HUNDRED_ETHER)).to.be.revertedWith(
+            await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER)).to.be.revertedWith(
                 'InvalidAmount(100000000000000000000, 0)'
             );
         });
@@ -68,8 +71,8 @@ describe('unit - Contract: Controller', function () {
             await AMORxGuild.connect(root).mint(operator.address, ONE_HUNDRED_ETHER);
             await AMORxGuild.connect(operator).approve(controller.address, ONE_HUNDRED_ETHER);
 
-            await controller.connect(operator).donate(staker.address, ONE_HUNDRED_ETHER);        
-            expect((await controller.balanceOf(staker.address)).toString()).to.equal(ONE_HUNDRED_ETHER.toString());
+            await controller.connect(operator).donate(ONE_HUNDRED_ETHER);        
+            expect((await controller.balanceOf(operator.address)).toString()).to.equal(ONE_HUNDRED_ETHER.toString());
         });
 
     });

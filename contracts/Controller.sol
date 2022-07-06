@@ -2,7 +2,7 @@
 pragma solidity 0.8.14;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
+import "hardhat/console.sol";
 /// @title Controller contract
 /// @author Daoism Systems Team
 /// @notice Controller contract controls the all of the deployed contracts of the guild
@@ -82,7 +82,8 @@ contract Controller {
     // (which are both multisigs and governed by the owners of dAMOR) in the 80%-20% distribution. 
     // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens, 
     // which are going to be owned by the user.
-    function donate(uint256 amount) public returns (uint256) {
+    function donate(uint256 amount) external returns (uint256) {
+
         if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
             revert InvalidAmount(amount, IERC20(AMORxGuild).balanceOf(msg.sender));
         }
