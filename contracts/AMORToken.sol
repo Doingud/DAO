@@ -33,15 +33,13 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
     //  Tax Rate
     uint256 public taxRate;
     //  Basis points
-    uint256 public BASIS_POINTS = 10000;
+    uint256 public constant BASIS_POINTS = 10000;
 
     error InvalidRate();
 
     error InvalidTaxCollector();
 
     error AlreadyInitialized();
-
-    error InvalidTransfer();
 
     event Initialized(bool success, address taxCollector, uint256 rate);
 
