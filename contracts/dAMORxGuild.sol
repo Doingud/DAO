@@ -56,6 +56,9 @@ contract dAMORxGuild is ERC20Base, Ownable {
     error TimeTooSmall();
     error TimeTooBig();
 
+    /*  @dev    The init() function takes the place of the constructor.
+     *          It can only be run once.
+     */
     function init(
         string memory name_,
         string memory symbol_,
@@ -88,9 +91,11 @@ contract dAMORxGuild is ERC20Base, Ownable {
         guardianThreshold = _guardianThreshold;
     }
 
+    /// @notice Mint AMORxGuild tokens to staker
+    /// @dev    Tokens are by following formula: NdAMOR = f(t)^2 *nAMOR
+    /// @param  amount uint256 amount of AMORxGuild to be staked
+    /// @param  time uint256 time how long tokens wll be staked
     function _stake(uint256 amount, uint256 time) internal returns (uint256) {
-        // mint AMORxGuild tokens to staker
-        // Tokens are by following formula: NdAMOR = f(t)^2 *nAMOR
         uint256 koef = (time * TIME_DENOMINATOR) / MAX_LOCK_TIME;
         uint256 newAmount = ((koef * koef) * amount) / (TIME_DENOMINATOR * TIME_DENOMINATOR);
         _mint(msg.sender, newAmount);
@@ -101,7 +106,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     //  and generate dAMORxGuild tokens in return.
     //  Tokens are minted following the formula
 
-    /// @notice Stake AMORxGuild and receive dAMORxGuild in return
+    /// @notice Stakes AMORxGuild and receive dAMORxGuild in return
     /// @dev    Front end must still call approve() on AMORxGuild token to allow transferFrom()
     /// @param  amount uint256 amount of dAMOR to be staked
     /// @param  time uint256
@@ -129,6 +134,9 @@ contract dAMORxGuild is ERC20Base, Ownable {
         return newAmount;
     }
 
+    /// @notice Increases stake of already staken AMORxGuild and receive dAMORxGuild in return
+    /// @dev    Front end must still call approve() on AMORxGuild token to allow transferFrom()
+    /// @param  amount uint256 amount of dAMOR to be staked
     function increaseStake(uint256 amount) public returns (uint256) {
         if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
             revert InvalidAmount(amount, IERC20(AMORxGuild).balanceOf(msg.sender));
@@ -149,9 +157,9 @@ contract dAMORxGuild is ERC20Base, Ownable {
         return newAmount;
     }
 
-    // function withdraws AMORxGuild tokens; burns dAMORxGuild
-    // When this tokens are burned, staked AMORxGuild is being transfered
-    // to the controller(contract that has a voting function)
+    /// @notice Withdraws AMORxGuild tokens; burns dAMORxGuild
+    /// @dev When this tokens are burned, staked AMORxGuild is being transfered
+    ///      to the controller(contract that has a voting function)
     function withdraw() public returns (uint256) {
         uint256 amount = stakes[msg.sender];
         if (amount <= 0) {
@@ -167,7 +175,9 @@ contract dAMORxGuild is ERC20Base, Ownable {
         return amount;
     }
 
-    // Delegate your dAMORxGuild to the address `account`.
+    /// @notice Delegate your dAMORxGuild to the address `account`
+    /// @param  to address to which delegate users FXAMORxGuild
+    /// @param  amount uint256 representing amount of delegating tokens
     function delegate(address to, uint256 amount) public {
         if (to == msg.sender) {
             revert InvalidSender();
@@ -193,6 +203,9 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
     }
 
+    /// @notice Undelegate your dAMORxGuild to the address `account`
+    /// @param  account address from which delegating will be taken away
+    /// @param  amount uint256 representing amount of undelegating tokens
     function undelegate(address account, uint256 amount) public {
         if (account == msg.sender) {
             revert InvalidSender();
@@ -212,7 +225,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
     }
 
-    //sets msg.sender as a guardian if a new amount of dAMORxGuild(dAMOR) tokens > guardianThreshold
+    /// @notice Sets msg.sender as a guardian if a new amount of dAMORxGuild(dAMOR) tokens > guardianThreshold
     function setGuardian(uint256 amount) internal {
         if (balanceOf(msg.sender) > guardianThreshold) {
             guardians.push(msg.sender);
@@ -228,7 +241,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
     }
 
-    // non-transferable
+    /// @notice non-transferable
     function transfer(address to, uint256 amount) public virtual override returns (bool) {
         return false;
     }
