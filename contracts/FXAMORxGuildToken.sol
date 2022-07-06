@@ -128,8 +128,6 @@ contract FXAMORxGuild is ERC20Base, Ownable {
     }
 
     /// @notice Allows some external account to vote with your FXAMORxGuild tokens
-    /// @dev When this tokens are burned, staked AMORxGuild is being transfered
-    //       to the controller(contract that has a voting function)
     /// @param  to address to which delegate users FXAMORxGuild
     /// @param  amount uint256 representing amount of delegating tokens
     function delegate(address to, uint256 amount) external {
