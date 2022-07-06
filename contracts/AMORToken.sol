@@ -22,17 +22,26 @@
 
 pragma solidity 0.8.15;
 
-import "./utils/ERC20Taxable.sol";
+import "./utils/ERC20Base.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract AMORToken is ERC20Taxable, Pausable, Ownable {
+contract AMORToken is ERC20Base, Pausable, Ownable {
+
+    //  Tax controller
+    address public taxController;
+    //  Tax Rate
+    uint256 public taxRate;
+    //  Basis points
+    uint256 public BASIS_POINTS = 10000;
 
     error InvalidRate();
 
     error InvalidTaxCollector();
 
     error AlreadyInitialized();
+
+    error InvalidTransfer();
 
     event Initialized(bool success, address taxCollector, uint256 rate);
 
@@ -59,7 +68,7 @@ contract AMORToken is ERC20Taxable, Pausable, Ownable {
         //  Pre-mint to the multisig address
         _mint(_multisig, 10000000 * 10 ** decimals());
         //  Set the tax collector address 
-        setTaxCollector(_initCollector);
+        updateController(_initCollector);
         //  Set the tax rate
         setTaxRate(_initTaxRate);
         _initialized = true;
@@ -70,11 +79,11 @@ contract AMORToken is ERC20Taxable, Pausable, Ownable {
     /// @notice Sets the tax rate for transfer and transferFrom
     /// @dev    Rate is expressed in basis points, this must be divided by 10 000 to equal desired rate
     /// @param  newRate uint256 representing new tax rate, must be <= 500
-    function setTaxRate(uint256 newRate) public override onlyOwner {
+    function setTaxRate(uint256 newRate) public onlyOwner {
         if(newRate > 500) {
             revert InvalidRate();
         }
-        ERC20Taxable.setTaxRate(newRate);
+        _setTaxRate(newRate);
     }
 
     /// @notice Sets the address which receives taxes
@@ -83,9 +92,60 @@ contract AMORToken is ERC20Taxable, Pausable, Ownable {
         if(newTaxCollector == address(this)) {
             revert InvalidTaxCollector();
         }
-        ERC20Taxable.setTaxCollector(newTaxCollector);
-    }
+        _updateController(newTaxCollector);
+    }    
     
+    /// @notice Sets the address which receives taxes
+    /// @param  newTaxCollector address which must receive taxes
+    function _updateController(address newTaxCollector) internal {
+        taxController = newTaxCollector;
+    }
+
+    /// @notice Sets the tax rate for transfer and transferFrom
+    /// @dev    Rate is expressed in basis points, this must be divided by 10 000 to equal desired rate
+    /// @param  newRate uint256 representing new tax rate, must be <= 500
+    function _setTaxRate(uint256 newRate) internal {
+        taxRate = newRate;
+    }
+
+    /// @notice This transfer function overrides the normal _transfer from ERC20Base
+    /// @dev    It implements the logic for taking fees
+    function _transfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override {
+        if (from == address(0) || to == address(0)) {
+            revert InvalidTransfer();
+        }
+        
+        _beforeTokenTransfer(from, to, amount);
+
+        uint256 fromBalance = _balances[from];
+        require(fromBalance >= amount, "ERC20: transfer amount exceeds balance");
+        unchecked {
+            _balances[from] = fromBalance - amount;
+        }
+
+        if (taxRate > 0) {
+            uint256 taxAmount = amount * taxRate / BASIS_POINTS;
+            uint256 afterTaxAmount = amount - taxAmount;
+            _balances[taxController] += taxAmount;
+
+            emit Transfer(from, taxController, taxAmount);
+
+            _balances[to] += afterTaxAmount;
+
+            emit Transfer(from, to, (amount - taxAmount));
+        } else {
+            _balances[to] += amount;
+
+            emit Transfer(from, to, amount);
+        }
+
+        _afterTokenTransfer(from, to, amount);
+    }
+
     /// @notice Pause functionality for AMOR
     /// @dev    For security purposes, should there be an exploit.    
     function pause() public onlyOwner {
