@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
-/// @title  ERC20Base 
+/// @title  ERC20Base
 /// @author Initial author OpenZeppelin, modified by Daoism Systems
 /// @notice To be used in clones where constructor calls cannot be used
 /// @dev    No constructor, but has a setToken detail function which can only be called once
@@ -11,7 +11,6 @@ pragma solidity 0.8.14;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
-
 
 abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
     mapping(address => uint256) internal _balances;
@@ -26,7 +25,7 @@ abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
     bool internal _detailsSet;
 
     uint8 internal _decimals;
-    
+
     /// Reverts if invalid transfer address
     error InvalidTransfer();
 
@@ -187,7 +186,7 @@ abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
      * - `spender` cannot be the zero address.
      * - `spender` must have allowance for the caller of at least
      * `subtractedValue`.
-     * 
+     *
      * @param spender the address which has an allowance that must be adjusted
      * @param subtractedValue the amount by which the allowance of the spender must be decreased
      * @return bool to indicate if the decrease allowance was successful
@@ -195,7 +194,7 @@ abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
     function decreaseAllowance(address spender, uint256 subtractedValue) external virtual returns (bool) {
         address owner = _msgSender();
         uint256 currentAllowance = allowance(owner, spender);
-        
+
         if (currentAllowance < subtractedValue) {
             revert InvalidAmount();
         }
@@ -246,7 +245,6 @@ abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
         _afterTokenTransfer(from, to, amount);
     }
 
-
     /** @dev Creates `amount` tokens and assigns them to `account`, increasing
      * the total supply.
      *
@@ -285,7 +283,7 @@ abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
         if (account == address(0)) {
             revert InvalidTransfer();
         }
-        
+
         _beforeTokenTransfer(account, address(0), amount);
 
         uint256 accountBalance = _balances[account];
@@ -323,7 +321,7 @@ abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
         if (owner == address(0) || spender == address(0)) {
             revert InvalidApprove();
         }
-        
+
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
