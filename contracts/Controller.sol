@@ -9,18 +9,17 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @notice Controller contract controls the all of the deployed contracts of the guild
 
 contract Controller {
-
     int256[] reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
-    mapping(uint => mapping(address => int256)) votes; // votes mapping(uint report => mapping(address voter => int256 vote))
-    mapping(uint => address[]) voters; // voters mapping(uint report => address [] voters)
-    int[] reportsVoting; // results of the vote for the report with specific id
+    mapping(uint256 => mapping(address => int256)) votes; // votes mapping(uint report => mapping(address voter => int256 vote))
+    mapping(uint256 => address[]) voters; // voters mapping(uint report => address [] voters)
+    uint256[] reportsVoting; // results of the vote for the report with specific id
     mapping(address => bool) impactMakers;
 
     address public owner;
-    address public AMORxGuild; 
+    address public AMORxGuild;
     address public FXAMORxGuild;
     address public guild;
-    address public impactPoll; 
+    address public impactPoll;
     address public projectPoll;
 
     uint256 public constant FEE_DENOMINATOR = 1000;
@@ -38,7 +37,7 @@ contract Controller {
     /// Invalid balance to transfer. Needed `minRequired` but sent `amount`
     /// @param sent sent amount.
     /// @param minRequired minimum amount to send.
-    error InvalidAmount (uint256 sent, uint256 minRequired);
+    error InvalidAmount(uint256 sent, uint256 minRequired);
 
     /// Invalid address. Needed address != address(0)
     error AddressZero();
@@ -80,11 +79,10 @@ contract Controller {
     /// @notice allows to donate AMORxGuild tokens to the Guild
     /// @param amount The amount to donate
     // It automatically distributes tokens between Impact and project polls
-    // (which are both multisigs and governed by the owners of dAMOR) in the 80%-20% distribution. 
-    // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens, 
+    // (which are both multisigs and governed by the owners of dAMOR) in the 80%-20% distribution.
+    // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
     // which are going to be owned by the user.
     function donate(uint256 amount) external returns (uint256) {
-
         if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
             revert InvalidAmount(amount, IERC20(AMORxGuild).balanceOf(msg.sender));
         }
@@ -96,18 +94,17 @@ contract Controller {
         uint256 ppAmount = (amount * projectFees) / FEE_DENOMINATOR; // amount to project poll
 
         uint256 FxGAmount = (ipAmount * 100) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact poll AMORxGuildAmount * 100 / 10
-        // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens, 
+        // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
         // which are going to be owned by the user.
         IERC20(AMORxGuild).transferFrom(msg.sender, address(this), FxGAmount);
         IERC20(AMORxGuild).approve(FXAMORxGuild, FxGAmount);
 
         IFXAMORxGuild(FXAMORxGuild).stake(msg.sender, FxGAmount);
-        
+
         uint256 decIpAmount = ipAmount - FxGAmount; //decreased ipAmount
         IERC20(AMORxGuild).transferFrom(msg.sender, impactPoll, decIpAmount);
         IERC20(AMORxGuild).transferFrom(msg.sender, projectPoll, ppAmount);
 
         return amount;
     }
-
 }
