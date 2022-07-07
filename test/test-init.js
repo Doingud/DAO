@@ -57,7 +57,6 @@ module.exports = {
   initialize,
   getTokens
 };
-=======
 
   const tokens = {
 
