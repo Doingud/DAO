@@ -35,6 +35,8 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
     //  Basis points
     uint256 public constant BASIS_POINTS = 10000;
 
+    bool private _initialized;
+
     error InvalidRate();
 
     error InvalidTaxCollector();
@@ -42,8 +44,6 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
     error AlreadyInitialized();
 
     event Initialized(bool success, address taxCollector, uint256 rate);
-
-    bool private _initialized;
 
     /*  @dev    The init() function takes the place of the constructor.
      *          It can only be run once.
