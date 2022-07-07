@@ -2,7 +2,7 @@
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
 /// @title  ERC20Base 
-/// @author Daoism Systems
+/// @author Initial author OpenZeppelin, modified by Daoism Systems
 /// @notice To be used in clones where constructor calls cannot be used
 /// @dev    No constructor, but has a setToken detail function which can only be called once
 
@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
 
-contract ERC20Base is Context, IERC20, IERC20Metadata {
+abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
     mapping(address => uint256) internal _balances;
 
     mapping(address => mapping(address => uint256)) internal _allowances;
@@ -48,8 +48,8 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
      * The default value of {decimals} is 18. To select a different value for
      * {decimals} you should overload it.
      *
-     * All two of these values are immutable: they can only be set once during
-     * construction.
+     * All two of these values should be immutable: they can only be set once during
+     * _setTokenDetail, which must be called upon initialization in the inheriting contract.
      */
     function _setTokenDetail(string memory name_, string memory symbol_) internal {
         if (_detailsSet) {
@@ -64,7 +64,7 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
     /**
      * @dev Returns the name of the token.
      */
-    function name() public view virtual override returns (string memory) {
+    function name() public view override returns (string memory) {
         return _name;
     }
 
@@ -72,7 +72,7 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
      * @dev Returns the symbol of the token, usually a shorter version of the
      * name.
      */
-    function symbol() public view virtual override returns (string memory) {
+    function symbol() public view override returns (string memory) {
         return _symbol;
     }
 
@@ -89,21 +89,21 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    function decimals() public view virtual override returns (uint8) {
+    function decimals() public view override returns (uint8) {
         return _decimals;
     }
 
     /**
      * @dev See {IERC20-totalSupply}.
      */
-    function totalSupply() public view virtual override returns (uint256) {
+    function totalSupply() public view override returns (uint256) {
         return _totalSupply;
     }
 
     /**
      * @dev See {IERC20-balanceOf}.
      */
-    function balanceOf(address account) public view virtual override returns (uint256) {
+    function balanceOf(address account) public view override returns (uint256) {
         return _balances[account];
     }
 
@@ -202,6 +202,10 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
      * - `spender` cannot be the zero address.
      * - `spender` must have allowance for the caller of at least
      * `subtractedValue`.
+     * 
+     * @param spender the address which has an allowance that must be adjusted
+     * @param substractedValue the amount by which the allowance of the spender must be decreased
+     * @return bool to indicate if the decrease allowance was successful
      */
     function decreaseAllowance(address spender, uint256 subtractedValue) external virtual returns (bool) {
         address owner = _msgSender();
