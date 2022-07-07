@@ -16,6 +16,12 @@ let IMPLEMENTATION;
 //  Mock upgrade contract for proxy tests
 let MOCK_UPGRADE_IMPLEMENTATION;
 //  The contract with exposed ABI for proxy specific functions
+const RATE = 500;
+const TOKEN_NAME = "DoinGud MetaDAO";
+const TOKEN_SYMBOL = "AMOR";
+const TEST_TRANSFER = 100;
+const BASIS_POINTS = 10000;
+
 let PROXY_CONTRACT;
 //  The PROXY_CONTRACT with the implemenation
 let PROXY;
@@ -24,7 +30,6 @@ let root;
 let multisig;
 let user1;
 let user2;
-//const BASIS_POINTS = 10000;
 
 describe("unit - AMOR Token", function () {
 

@@ -2,12 +2,12 @@
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
 pragma solidity 0.8.14;
-/// @title  Interface for ERC20Taxable 
+
+/// @title  Interface for ERC20Taxable
 /// @author Daoism Systems Team
 
-
-    interface IERC20Taxable {
-        /**
+interface IERC20Taxable {
+    /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
      * another (`to`).
      *
@@ -79,7 +79,6 @@ pragma solidity 0.8.14;
         address to,
         uint256 amount
     ) external returns (bool);
-
 
     /// View the current tax rate in basis points
     function viewRate() external view returns (uint256);

@@ -10,6 +10,7 @@ const initialize = async (accounts) => {
     doingud_multisig: accounts[1],
     user1: accounts[2],
     user2: accounts[3]
+
   };
 
   return setup;
@@ -56,3 +57,17 @@ module.exports = {
   initialize,
   getTokens
 };
+=======
+
+  const tokens = {
+
+  };
+
+  setup.tokens = tokens;
+  return tokens;
+};
+
+module.exports = {
+  initialize,
+  getTokens,
+}; 
