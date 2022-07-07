@@ -204,7 +204,7 @@ abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
      * `subtractedValue`.
      * 
      * @param spender the address which has an allowance that must be adjusted
-     * @param substractedValue the amount by which the allowance of the spender must be decreased
+     * @param subtractedValue the amount by which the allowance of the spender must be decreased
      * @return bool to indicate if the decrease allowance was successful
      */
     function decreaseAllowance(address spender, uint256 subtractedValue) external virtual returns (bool) {
