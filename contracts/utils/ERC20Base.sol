@@ -21,8 +21,8 @@ abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
     uint256 internal _totalSupply;
 
     /// ***Non-standard implementation of _name and _symbol***
-    string internal _name;
-    string internal _symbol;
+    string public name;
+    string public symbol;
     bool internal _detailsSet;
 
     uint8 internal _decimals;
@@ -55,25 +55,10 @@ abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
         if (_detailsSet) {
             revert AlreadySet();
         }
-        _name = name_;
-        _symbol = symbol_;
+        name = name_;
+        symbol = symbol_;
         _detailsSet = true;
         _decimals = uint8(18);
-    }
-
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() public view override returns (string memory) {
-        return _name;
-    }
-
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public view override returns (string memory) {
-        return _symbol;
     }
 
     /**

@@ -49,8 +49,8 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
      *          It can only be run once.
     */
     function init(
-        string memory name, 
-        string memory symbol, 
+        string memory _name, 
+        string memory _symbol, 
         address _initCollector, 
         uint256 _initTaxRate,
         address _multisig
@@ -61,8 +61,8 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         //  Set the owner to the Multisig
         _transferOwnership(_multisig);
         //  Set the name and symbol
-        _name = name;
-        _symbol = symbol;
+        name = _name;
+        symbol = _symbol;
         //  Pre-mint to the multisig address
         _mint(_multisig, 10000000 * 10 ** decimals());
         //  Set the tax collector address 

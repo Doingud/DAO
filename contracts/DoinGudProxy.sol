@@ -19,7 +19,7 @@ pragma solidity 0.8.15;
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "@openzeppelin/contracts/proxy/Proxy.sol";
 
-contract AMORProxy is Proxy, ERC1967Upgrade {
+contract DoinGudProxy is Proxy, ERC1967Upgrade {
     bool private _initializedProxy;
 
     error Initialized();
