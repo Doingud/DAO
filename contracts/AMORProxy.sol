@@ -20,7 +20,7 @@ import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "@openzeppelin/contracts/proxy/Proxy.sol";
 
 contract AMORProxy is Proxy, ERC1967Upgrade {
-    bool private _initialized;
+    bool private _initializedProxy;
 
     error Initialized();
     /**
@@ -30,11 +30,11 @@ contract AMORProxy is Proxy, ERC1967Upgrade {
      * function call, and allows initializing the storage of the proxy like a Solidity constructor.
      */
     function initProxy(address _logic, bytes memory _data) public payable {
-        if (_initialized) {
+        if (_initializedProxy) {
             revert Initialized();
         }
         _upgradeToAndCall(_logic, _data, false);
-        _initialized = true;
+        _initializedProxy = true;
     }
 
     //  Uprade the token implementation

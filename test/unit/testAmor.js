@@ -58,8 +58,9 @@ describe("unit - AMOR Token", function () {
     describe("proxy initialization", function () {
       it("initializes the proxy's storage", async function () {
         
+        
         expect(await PROXY.init(
-            AMOR_TOKEN_NAME,
+          AMOR_TOKEN_NAME,
           AMOR_TOKEN_SYMBOL,
           multisig.address,
           TAX_RATE,
