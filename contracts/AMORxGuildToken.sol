@@ -20,7 +20,7 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /// Interface to expose ERC20Taxable functions
-import "./utils/interfaces/IERC20Taxable.sol";
+import "./utils/interfaces/IAmorToken.sol";
 
 /// Advanced math functions for bonding curve
 import "./utils/ABDKMath64x64.sol";
@@ -33,7 +33,7 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     bool private _initialized;
 
     /// The proxy contract address for AMOR
-    IERC20Taxable private tokenAmor;
+    IAmorToken private tokenAmor;
     /// The token logic for AMORxGuild
     address private _implementation;
     /// Co-efficient
@@ -111,7 +111,7 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     }
 
     function _setAmorAddress(address _token) internal {
-        tokenAmor = IERC20Taxable(_token);
+        tokenAmor = IAmorToken(_token);
     }
 
     function pause() public onlyOwner {
