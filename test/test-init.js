@@ -59,11 +59,8 @@ module.exports = {
 };
 
   const tokens = {
-
-  };
-
-  setup.tokens = tokens;
-  return tokens;
+    setup.tokens = tokens;
+    return tokens;
 };
 
 module.exports = {
