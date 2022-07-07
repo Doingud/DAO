@@ -21,12 +21,12 @@ const getTokens = async (setup) => {
 
   const FXAMORxGuildFactory = await ethers.getContractFactory('FXAMORxGuild');
   const FXAMORxGuild = await FXAMORxGuildFactory.deploy();
-  await FXAMORxGuild.init(
-    "DoinGud MetaDAO", 
-    "FXAMORxGuild", 
-    setup.roles.operator.address, 
-    ERC20Token.address
-  ); 
+  // await FXAMORxGuild.init(
+  //   "DoinGud MetaDAO", 
+  //   "FXAMORxGuild", 
+  //   setup.roles.operator.address, //controller
+  //   ERC20Token.address
+  // ); 
 
   const guardianThreshold = 10;
   // const dAMORxGuildFactory = await ethers.getContractFactory('dAMORxGuild');
@@ -60,6 +60,13 @@ const controller = async (setup, impactPoll, projectPoll) => {
     impactPoll.address,
     projectPoll.address
   );
+
+  await setup.tokens.FXAMORxGuild.init(
+    "DoinGud MetaDAO", 
+    "FXAMORxGuild", 
+    controller.address, //controller
+    setup.tokens.ERC20Token.address
+  ); 
 
   return controller;
 };

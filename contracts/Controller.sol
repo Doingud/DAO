@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
+import "hardhat/console.sol";
 /// @title Controller contract
 /// @author Daoism Systems Team
 /// @notice Controller contract controls the all of the deployed contracts of the guild
@@ -89,17 +89,24 @@ contract Controller {
             revert InvalidAmount(amount, IERC20(AMORxGuild).balanceOf(msg.sender));
         }
 
+        // send donation to the Controller
+        // IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount);
+
         uint256 ipAmount = (amount * impactFees) / FEE_DENOMINATOR; // amount to Impact poll
         uint256 ppAmount = (amount * projectFees) / FEE_DENOMINATOR; // amount to project poll
 
-        IERC20(AMORxGuild).transfer(impactPoll, ipAmount);
-        IERC20(AMORxGuild).transfer(projectPoll, ppAmount);
-
-        uint256 FxGAmount = (amount * 100) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = AMORxGuildAmount * 100 / 10
+        uint256 FxGAmount = (ipAmount * 100) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact poll AMORxGuildAmount * 100 / 10
         // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens, 
         // which are going to be owned by the user.
+        IERC20(AMORxGuild).transferFrom(msg.sender, address(this), FxGAmount);//ipAmount);
+        IERC20(AMORxGuild).approve(FXAMORxGuild, FxGAmount);
+
         IFXAMORxGuild(FXAMORxGuild).stake(msg.sender, FxGAmount);
         
+        uint256 decIpAmount = ipAmount - FxGAmount; //decreased ipAmount
+        IERC20(AMORxGuild).transferFrom(msg.sender, impactPoll, decIpAmount);
+        IERC20(AMORxGuild).transferFrom(msg.sender, projectPoll, ppAmount);
+
         return amount;
     }
 

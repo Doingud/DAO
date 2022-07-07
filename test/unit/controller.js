@@ -4,6 +4,10 @@ const { ethers } = require('hardhat');
 const { TWO_HUNDRED_ETHER, ONE_HUNDRED_ETHER, FIFTY_ETHER, MOCK_GUILD_NAMES, MOCK_GUILD_SYMBOLS } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
+const FEE_DENOMINATOR = 1000;
+const impactFees = 800; //80% // FEE_DENOMINATOR/100*80
+const projectFees = 200; //20%
+
 let AMORxGuild;
 let FXAMORxGuild
 let controller;
@@ -72,7 +76,16 @@ describe('unit - Contract: Controller', function () {
             await AMORxGuild.connect(operator).approve(controller.address, ONE_HUNDRED_ETHER);
 
             await controller.connect(operator).donate(ONE_HUNDRED_ETHER);        
-            expect((await controller.balanceOf(operator.address)).toString()).to.equal(ONE_HUNDRED_ETHER.toString());
+            
+            const ipAmount = (ONE_HUNDRED_ETHER * impactFees) / FEE_DENOMINATOR; // amount to Impact poll
+            const ppAmount = (ONE_HUNDRED_ETHER * projectFees) / FEE_DENOMINATOR; // amount to project poll
+            const FxGAmount = (ipAmount * 100) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of amount to Impact poll
+            const decIpAmount = ipAmount - FxGAmount; //decreased ipAmount
+
+            expect((await AMORxGuild.balanceOf(impactPoll.address)).toString()).to.equal(decIpAmount.toString());
+            expect((await AMORxGuild.balanceOf(projectPoll.address)).toString()).to.equal(ppAmount.toString());
+            expect((await FXAMORxGuild.balanceOf(operator.address)).toString()).to.equal(FxGAmount.toString());
+
         });
 
     });
