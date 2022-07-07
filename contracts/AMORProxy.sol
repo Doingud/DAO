@@ -33,7 +33,7 @@ contract AMORProxy is Proxy, ERC1967Upgrade {
         if (_initializedProxy) {
             revert Initialized();
         }
-        _upgradeToAndCall(_logic, _data, false);
+        _upgradeTo(_logic);
         _initializedProxy = true;
     }
 

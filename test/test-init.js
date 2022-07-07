@@ -1,6 +1,6 @@
 //  Init the test environment
 
-const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants');
+//const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants');
 const { ethers } = require('hardhat');
 
 const initialize = async (accounts) => {
@@ -10,6 +10,7 @@ const initialize = async (accounts) => {
     doingud_multisig: accounts[1],
     user1: accounts[2],
     user2: accounts[3]
+
   };
 
   return setup;
@@ -30,6 +31,7 @@ const getTokens = async (setup) => {
 
     //  Amor Tokens
     const AmorTokenImplementation = await AmorTokenFactory.deploy();
+    const AmorTokenMockUpgrade = await AmorTokenFactory.deploy();
     const AmorTokenProxy = await AmorTokenProxyFactory.deploy();
     
     /*  AmorGuild Tokens
@@ -40,11 +42,12 @@ const getTokens = async (setup) => {
 
     const tokens = {
       AmorTokenImplementation,
-      AmorTokenProxy
+      AmorTokenProxy,
+      AmorTokenMockUpgrade
       /*AmorGuildToken,
       AmorGuildTokenProxy,
-      AmorGuildCloneFactory
-    */};
+      AmorGuildCloneFactory*/
+    };
 
     setup.tokens = tokens;
     return tokens;
@@ -54,3 +57,8 @@ module.exports = {
   initialize,
   getTokens
 };
+
+module.exports = {
+  initialize,
+  getTokens,
+}; 
