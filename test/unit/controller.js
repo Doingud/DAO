@@ -1,7 +1,6 @@
-const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants.js');
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { TWO_HUNDRED_ETHER, ONE_HUNDRED_ETHER, FIFTY_ETHER, MOCK_GUILD_NAMES, MOCK_GUILD_SYMBOLS } = require('../helpers/constants.js');
+const { ONE_HUNDRED_ETHER } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
 const FEE_DENOMINATOR = 1000;
@@ -16,7 +15,6 @@ let projectPoll;
 let root;
 let authorizer_adaptor;
 let operator;
-let staker;
 
 describe('unit - Contract: Controller', function () {
 
@@ -33,7 +31,6 @@ describe('unit - Contract: Controller', function () {
         root = setup.roles.root;
         authorizer_adaptor = setup.roles.authorizer_adaptor;
         operator = setup.roles.operator;
-        staker = setup.roles.staker;
     });
 
     before('>>> setup', async function() {
@@ -48,7 +45,6 @@ describe('unit - Contract: Controller', function () {
             expect(await controller.guild()).to.equals(authorizer_adaptor.address);
             expect(await controller.impactPoll()).to.equals(impactPoll.address);
             expect(await controller.projectPoll()).to.equals(projectPoll.address);
-
         });
 
         it("Should fail if called more than once", async function () {
@@ -85,7 +81,6 @@ describe('unit - Contract: Controller', function () {
             expect((await AMORxGuild.balanceOf(impactPoll.address)).toString()).to.equal(decIpAmount.toString());
             expect((await AMORxGuild.balanceOf(projectPoll.address)).toString()).to.equal(ppAmount.toString());
             expect((await FXAMORxGuild.balanceOf(operator.address)).toString()).to.equal(FxGAmount.toString());
-
         });
 
     });

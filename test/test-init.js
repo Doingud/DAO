@@ -28,7 +28,7 @@ const getTokens = async (setup) => {
   //   ERC20Token.address
   // ); 
 
-  const guardianThreshold = 10;
+  // const guardianThreshold = 10;
   // const dAMORxGuildFactory = await ethers.getContractFactory('dAMORxGuild');
   // const dAMORxGuild = await dAMORxGuildFactory.deploy();
   // await dAMORxGuild.init(
