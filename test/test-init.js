@@ -58,11 +58,6 @@ module.exports = {
   getTokens
 };
 
-  const tokens = {
-    setup.tokens = tokens;
-    return tokens;
-};
-
 module.exports = {
   initialize,
   getTokens,
