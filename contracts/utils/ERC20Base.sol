@@ -1,61 +1,70 @@
 // SPDX-License-Identifier: MIT
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
-/// @title  ERC20Taxable
-/// @author Daoism Systems Team
-/// @notice Implements a "tax"/"fee" on any token transfers
-/// @dev    "Tax" mechanism implemented within _transfer() function
+/// @title  ERC20Base 
+/// @author Initial author OpenZeppelin, modified by Daoism Systems
+/// @notice To be used in clones where constructor calls cannot be used
+/// @dev    No constructor, but has a setToken detail function which can only be called once
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
-/**
- * @dev Implementation of the {IERC20} interface.
- *
- * This implementation is agnostic to the way tokens are created. This means
- * that a supply mechanism has to be added in a derived contract using {_mint}.
- * For a generic mechanism see {ERC20PresetMinterPauser}.
- *
- * TIP: For a detailed writeup see our guide
- * https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How
- * to implement supply mechanisms].
- *
- * We have followed general OpenZeppelin Contracts guidelines: functions revert
- * instead returning `false` on failure. This behavior is nonetheless
- * conventional and does not conflict with the expectations of ERC20
- * applications.
- *
- * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
- * This allows applications to reconstruct the allowance for all accounts just
- * by listening to said events. Other implementations of the EIP may not emit
- * these events, as it isn't required by the specification.
- *
- * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
- * functions have been added to mitigate the well-known issues around setting
- * allowances. See {IERC20-approve}.
- */
-contract ERC20Taxable is Context, IERC20, IERC20Metadata {
-    mapping(address => uint256) private _balances;
 
-    mapping(address => mapping(address => uint256)) private _allowances;
+abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
+    mapping(address => uint256) internal _balances;
 
-    uint256 private _totalSupply;
+    mapping(address => mapping(address => uint256)) internal _allowances;
 
+    uint256 internal _totalSupply;
+
+    /// ***Non-standard implementation of _name and _symbol***
     string internal _name;
     string internal _symbol;
+    bool internal _detailsSet;
 
-    uint256 internal taxRate;
-    address internal taxCollector;
+    uint8 internal _decimals;
+    
+    /// Reverts if invalid transfer address
+    error InvalidTransfer();
 
-    uint256 public constant BASIS_POINTS = 10000;
+    /// Reverts if invalid address used in approve
+    error InvalidApprove();
+
+    /// Reverts if trying to change the token name and symbol
+    error AlreadySet();
+
+    /// Reverts if amount is invalid
+    error InvalidAmount();
+
+    /// Reverts if address is address(0)
+    error InvalidAddress();
+
+    /**
+     * @dev Sets the values for {name} and {symbol}.
+     *
+     * The default value of {decimals} is 18. To select a different value for
+     * {decimals} you should overload it.
+     *
+     * All two of these values should be immutable: they can only be set once during
+     * _setTokenDetail, which must be called upon initialization in the inheriting contract.
+     */
+    function _setTokenDetail(string memory name_, string memory symbol_) internal {
+        if (_detailsSet) {
+            revert AlreadySet();
+        }
+        _name = name_;
+        _symbol = symbol_;
+        _detailsSet = true;
+        _decimals = uint8(18);
+    }
 
     /**
      * @dev Returns the name of the token.
      */
-    function name() public view virtual override returns (string memory) {
+    function name() public view override returns (string memory) {
         return _name;
     }
 
@@ -63,7 +72,7 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
      * @dev Returns the symbol of the token, usually a shorter version of the
      * name.
      */
-    function symbol() public view virtual override returns (string memory) {
+    function symbol() public view override returns (string memory) {
         return _symbol;
     }
 
@@ -80,21 +89,21 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
      */
-    function decimals() public view virtual override returns (uint8) {
-        return 18;
+    function decimals() public view override returns (uint8) {
+        return _decimals;
     }
 
     /**
      * @dev See {IERC20-totalSupply}.
      */
-    function totalSupply() public view virtual override returns (uint256) {
+    function totalSupply() public view override returns (uint256) {
         return _totalSupply;
     }
 
     /**
      * @dev See {IERC20-balanceOf}.
      */
-    function balanceOf(address account) public view virtual override returns (uint256) {
+    function balanceOf(address account) public view override returns (uint256) {
         return _balances[account];
     }
 
@@ -174,7 +183,7 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
      *
      * - `spender` cannot be the zero address.
      */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+    function increaseAllowance(address spender, uint256 addedValue) external virtual returns (bool) {
         address owner = _msgSender();
         _approve(owner, spender, allowance(owner, spender) + addedValue);
         return true;
@@ -193,11 +202,18 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
      * - `spender` cannot be the zero address.
      * - `spender` must have allowance for the caller of at least
      * `subtractedValue`.
+     * 
+     * @param spender the address which has an allowance that must be adjusted
+     * @param subtractedValue the amount by which the allowance of the spender must be decreased
+     * @return bool to indicate if the decrease allowance was successful
      */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+    function decreaseAllowance(address spender, uint256 subtractedValue) external virtual returns (bool) {
         address owner = _msgSender();
         uint256 currentAllowance = allowance(owner, spender);
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
+        
+        if (currentAllowance < subtractedValue) {
+            revert InvalidAmount();
+        }
         unchecked {
             _approve(owner, spender, currentAllowance - subtractedValue);
         }
@@ -205,50 +221,13 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
         return true;
     }
 
-    /// @notice Sets the tax rate for transfer and transferFrom
-    /// @dev    Should be overridden in derived contracts for access control
-    /// @dev    Rate should be expressed in basis points
-    /// @param  newRate uint256 representing new tax rate
-    function setTaxRate(uint256 newRate) public virtual {
-        taxRate = newRate;
-    }
-
-    /// View the current tax rate in basis points
-    function viewRate() public view returns (uint256) {
-        return taxRate;
-    }
-
-    /// @notice Sets the address which receives taxes
-    /// @dev    Should be overridden in derived contracts to add access control
-    /// @param  newTaxCollector address which must receive taxes
-    function setTaxCollector(address newTaxCollector) internal virtual {
-        require(newTaxCollector != taxCollector, "Already set");
-        require(newTaxCollector != address(0), "Zero address");
-        taxCollector = newTaxCollector;
-    }
-
-    /// View the current tax collector address
-    function viewCollector() public view returns (address) {
-        return taxCollector;
-    }
-
-    /// View the basis points constant
-    function viewBasisPoints() public pure returns (uint256) {
-        return BASIS_POINTS;
-    }
-
     /**
      * @dev Moves `amount` of tokens from `from` to `to`.
      *
-     * **Caution**
-     * This is a non-standard implementation
-     * It uses the tax rate to calculate a "tax" which is transferred
-     * to the tax collector
+     * This internal function is equivalent to {transfer}, and can be used to
+     * e.g. implement automatic token fees, slashing mechanisms, etc.
      *
-     * - implemented for Daoism Systems
-     * - be aware that for extremely small transfers the tax rate becomes 0
-     *
-     * Emits TWO {Transfer} events.
+     * Emits a {Transfer} event.
      *
      * Requirements:
      *
@@ -261,35 +240,27 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
         address to,
         uint256 amount
     ) internal virtual {
-        require(from != address(0), "ERC20: transfer from the zero address");
-        require(to != address(0), "ERC20: transfer to the zero address");
+        if (from == address(0) || to == address(0)) {
+            revert InvalidTransfer();
+        }
 
         _beforeTokenTransfer(from, to, amount);
 
         uint256 fromBalance = _balances[from];
-        require(fromBalance >= amount, "ERC20: transfer amount exceeds balance");
+
+        if (fromBalance < amount) {
+            revert InvalidAmount();
+        }
         unchecked {
             _balances[from] = fromBalance - amount;
         }
+        _balances[to] += amount;
 
-        if (taxRate > 0) {
-            uint256 taxAmount = (amount * taxRate) / BASIS_POINTS;
-            uint256 afterTaxAmount = amount - taxAmount;
-            _balances[taxCollector] += taxAmount;
-
-            emit Transfer(from, taxCollector, taxAmount);
-
-            _balances[to] += afterTaxAmount;
-
-            emit Transfer(from, to, (amount - taxAmount));
-        } else {
-            _balances[to] += amount;
-
-            emit Transfer(from, to, amount);
-        }
+        emit Transfer(from, to, amount);
 
         _afterTokenTransfer(from, to, amount);
     }
+
 
     /** @dev Creates `amount` tokens and assigns them to `account`, increasing
      * the total supply.
@@ -301,7 +272,9 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
      * - `account` cannot be the zero address.
      */
     function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
+        if (account == address(0)) {
+            revert InvalidAddress();
+        }
 
         _beforeTokenTransfer(address(0), account, amount);
 
@@ -324,12 +297,16 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
      * - `account` must have at least `amount` tokens.
      */
     function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
-
+        if (account == address(0)) {
+            revert InvalidTransfer();
+        }
+        
         _beforeTokenTransfer(account, address(0), amount);
 
         uint256 accountBalance = _balances[account];
-        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
+        if (accountBalance < amount) {
+            revert InvalidAmount();
+        }
         unchecked {
             _balances[account] = accountBalance - amount;
         }
@@ -358,9 +335,10 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
         address spender,
         uint256 amount
     ) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
+        if (owner == address(0) || spender == address(0)) {
+            revert InvalidApprove();
+        }
+        
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
@@ -380,7 +358,9 @@ contract ERC20Taxable is Context, IERC20, IERC20Metadata {
     ) internal virtual {
         uint256 currentAllowance = allowance(owner, spender);
         if (currentAllowance != type(uint256).max) {
-            require(currentAllowance >= amount, "ERC20: insufficient allowance");
+            if (currentAllowance < amount) {
+                revert InvalidAmount();
+            }
             unchecked {
                 _approve(owner, spender, currentAllowance - amount);
             }
