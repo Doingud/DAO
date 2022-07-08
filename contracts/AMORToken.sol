@@ -7,14 +7,14 @@
 
 /**
  *  @dev Implementation of the AMOR token Logic for DoinGud MetaDAO
- *  
+ *
  *  The Token Logic contract is referenced by the proxy (storage) implementation.
- *  
+ *
  *  This contract must not store data!
- *   
+ *
  *  The contract extends the ERC20Taxable contract and exposes the setTaxCollector() and
- *  setTaxRate() functions from the ERC20Taxable contract and allows for custom 
- *  require() statements within these functions. 
+ *  setTaxRate() functions from the ERC20Taxable contract and allows for custom
+ *  require() statements within these functions.
  *
  *  The setTaxCollector() and setTaxRate() functions should be set on deploy and are
  *  not immutable.
@@ -47,7 +47,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
 
     /*  @dev    The init() function takes the place of the constructor.
      *          It can only be run once.
-    */
+     */
     function init(
         string memory _name, 
         string memory _symbol, 
@@ -73,7 +73,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         emit Initialized(_initialized, _initCollector, _initTaxRate);
         return true;
     }
-    
+
     /// @notice Sets the tax rate for transfer and transferFrom
     /// @dev    Rate is expressed in basis points, this must be divided by 10 000 to equal desired rate
     /// @param  newRate uint256 representing new tax rate, must be <= 500
@@ -87,7 +87,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
     /// @notice Sets the address which receives taxes
     /// @param  newTaxCollector address which must receive taxes
     function updateController(address newTaxCollector) public onlyOwner {
-        if(newTaxCollector == address(this)) {
+        if (newTaxCollector == address(this)) {
             revert InvalidTaxCollector();
         }
         _updateController(newTaxCollector);
@@ -157,12 +157,11 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         _unpause();
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 amount)
-        internal
-        whenNotPaused
-        override
-    {
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override whenNotPaused {
         super._beforeTokenTransfer(from, to, amount);
     }
-
 }

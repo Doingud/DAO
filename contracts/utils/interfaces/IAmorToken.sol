@@ -79,7 +79,6 @@ pragma solidity 0.8.15;
         uint256 amount
     ) external returns (bool);
 
-
     /// View the current tax rate in basis points
     function viewRate() external view returns (uint256);
 
