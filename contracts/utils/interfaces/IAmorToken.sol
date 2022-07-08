@@ -2,11 +2,12 @@
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
 pragma solidity 0.8.15;
+
 /// @title  Interface for AmorToken.sol
 /// @author Daoism Systems Team
 
-    interface IAmorToken {
-        /**
+interface IAmorToken {
+    /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
      * another (`to`).
      *
