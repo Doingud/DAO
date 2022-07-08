@@ -27,7 +27,6 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract AMORToken is ERC20Base, Pausable, Ownable {
-
     //  Tax controller
     address public taxController;
     //  Tax Rate
@@ -50,8 +49,8 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
      */
     function init(
         string memory _name, 
-        string memory _symbol, 
-        address _initCollector, 
+        string memory _symbol,
+        address _initCollector,
         uint256 _initTaxRate,
         address _multisig
     ) external returns (bool) {
@@ -64,7 +63,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         name = _name;
         symbol = _symbol;
         //  Pre-mint to the multisig address
-        _mint(_multisig, 10000000 * 10 ** decimals());
+        _mint(_multisig, 10000000 * 10**decimals());
         //  Set the tax collector address 
         updateController(_initCollector);
         //  Set the tax rate
@@ -92,7 +91,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         }
         _updateController(newTaxCollector);
     }    
-    
+
     /// @notice Sets the address which receives taxes
     /// @param  newTaxCollector address which must receive taxes
     function _updateController(address newTaxCollector) internal {
@@ -129,7 +128,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         }
 
         if (taxRate > 0) {
-            uint256 taxAmount = amount * taxRate / BASIS_POINTS;
+            uint256 taxAmount = (amount * taxRate) / BASIS_POINTS;
             uint256 afterTaxAmount = amount - taxAmount;
             _balances[taxController] += taxAmount;
 
@@ -148,7 +147,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
     }
 
     /// @notice Pause functionality for AMOR
-    /// @dev    For security purposes, should there be an exploit.    
+    /// @dev    For security purposes, should there be an exploit.
     function pause() external onlyOwner {
         _pause();
     }

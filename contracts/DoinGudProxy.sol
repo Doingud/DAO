@@ -7,14 +7,14 @@ pragma solidity 0.8.15;
 /// @notice Data storage for the DoingGud Guild (AMORxGuild) tokens
 /// @dev    ERC1967 compliant, upgradeable proxy implementation
 
-/*  
+/*
  *  The contract extends the ERC1967Proxy contract from OpenZeppelin.
- *  All calls to this contract (except getImplementation()) should 
+ *  All calls to this contract (except getImplementation()) should
  *  default to the fallback() function which calls delegateCall()
  *  to the implementation contract.
  *
  *  This proxy contract acts as the storage contract for the implementation contract.
-*/
+ */
 
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "@openzeppelin/contracts/proxy/Proxy.sol";
@@ -23,13 +23,14 @@ contract DoinGudProxy is Proxy, ERC1967Upgrade {
     bool private _initializedProxy;
 
     error Initialized();
+
     /**
      * @dev Initializes the upgradeable proxy with an initial implementation specified by `_logic`.
      *
      * If `_data` is nonempty, it's used as data in a delegate call to `_logic`. This will typically be an encoded
      * function call, and allows initializing the storage of the proxy like a Solidity constructor.
      */
-    function initProxy(address _logic, bytes memory _data) public payable {
+    function initProxy(address _logic) public payable {
         if (_initializedProxy) {
             revert Initialized();
         }
@@ -54,4 +55,5 @@ contract DoinGudProxy is Proxy, ERC1967Upgrade {
     function _implementation() internal view virtual override returns (address impl) {
         return ERC1967Upgrade._getImplementation();
     }
+
 }
