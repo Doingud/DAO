@@ -48,7 +48,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
      *          It can only be run once.
      */
     function init(
-        string memory _name, 
+        string memory _name,
         string memory _symbol,
         address _initCollector,
         uint256 _initTaxRate,
@@ -64,7 +64,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         symbol = _symbol;
         //  Pre-mint to the multisig address
         _mint(_multisig, 10000000 * 10**decimals());
-        //  Set the tax collector address 
+        //  Set the tax collector address
         updateController(_initCollector);
         //  Set the tax rate
         setTaxRate(_initTaxRate);
@@ -77,7 +77,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
     /// @dev    Rate is expressed in basis points, this must be divided by 10 000 to equal desired rate
     /// @param  newRate uint256 representing new tax rate, must be <= 500
     function setTaxRate(uint256 newRate) public onlyOwner {
-        if(newRate > 500) {
+        if (newRate > 500) {
             revert InvalidRate();
         }
         _setTaxRate(newRate);
@@ -90,7 +90,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
             revert InvalidTaxCollector();
         }
         _updateController(newTaxCollector);
-    }    
+    }
 
     /// @notice Sets the address which receives taxes
     /// @param  newTaxCollector address which must receive taxes
@@ -115,7 +115,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         if (from == address(0) || to == address(0)) {
             revert InvalidTransfer();
         }
-        
+
         _beforeTokenTransfer(from, to, amount);
 
         uint256 fromBalance = _balances[from];
