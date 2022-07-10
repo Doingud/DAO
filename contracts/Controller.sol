@@ -112,14 +112,14 @@ contract Controller {
     /// @dev As soon as the report added, voting on it can start.
     /// @param report The report to add
     /// @param signature Function checks if a report is ok to start voting on(based on signature)
-    function addReport(bytes memory report, bytes memory signature) external onlyAddress(owner) {
+    function addReport(bytes memory report, bytes memory signature) external {
 
         uint256 newReportId = reportsWeight.length;
 
         // saveRepostContent = report; TODO
 
         reportsWeight[newReportId] = 0;//report);//[length] = 0;
-        reportsVoting[newReportId] = 0;//[length] = 0;
+        // reportsVoting[newReportId] = 0;//[length] = 0;
 
 
         // int256[] reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
@@ -127,5 +127,32 @@ contract Controller {
         // mapping(uint256 => address[]) voters; // voters mapping(uint report => address [] voters)
         // uint256[] reportsVoting; // results of the vote for the report with specific id
         // mapping(address => bool) impactMakers;
+    }
+
+    /// @notice burns the amount of FXTokens, and changes a report weight, based on a sign provided. 
+    /// It also sets a vote info for a specific voter. 
+    /// @dev As soon as the first vote goes for report, we create a time limit for vote(a week).
+    /// @param id ID of report to voter for
+    /// @param amount Amount of FXTokens to use for vote and burn
+    /// @param sign Signature
+    function voteForReport(uint256 id, uint256 amount, bool sign) external {
+
+        reportsWeight[id] += amount;
+        // reportsVoting[newReportId] = 0;//[length] = 0;
+    }
+
+    /// @notice distributes funds, depending on the report ids, for which votings were conducted. 
+   
+    function finalizeReportVoting(uint256 id) external {
+
+        if (reportsWeight[id] >= 0) {
+            // If report has positive voting weight, then funds go 50-50%, 50% go to the report creater, 
+            // and 50% goes to the people who voted positively
+
+        } else {
+            // If report has negative voting weight, then 50% goes to the people who voted negatively, 
+            // and 50% gets redistributed between the passed reports based on their weights
+            
+        }
     }
 }
