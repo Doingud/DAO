@@ -107,4 +107,25 @@ contract Controller {
 
         return amount;
     }
+
+    /// @notice adds another element to the reportsWeight, with weight 0, and starts voting on it. 
+    /// @dev As soon as the report added, voting on it can start.
+    /// @param report The report to add
+    /// @param signature Function checks if a report is ok to start voting on(based on signature)
+    function addReport(bytes memory report, bytes memory signature) external onlyAddress(owner) {
+
+        uint256 newReportId = reportsWeight.length;
+
+        // saveRepostContent = report; TODO
+
+        reportsWeight[newReportId] = 0;//report);//[length] = 0;
+        reportsVoting[newReportId] = 0;//[length] = 0;
+
+
+        // int256[] reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
+        // mapping(uint256 => mapping(address => int256)) votes; // votes mapping(uint report => mapping(address voter => int256 vote))
+        // mapping(uint256 => address[]) voters; // voters mapping(uint report => address [] voters)
+        // uint256[] reportsVoting; // results of the vote for the report with specific id
+        // mapping(address => bool) impactMakers;
+    }
 }
