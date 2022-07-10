@@ -3,6 +3,7 @@ pragma solidity 0.8.14;
 
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 
 /// @title Controller contract
 /// @author Daoism Systems Team
@@ -132,17 +133,28 @@ contract Controller {
     /// @notice burns the amount of FXTokens, and changes a report weight, based on a sign provided. 
     /// It also sets a vote info for a specific voter. 
     /// @dev As soon as the first vote goes for report, we create a time limit for vote(a week).
-    /// @param id ID of report to voter for
+    /// @param id ID of report to vote for
     /// @param amount Amount of FXTokens to use for vote and burn
-    /// @param sign Signature
-    function voteForReport(uint256 id, uint256 amount, bool sign) external {
+    /// @param sign The signature of the voting signed by the reporter
+    function voteForReport(uint256 id, int256 amount, bool sign) external {
+
+
+        bytes32 hash = ; //TODO
+        require(
+            SignatureChecker.isValidSignatureNow(
+                msg.sender,
+                hash
+                rootSig
+            ),
+            "invalid result signature"
+        );
 
         reportsWeight[id] += amount;
         // reportsVoting[newReportId] = 0;//[length] = 0;
     }
 
     /// @notice distributes funds, depending on the report ids, for which votings were conducted. 
-   
+    /// @param id ID of report from distributes funds
     function finalizeReportVoting(uint256 id) external {
 
         if (reportsWeight[id] >= 0) {
@@ -152,7 +164,7 @@ contract Controller {
         } else {
             // If report has negative voting weight, then 50% goes to the people who voted negatively, 
             // and 50% gets redistributed between the passed reports based on their weights
-            
+
         }
     }
 }

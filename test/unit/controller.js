@@ -15,6 +15,8 @@ let projectPoll;
 let root;
 let authorizer_adaptor;
 let operator;
+let report;
+let signature;
 
 describe('unit - Contract: Controller', function () {
 
@@ -85,5 +87,35 @@ describe('unit - Contract: Controller', function () {
 
     });
 
+    context('» reports testing', () => {
 
+        it('it fails to donate AMORxGuild tokens if not enough AMORxGuild', async function () {
+            await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER)).to.be.revertedWith(
+                'InvalidAmount(100000000000000000000, 0)'
+            );
+        });
+
+        it('it fails to add report if ', async function () {
+            await AMORxGuild.connect(root).mint(operator.address, ONE_HUNDRED_ETHER);
+            await AMORxGuild.connect(operator).approve(controller.address, ONE_HUNDRED_ETHER);
+
+            report = '0xF';
+            signature = '0xF';
+            const amount = ;
+            await controller.connect(operator).addReport(report, signature);        
+    
+            expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(amount.toString());
+        });
+
+        it('adds report', async function () {
+            await AMORxGuild.connect(root).mint(operator.address, ONE_HUNDRED_ETHER);
+            await AMORxGuild.connect(operator).approve(controller.address, ONE_HUNDRED_ETHER);
+            
+            const amount = ;
+            await controller.connect(operator).addReport(report, signature);        
+
+            expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(amount.toString());
+        });
+
+    });
 });
