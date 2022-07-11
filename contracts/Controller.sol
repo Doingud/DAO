@@ -114,6 +114,12 @@ contract Controller {
     /// @param signature Function checks if a report is ok to start voting on(based on signature)
     function addReport(bytes memory report, bytes memory signature) external {
 
+// report - hash or report (timestamp and report header)
+// signature - signature of this report
+// each report is an NFT (maybe hash-id of NFT and sign this NFT-hash)
+
+
+
         uint256 newReportId = reportsWeight.length;
 
         // saveRepostContent = report; TODO
@@ -138,6 +144,8 @@ contract Controller {
     function voteForReport(uint256 id, int256 amount, bool sign) external {
         IFXAMORxGuild(FXAMORxGuild).burn(msg.sender, amount);
 
+        //check if the week has passed - can vote only a week from first vote
+
         if (sign == true) {
             reportsWeight[id] += amount;
         } else {
@@ -151,12 +159,16 @@ contract Controller {
     /// @param id ID of report from distributes funds
     function finalizeReportVoting(uint256 id) external {
 
+// if > 80% positive FX tokens --> then report was accepted
+
         if (reportsWeight[id] >= 0) {
-            // If report has positive voting weight, then funds go 50-50%, 50% go to the report creater, 
+            // If report has positive voting weight, then funds go 50-50%, 
+            // 50% go to the report creater, 
             // and 50% goes to the people who voted positively
 
         } else {
-            // If report has negative voting weight, then 50% goes to the people who voted negatively, 
+            // If report has negative voting weight, then 
+            // 50% goes to the people who voted negatively, 
             // and 50% gets redistributed between the passed reports based on their weights
 
         }
