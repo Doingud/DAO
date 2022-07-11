@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
-/// @title  ERC20Base 
+/// @title  ERC20Base
 /// @author Initial author OpenZeppelin, modified by Daoism Systems
 /// @notice To be used in clones where constructor calls cannot be used
 /// @dev    No constructor, but has a setToken detail function which can only be called once
@@ -12,7 +12,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
-
 abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
     mapping(address => uint256) internal _balances;
 
@@ -21,12 +20,12 @@ abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
     uint256 internal _totalSupply;
 
     /// ***Non-standard implementation of _name and _symbol***
-    string internal _name;
-    string internal _symbol;
+    string public name;
+    string public symbol;
     bool internal _detailsSet;
 
-    uint8 internal _decimals;
-    
+    uint8 public decimals;
+
     /// Reverts if invalid transfer address
     error InvalidTransfer();
 
@@ -55,42 +54,10 @@ abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
         if (_detailsSet) {
             revert AlreadySet();
         }
-        _name = name_;
-        _symbol = symbol_;
+        name = name_;
+        symbol = symbol_;
         _detailsSet = true;
-        _decimals = uint8(18);
-    }
-
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() public view override returns (string memory) {
-        return _name;
-    }
-
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public view override returns (string memory) {
-        return _symbol;
-    }
-
-    /**
-     * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5.05` (`505 / 10 ** 2`).
-     *
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless this function is
-     * overridden;
-     *
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
-     */
-    function decimals() public view override returns (uint8) {
-        return _decimals;
+        decimals = uint8(18);
     }
 
     /**
@@ -202,7 +169,7 @@ abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
      * - `spender` cannot be the zero address.
      * - `spender` must have allowance for the caller of at least
      * `subtractedValue`.
-     * 
+     *
      * @param spender the address which has an allowance that must be adjusted
      * @param subtractedValue the amount by which the allowance of the spender must be decreased
      * @return bool to indicate if the decrease allowance was successful
@@ -210,7 +177,7 @@ abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
     function decreaseAllowance(address spender, uint256 subtractedValue) external virtual returns (bool) {
         address owner = _msgSender();
         uint256 currentAllowance = allowance(owner, spender);
-        
+
         if (currentAllowance < subtractedValue) {
             revert InvalidAmount();
         }
@@ -261,7 +228,6 @@ abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
         _afterTokenTransfer(from, to, amount);
     }
 
-
     /** @dev Creates `amount` tokens and assigns them to `account`, increasing
      * the total supply.
      *
@@ -300,7 +266,7 @@ abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
         if (account == address(0)) {
             revert InvalidTransfer();
         }
-        
+
         _beforeTokenTransfer(account, address(0), amount);
 
         uint256 accountBalance = _balances[account];
@@ -338,7 +304,7 @@ abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
         if (owner == address(0) || spender == address(0)) {
             revert InvalidApprove();
         }
-        
+
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
