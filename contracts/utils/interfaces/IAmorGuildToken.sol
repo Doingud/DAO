@@ -6,8 +6,8 @@
 
 /**
  *  @dev Implementation of the AMORxGuild token for DoinGud
- *   
- *  The contract houses the token logic for AMORxGuild. 
+ *
+ *  The contract houses the token logic for AMORxGuild.
  *
  *  It varies from traditional ERC20 implementations by:
  *  1) Allowing the token name to be set with an `init()` function
@@ -17,7 +17,6 @@
 pragma solidity 0.8.15;
 
 interface IAmorxGuild {
-
     /// Events
     /// Emitted once token has been initialized
     event Initialized(string name, string symbol, address amorToken);
@@ -32,8 +31,11 @@ interface IAmorxGuild {
     /// @param  amorAddress the address of the AMOR token proxy
     /// @param  name the token name (e.g AMORxIMPACT)
     /// @param  symbol the token symbol
-    function init(address amorAddress, string memory name, string memory symbol) external;
-
+    function init(
+        address amorAddress,
+        string memory name,
+        string memory symbol
+    ) external;
 
     /// @notice Allows a user to stake their AMOR and receive AMORxGuild in return
     /// @param  to a parameter just like in doxygen (must be followed by parameter name)
@@ -45,5 +47,4 @@ interface IAmorxGuild {
     /// @param  amount uint256 amount of AMORxGuild to exchange for AMOR
     /// @return uint256 the amount of AMOR returned from burning AMORxGuild
     function withdrawAmor(uint256 amount) external returns (uint256);
-
 }

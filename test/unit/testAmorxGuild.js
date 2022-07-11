@@ -95,11 +95,11 @@ describe("unit - AMORxGuild", function () {
 
   context("stakeAmor()", () => {
     describe("staking behaviour", function () {
-      it("Should allow a user to stake 100 AMOR", async function () {
-        //console.log(balanceAmor.toString());
-        // Not working as expected
-        // The emitted arguments are <> but balances check out
+      it("Approve AMOR for stake", async function () {
         await AMOR_TOKEN.approve(AMOR_GUILD_TOKEN.address, MOCK_TEST_AMOUNT);
+      });
+      it("Should allow a user to stake 100 AMOR", async function () {
+ 
         expect(await AMOR_GUILD_TOKEN.stakeAmor(root.address, MOCK_TEST_AMOUNT)).
          to.emit(AMOR_TOKEN, "Transfer").
           withArgs(
@@ -114,8 +114,8 @@ describe("unit - AMORxGuild", function () {
       });
 
       it("Should increase the staker's AmorxGuild balanceOf by the expected amount", async function () {
-        expect(await AMOR_GUILD_TOKEN.balanceOf(root.address)).to.equal(ethers.utils.parseEther((10).toString()))
-        const AmorGuildTokens = await AMOR_GUILD_TOKEN.balanceOf(root.address);
+        expect(await AMOR_GUILD_TOKEN.balanceOf(root.address)).
+          to.equal(ethers.utils.parseEther((10).toString()))
       });
 
       it("Should revert if unsufficient AMOR", async function () {

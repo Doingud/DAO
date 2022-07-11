@@ -2,11 +2,12 @@
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
 pragma solidity 0.8.15;
+
 /// @title  Interface for AmorToken.sol
 /// @author Daoism Systems Team
 
-    interface IAmorToken {
-        /**
+interface IAmorToken {
+    /**
      * @dev Emitted when `value` tokens are moved from one account (`from`) to
      * another (`to`).
      *
@@ -19,6 +20,16 @@ pragma solidity 0.8.15;
      * a call to {approve}. `value` is the new allowance.
      */
     event Approval(address indexed owner, address indexed spender, uint256 value);
+
+    /**
+     * @dev Returns the tax rate of the AMOR token.
+     */
+    function taxRate() external view returns (uint256);
+
+    /**
+     * @dev Returns the basis points constant.
+     */
+    function BASIS_POINTS() external view returns (uint256);
 
     /**
      * @dev Returns the amount of tokens in existence.
@@ -78,7 +89,6 @@ pragma solidity 0.8.15;
         address to,
         uint256 amount
     ) external returns (bool);
-
 
     /// View the current tax rate in basis points
     function viewRate() external view returns (uint256);
