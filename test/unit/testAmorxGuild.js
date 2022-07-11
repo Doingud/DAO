@@ -12,8 +12,6 @@ const init = require('../test-init.js');
 
 use(solidity);
 
-  let PROXY_CONTRACT;
-
   let root;
   let multisig;
 
