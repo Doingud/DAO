@@ -4,16 +4,22 @@ pragma solidity 0.8.14;
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/// @title Controller contract
+/// @title GuildController contract
 /// @author Daoism Systems Team
-/// @notice Controller contract controls the all of the deployed contracts of the guild
+/// @notice GuildController contract controls the all of the deployed contracts of the guild
 
-contract Controller {
+contract GuildController  {
     int256[] reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
     mapping(uint256 => mapping(address => int256)) votes; // votes mapping(uint report => mapping(address voter => int256 vote))
     mapping(uint256 => address[]) voters; // voters mapping(uint report => address [] voters)
     uint256[] reportsVoting; // results of the vote for the report with specific id
     mapping(address => bool) impactMakers;
+    mapping(address => uint) claimableTokens; // amount of tokens each specific address(impactMaker) can claim.
+    mapping(address => uint) weights;// weight of each specific Impact Maker/Builder.
+    uint256 totalWeight; // total Weight of all of the impact makers.
+    uint256[] timeVoting; // time of the forst vote the report with specific id
+
+    uint256 public constant VOTING_TIME = 7 days; // 1 week is the time for the users to vore for the specific report
 
     address public owner;
     address public AMORxGuild;
@@ -33,6 +39,7 @@ contract Controller {
     error Unauthorized();
     error EmptyArray();
     error InvalidParameters();
+    error VotingTimeExpired();
 
     /// Invalid balance to transfer. Needed `minRequired` but sent `amount`
     /// @param sent sent amount.
@@ -110,15 +117,18 @@ contract Controller {
 
     /// @notice adds another element to the reportsWeight, with weight 0, and starts voting on it. 
     /// @dev As soon as the report added, voting on it can start.
-    /// @param report The report to add
-    /// @param signature Function checks if a report is ok to start voting on(based on signature)
-    function addReport(bytes memory report, bytes memory signature) external {
+    /// @param report Hash of report (timestamp and report header)
+    /// @param signature Signature of this report (splitted into uint8 v, bytes32 r, bytes32 s)
+    function addReport(bytes32 memory report, uint8 v, bytes32 r, bytes32 s) external { 
+        //function addReport(bytes32 memory report, bytes memory signature) external {
 
-// report - hash or report (timestamp and report header)
-// signature - signature of this report
 // each report is an NFT (maybe hash-id of NFT and sign this NFT-hash)
 
-
+        // ecrecover(bytes32 hash, uint8 v, bytes32 r, bytes32 s)
+        address signer = ecrecover(report, v, r, s);
+        if (signer != msg.sender) {
+            revert Unauthorized();
+        }
 
         uint256 newReportId = reportsWeight.length;
 
@@ -144,7 +154,16 @@ contract Controller {
     function voteForReport(uint256 id, int256 amount, bool sign) external {
         IFXAMORxGuild(FXAMORxGuild).burn(msg.sender, amount);
 
-        //check if the week has passed - can vote only a week from first vote
+        if (voters[id].length == 0) {
+            timeVoting[id] = block.timestamp;
+
+        } else if (block.timestamp > (timeVoting[id] + VOTING_TIME)) {
+            //check if the week has passed - can vote only a week from first vote
+            revert VotingTimeExpired();
+        }
+
+        voters[id].add(msg.sender);
+        votes[id][msg.sender] += amount;
 
         if (sign == true) {
             reportsWeight[id] += amount;
