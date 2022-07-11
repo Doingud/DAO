@@ -2,11 +2,8 @@ const { ethers } = require("hardhat");
 const { use, expect } = require("chai");
 const { solidity } = require("ethereum-waffle");
 const { TAX_RATE, 
-        BASIS_POINTS, 
         AMOR_TOKEN_NAME, 
         AMOR_TOKEN_SYMBOL,
-        INIT_MINT,
-        TEST_TRANSFER,
         MOCK_TEST_AMOUNT,
         MOCK_GUILD_NAMES,
         MOCK_GUILD_SYMBOLS 
@@ -15,27 +12,12 @@ const init = require('../test-init.js');
 
 use(solidity);
 
-
-
-  //  The contract with the execution logic
-  //  The contract with the execution logic
-  let IMPLEMENTATION;
-  let GUILD_TOKEN_IMPLEMENTATION;
-  //  The contract which stores the data
-  let PROXY_CONTRACT;
-  //  The PROXY_CONTRACT with the implemenation
-  let PROXY;
-
   let root;
   let multisig;
-  let user1;
-  let user2;
 
   let AMOR_TOKEN;
-  let CLONE_TARGET;
   let AMOR_GUILD_TOKEN;
 
-  const TEST_TAX_AMOUNT = 5000000000000000000n;
   const TEST_TAX_DEDUCTED_AMOUNT = 95000000000000000000n;
   const TEST_BALANCE_ROOT = 9999900000000000000000000n;
 
@@ -47,7 +29,6 @@ describe("unit - AMORxGuild", function () {
     await init.getTokens(setup);
 
     AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
-    PROXY_CONTRACT = setup.tokens.AmorTokenProxy;
     AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
     //CLONE_TARGET = setup.tokens.AmorGuildTokenProxy;
     //FACTORY = setup.tokens.AmorGuildCloneFactory;
