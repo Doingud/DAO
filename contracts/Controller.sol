@@ -3,7 +3,6 @@ pragma solidity 0.8.14;
 
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 
 /// @title Controller contract
 /// @author Daoism Systems Team
@@ -135,21 +134,16 @@ contract Controller {
     /// @dev As soon as the first vote goes for report, we create a time limit for vote(a week).
     /// @param id ID of report to vote for
     /// @param amount Amount of FXTokens to use for vote and burn
-    /// @param sign The signature of the voting signed by the reporter
+    /// @param sign Boolean value: true (for) or false (against) user is voting
     function voteForReport(uint256 id, int256 amount, bool sign) external {
+        IFXAMORxGuild(FXAMORxGuild).burn(msg.sender, amount);
 
+        if (sign == true) {
+            reportsWeight[id] += amount;
+        } else {
+            reportsWeight[id] -= amount;
+        }
 
-        bytes32 hash = ; //TODO
-        require(
-            SignatureChecker.isValidSignatureNow(
-                msg.sender,
-                hash
-                rootSig
-            ),
-            "invalid result signature"
-        );
-
-        reportsWeight[id] += amount;
         // reportsVoting[newReportId] = 0;//[length] = 0;
     }
 
