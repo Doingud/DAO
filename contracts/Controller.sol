@@ -130,11 +130,11 @@ contract GuildController  {
             revert Unauthorized();
         }
 
-        uint256 newReportId = reportsWeight.length;
+        uint256 newReportId = reportsVoting.length;
 
         // saveRepostContent = report; TODO
 
-        reportsWeight[newReportId] = 0;//report);//[length] = 0;
+        reportsVoting[newReportId] = 0;//report);//[length] = 0;
         // reportsVoting[newReportId] = 0;//[length] = 0;
 
 
@@ -163,27 +163,37 @@ contract GuildController  {
         }
 
         voters[id].add(msg.sender);
-        votes[id][msg.sender] += amount;
+        // votes[id][msg.sender] += amount;
+        reportsWeight[id] += amount;
 
         if (sign == true) {
-            reportsWeight[id] += amount;
+            reportsVoting[id] += amount;
+            votes[id][msg.sender] += amount;
         } else {
-            reportsWeight[id] -= amount;
+            reportsVoting[id] -= amount;
+            votes[id][msg.sender] -= amount;
         }
-
-        // reportsVoting[newReportId] = 0;//[length] = 0;
     }
 
     /// @notice distributes funds, depending on the report ids, for which votings were conducted. 
     /// @param id ID of report from distributes funds
     function finalizeReportVoting(uint256 id) external {
 
-// if > 80% positive FX tokens --> then report was accepted
+        reportsVoting[id];// = reportsWeight[id];
 
-        if (reportsWeight[id] >= 0) {
+        // if > 80% positive FX tokens then report is accepted
+        uint256 necessaryPercent = (reportsWeight[id] * 80) / 100;
+
+        if (reportsVoting[id] > necessaryPercent) {
             // If report has positive voting weight, then funds go 50-50%, 
             // 50% go to the report creater, 
             // and 50% goes to the people who voted positively
+            for (uint256 i == 0; i < votes[id].length; i++) {
+                if (votes[id][msg.sender] > 0) {
+                    uint256 amountToSend = 
+
+                }
+            }
 
         } else {
             // If report has negative voting weight, then 
