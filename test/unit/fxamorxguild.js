@@ -57,7 +57,7 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
 
         it('it fails to stakes AMORxGuild tokens if not enough AMORxGuild', async function () {
             await expect(FXAMORxGuild.connect(operator).stake(staker.address, ONE_HUNDRED_ETHER)).to.be.revertedWith(
-                'InvalidAmount(100000000000000000000, 0)'
+                'InvalidAmount()'
             );
         });
 
@@ -97,7 +97,7 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
         
         it('it fails to delegate FXAMORxGuild tokens if not enough FXAMORxGuild', async function () {
             await expect(FXAMORxGuild.connect(staker).delegate(operator.address, TWO_HUNDRED_ETHER)).to.be.revertedWith(
-                'InvalidAmount(200000000000000000000, 100000000000000000000)'
+                'InvalidAmount()'
             ); 
         });
 
@@ -120,7 +120,7 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
 
         it('it fails to delegate FXAMORxGuild tokens if Unavailable amount of FXAMORxGuild', async function () {
             await expect(FXAMORxGuild.connect(staker).delegate(operator.address, ONE_HUNDRED_ETHER)).to.be.revertedWith(
-                'InvalidAmount(100000000000000000000, 50000000000000000000)'
+                'InvalidAmount()'
             ); 
         });
     });
@@ -155,7 +155,7 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
 
         it('it fails to burn FXAMORxGuild tokens if not enough FXAMORxGuild', async function () {        
             await expect(FXAMORxGuild.connect(operator).burn(operator.address, TWO_HUNDRED_ETHER)).to.be.revertedWith(
-                'InvalidAmount(200000000000000000000, 0)'
+                'InvalidAmount()'
             ); 
         });
 

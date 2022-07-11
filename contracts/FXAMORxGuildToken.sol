@@ -32,11 +32,6 @@ contract FXAMORxGuild is ERC20Base, Ownable {
     error EmptyArray();
     error NotDelegatedAny();
 
-    /// Invalid balance to transfer. Needed `minRequired` but sent `amount`
-    /// @param sent sent amount.
-    /// @param minRequired minimum amount to send.
-    error InvalidAmount(uint256 sent, uint256 minRequired);
-
     /// Invalid address. Needed address != address(0)
     error AddressZero();
 
@@ -58,8 +53,9 @@ contract FXAMORxGuild is ERC20Base, Ownable {
 
         _owner = initOwner_;
         AMORxGuild = AMORxGuild_;
-        _name = name_;
-        _symbol = symbol_;
+        //  Set the name and symbol
+        name = name_;
+        symbol = symbol_;
 
         _initialized = true;
         emit Initialized(_initialized, initOwner_, AMORxGuild_);
@@ -98,7 +94,7 @@ contract FXAMORxGuild is ERC20Base, Ownable {
         }
 
         if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
-            revert InvalidAmount(amount, IERC20(AMORxGuild).balanceOf(msg.sender));
+            revert InvalidAmount();
         }
         // send to FXAMORxGuild contract to stake
         IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount);
@@ -119,7 +115,7 @@ contract FXAMORxGuild is ERC20Base, Ownable {
     /// @param  amount uint256 representing amount of burning tokens
     function burn(address account, uint256 amount) external onlyAddress(_owner) {
         if (stakes[account] < amount) {
-            revert InvalidAmount(amount, stakes[account]);
+            revert InvalidAmount();
         }
         //burn used FXAMORxGuild tokens from staker
         _burn(account, amount);
@@ -141,7 +137,7 @@ contract FXAMORxGuild is ERC20Base, Ownable {
         uint256 alreadyDelegated = amountDelegated[msg.sender];
         uint256 availableAmount = stakes[msg.sender] - alreadyDelegated;
         if (availableAmount < amount) {
-            revert InvalidAmount(amount, availableAmount);
+            revert InvalidAmount();
         }
 
         delegators[to].push(msg.sender);
