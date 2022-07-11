@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @author Daoism Systems Team
 /// @notice GuildController contract controls the all of the deployed contracts of the guild
 
-contract GuildController  {
+contract GuildController {
     int256[] reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
     mapping(uint256 => mapping(address => int256)) votes; // votes mapping(uint report => mapping(address voter => int256 vote))
     mapping(uint256 => address[]) voters; // voters mapping(uint report => address [] voters)
@@ -183,23 +183,42 @@ contract GuildController  {
 
         // if > 80% positive FX tokens then report is accepted
         uint256 necessaryPercent = (reportsWeight[id] * 80) / 100;
+        uint256 fiftyPercent = (reportsWeight[id] * 50) / 100;
 
         if (reportsVoting[id] > necessaryPercent) {
             // If report has positive voting weight, then funds go 50-50%, 
-            // 50% go to the report creater, 
-            // and 50% goes to the people who voted positively
-            for (uint256 i == 0; i < votes[id].length; i++) {
-                if (votes[id][msg.sender] > 0) {
-                    uint256 amountToSend = 
+            // 50% go to the report creater,
+            IERC20(AMORxGuild).transfer(creatorAddress, fiftyPercent);
 
+            // and 50% goes to the people who voted positively
+            for (uint256 i == 0; i < voters[id].length; i++) {
+                if (votes[id][voters[i]] > 0) { // voted positively
+                    uint256 weight = ; //TODO
+                    // 50% * user weigth / all 100%
+                    uint256 amountToSendVoter = (fiftyPercent * weight) / reportsWeight[id];
+                    IERC20(AMORxGuild).transfer(voters[i], amountToSendVoter);
                 }
             }
 
         } else {
             // If report has negative voting weight, then 
-            // 50% goes to the people who voted negatively, 
+            // 50% goes to the people who voted negatively,
+            for (uint256 i == 0; i < voters[id].length; i++) {
+                if (votes[id][voters[i]] < 0) { // voted negatively
+                    // 50% * user weigth / all 100%
+                    uint256 amountToSendVoter = (fiftyPercent * weight) / reportsWeight[id];
+                    IERC20(AMORxGuild).transfer(voters[i], amountToSendVoter);
+                }
+            }
             // and 50% gets redistributed between the passed reports based on their weights
-
+            for (uint256 i == 0; i < reportsWeight.length; i++) {
+                if (votes[id][voters[i]] < 0) { // voted negatively
+                    uint256 weight = ; //TODO
+                    // 50% * user weigth / all 100%
+                    uint256 amountToSendVoter = (fiftyPercent * reportsWeight[i]) / &&&;
+                    IERC20(AMORxGuild).transfer(voters[i], amountToSendVoter);
+                }
+            }
         }
     }
 }

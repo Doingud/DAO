@@ -50,7 +50,7 @@ const getTokens = async (setup) => {
 };
 
 const controller = async (setup, impactPoll, projectPoll) => {
-  const controllerFactory = await ethers.getContractFactory('Controller');
+  const controllerFactory = await ethers.getContractFactory('GuildController');
   const controller = await controllerFactory.deploy();
   await controller.init(
     setup.roles.root.address, // owner
