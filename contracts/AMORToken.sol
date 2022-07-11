@@ -63,7 +63,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         name = _name;
         symbol = _symbol;
         //  Pre-mint to the multisig address
-        _mint(_multisig, 10000000 * 10**decimals());
+        _mint(_multisig, 10000000 * 10**decimals);
         //  Set the tax collector address
         updateController(_initCollector);
         //  Set the tax rate
