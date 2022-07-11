@@ -4,7 +4,7 @@
 /// @title  dAMORxGuild
 /// @notice Implements a dAMORxGuild token
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/ERC20Base.sol";

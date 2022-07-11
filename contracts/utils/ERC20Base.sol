@@ -2,29 +2,44 @@
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
 
 /// @title  ERC20Base
-/// @author Daoism Systems
-/// @notice To be used in clones
+/// @author Initial author OpenZeppelin, modified by Daoism Systems
+/// @notice To be used in clones where constructor calls cannot be used
 /// @dev    No constructor, but has a setToken detail function which can only be called once
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
-contract ERC20Base is Context, IERC20, IERC20Metadata {
-    mapping(address => uint256) private _balances;
+abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
+    mapping(address => uint256) internal _balances;
 
-    mapping(address => mapping(address => uint256)) private _allowances;
+    mapping(address => mapping(address => uint256)) internal _allowances;
 
-    uint256 private _totalSupply;
+    uint256 internal _totalSupply;
 
     /// ***Non-standard implementation of _name and _symbol***
-    string internal _name;
-    string internal _symbol;
+    string public name;
+    string public symbol;
     bool internal _detailsSet;
 
+    uint8 public decimals;
+
+    /// Reverts if invalid transfer address
+    error InvalidTransfer();
+
+    /// Reverts if invalid address used in approve
+    error InvalidApprove();
+
+    /// Reverts if trying to change the token name and symbol
     error AlreadySet();
+
+    /// Reverts if amount is invalid
+    error InvalidAmount();
+
+    /// Reverts if address is address(0)
+    error InvalidAddress();
 
     /**
      * @dev Sets the values for {name} and {symbol}.
@@ -32,61 +47,30 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
      * The default value of {decimals} is 18. To select a different value for
      * {decimals} you should overload it.
      *
-     * All two of these values are immutable: they can only be set once during
-     * construction.
+     * All two of these values should be immutable: they can only be set once during
+     * _setTokenDetail, which must be called upon initialization in the inheriting contract.
      */
     function _setTokenDetail(string memory name_, string memory symbol_) internal {
         if (_detailsSet) {
             revert AlreadySet();
         }
-        _name = name_;
-        _symbol = symbol_;
+        name = name_;
+        symbol = symbol_;
         _detailsSet = true;
-    }
-
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() public view virtual override returns (string memory) {
-        return _name;
-    }
-
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public view virtual override returns (string memory) {
-        return _symbol;
-    }
-
-    /**
-     * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5.05` (`505 / 10 ** 2`).
-     *
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless this function is
-     * overridden;
-     *
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
-     */
-    function decimals() public view virtual override returns (uint8) {
-        return 18;
+        decimals = uint8(18);
     }
 
     /**
      * @dev See {IERC20-totalSupply}.
      */
-    function totalSupply() public view virtual override returns (uint256) {
+    function totalSupply() public view override returns (uint256) {
         return _totalSupply;
     }
 
     /**
      * @dev See {IERC20-balanceOf}.
      */
-    function balanceOf(address account) public view virtual override returns (uint256) {
+    function balanceOf(address account) public view override returns (uint256) {
         return _balances[account];
     }
 
@@ -166,7 +150,7 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
      *
      * - `spender` cannot be the zero address.
      */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+    function increaseAllowance(address spender, uint256 addedValue) external virtual returns (bool) {
         address owner = _msgSender();
         _approve(owner, spender, allowance(owner, spender) + addedValue);
         return true;
@@ -185,11 +169,18 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
      * - `spender` cannot be the zero address.
      * - `spender` must have allowance for the caller of at least
      * `subtractedValue`.
+     *
+     * @param spender the address which has an allowance that must be adjusted
+     * @param subtractedValue the amount by which the allowance of the spender must be decreased
+     * @return bool to indicate if the decrease allowance was successful
      */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+    function decreaseAllowance(address spender, uint256 subtractedValue) external virtual returns (bool) {
         address owner = _msgSender();
         uint256 currentAllowance = allowance(owner, spender);
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
+
+        if (currentAllowance < subtractedValue) {
+            revert InvalidAmount();
+        }
         unchecked {
             _approve(owner, spender, currentAllowance - subtractedValue);
         }
@@ -216,13 +207,17 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
         address to,
         uint256 amount
     ) internal virtual {
-        require(from != address(0), "ERC20: transfer from the zero address");
-        require(to != address(0), "ERC20: transfer to the zero address");
+        if (from == address(0) || to == address(0)) {
+            revert InvalidTransfer();
+        }
 
         _beforeTokenTransfer(from, to, amount);
 
         uint256 fromBalance = _balances[from];
-        require(fromBalance >= amount, "ERC20: transfer amount exceeds balance");
+
+        if (fromBalance < amount) {
+            revert InvalidAmount();
+        }
         unchecked {
             _balances[from] = fromBalance - amount;
         }
@@ -243,7 +238,9 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
      * - `account` cannot be the zero address.
      */
     function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
+        if (account == address(0)) {
+            revert InvalidAddress();
+        }
 
         _beforeTokenTransfer(address(0), account, amount);
 
@@ -266,12 +263,16 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
      * - `account` must have at least `amount` tokens.
      */
     function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
+        if (account == address(0)) {
+            revert InvalidTransfer();
+        }
 
         _beforeTokenTransfer(account, address(0), amount);
 
         uint256 accountBalance = _balances[account];
-        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
+        if (accountBalance < amount) {
+            revert InvalidAmount();
+        }
         unchecked {
             _balances[account] = accountBalance - amount;
         }
@@ -300,8 +301,9 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
         address spender,
         uint256 amount
     ) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
+        if (owner == address(0) || spender == address(0)) {
+            revert InvalidApprove();
+        }
 
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
@@ -322,7 +324,9 @@ contract ERC20Base is Context, IERC20, IERC20Metadata {
     ) internal virtual {
         uint256 currentAllowance = allowance(owner, spender);
         if (currentAllowance != type(uint256).max) {
-            require(currentAllowance >= amount, "ERC20: insufficient allowance");
+            if (currentAllowance < amount) {
+                revert InvalidAmount();
+            }
             unchecked {
                 _approve(owner, spender, currentAllowance - amount);
             }
