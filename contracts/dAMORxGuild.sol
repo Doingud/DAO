@@ -42,11 +42,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
     error EmptyArray();
     error NotDelegatedAny();
 
-    /// Invalid balance to transfer. Needed `minRequired` but sent `amount`
-    /// @param sent sent amount.
-    /// @param minRequired minimum amount to send.
-    error InvalidAmount(uint256 sent, uint256 minRequired);
-
     /// Invalid address. Needed address != address(0)
     error AddressZero();
 
@@ -119,7 +114,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
             revert TimeTooBig();
         }
         if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
-            revert InvalidAmount(amount, IERC20(AMORxGuild).balanceOf(msg.sender));
+            revert InvalidAmount();
         }
         // send to AMORxGuild contract to stake
         IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount);
@@ -139,7 +134,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     /// @param  amount uint256 amount of dAMOR to be staked
     function increaseStake(uint256 amount) public returns (uint256) {
         if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
-            revert InvalidAmount(amount, IERC20(AMORxGuild).balanceOf(msg.sender));
+            revert InvalidAmount();
         }
         // send to AMORxGuild contract to stake
         IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount);
@@ -163,7 +158,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     function withdraw() public returns (uint256) {
         uint256 amount = stakes[msg.sender];
         if (amount <= 0) {
-            revert InvalidAmount(amount, 0);
+            revert InvalidAmount();
         }
 
         //burn used dAMORxGuild tokens from staker
@@ -183,13 +178,13 @@ contract dAMORxGuild is ERC20Base, Ownable {
             revert InvalidSender();
         }
         if (stakes[msg.sender] < amount) {
-            revert InvalidAmount(amount, stakes[msg.sender]);
+            revert InvalidAmount();
         }
 
         uint256 alreadyDelegated = amountDelegated[msg.sender];
         uint256 availableAmount = stakes[msg.sender] - alreadyDelegated;
         if (availableAmount < amount) {
-            revert InvalidAmount(amount, availableAmount);
+            revert InvalidAmount();
         }
 
         delegators[msg.sender].push(to);

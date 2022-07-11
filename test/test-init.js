@@ -9,8 +9,10 @@ const initialize = async (accounts) => {
     root: accounts[0],
     doingud_multisig: accounts[1],
     user1: accounts[2],
-    user2: accounts[3]
-
+    user2: accounts[3],
+    authorizer_adaptor: accounts[5],
+    operator: accounts[6],
+    staker: accounts[7],
   };
 
   return setup;

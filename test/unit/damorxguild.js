@@ -13,7 +13,7 @@ let root;
 let authorizer_adaptor;
 let operator;
 let staker;
-let buyer1;
+let user1;
 let timeTooSmall;
 let timeTooBig;
 let normalTime;
@@ -33,7 +33,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
         authorizer_adaptor = setup.roles.authorizer_adaptor;
         operator = setup.roles.operator;
         staker = setup.roles.staker;
-        buyer1 = setup.roles.buyer1;
+        user1 = setup.roles.user1;
     });
 
     before('>>> setup', async function() {
@@ -82,7 +82,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
         it('it fails to stakes AMORxGuild tokens if not enough AMORxGuild', async function () {
             await expect(dAMORxGuild.connect(staker).stake(ONE_HUNDRED_ETHER, normalTime)).to.be.revertedWith(
-                'InvalidAmount(100000000000000000000, 0)'
+                'InvalidAmount()'
             );
         });
 
@@ -106,7 +106,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
         it('it fails to increase stake AMORxGuild tokens if not enough AMORxGuild', async function () {
             await expect(dAMORxGuild.connect(staker).increaseStake(ONE_HUNDRED_ETHER)).to.be.revertedWith(
-                'InvalidAmount(100000000000000000000, 0)'
+                'InvalidAmount()'
             );
         });
 
@@ -140,7 +140,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
         
         it('it fails to delegate dAMORxGuild tokens if not enough dAMORxGuild', async function () {
             await expect(dAMORxGuild.connect(staker).delegate(operator.address, TWO_HUNDRED_ETHER)).to.be.revertedWith(
-                'InvalidAmount(200000000000000000000, ' + realAmount.toString()
+                'InvalidAmount()'
             ); 
         });
 
@@ -157,7 +157,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
         it('it fails to delegate dAMORxGuild tokens if Unavailable amount of dAMORxGuild', async function () {
             await expect(dAMORxGuild.connect(staker).delegate(operator.address, ONE_HUNDRED_ETHER)).to.be.revertedWith(
-                'InvalidAmount(100000000000000000000, ' + realAmount.toString()
+                'InvalidAmount()'
             ); 
         });
     });
@@ -188,7 +188,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
         it('it fails to withdraw dAMORxGuild tokens if amount <= 0', async function () {
             await expect(dAMORxGuild.connect(root).withdraw()).to.be.revertedWith(
-                'InvalidAmount(0, 0)'
+                'InvalidAmount()'
             ); 
         });  
 
@@ -204,24 +204,24 @@ describe('unit - Contract: dAMORxGuild Token', function () {
     context('» setGuardian testing', () => {
 
         it('it fails to set guardian of dAMORxGuild in not enouth dAMORxGuild', async function () {
-            await AMORxGuild.connect(root).mint(buyer1.address, ONE_HUNDRED_ETHER);
-            await AMORxGuild.connect(buyer1).approve(dAMORxGuild.address, ONE_HUNDRED_ETHER);
+            await AMORxGuild.connect(root).mint(user1.address, ONE_HUNDRED_ETHER);
+            await AMORxGuild.connect(user1).approve(dAMORxGuild.address, ONE_HUNDRED_ETHER);
     
-            await dAMORxGuild.connect(buyer1).stake(1, normalTime);        
-            const newRealAmount = (await dAMORxGuild.balanceOf(buyer1.address)).toString();
+            await dAMORxGuild.connect(user1).stake(1, normalTime);        
+            const newRealAmount = (await dAMORxGuild.balanceOf(user1.address)).toString();
             const roundedRealAmount = Math.round(newRealAmount * 100) / 100;
             
             expect(roundedRealAmount.toString()).to.equal("0");
         });
 
         it('set guardian of dAMORxGuild', async function () {
-            await AMORxGuild.connect(root).mint(buyer1.address, FIFTY_ETHER);
-            await AMORxGuild.connect(buyer1).approve(dAMORxGuild.address, FIFTY_ETHER);
+            await AMORxGuild.connect(root).mint(user1.address, FIFTY_ETHER);
+            await AMORxGuild.connect(user1).approve(dAMORxGuild.address, FIFTY_ETHER);
 
             // increaseStake() or stake() --> setGuardian
-            await dAMORxGuild.connect(buyer1).increaseStake(FIFTY_ETHER);
+            await dAMORxGuild.connect(user1).increaseStake(FIFTY_ETHER);
             expect((await dAMORxGuild.guardians(0))).to.equal(staker.address);
-            expect((await dAMORxGuild.guardians(2))).to.equal(buyer1.address);
+            expect((await dAMORxGuild.guardians(2))).to.equal(user1.address);
         });
     });
 
