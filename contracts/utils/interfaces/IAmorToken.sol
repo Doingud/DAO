@@ -22,6 +22,16 @@ interface IAmorToken {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
     /**
+     * @dev Returns the tax rate of the AMOR token.
+     */
+    function taxRate() external view returns (uint256);
+
+    /**
+     * @dev Returns the basis points constant.
+     */
+    function BASIS_POINTS() external view returns (uint256);
+
+    /**
      * @dev Returns the amount of tokens in existence.
      */
     function totalSupply() external view returns (uint256);
