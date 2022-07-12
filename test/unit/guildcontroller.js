@@ -17,6 +17,9 @@ let authorizer_adaptor;
 let operator;
 let report;
 let signature;
+let r;
+let s;
+let v;
 
 describe('unit - Contract: GuildController', function () {
 
@@ -95,28 +98,11 @@ describe('unit - Contract: GuildController', function () {
             );
         });
 
-        it('it fails to add report if ', async function () {
+        it('it fails to add report if Unauthorized', async function () {
             await AMORxGuild.connect(root).mint(operator.address, ONE_HUNDRED_ETHER);
             await AMORxGuild.connect(operator).approve(controller.address, ONE_HUNDRED_ETHER);
 
-            const amount = 1;
-            report = '0xF';
             // signature = '0xF';
-            
-    // message to sign
-    // const message = "hello";
-    // console.log({ message });
-
-    // // hash message
-    // const hashedMessage = ethers.utils.hashMessage(message)
-    // console.log({ hashedMessage });
-
-    // sign hashed message
-    // const signature = await ethereum.request({
-    //   method: "personal_sign",
-    //   params: [hashedMessage, operator],
-    // });
-    // console.log({ signature });
 
             const timestamp = Date.now();
             // STEP 1:
@@ -134,28 +120,21 @@ describe('unit - Contract: GuildController', function () {
             let signature = await operator.signMessage(messageHashBinary);
 
             // split signature
-            const r = signature.slice(0, 66);
-            const s = "0x" + signature.slice(66, 130);
-            const v = parseInt(signature.slice(130, 132), 16);
-            console.log({ r, s, v });
-
-
-    // Make sure you arrayify the message if you want the bytes to be used as the message
-    // const recoveredAddress = ethers.utils.verifyMessage(ethers.utils.arrayify(hash), signature)
-            
+            r = signature.slice(0, 66);
+            s = "0x" + signature.slice(66, 130);
+            v = parseInt(signature.slice(130, 132), 16);
+            // console.log({ r, s, v });
+                    
             report = messageHash;
-            await controller.connect(operator).addReport(report, v,r,s);//signature);       
-            expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(ONE_HUNDRED_ETHER.toString());
+            await expect(controller.connect(authorizer_adaptor).addReport(report, v,r,s)).to.be.revertedWith(
+                'Unauthorized()'
+            );
         });
 
         it('adds report', async function () {
-            await AMORxGuild.connect(root).mint(operator.address, ONE_HUNDRED_ETHER);
-            await AMORxGuild.connect(operator).approve(controller.address, ONE_HUNDRED_ETHER);
-            
-            const amount = 1;
-            await controller.connect(operator).addReport(report, v,r,s);        
+            await controller.connect(operator).addReport(report, v,r,s); 
 
-            expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(amount.toString());
+            expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(ONE_HUNDRED_ETHER.toString());
         });
 
     });
