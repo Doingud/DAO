@@ -36,13 +36,17 @@ contract GuildCloneFactory {
     /// The DoinGud generic proxy contract (the target)
     address public cloneTarget;
     address[] public guilds;
+    address[] public dAMORxGuildTokens;
+    address[] public fxAMORxGuildTokens;
+
+    error CreationFailed();
 
     constructor(
         address _amorToken,
         address _amorxGuildToken,
         address _fxAMORxGuildToken,
-        address _ dAMORxGuildToken
-        address _doinGudProxy,
+        address _dAMORxGuildToken,
+        address _doinGudProxy
         ) {
         amorToken = _amorToken;
         /// Set the implementation addresses
@@ -50,32 +54,50 @@ contract GuildCloneFactory {
         fxAMORxGuildToken = _fxAMORxGuildToken;
         dAMORxGuildToken = _dAMORxGuildToken;
         /// `_cloneTarget` refers to the DoinGud Proxy
-        _cloneTarget = _doinGudProxy;
+        cloneTarget = _doinGudProxy;
     }
 
     /// @notice This deploys a new guild with it's associated tokens
     /// @dev    Takes the names and symbols and associates it to a guild
-    /// @param  _names an array of Guild names
-    /// @param  _symbols an array of token symbols
-    function deployGuildContracts(string memory _name, string memory _symbol) public returns (address) {
-        /// Create a new instance of the Guild
-        IAmorxGuild proxyAmorxGuild;
-        IAmorxGuild proxyFXAMORxGuild;
-        IAmorxGuild proxyDAMORxGuild;
-        proxyContract = IAmorxGuild(Clones.clone(_cloneTarget));
-        /// Ensure Guild creation succeeded
-        require(address(proxyContract) != address(0), "Clone deployment failed");
-        /// Add this Guild to the array
-        guilds.push(address(proxyGuildToken));
-        /// Init the proxy and set the token details
-        proxyGuildToken.initProxy(_implementation);
-        proxyGuildToken.init(amorToken, _name, _symbol);
-        }
-    }
+    /// @param  _name The name of the Guild without the prefix "AMORx"
+    /// @param  _symbol The symbol of the Guild
+    function deployGuildContracts(string memory _name, string memory _symbol) public {
+        /// Setup local scope vars
+        string memory tokenName;
+        address clonedContract;
+        /// Deploy AMORxGuild contract
+        tokenName = string.concat("AMORx",_name);
+        clonedContract = _deployContract(_name, _symbol, amorxGuildToken);
+        guilds.push(clonedContract);
 
-    function _deployGuildContracts(_name, _symbol, _implementation) internal returns (address) {
+        /// Deploy FXAMORxGuild contract
+        tokenName = string.concat("FXAMORx",_name);
+        clonedContract = _deployContract(tokenName, _symbol, fxAMORxGuildToken);
+        fxAMORxGuildTokens.push(clonedContract);
+
+        /// Deploy dAMORxGuild contract
+        tokenName = string.concat("dAMORx",_name);
+        clonedContract = _deployContract(tokenName, _symbol, dAMORxGuildToken);
+        dAMORxGuildTokens.push(clonedContract);
+        }
+
+    /// @notice Internal contract to deploy clone of an implementation contract
+    /// @param  guildName name of token 
+    /// @param  guildSymbol symbol of token
+    /// @param  _implementation address of the contract to be cloned
+    /// @return address of the deployed contract
+    function _deployContract(string memory guildName, string memory guildSymbol, address _implementation) internal returns (address) {
         IAmorxGuild proxyContract;
-        proxyContract IAmorxGuild(Clones.clone(_cloneTarget)
+        proxyContract = IAmorxGuild(Clones.clone(cloneTarget));
+
+        if (address(proxyContract) == address(0)) {
+            revert CreationFailed();
+        }
+
+        proxyContract.initProxy(_implementation);
+        proxyContract.init(amorToken, guildName, guildSymbol);
+
+        return address(proxyContract);
     }
 
     function viewGuilds() public view returns (address[] memory) {
