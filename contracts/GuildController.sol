@@ -46,7 +46,7 @@ contract GuildController {
     error InvalidParameters();
     error VotingTimeExpired();
     error VotingTimeNotFinished();
-
+    error ReportNotExists();
     /// Invalid balance to transfer. Needed `minRequired` but sent `amount`
     /// @param sent sent amount.
     /// @param minRequired minimum amount to send.
@@ -125,7 +125,6 @@ contract GuildController {
     /// @param report Hash of report (timestamp and report header)
     /// param signature Signature of this report (splitted into uint8 v, bytes32 r, bytes32 s)
     function addReport(bytes32 report, uint8 v, bytes32 r, bytes32 s) external { 
-        //function addReport(bytes32 memory report, bytes memory signature) external {
 
         // each report is an NFT (maybe hash-id of NFT and sign this NFT-hash)
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
@@ -141,7 +140,9 @@ contract GuildController {
 
         reportsContent[newReportId] = report; // save report info
         reportsAuthors[newReportId] = msg.sender;
+        reportsWeight.push(0);
         reportsVoting.push(0);
+        timeVoting.push(0);
     }
 
     /// @notice burns the amount of FXTokens, and changes a report weight, based on a sign provided. 
@@ -151,18 +152,23 @@ contract GuildController {
     /// @param amount Amount of FXTokens to use for vote and burn
     /// @param sign Boolean value: true (for) or false (against) user is voting
     function voteForReport(uint256 id, uint256 amount, bool sign) external {
-        IFXAMORxGuild(FXAMORxGuild).burn(msg.sender, amount);
+
+        // TODO: check if report with that id exists
+        if (reportsWeight.length < id) {
+            revert ReportNotExists();
+        }
 
         if (voters[id].length == 0) {
             timeVoting[id] = block.timestamp;
-
         } else if (block.timestamp > (timeVoting[id] + VOTING_TIME)) {
             //check if the week has passed - can vote only a week from first vote
             revert VotingTimeExpired();
         }
+        // TODO: check if have enough funds
+
+        IFXAMORxGuild(FXAMORxGuild).burn(msg.sender, amount);
 
         voters[id].push(msg.sender);
-        // votes[id][msg.sender] += amount;
         reportsWeight[id] += amount;
 
         if (sign == true) {

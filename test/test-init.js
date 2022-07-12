@@ -16,37 +16,56 @@ const initialize = async (accounts) => {
 };
 
 const getTokens = async (setup) => {
-  const ERC20Factory = await ethers.getContractFactory('ERC20Mock', setup.roles.root);
-  const ERC20Token = await ERC20Factory.deploy('ERC20Token', 'ERC20Token'); // test token
+    const ERC20Factory = await ethers.getContractFactory('ERC20Mock', setup.roles.root);
+    const ERC20Token = await ERC20Factory.deploy('ERC20Token', 'ERC20Token'); // test token
 
-  const FXAMORxGuildFactory = await ethers.getContractFactory('FXAMORxGuild');
-  const FXAMORxGuild = await FXAMORxGuildFactory.deploy();
-  // await FXAMORxGuild.init(
-  //   "DoinGud MetaDAO", 
-  //   "FXAMORxGuild", 
-  //   setup.roles.operator.address, //controller
-  //   ERC20Token.address
-  // ); 
+    const FXAMORxGuildFactory = await ethers.getContractFactory('FXAMORxGuild');
+    const FXAMORxGuild = await FXAMORxGuildFactory.deploy(); 
 
-  // const guardianThreshold = 10;
-  // const dAMORxGuildFactory = await ethers.getContractFactory('dAMORxGuild');
-  // const dAMORxGuild = await dAMORxGuildFactory.deploy();
-  // await dAMORxGuild.init(
-  //   "DoinGud MetaDAO", 
-  //   "FXAMORxGuild", 
-  //   setup.roles.operator.address, 
-  //   ERC20Token.address, 
-  //   guardianThreshold
-  // ); 
+    // const guardianThreshold = 10;
+    // const dAMORxGuildFactory = await ethers.getContractFactory('dAMORxGuild');
+    // const dAMORxGuild = await dAMORxGuildFactory.deploy();
+    // await dAMORxGuild.init(
+    //   "DoinGud MetaDAO", 
+    //   "FXAMORxGuild", 
+    //   setup.roles.operator.address, 
+    //   ERC20Token.address, 
+    //   guardianThreshold
+    // ); 
 
-  const tokens = {
-    ERC20Token,
-    FXAMORxGuild,
-    // dAMORxGuild,
-  };
+    const AmorTokenFactory = await ethers.getContractFactory('AMORToken', setup.roles.root);
 
-  setup.tokens = tokens;
-  return tokens;
+    const AmorTokenProxyFactory = await ethers.getContractFactory('DoinGudProxy', setup.roles.root);
+    /* Constants for AmorGuild tokens - Still to be merged
+    const AmorGuildTokenFactory = await ethers.getContractFactory('AMORxGuildToken', setup.roles.root);
+    const AmorGuildTokenProxyFactory = await ethers.getContractFactory('AmorGuildProxy', setup.roles.root);
+    const GuildTokenFactory = await ethers.getContractFactory('GuildTokenFactory', setup.roles.root);
+    */
+    //  Amor Tokens
+    const AmorTokenImplementation = await AmorTokenFactory.deploy();
+    const AmorTokenMockUpgrade = await AmorTokenFactory.deploy();
+    const AmorTokenProxy = await AmorTokenProxyFactory.deploy();
+    
+    /*  AmorGuild Tokens
+    const AmorGuildToken = await AmorGuildTokenFactory.deploy();
+    const AmorGuildTokenProxy = await AmorGuildTokenProxyFactory.deploy();
+    const AmorGuildCloneFactory = await GuildTokenFactory.deploy(AmorGuildTokenProxy.address, AmorGuildToken.address, AmorTokenProxy.address );
+    */
+
+    const tokens = {
+      ERC20Token,
+      FXAMORxGuild,
+      // dAMORxGuild,
+      AmorTokenImplementation,
+      AmorTokenProxy,
+      AmorTokenMockUpgrade
+      /*AmorGuildToken,
+      AmorGuildTokenProxy,
+      AmorGuildCloneFactory*/
+    };
+
+    setup.tokens = tokens;
+    return tokens;
 };
 
 const controller = async (setup, impactPoll, projectPoll) => {

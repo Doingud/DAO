@@ -90,7 +90,7 @@ describe('unit - Contract: GuildController', function () {
 
     });
 
-    context('» reports testing', () => {
+    context('» addReport testing', () => {
 
         it('it fails to add report if Unauthorized', async function () {
             await AMORxGuild.connect(root).mint(operator.address, ONE_HUNDRED_ETHER);
@@ -126,6 +126,39 @@ describe('unit - Contract: GuildController', function () {
             await controller.connect(operator).addReport(report, v, r, s); 
 
             expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(ONE_HUNDRED_ETHER.toString());
+        });
+
+    });
+    context('» voteForReport testing', () => {
+
+        it('it fails to vote for report if ReportNotExists', async function () {
+            await AMORxGuild.connect(root).mint(operator.address, ONE_HUNDRED_ETHER);
+            await AMORxGuild.connect(operator).approve(controller.address, ONE_HUNDRED_ETHER);
+            await controller.connect(operator).addReport(report, v, r, s); 
+
+            const id = 11;
+            const amount = 12;
+            const sign = true;            
+            await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
+                'ReportNotExists()'
+            );
+        });
+
+        it('votes for report', async function () {
+            const id = 0;
+            const amount = 12;
+            const sign = true;
+            await controller.connect(operator).voteForReport(id, amount, sign); 
+
+        });
+        
+        it('it fails to vote for report if VotingTimeExpired', async function () {
+            const id = 1;
+            const amount = 12;
+            const sign = true;
+            await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
+                'VotingTimeExpired()'
+            );
         });
 
     });
