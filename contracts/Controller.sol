@@ -9,11 +9,21 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @notice Controller contract controls the all of the deployed contracts of the guild
 
 contract Controller {
-    int256[] reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
-    mapping(uint256 => mapping(address => int256)) votes; // votes mapping(uint report => mapping(address voter => int256 vote))
+    uint256[] reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
+    mapping(uint256 => mapping(address => uint256)) votes; // votes mapping(uint report => mapping(address voter => int256 vote))
     mapping(uint256 => address[]) voters; // voters mapping(uint report => address [] voters)
-    uint256[] reportsVoting; // results of the vote for the report with specific id
+    uint256[] reportsVoting; // results of the vote for the report with spe
+    mapping(uint256 => address) reportsAuthors;
+    uint256 totalReportsWeight; // total Weight of all of reports
+    mapping(uint256 => bytes32) reportsContent;
+
     mapping(address => bool) impactMakers;
+    mapping(address => uint) claimableTokens; // amount of tokens each specific address(impactMaker) can claim.
+    mapping(address => uint) weights;// weight of each specific Impact Maker/Builder.
+    uint256 totalWeight; // total Weight of all of the impact makers.
+    uint256[] timeVoting; // time of the forst vote the report with specific id
+
+    uint256 public constant VOTING_TIME = 7 days; // 1 week is the time for the users to vore for the specific report
 
     address public owner;
     address public AMORxGuild;
@@ -23,7 +33,7 @@ contract Controller {
     address public projectPoll;
 
     uint256 public constant FEE_DENOMINATOR = 1000;
-    uint256 public impactFees = 800; //80% // FEE_DENOMINATOR/100*80
+    uint256 public impactFees = 100; //10% // FEE_DENOMINATOR/100*10
     uint256 public projectFees = 200; //20%
 
     event Initialized(bool success, address owner, address AMORxGuild);
@@ -78,10 +88,10 @@ contract Controller {
 
     /// @notice allows to donate AMORxGuild tokens to the Guild
     /// @param amount The amount to donate
-    // It automatically distributes tokens between Impact and project polls
-    // (which are both multisigs and governed by the owners of dAMOR) in the 80%-20% distribution.
-    // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
-    // which are going to be owned by the user.
+    // It automatically distributes tokens between Impact makers. 
+    // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens, 
+    // which are going to be owned by the user. Afterwards, based on the weights distribution, 
+    // tokens will be automatically redirected to the impact makers.
     function donate(uint256 amount) external returns (uint256) {
         if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
             revert InvalidAmount(amount, IERC20(AMORxGuild).balanceOf(msg.sender));
@@ -91,7 +101,7 @@ contract Controller {
         // IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount);
 
         uint256 ipAmount = (amount * impactFees) / FEE_DENOMINATOR; // amount to Impact poll
-        uint256 ppAmount = (amount * projectFees) / FEE_DENOMINATOR; // amount to project poll
+        // uint256 ppAmount = (amount * projectFees) / FEE_DENOMINATOR; // amount to project poll
 
         uint256 FxGAmount = (ipAmount * 100) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact poll AMORxGuildAmount * 100 / 10
         // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
@@ -103,7 +113,7 @@ contract Controller {
 
         uint256 decIpAmount = ipAmount - FxGAmount; //decreased ipAmount
         IERC20(AMORxGuild).transferFrom(msg.sender, impactPoll, decIpAmount);
-        IERC20(AMORxGuild).transferFrom(msg.sender, projectPoll, ppAmount);
+        // IERC20(AMORxGuild).transferFrom(msg.sender, projectPoll, ppAmount);
 
         return amount;
     }
