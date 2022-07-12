@@ -52,9 +52,9 @@ const getTokens = async (setup) => {
     /*
     const AmorGuildTokenProxyFactory = await ethers.getContractFactory('AmorGuildProxy', setup.roles.root);
 
-    const GuildTokenFactory = await ethers.getContractFactory('GuildTokenFactory', setup.roles.root);
-    */
+    //  const GuildTokenFactory = await ethers.getContractFactory('GuildTokenFactory', setup.roles.root);
 
+    */
     //  Amor Tokens
     const AmorTokenImplementation = await AmorTokenFactory.deploy();
     const AmorTokenMockUpgrade = await AmorTokenFactory.deploy();

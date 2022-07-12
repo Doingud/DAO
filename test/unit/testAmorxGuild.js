@@ -4,10 +4,16 @@ const { solidity } = require("ethereum-waffle");
 const { TAX_RATE, 
         AMOR_TOKEN_NAME, 
         AMOR_TOKEN_SYMBOL,
+<<<<<<< HEAD
         MOCK_TEST_AMOUNT,
         MOCK_GUILD_NAMES,
         MOCK_GUILD_SYMBOLS, 
         BASIS_POINTS
+=======
+        TEST_TRANSFER,
+        MOCK_GUILD_NAMES,
+        MOCK_GUILD_SYMBOLS 
+>>>>>>> 600294c (Init issue with updates)
       } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
@@ -19,6 +25,12 @@ use(solidity);
   let AMOR_TOKEN;
   let AMOR_GUILD_TOKEN;
 
+<<<<<<< HEAD
+=======
+  const TEST_TAX_DEDUCTED_AMOUNT = 95000000000000000000n;
+  const TEST_BALANCE_ROOT = 9999900000000000000000000n;
+
+>>>>>>> 600294c (Init issue with updates)
 describe("unit - AMORxGuild", function () {
 
   const setupTests = deployments.createFixture(async () => {
@@ -27,12 +39,19 @@ describe("unit - AMORxGuild", function () {
     await init.getTokens(setup);
 
     AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
+<<<<<<< HEAD
+=======
+    PROXY_CONTRACT = setup.tokens.AmorTokenProxy;
+>>>>>>> 600294c (Init issue with updates)
     AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
 
     root = setup.roles.root;
     multisig = setup.roles.doingud_multisig;
+<<<<<<< HEAD
     user1 = setup.roles.user1;
     user2 = setup.roles.user2;
+=======
+>>>>>>> 600294c (Init issue with updates)
 
   });
 
@@ -45,18 +64,28 @@ describe("unit - AMORxGuild", function () {
       TAX_RATE, 
       root.address
     );
+<<<<<<< HEAD
 
     await AMOR_TOKEN.approve(AMOR_GUILD_TOKEN.address, MOCK_TEST_AMOUNT);
   });
 
   context("function: init()", () => {
     describe("initialization of token details", function () {
+=======
+  });
+
+  context("function: init()", () => {
+>>>>>>> 600294c (Init issue with updates)
       it("Should emit an Initialized event", async function () {
         await expect(AMOR_GUILD_TOKEN.init(
           AMOR_TOKEN.address, 
           MOCK_GUILD_NAMES[0], 
+<<<<<<< HEAD
           MOCK_GUILD_SYMBOLS[0],
           user2.address
+=======
+          MOCK_GUILD_SYMBOLS[0]
+>>>>>>> 600294c (Init issue with updates)
         )).
           to.emit(AMOR_GUILD_TOKEN, "Initialized").
             withArgs(MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0], AMOR_TOKEN.address);
@@ -66,6 +95,7 @@ describe("unit - AMORxGuild", function () {
         await expect(AMOR_GUILD_TOKEN.init(
           AMOR_TOKEN.address, 
           MOCK_GUILD_NAMES[0], 
+<<<<<<< HEAD
           MOCK_GUILD_SYMBOLS[0],
           user2.address
         )).to.be.reverted;
@@ -93,10 +123,26 @@ describe("unit - AMORxGuild", function () {
     describe("staking behaviour", function () {
       it("Should allow a user to stake AMOR", async function () {
         expect(await AMOR_GUILD_TOKEN.stakeAmor(root.address, MOCK_TEST_AMOUNT)).
+=======
+          MOCK_GUILD_SYMBOLS[0]
+        )).to.be.reverted;
+      });
+  });
+
+  context("stakeAmor()", () => {
+    describe("staking behaviour", function () {
+      it("Approve AMOR for stake", async function () {
+        await AMOR_TOKEN.approve(AMOR_GUILD_TOKEN.address, TEST_TRANSFER);
+      });
+
+      it("Should allow a user to stake 100 AMOR", async function () {
+        expect(await AMOR_GUILD_TOKEN.stakeAmor(root.address, TEST_TRANSFER)).
+>>>>>>> 600294c (Init issue with updates)
          to.emit(AMOR_TOKEN, "Transfer").
           withArgs(
             root.address, 
             AMOR_GUILD_TOKEN.address, 
+<<<<<<< HEAD
             ethers.utils.parseEther((100*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString())
           );
       });
@@ -120,11 +166,29 @@ describe("unit - AMORxGuild", function () {
       it("Should revert if unsufficient AMOR", async function () {
         await expect(AMOR_GUILD_TOKEN.stakeAmor(root.address, ethers.utils.parseEther(MOCK_TEST_AMOUNT.toString())))
           .to.be.revertedWith("UnsufficientAmount");
+=======
+            TEST_TAX_DEDUCTED_AMOUNT 
+          );
+    });
+
+    it("Should decrease the staker's balance by the test amount", async function () {
+      expect(await AMOR_TOKEN.balanceOf(root.address)).to.equal(TEST_BALANCE_ROOT);
+    });
+
+      it("Should increase the staker's AmorxGuild balanceOf by the expected amount", async function () {
+        expect(await AMOR_GUILD_TOKEN.balanceOf(root.address)).
+          to.equal(ethers.utils.parseEther((10).toString()))
+      });
+
+      it("Should revert if unsufficient AMOR", async function () {
+        await expect(AMOR_GUILD_TOKEN.stakeAmor(root.address, ethers.utils.parseEther(TEST_TRANSFER.toString()))).to.be.reverted;
+>>>>>>> 600294c (Init issue with updates)
       });
     });
   });
 
   context("function: withdrawAmor()", () => {
+<<<<<<< HEAD
     describe("unstaking behaviour", function () {
       let userBalance;
       let guildTokenSupply;
@@ -175,3 +239,17 @@ describe("unit - AMORxGuild", function () {
 
   });
 });
+=======
+      it("Should allow the user to withdraw their AMOR", async function () {
+        expect(await AMOR_GUILD_TOKEN.withdrawAmor(ethers.utils.parseEther("10"))).
+          to.emit(AMOR_TOKEN, "Transfer").
+          to.emit(AMOR_GUILD_TOKEN, "Transfer");
+      });
+      it("Should revert if unsufficient AMORxGuild", async function () {
+        await expect(AMOR_GUILD_TOKEN.withdrawAmor(ethers.utils.parseEther("100"))).
+          to.be.reverted;
+      });
+  })
+
+});
+>>>>>>> 600294c (Init issue with updates)
