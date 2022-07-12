@@ -24,7 +24,7 @@ interface IAmorxGuild {
     /// Proxy Address Change
     event ProxyAddressChange(address indexed newProxyAddress);
 
-    function initProxy(address _logic, bytes memory _data) external;
+    function initProxy(address _logic) external;
 
     /// @notice Initializes the AMORxGuild contract
     /// @dev    Sets the token details as well as the required addresses for token logic
