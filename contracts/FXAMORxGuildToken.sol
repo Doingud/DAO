@@ -28,6 +28,7 @@ contract FXAMORxGuild is ERC20Base, Ownable {
     address public AMORxGuild;
     address public controller; //contract that has a voting function
 
+    error AlreadyInitialized();
     error Unauthorized();
     error EmptyArray();
     error NotDelegatedAny();
@@ -47,7 +48,9 @@ contract FXAMORxGuild is ERC20Base, Ownable {
         address initOwner_,
         address AMORxGuild_
     ) external returns (bool) {
-        require(!_initialized, "Already initialized");
+        if (_initialized) {
+            revert AlreadyInitialized();
+        }
 
         _transferOwnership(initOwner_);
 
