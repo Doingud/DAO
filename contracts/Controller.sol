@@ -12,7 +12,10 @@ contract GuildController {
     int256[] reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
     mapping(uint256 => mapping(address => int256)) votes; // votes mapping(uint report => mapping(address voter => int256 vote))
     mapping(uint256 => address[]) voters; // voters mapping(uint report => address [] voters)
-    uint256[] reportsVoting; // results of the vote for the report with specific id
+    uint256[] reportsVoting; // results of the vote for the report with spe
+    mapping(uint256 => address) reportsAuthors;
+    uint256 totalReportsWeight; // total Weight of all of reports
+
     mapping(address => bool) impactMakers;
     mapping(address => uint) claimableTokens; // amount of tokens each specific address(impactMaker) can claim.
     mapping(address => uint) weights;// weight of each specific Impact Maker/Builder.
@@ -120,7 +123,7 @@ contract GuildController {
     /// @dev As soon as the report added, voting on it can start.
     /// @param report Hash of report (timestamp and report header)
     /// @param signature Signature of this report (splitted into uint8 v, bytes32 r, bytes32 s)
-    function addReport(bytes32 memory report, uint8 v, bytes32 r, bytes32 s) external { 
+    function addReport(bytes32 report, uint8 v, bytes32 r, bytes32 s) external { 
         //function addReport(bytes32 memory report, bytes memory signature) external {
 
 // each report is an NFT (maybe hash-id of NFT and sign this NFT-hash)
@@ -134,7 +137,7 @@ contract GuildController {
         uint256 newReportId = reportsVoting.length;
 
         // saveRepostContent = report; TODO
-
+        reportsAuthors[newReportId] = msg.sender;
         reportsVoting[newReportId] = 0;//report);//[length] = 0;
         // reportsVoting[newReportId] = 0;//[length] = 0;
 
@@ -191,10 +194,10 @@ contract GuildController {
         if (reportsVoting[id] > necessaryPercent) {
             // If report has positive voting weight, then funds go 50-50%, 
             // 50% go to the report creater,
-            IERC20(AMORxGuild).transfer(creatorAddress, fiftyPercent);
+            IERC20(AMORxGuild).transfer(reportsAuthors[id], fiftyPercent);
 
             // and 50% goes to the people who voted positively
-            for (uint256 i == 0; i < voters[id].length; i++) {
+            for (uint256 i = 0; i < voters[id].length; i++) {
                 if (votes[id][voters[i]] > 0) { // voted positively
                     uint256 weight = votes[id][voters[i]] / reportsWeight[id]; // amountFromUser / allAmount
                     // 50% * user weigth / all 100%
@@ -206,7 +209,7 @@ contract GuildController {
         } else {
             // If report has negative voting weight, then 
             // 50% goes to the people who voted negatively,
-            for (uint256 i == 0; i < voters[id].length; i++) {
+            for (uint256 i = 0; i < voters[id].length; i++) {
                 if (votes[id][voters[i]] < 0) { // voted negatively
                     uint256 weight = votes[id][voters[i]] / reportsWeight[id]; // weightFromUser / allWeight
                     // allAmountToDistribute(50%) * user weigth in % / all 100%
@@ -215,12 +218,12 @@ contract GuildController {
                 }
             }
             // and 50% gets redistributed between the passed reports based on their weights
-            for (uint256 i == 0; i < reportsWeight.length; i++) {
+            for (uint256 i = 0; i < reportsWeight.length; i++) {
                 if (reportsWeight[i] > 0) { // passed reports // TODO: check. maybe add mappint uint --> bool - if passed
-                    uint256 weight = reportsWeight[i] / allWeight; // weightFromReport / allWeight // TODO: get allWeight
+                    uint256 weight = reportsWeight[i] / totalReportsWeight; // weightFromReport / allWeight
                     // allAmountToDistribute(50%) * report weigth in % / all 100%
-                    uint256 amountToSendVoter = (fiftyPercent * weight) / 100;
-                    IERC20(AMORxGuild).transfer(voters[i], amountToSendVoter);
+                    uint256 amountToSendReport = (fiftyPercent * weight) / 100;
+                    IERC20(AMORxGuild).transfer(voters[i], amountToSendReport);
                 }
             }
         }
