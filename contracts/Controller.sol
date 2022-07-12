@@ -40,6 +40,7 @@ contract GuildController {
     error EmptyArray();
     error InvalidParameters();
     error VotingTimeExpired();
+    error VotingTimeNotFinished();
 
     /// Invalid balance to transfer. Needed `minRequired` but sent `amount`
     /// @param sent sent amount.
@@ -179,7 +180,9 @@ contract GuildController {
     /// @param id ID of report from distributes funds
     function finalizeReportVoting(uint256 id) external {
 
-        reportsVoting[id];// = reportsWeight[id];
+        if (block.timestamp < (timeVoting[id] + VOTING_TIME)) {
+            revert VotingTimeNotFinished();
+        }
 
         // if > 80% positive FX tokens then report is accepted
         uint256 necessaryPercent = (reportsWeight[id] * 80) / 100;
@@ -193,9 +196,9 @@ contract GuildController {
             // and 50% goes to the people who voted positively
             for (uint256 i == 0; i < voters[id].length; i++) {
                 if (votes[id][voters[i]] > 0) { // voted positively
-                    uint256 weight = ; //TODO
+                    uint256 weight = votes[id][voters[i]] / reportsWeight[id]; // amountFromUser / allAmount
                     // 50% * user weigth / all 100%
-                    uint256 amountToSendVoter = (fiftyPercent * weight) / reportsWeight[id];
+                    uint256 amountToSendVoter = (fiftyPercent * weight) / 100;//reportsWeight[id];
                     IERC20(AMORxGuild).transfer(voters[i], amountToSendVoter);
                 }
             }
@@ -205,17 +208,18 @@ contract GuildController {
             // 50% goes to the people who voted negatively,
             for (uint256 i == 0; i < voters[id].length; i++) {
                 if (votes[id][voters[i]] < 0) { // voted negatively
-                    // 50% * user weigth / all 100%
+                    uint256 weight = votes[id][voters[i]] / reportsWeight[id]; // weightFromUser / allWeight
+                    // allAmountToDistribute(50%) * user weigth in % / all 100%
                     uint256 amountToSendVoter = (fiftyPercent * weight) / reportsWeight[id];
                     IERC20(AMORxGuild).transfer(voters[i], amountToSendVoter);
                 }
             }
             // and 50% gets redistributed between the passed reports based on their weights
             for (uint256 i == 0; i < reportsWeight.length; i++) {
-                if (votes[id][voters[i]] < 0) { // voted negatively
-                    uint256 weight = ; //TODO
-                    // 50% * user weigth / all 100%
-                    uint256 amountToSendVoter = (fiftyPercent * reportsWeight[i]) / &&&;
+                if (reportsWeight[i] > 0) { // passed reports // TODO: check. maybe add mappint uint --> bool - if passed
+                    uint256 weight = reportsWeight[i] / allWeight; // weightFromReport / allWeight // TODO: get allWeight
+                    // allAmountToDistribute(50%) * report weigth in % / all 100%
+                    uint256 amountToSendVoter = (fiftyPercent * weight) / 100;
                     IERC20(AMORxGuild).transfer(voters[i], amountToSendVoter);
                 }
             }
