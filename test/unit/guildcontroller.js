@@ -149,7 +149,6 @@ describe('unit - Contract: GuildController', function () {
             const amount = 12;
             const sign = true;
             await controller.connect(operator).voteForReport(id, amount, sign); 
-
         });
         
         it('it fails to vote for report if VotingTimeExpired', async function () {
