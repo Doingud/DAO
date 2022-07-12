@@ -141,15 +141,7 @@ contract GuildController {
 
         reportsContent[newReportId] = report; // save report info
         reportsAuthors[newReportId] = msg.sender;
-        reportsVoting.push(0);//report);//[length] = 0;
-        // reportsVoting[newReportId] = 0;//[length] = 0;
-
-
-        // int256[] reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
-        // mapping(uint256 => mapping(address => int256)) votes; // votes mapping(uint report => mapping(address voter => int256 vote))
-        // mapping(uint256 => address[]) voters; // voters mapping(uint report => address [] voters)
-        // uint256[] reportsVoting; // results of the vote for the report with specific id
-        // mapping(address => bool) impactMakers;
+        reportsVoting.push(0);
     }
 
     /// @notice burns the amount of FXTokens, and changes a report weight, based on a sign provided. 

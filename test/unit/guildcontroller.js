@@ -92,47 +92,38 @@ describe('unit - Contract: GuildController', function () {
 
     context('» reports testing', () => {
 
-        it('it fails to donate AMORxGuild tokens if not enough AMORxGuild', async function () {
-            await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER)).to.be.revertedWith(
-                'InvalidAmount(100000000000000000000, 0)'
-            );
-        });
-
         it('it fails to add report if Unauthorized', async function () {
             await AMORxGuild.connect(root).mint(operator.address, ONE_HUNDRED_ETHER);
             await AMORxGuild.connect(operator).approve(controller.address, ONE_HUNDRED_ETHER);
 
-            // signature = '0xF';
-
             const timestamp = Date.now();
-            // STEP 1:
+
             // building hash has to come from system address
             // 32 bytes of data
             let messageHash = ethers.utils.solidityKeccak256(
-                ["address", "uint"],
-                [operator.address, timestamp]
+                ["address", "uint", "string"],
+                [operator.address, timestamp, "report info"]
             );
 
-            // STEP 2: 32 bytes of data in Uint8Array
+            // 32 bytes of data in Uint8Array
             let messageHashBinary = ethers.utils.arrayify(messageHash);
             
-            // STEP 3: To sign the 32 bytes of data, make sure you pass in the data
+            // To sign the 32 bytes of data, make sure you pass in the data
             let signature = await operator.signMessage(messageHashBinary);
 
             // split signature
             r = signature.slice(0, 66);
             s = "0x" + signature.slice(66, 130);
             v = parseInt(signature.slice(130, 132), 16);
-            // console.log({ r, s, v });
                     
             report = messageHash;
-            await expect(controller.connect(authorizer_adaptor).addReport(report, v,r,s)).to.be.revertedWith(
+            await expect(controller.connect(authorizer_adaptor).addReport(report, v, r, s)).to.be.revertedWith(
                 'Unauthorized()'
             );
         });
 
         it('adds report', async function () {
-            await controller.connect(operator).addReport(report, v,r,s); 
+            await controller.connect(operator).addReport(report, v, r, s); 
 
             expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(ONE_HUNDRED_ETHER.toString());
         });
@@ -150,3 +141,4 @@ function splitSignature(sig) {
     console.log([hash,signatureParts])
     return ([hash,signatureParts]);
 }
+
