@@ -91,6 +91,8 @@ contract GuildController {
     // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
     // which are going to be owned by the user.
     function donate(uint256 amount) external returns (uint256) {
+        console.log("   IERC20(AMORxGuild).balanceOf(msg.sender) is %s", IERC20(AMORxGuild).balanceOf(msg.sender));
+        console.log("   amount is %s", amount);
         if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }
@@ -104,8 +106,11 @@ contract GuildController {
         uint256 FxGAmount = (ipAmount * 100) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact poll AMORxGuildAmount * 100 / 10
         // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
         // which are going to be owned by the user.
+        console.log("   FxGAmount is %s", FxGAmount);
         IERC20(AMORxGuild).transferFrom(msg.sender, address(this), FxGAmount);
         IERC20(AMORxGuild).approve(FXAMORxGuild, FxGAmount);
+        console.log("   address(this) is %s", address(this));
+        console.log("   E IERC20(AMORxGuild).balanceOf(address(this)) is %s", IERC20(AMORxGuild).balanceOf(address(this)));
 
         IFXAMORxGuild(FXAMORxGuild).stake(msg.sender, FxGAmount);
 
@@ -163,11 +168,12 @@ contract GuildController {
         }
 
         if (IERC20(FXAMORxGuild).balanceOf(msg.sender) < amount) {
+            console.log("amount is %s", amount);
             revert InvalidAmount();
         }
 
         IFXAMORxGuild(FXAMORxGuild).burn(msg.sender, amount);
-
+console.log("msg.sender is %s", msg.sender);
         voters[id].push(msg.sender);
         reportsWeight[id] += amount;
 

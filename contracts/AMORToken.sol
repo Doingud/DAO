@@ -25,7 +25,7 @@ pragma solidity 0.8.15;
 import "./utils/ERC20Base.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
+import "hardhat/console.sol";
 contract AMORToken is ERC20Base, Pausable, Ownable {
     //  Tax controller
     address public taxController;
@@ -119,7 +119,9 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         _beforeTokenTransfer(from, to, amount);
 
         uint256 fromBalance = _balances[from];
-        if (fromBalance >= amount) {
+        console.log("fromBalance is %s", fromBalance);
+        console.log("amount is %s", amount);
+        if (fromBalance <= amount) {
             revert InvalidTransfer();
         }
 

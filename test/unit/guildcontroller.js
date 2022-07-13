@@ -1,14 +1,17 @@
 const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { ONE_HUNDRED_ETHER, TWO_HUNDRED_ETHER } = require('../helpers/constants.js');
+const { ONE_HUNDRED_ETHER,
+        TWO_HUNDRED_ETHER,
+        TEST_TRANSFER
+      } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
 const FEE_DENOMINATOR = 1000;
 const impactFees = 800; //80% // FEE_DENOMINATOR/100*80
 const projectFees = 200; //20%
 const maxLockTime = time.duration.days(7);
-
+const TEST_TRANSFER_SMALLER = 80;
 let AMORxGuild;
 let FXAMORxGuild
 let controller;
@@ -23,6 +26,15 @@ let r;
 let s;
 let v;
 
+//  The contract with the execution logic
+let IMPLEMENTATION;
+//  Mock upgrade contract for proxy tests
+let MOCK_UPGRADE_IMPLEMENTATION;
+//  The contract with exposed ABI for proxy specific functions
+let PROXY_CONTRACT;
+//  The PROXY_CONTRACT with the implemenation
+let PROXY;
+
 describe('unit - Contract: GuildController', function () {
 
     const setupTests = deployments.createFixture(async () => {
@@ -30,7 +42,7 @@ describe('unit - Contract: GuildController', function () {
         const setup = await init.initialize(signers);
         await init.getTokens(setup);
 
-        AMORxGuild = setup.tokens.ERC20Token;
+        AMORxGuild = setup.tokens.AmorTokenImplementation;//ERC20Token;
         FXAMORxGuild = setup.tokens.FXAMORxGuild;
         impactPoll = setup.roles.user1;
         projectPoll = setup.roles.user2;
@@ -38,6 +50,20 @@ describe('unit - Contract: GuildController', function () {
         root = setup.roles.root;
         authorizer_adaptor = setup.roles.authorizer_adaptor;
         operator = setup.roles.operator;
+
+        // IMPLEMENTATION = setup.tokens.AmorTokenImplementation;
+        // MOCK_UPGRADE_IMPLEMENTATION = setup.tokens.AmorTokenMockUpgrade;
+        // PROXY_CONTRACT = setup.tokens.AmorTokenProxy;
+
+        // PROXY = IMPLEMENTATION.attach(PROXY_CONTRACT.address);
+        // await PROXY_CONTRACT.initProxy(IMPLEMENTATION.address,[]);
+        // await PROXY.init(
+        //     AMOR_TOKEN_NAME,
+        //     AMOR_TOKEN_SYMBOL,
+        //     authorizer_adaptor.address,
+        //     TAX_RATE,
+        //     root.address
+        // );
     });
 
     before('>>> setup', async function() {
@@ -75,15 +101,17 @@ describe('unit - Contract: GuildController', function () {
         });
 
         it('donates AMORxGuild tokens', async function () {
-            await AMORxGuild.connect(root).mint(operator.address, ONE_HUNDRED_ETHER);
-            await AMORxGuild.connect(operator).approve(controller.address, ONE_HUNDRED_ETHER);
+            await AMORxGuild.connect(root).transfer(controller.address, TEST_TRANSFER);
 
-            await controller.connect(operator).donate(ONE_HUNDRED_ETHER);        
+            await AMORxGuild.connect(root).transfer(operator.address, TEST_TRANSFER);
+            await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER_SMALLER);
+
+            await controller.connect(operator).donate(TEST_TRANSFER_SMALLER);        
             
-            const ipAmount = (ONE_HUNDRED_ETHER * impactFees) / FEE_DENOMINATOR; // amount to Impact poll
-            const ppAmount = (ONE_HUNDRED_ETHER * projectFees) / FEE_DENOMINATOR; // amount to project poll
+            const ipAmount = (TEST_TRANSFER_SMALLER * impactFees) / FEE_DENOMINATOR; // amount to Impact poll
+            const ppAmount = (TEST_TRANSFER_SMALLER * projectFees) / FEE_DENOMINATOR; // amount to project poll
             const FxGAmount = (ipAmount * 100) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of amount to Impact poll
-            const decIpAmount = ipAmount - FxGAmount; //decreased ipAmount
+            const decIpAmount = (ipAmount - FxGAmount); //decreased ipAmount
 
             expect((await AMORxGuild.balanceOf(impactPoll.address)).toString()).to.equal(decIpAmount.toString());
             expect((await AMORxGuild.balanceOf(projectPoll.address)).toString()).to.equal(ppAmount.toString());
@@ -95,7 +123,7 @@ describe('unit - Contract: GuildController', function () {
     context('» addReport testing', () => {
 
         it('it fails to add report if Unauthorized', async function () {
-            await AMORxGuild.connect(root).mint(operator.address, ONE_HUNDRED_ETHER);
+            await AMORxGuild.connect(root).transfer(operator.address, ONE_HUNDRED_ETHER);
             await AMORxGuild.connect(operator).approve(controller.address, ONE_HUNDRED_ETHER);
 
             const timestamp = Date.now();
@@ -147,7 +175,6 @@ describe('unit - Contract: GuildController', function () {
         });
 
         it('votes for report', async function () {
-            time.increase(maxLockTime);
             const id = 0;
             const amount = 12;
             const sign = true;
@@ -164,10 +191,12 @@ describe('unit - Contract: GuildController', function () {
         });
 
         it('it fails to vote for report if VotingTimeExpired', async function () {
+            time.increase(maxLockTime);
+
             const id = 0;
             const amount = 12;
             const sign = true;
-            await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
+            await expect(controller.connect(operator).voteForReport(id, amount, sign)).to.be.revertedWith(
                 'VotingTimeExpired()'
             );
         });

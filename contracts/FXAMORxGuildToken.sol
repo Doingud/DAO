@@ -9,7 +9,7 @@ pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/ERC20Base.sol";
-
+import "hardhat/console.sol";
 contract FXAMORxGuild is ERC20Base, Ownable {
     // staker => all staker balance
     mapping(address => uint256) stakes;
@@ -88,7 +88,9 @@ contract FXAMORxGuild is ERC20Base, Ownable {
         if (to == address(0)) {
             revert AddressZero();
         }
-
+console.log("           msg.sender is %s", msg.sender);
+console.log("           amount is %s", amount);
+console.log("           IERC20(AMORxGuild).balanceOf(msg.sender) is %s", IERC20(AMORxGuild).balanceOf(msg.sender));
         if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }

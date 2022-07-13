@@ -2,6 +2,10 @@
 
 //const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants');
 const { ethers } = require('hardhat');
+const { TAX_RATE,
+        AMOR_TOKEN_NAME, 
+        AMOR_TOKEN_SYMBOL, 
+      } = require('./helpers/constants.js');
 
 const initialize = async (accounts) => {
   const setup = {};
@@ -76,19 +80,27 @@ const controller = async (setup, impactPoll, projectPoll) => {
   const controller = await controllerFactory.deploy();
   await controller.init(
     setup.roles.root.address, // owner
-    setup.tokens.ERC20Token.address, // AMORxGuild
+    setup.tokens.AmorTokenImplementation.address, // AMORxGuild
     setup.tokens.FXAMORxGuild.address, // FXAMORxGuild
     setup.roles.authorizer_adaptor.address, // guild
     impactPoll.address,
     projectPoll.address
   );
 
+  await setup.tokens.AmorTokenImplementation.init(
+    AMOR_TOKEN_NAME, 
+    AMOR_TOKEN_SYMBOL, 
+    setup.roles.authorizer_adaptor.address, //taxController
+    TAX_RATE,
+    setup.roles.root.address // multisig
+  ); 
+  
   await setup.tokens.FXAMORxGuild.init(
     "DoinGud MetaDAO", 
     "FXAMORxGuild", 
     controller.address, //controller
-    setup.tokens.ERC20Token.address
-  ); 
+    setup.tokens.AmorTokenImplementation.address
+  );
 
   return controller;
 };
