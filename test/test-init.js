@@ -26,10 +26,10 @@ const getTokens = async (setup) => {
 
     /*
     const AmorGuildTokenProxyFactory = await ethers.getContractFactory('AmorGuildProxy', setup.roles.root);
-
-    //  const GuildTokenFactory = await ethers.getContractFactory('GuildTokenFactory', setup.roles.root);
-
     */
+    
+    const CloneFactory = await ethers.getContractFactory('GuildCloneFactory', setup.roles.root);
+
     //  Amor Tokens
     const AmorTokenImplementation = await AmorTokenFactory.deploy();
     const AmorTokenMockUpgrade = await AmorTokenFactory.deploy();
@@ -42,12 +42,23 @@ const getTokens = async (setup) => {
     const AmorGuildTokenProxy = await AmorGuildTokenProxyFactory.deploy();
     const AmorGuildCloneFactory = await GuildTokenFactory.deploy(AmorGuildTokenProxy.address, AmorGuildToken.address, AmorTokenProxy.address );
     */
+    //  Clone Factory
+    const MockFxAmor = await AmorGuildTokenFactory.deploy();
+    const MockdAmor = await AmorGuildTokenFactory.deploy();
+    const CloneFactoryContract = await CloneFactory.deploy(
+      AmorTokenImplementation.address,
+      AmorGuildToken.address,
+      MockdAmor.address,
+      MockFxAmor.address,
+      AmorTokenProxy.address
+      );
 
     const tokens = {
       AmorTokenImplementation,
       AmorTokenProxy,
       AmorTokenMockUpgrade,
-      AmorGuildToken
+      AmorGuildToken,
+      CloneFactoryContract
       /*
       AmorGuildTokenProxy,
       AmorGuildCloneFactory*/
@@ -56,11 +67,6 @@ const getTokens = async (setup) => {
     setup.tokens = tokens;
     return tokens;
 }
-
-module.exports = {
-  initialize,
-  getTokens
-};
 
 module.exports = {
   initialize,
