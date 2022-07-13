@@ -5,7 +5,7 @@
 /// @notice Implements a FXAMORxGuild token
 /// @dev    Non transferable
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/ERC20Base.sol";

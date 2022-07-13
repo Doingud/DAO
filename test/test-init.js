@@ -1,14 +1,17 @@
+//  Init the test environment
+
+//const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants');
+const { ethers } = require('hardhat');
 
 const initialize = async (accounts) => {
   const setup = {};
   setup.roles = {
     root: accounts[0],
-    prime: accounts[1],
-    reward_manager: accounts[2],
-    authorizer_adaptor: accounts[3],
-    operator: accounts[4],
-    buyer1: accounts[5],
-    buyer2: accounts[6],
+    doingud_multisig: accounts[1],
+    user1: accounts[2],
+    user2: accounts[3],
+    authorizer_adaptor: accounts[5],
+    operator: accounts[6],
     staker: accounts[7],
   };
 
