@@ -53,7 +53,6 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             expect(await dAMORxGuild.name()).to.equals("DoinGud MetaDAO");
             expect(await dAMORxGuild.symbol()).to.equals("FXAMORxGuild");
             expect(await dAMORxGuild.owner()).to.equals(operator.address);
-            expect(await dAMORxGuild.AMORxGuild()).to.equals(AMORxGuild.address);
             expect(await dAMORxGuild.guardianThreshold()).to.equals(10);
         });
 

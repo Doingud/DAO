@@ -35,8 +35,9 @@ contract dAMORxGuild is ERC20Base, Ownable {
     uint256 public constant MIN_LOCK_TIME = 7 days; // 1 week is the time for the new deposided tokens to be locked until they can be withdrawn
 
     address public _owner; //GuildController
-    address public AMORxGuild;
     address public guardian;
+
+    IERC20 private AMORxGuild;
 
     error Unauthorized();
     error EmptyArray();
@@ -66,7 +67,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         _transferOwnership(initOwner_);
 
         _owner = initOwner_;
-        AMORxGuild = AMORxGuild_;
+        AMORxGuild = IERC20(AMORxGuild_);
         _setTokenDetail(name_, symbol_);
         guardianThreshold = amount;
 
@@ -113,11 +114,11 @@ contract dAMORxGuild is ERC20Base, Ownable {
         if (time > MAX_LOCK_TIME) {
             revert TimeTooBig();
         }
-        if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
+        if (AMORxGuild.balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }
         // send to AMORxGuild contract to stake
-        IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount);
+        AMORxGuild.transferFrom(msg.sender, address(this), amount);
 
         uint256 newAmount = _stake(amount, time);
 
@@ -133,11 +134,11 @@ contract dAMORxGuild is ERC20Base, Ownable {
     /// @dev    Front end must still call approve() on AMORxGuild token to allow transferFrom()
     /// @param  amount uint256 amount of dAMOR to be staked
     function increaseStake(uint256 amount) public returns (uint256) {
-        if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
+        if (AMORxGuild.balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }
         // send to AMORxGuild contract to stake
-        IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount);
+        AMORxGuild.transferFrom(msg.sender, address(this), amount);
 
         // mint AMORxGuild tokens to staker
         // msg.sender receives funds, based on the amount of time remaining until the end of his stake
@@ -175,7 +176,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
         amountDelegated[msg.sender] = 0;
 
-        IERC20(AMORxGuild).transfer(msg.sender, amount);
+        AMORxGuild.transfer(msg.sender, amount);
 
         return amount;
     }
