@@ -41,6 +41,8 @@ contract GuildCloneFactory {
 
     error CreationFailed();
 
+    error ArrayMismatch();
+
     constructor(
         address _amorToken,
         address _amorxGuildToken,
@@ -65,6 +67,7 @@ contract GuildCloneFactory {
         /// Setup local scope vars
         string memory tokenName;
         address clonedContract;
+
         /// Deploy AMORxGuild contract
         tokenName = string.concat("AMORx",_name);
         clonedContract = _deployContract(_name, _symbol, amorxGuildToken);
@@ -79,6 +82,11 @@ contract GuildCloneFactory {
         tokenName = string.concat("dAMORx",_name);
         clonedContract = _deployContract(tokenName, _symbol, dAMORxGuildToken);
         dAMORxGuildTokens.push(clonedContract);
+        
+        /// Check that all contracts were added to the respective arrays
+        if (guilds.length != dAMORxGuildTokens.length || guilds.length != fxAMORxGuildTokens.length) {
+            revert ArrayMismatch();
+        }
         }
 
     /// @notice Internal contract to deploy clone of an implementation contract
@@ -100,6 +108,7 @@ contract GuildCloneFactory {
         return address(proxyContract);
     }
 
+    /// ***Still needs to be reworked to accommodate more arrays
     function viewGuilds() public view returns (address[] memory) {
         return guilds;
     }
