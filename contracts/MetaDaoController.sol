@@ -16,28 +16,31 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract MetaDaoController {
 
-    //  Array of addresses of Guilds
+    /// Array of addresses of Guilds
     address[] public guilds;
-    //  The total weight of the guilds
+    /// The total weight of the guilds
     uint256 public guildsTotalWeight;
-    //  Amounts for Guilds' distributions
+    /// Amounts for Guilds' distributions
     uint256[] public guildDistribution;
 
-    //  Donation distribution weights
+    /// Donation distribution weights
     uint256 constant internal WEIGHT_TOTAL = 100;
     uint256 internal operationsWeight;
     uint256 internal buildersWeight;
 
-    //  Operations pool address
+    /// Operations pool address
     address public operationsPool;
-    //  Builders pool
+    /// Builders pool
     address public buildersPool;
+    /// Clone Factory
+    address public guildFactory;
 
     //  AMOR token
     IERC20 public amorToken;
 
-    constructor(address _amor) {
+    constructor(address _amor, address _cloneFactory) {
         amorToken = IERC20(_amor);
+        guildFactory = _cloneFactory;
     }
 
     /// @notice Explain to an end user what this does
