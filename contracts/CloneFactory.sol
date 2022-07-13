@@ -63,23 +63,27 @@ contract GuildCloneFactory {
     /// @dev    Takes the names and symbols and associates it to a guild
     /// @param  _name The name of the Guild without the prefix "AMORx"
     /// @param  _symbol The symbol of the Guild
-    function deployGuildContracts(string memory _name, string memory _symbol) public {
+    function deployGuildContracts(string memory _name, string memory _symbol) external {
         /// Setup local scope vars
         string memory tokenName;
+        string memory tokenSymbol;
         address clonedContract;
 
         /// Deploy AMORxGuild contract
         tokenName = string.concat("AMORx",_name);
-        clonedContract = _deployContract(_name, _symbol, amorxGuildToken);
+        tokenSymbol = string.concat("A",_symbol);
+        clonedContract = _deployContract(tokenName, _symbol, amorxGuildToken);
         guilds.push(clonedContract);
 
         /// Deploy FXAMORxGuild contract
         tokenName = string.concat("FXAMORx",_name);
+        tokenSymbol = string.concat("FX",_symbol);
         clonedContract = _deployContract(tokenName, _symbol, fxAMORxGuildToken);
         fxAMORxGuildTokens.push(clonedContract);
 
         /// Deploy dAMORxGuild contract
         tokenName = string.concat("dAMORx",_name);
+        tokenSymbol = string.concat("D",_symbol);
         clonedContract = _deployContract(tokenName, _symbol, dAMORxGuildToken);
         dAMORxGuildTokens.push(clonedContract);
         
@@ -106,10 +110,5 @@ contract GuildCloneFactory {
         proxyContract.init(amorToken, guildName, guildSymbol);
 
         return address(proxyContract);
-    }
-
-    /// ***Still needs to be reworked to accommodate more arrays
-    function viewGuilds() public view returns (address[] memory) {
-        return guilds;
     }
 }
