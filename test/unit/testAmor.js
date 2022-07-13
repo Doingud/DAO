@@ -130,13 +130,13 @@ describe("unit - AMOR Token", function () {
     context("function: approve()", () => {
       it("allows funds to be approved for spending", async function () {
         //  Approve AMOR to be transferred
-        expect(await PROXY.approve(root.address, ethers.utils.parseEther(TEST_TRANSFER.toString()))).
+        expect(await PROXY.approve(root.address, TEST_TRANSFER)).
           to.emit(PROXY, "Approval").
-            withArgs(root.address, root.address, ethers.utils.parseEther(TEST_TRANSFER.toString()));
+            withArgs(root.address, root.address, TEST_TRANSFER);
       });
       
       it("shows the correct allowance", async function () {
-        expect(await PROXY.allowance(root.address, root.address)).to.equal(ethers.utils.parseEther(TEST_TRANSFER.toString()));
+        expect(await PROXY.allowance(root.address, root.address)).to.equal(TEST_TRANSFER);
       });
     });
 
@@ -144,19 +144,19 @@ describe("unit - AMOR Token", function () {
       it("transfers from one user to another", async function () {
         const taxDeducted = TEST_TRANSFER*(1-TAX_RATE/BASIS_POINTS);
       
-        expect(await PROXY.transferFrom(root.address, user1.address, ethers.utils.parseEther(TEST_TRANSFER.toString())))
+        expect(await PROXY.connect(root).transferFrom(root.address, user1.address, TEST_TRANSFER))
           .to.emit(PROXY, "Transfer")
-            .withArgs(root.address, user1.address,ethers.utils.parseEther(taxDeducted.toString()));
+            .withArgs(root.address, user1.address, taxDeducted.toString());
       });
       it("allocates the fees to the collector", async function () {
         const taxAmount = TEST_TRANSFER*(TAX_RATE/BASIS_POINTS);
 
-        expect(await PROXY.balanceOf(multisig.address)).to.equal(ethers.utils.parseEther(taxAmount.toString()));
+        expect(await PROXY.balanceOf(multisig.address)).to.equal(taxAmount);
       })
       it("correctly substracts the fees from the sender", async function () {
         const taxAmount = TEST_TRANSFER*(1-(TAX_RATE/BASIS_POINTS));
 
-        expect(await PROXY.balanceOf(user1.address)).to.equal(ethers.utils.parseEther(taxAmount.toString()));
+        expect(await PROXY.balanceOf(user1.address)).to.equal(taxAmount);
       });
     });
 
