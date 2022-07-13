@@ -11,7 +11,9 @@ const FEE_DENOMINATOR = 1000;
 const impactFees = 800; //80% // FEE_DENOMINATOR/100*80
 const projectFees = 200; //20%
 const maxLockTime = time.duration.days(7);
+const TEST_TRANSFER_BIGGER = 100000;
 const TEST_TRANSFER_SMALLER = 80;
+
 let AMORxGuild;
 let FXAMORxGuild
 let controller;
@@ -123,8 +125,8 @@ describe('unit - Contract: GuildController', function () {
     context('» addReport testing', () => {
 
         it('it fails to add report if Unauthorized', async function () {
-            await AMORxGuild.connect(root).transfer(operator.address, ONE_HUNDRED_ETHER);
-            await AMORxGuild.connect(operator).approve(controller.address, ONE_HUNDRED_ETHER);
+            await AMORxGuild.connect(root).transfer(operator.address, TEST_TRANSFER_BIGGER);
+            await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER);
 
             const timestamp = Date.now();
 
@@ -154,16 +156,19 @@ describe('unit - Contract: GuildController', function () {
 
         it('adds report', async function () {
             await controller.connect(operator).addReport(report, v, r, s); 
-
-            expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(ONE_HUNDRED_ETHER.toString());
+            expect((await controller.reportsAuthors(0))).to.equal(operator.address);
+            expect((await controller.reportsContent(0))).to.equal(report);
         });
 
     });
+
     context('» voteForReport testing', () => {
 
         it('it fails to vote for report if ReportNotExists', async function () {
-            await AMORxGuild.connect(root).mint(operator.address, ONE_HUNDRED_ETHER);
-            await AMORxGuild.connect(operator).approve(controller.address, ONE_HUNDRED_ETHER);
+            await AMORxGuild.connect(root).transfer(controller.address, TEST_TRANSFER);
+
+            await AMORxGuild.connect(root).transfer(operator.address, TEST_TRANSFER_BIGGER);
+            await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER);
             await controller.connect(operator).addReport(report, v, r, s); 
 
             const id = 11;
@@ -175,15 +180,18 @@ describe('unit - Contract: GuildController', function () {
         });
 
         it('votes for report', async function () {
+            await AMORxGuild.connect(operator).approve(FXAMORxGuild.address, TEST_TRANSFER);
+            await controller.connect(operator).donate(TEST_TRANSFER); // the must before voting   
+
             const id = 0;
-            const amount = 12;
+            const amount = 2;
             const sign = true;
             await controller.connect(operator).voteForReport(id, amount, sign); 
         });
 
         it('it fails to vote for report if try to vote more than user have', async function () {
             const id = 0;
-            const amount = TWO_HUNDRED_ETHER;
+            const amount = TEST_TRANSFER;
             const sign = true;
             await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
                 'InvalidAmount()'

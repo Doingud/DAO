@@ -10,13 +10,13 @@ import "hardhat/console.sol";
 /// @notice GuildController contract controls the all of the deployed contracts of the guild
 
 contract GuildController {
-    uint256[] reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
-    mapping(uint256 => mapping(address => uint256)) votes; // votes mapping(uint report => mapping(address voter => int256 vote))
-    mapping(uint256 => address[]) voters; // voters mapping(uint report => address [] voters)
-    uint256[] reportsVoting; // results of the vote for the report with spe
-    mapping(uint256 => address) reportsAuthors;
-    uint256 totalReportsWeight; // total Weight of all of reports
-    mapping(uint256 => bytes32) reportsContent;
+    uint256[] public reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
+    mapping(uint256 => mapping(address => uint256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
+    mapping(uint256 => address[]) public voters; // voters mapping(uint report => address [] voters)
+    uint256[] public reportsVoting; // results of the vote for the report with spe
+    mapping(uint256 => address) public reportsAuthors;
+    uint256 public totalReportsWeight; // total Weight of all of reports
+    mapping(uint256 => bytes32) public reportsContent;
 
     mapping(address => bool) impactMakers;
     mapping(address => uint) claimableTokens; // amount of tokens each specific address(impactMaker) can claim.
@@ -168,6 +168,7 @@ contract GuildController {
         }
 
         if (IERC20(FXAMORxGuild).balanceOf(msg.sender) < amount) {
+            console.log("IERC20(FXAMORxGuild).balanceOf(msg.sender) is %s", IERC20(FXAMORxGuild).balanceOf(msg.sender));
             console.log("amount is %s", amount);
             revert InvalidAmount();
         }
