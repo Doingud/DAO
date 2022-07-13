@@ -210,6 +210,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
         //Nothing to undelegate
         if (delegations[msg.sender][account] == 0) {
+            delete delegations[msg.sender][account];
             revert NotDelegatedAny();
         }
 
@@ -220,6 +221,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
             delegations[msg.sender][account] = 0;
             amountDelegated[msg.sender] = 0;
         }
+        delete delegations[msg.sender][account];
     }
 
     /// @notice Sets msg.sender as a guardian if a new amount of dAMORxGuild(dAMOR) tokens > guardianThreshold
