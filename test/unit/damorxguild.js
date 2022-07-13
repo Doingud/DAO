@@ -6,6 +6,7 @@ const init = require('../test-init.js');
 
 // const MIN_LOCK_TIME = 604800; // 1 week
 const MAX_LOCK_TIME = 31536000; // 1 year = 60 * 60 * 24 * 365
+const maxLockTime = time.duration.days(365);
 
 let AMORxGuild;
 let dAMORxGuild
@@ -190,9 +191,16 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             await expect(dAMORxGuild.connect(root).withdraw()).to.be.revertedWith(
                 'InvalidAmount()'
             ); 
+        });
+
+        it('it fails to withdraw dAMORxGuild tokens if stake is not finished', async function () {
+            await expect(dAMORxGuild.connect(staker).withdraw()).to.be.revertedWith(
+                'TimeTooSmall()'
+            ); 
         });  
 
         it('withdraw dAMORxGuild tokens', async function () {
+            time.increase(maxLockTime);
             const currentAmount = (await dAMORxGuild.balanceOf(staker.address)).toString();
             await dAMORxGuild.connect(staker).withdraw();        
             const withdrawedTokens = (await AMORxGuild.balanceOf(staker.address)).toString();

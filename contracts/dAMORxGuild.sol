@@ -156,6 +156,10 @@ contract dAMORxGuild is ERC20Base, Ownable {
     /// @dev When this tokens are burned, staked AMORxGuild is being transfered
     ///      to the controller(contract that has a voting function)
     function withdraw() public returns (uint256) {
+        if (block.timestamp < stakesTimes[msg.sender]) {
+            revert TimeTooSmall();
+        }
+
         uint256 amount = stakes[msg.sender];
         if (amount <= 0) {
             revert InvalidAmount();
@@ -164,6 +168,12 @@ contract dAMORxGuild is ERC20Base, Ownable {
         //burn used dAMORxGuild tokens from staker
         _burn(msg.sender, amount);
         stakes[msg.sender] = 0;
+
+        address[] memory people = delegators[msg.sender];
+        for (uint256 i = 0; i < people.length; i++) {
+            delegations[msg.sender][people[i]] = 0;
+        }
+        amountDelegated[msg.sender] = 0;
 
         IERC20(AMORxGuild).transfer(msg.sender, amount);
 
@@ -177,9 +187,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
         if (to == msg.sender) {
             revert InvalidSender();
         }
-        if (stakes[msg.sender] < amount) {
-            revert InvalidAmount();
-        }
 
         uint256 alreadyDelegated = amountDelegated[msg.sender];
         uint256 availableAmount = stakes[msg.sender] - alreadyDelegated;
@@ -189,13 +196,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
         delegators[msg.sender].push(to);
 
-        if (delegations[msg.sender][to] > 0) {
-            delegations[msg.sender][to] += amount;
-            amountDelegated[msg.sender] += amount;
-        } else {
-            delegations[msg.sender][to] = amount;
-            amountDelegated[msg.sender] = amount;
-        }
+        delegations[msg.sender][to] += amount;
+        amountDelegated[msg.sender] += amount;
     }
 
     /// @notice Undelegate your dAMORxGuild to the address `account`
@@ -248,10 +250,4 @@ contract dAMORxGuild is ERC20Base, Ownable {
     ) public virtual override returns (bool) {
         return false;
     }
-
-    function _transfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal virtual override {}
 }
