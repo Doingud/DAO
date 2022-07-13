@@ -47,10 +47,7 @@ contract GuildController {
     error VotingTimeExpired();
     error VotingTimeNotFinished();
     error ReportNotExists();
-    /// Invalid balance to transfer. Needed `minRequired` but sent `amount`
-    /// @param sent sent amount.
-    /// @param minRequired minimum amount to send.
-    error InvalidAmount(uint256 sent, uint256 minRequired);
+    error InvalidAmount();
 
     /// Invalid address. Needed address != address(0)
     error AddressZero();
@@ -95,7 +92,7 @@ contract GuildController {
     // which are going to be owned by the user.
     function donate(uint256 amount) external returns (uint256) {
         if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
-            revert InvalidAmount(amount, IERC20(AMORxGuild).balanceOf(msg.sender));
+            revert InvalidAmount();
         }
 
         // send donation to the Controller
@@ -153,7 +150,7 @@ contract GuildController {
     /// @param sign Boolean value: true (for) or false (against) user is voting
     function voteForReport(uint256 id, uint256 amount, bool sign) external {
 
-        // TODO: check if report with that id exists
+        // check if report with that id exists
         if (reportsWeight.length < id) {
             revert ReportNotExists();
         }
@@ -164,7 +161,10 @@ contract GuildController {
             //check if the week has passed - can vote only a week from first vote
             revert VotingTimeExpired();
         }
-        // TODO: check if have enough funds
+
+        if (IERC20(FXAMORxGuild).balanceOf(msg.sender) < amount) {
+            revert InvalidAmount();
+        }
 
         IFXAMORxGuild(FXAMORxGuild).burn(msg.sender, amount);
 
@@ -183,6 +183,11 @@ contract GuildController {
     /// @notice distributes funds, depending on the report ids, for which votings were conducted. 
     /// @param id ID of report from distributes funds
     function finalizeReportVoting(uint256 id) external {
+
+        // check if report with that id exists
+        if (reportsWeight.length < id) {
+            revert ReportNotExists();
+        }
 
         if (block.timestamp < (timeVoting[id] + VOTING_TIME)) {
             revert VotingTimeNotFinished();

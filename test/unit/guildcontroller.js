@@ -1,11 +1,13 @@
+const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { ONE_HUNDRED_ETHER } = require('../helpers/constants.js');
+const { ONE_HUNDRED_ETHER, TWO_HUNDRED_ETHER } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
 const FEE_DENOMINATOR = 1000;
 const impactFees = 800; //80% // FEE_DENOMINATOR/100*80
 const projectFees = 200; //20%
+const maxLockTime = time.duration.days(7);
 
 let AMORxGuild;
 let FXAMORxGuild
@@ -68,7 +70,7 @@ describe('unit - Contract: GuildController', function () {
 
         it('it fails to donate AMORxGuild tokens if not enough AMORxGuild', async function () {
             await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER)).to.be.revertedWith(
-                'InvalidAmount(100000000000000000000, 0)'
+                'InvalidAmount()'
             );
         });
 
@@ -145,14 +147,24 @@ describe('unit - Contract: GuildController', function () {
         });
 
         it('votes for report', async function () {
+            time.increase(maxLockTime);
             const id = 0;
             const amount = 12;
             const sign = true;
             await controller.connect(operator).voteForReport(id, amount, sign); 
         });
-        
+
+        it('it fails to vote for report if try to vote more than user have', async function () {
+            const id = 0;
+            const amount = TWO_HUNDRED_ETHER;
+            const sign = true;
+            await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
+                'InvalidAmount()'
+            );
+        });
+
         it('it fails to vote for report if VotingTimeExpired', async function () {
-            const id = 1;
+            const id = 0;
             const amount = 12;
             const sign = true;
             await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
