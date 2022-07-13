@@ -93,7 +93,7 @@ contract GuildCloneFactory {
         }
         }
 
-    /// @notice Internal contract to deploy clone of an implementation contract
+    /// @notice Internal function to deploy clone of an implementation contract
     /// @param  guildName name of token 
     /// @param  guildSymbol symbol of token
     /// @param  _implementation address of the contract to be cloned
