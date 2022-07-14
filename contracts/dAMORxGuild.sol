@@ -16,11 +16,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
     mapping(address => uint256) public stakes;
     // those who delegated to a specific address
     mapping(address => address[]) public delegators;
-    // staker => delegated to (many accounts) => amount
-    // list of delegations from one address
-    mapping(address => mapping(address => uint256)) public delegations;
-    // amount of all delegated tokens from staker
-    mapping(address => uint256) public amountDelegated;
+    // delegation of all balance from one address to one address
+    mapping(address => address) public delegations;
 
     event Initialized(bool success, address owner, address AMORxGuild, uint256 amount);
 
@@ -151,9 +148,9 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
         address[] memory people = delegators[msg.sender];
         for (uint256 i = 0; i < people.length; i++) {
-            delete delegations[msg.sender][people[i]];
+            delete delegations[people[i]];
         }
-        amountDelegated[msg.sender] = 0;
+        delete delegations[msg.sender];
 
         AMORxGuild.transfer(msg.sender, amount);
 
@@ -162,46 +159,35 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
     /// @notice Delegate your dAMORxGuild to the address `account`
     /// @param  to address to which delegate users FXAMORxGuild
-    /// @param  amount uint256 representing amount of delegating tokens
-    function delegate(address to, uint256 amount) public {
+    function delegate(address to) public {
         if (to == msg.sender) {
             revert InvalidSender();
         }
 
-        uint256 alreadyDelegated = amountDelegated[msg.sender];
-        uint256 availableAmount = stakes[msg.sender] - alreadyDelegated;
-        if (availableAmount < amount) {
-            revert InvalidAmount();
-        }
-
-        delegators[msg.sender].push(to);
-
-        delegations[msg.sender][to] += amount;
-        amountDelegated[msg.sender] += amount;
+        delegators[to].push(msg.sender);
+        delegations[msg.sender] = to;
     }
 
     /// @notice Undelegate your dAMORxGuild to the address `account`
     /// @param  account address from which delegating will be taken away
-    /// @param  amount uint256 representing amount of undelegating tokens
-    function undelegate(address account, uint256 amount) public {
+    function undelegate(address account) public {
         if (account == msg.sender) {
             revert InvalidSender();
         }
 
         //Nothing to undelegate
-        if (delegations[msg.sender][account] == 0) {
-            delete delegations[msg.sender][account];
+        if (delegators[account].length == 0) {
             revert NotDelegatedAny();
         }
 
-        if (delegations[msg.sender][account] >= amount) {
-            delegations[msg.sender][account] -= amount;
-            amountDelegated[msg.sender] -= amount;
-        } else {
-            amountDelegated[msg.sender] -= delegations[msg.sender][account];
-            delegations[msg.sender][account] = 0;
+        for (uint256 i = 0; i < delegators[account].length; i++) {
+            if (delegators[account][i] == account) {
+                delegators[account][i] = delegators[account][delegators[account].length - 1];
+                delegators[account].pop();
+                break;
+            }
         }
-        delete delegations[msg.sender][account];
+        delete delegations[msg.sender];
     }
 
     /// @notice non-transferable
