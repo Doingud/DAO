@@ -20,7 +20,7 @@
  *  not immutable.
  */
 
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 import "./ERC20Taxable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
