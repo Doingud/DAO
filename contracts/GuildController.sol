@@ -24,8 +24,8 @@ contract GuildController {
 
     uint256 public VOTING_TIME;
     uint256 public constant WEEK = 7 days; // 1 week is the time for the users to vore for the specific report
-    uint constant DAY_IN_SECONDS = 86400;
-    
+    uint256 constant DAY_IN_SECONDS = 86400;
+
     address public owner;
     address public FXAMORxGuild;
     address public guild;
@@ -170,7 +170,7 @@ contract GuildController {
             uint256 day = getWeekday(block.timestamp);
 
             // SUNDAY-CHECK
-            if (day == 0){
+            if (day == 0) {
                 endTime += WEEK;
             } else if (day == 6 || day == 5) {
                 // if vote started on Friday/Saturday, then the end will be next week
@@ -259,8 +259,8 @@ contract GuildController {
             }
         }
     }
+
     function getWeekday(uint timestamp) public pure returns (uint8) {
         return uint8((timestamp / DAY_IN_SECONDS + 4) % 7); // day of week = (floor(T / 86400) + 4) mod 7.
     }
-
 }
