@@ -9,7 +9,7 @@ pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/ERC20Base.sol";
-import "hardhat/console.sol";
+
 contract FXAMORxGuild is ERC20Base, Ownable {
     // staker => all staker balance
     mapping(address => uint256) stakes;
@@ -25,6 +25,7 @@ contract FXAMORxGuild is ERC20Base, Ownable {
     bool private _initialized;
 
     address public _owner; //GuildController
+    address public _authorized; //address with ability to change controller address
     address public AMORxGuild;
     address public controller; //contract that has a voting function
 
@@ -42,7 +43,8 @@ contract FXAMORxGuild is ERC20Base, Ownable {
         string memory name_,
         string memory symbol_,
         address initOwner_,
-        address AMORxGuild_
+        address AMORxGuild_,
+        address authorized_
     ) external returns (bool) {
         require(!_initialized, "Already initialized");
 
@@ -50,6 +52,7 @@ contract FXAMORxGuild is ERC20Base, Ownable {
 
         _owner = initOwner_;
         AMORxGuild = AMORxGuild_;
+        _authorized = authorized_;
 
         _setTokenDetail(name_, symbol_);
 
@@ -58,7 +61,7 @@ contract FXAMORxGuild is ERC20Base, Ownable {
         return true;
     }
 
-    function setController(address _controller) external onlyAddress(_owner) {
+    function setController(address _controller) external onlyAddress(_authorized) {
         if (_controller == address(0)) {
             revert AddressZero();
         }
@@ -88,9 +91,6 @@ contract FXAMORxGuild is ERC20Base, Ownable {
         if (to == address(0)) {
             revert AddressZero();
         }
-console.log("           msg.sender is %s", msg.sender);
-console.log("           amount is %s", amount);
-console.log("           IERC20(AMORxGuild).balanceOf(msg.sender) is %s", IERC20(AMORxGuild).balanceOf(msg.sender));
         if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }

@@ -3,7 +3,6 @@ pragma solidity 0.8.15;
 
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
 
 /// @title GuildController contract
 /// @author Daoism Systems Team
@@ -16,9 +15,8 @@ contract GuildController {
     uint256[] public reportsVoting; // results of the vote for the report with spe
     mapping(uint256 => address) public reportsAuthors;
     uint256 public totalReportsWeight; // total Weight of all of reports
-    mapping(uint256 => bytes32) public reportsContent;
 
-    mapping(address => bool) impactMakers;
+    address[] impactMakers; // list of impactMakers of this DAO
     mapping(address => uint) claimableTokens; // amount of tokens each specific address(impactMaker) can claim.
     mapping(address => uint) weights;// weight of each specific Impact Maker/Builder.
     uint256 totalWeight; // total Weight of all of the impact makers.
@@ -27,15 +25,13 @@ contract GuildController {
     uint256 public constant VOTING_TIME = 7 days; // 1 week is the time for the users to vore for the specific report
 
     address public owner;
-    address public AMORxGuild;
     address public FXAMORxGuild;
     address public guild;
-    address public impactPoll;
-    address public projectPoll;
 
+    IERC20 private AMORxGuild;
+    
     uint256 public constant FEE_DENOMINATOR = 1000;
-    uint256 public impactFees = 800; //80% // FEE_DENOMINATOR/100*80
-    uint256 public projectFees = 200; //20%
+    uint256 public percentToConvert = 100; //10% // FEE_DENOMINATOR/100*80
 
     event Initialized(bool success, address owner, address AMORxGuild);
 
@@ -60,17 +56,17 @@ contract GuildController {
         address AMORxGuild_,
         address FXAMORxGuild_,
         address guild_,
-        address impactPoll_,
-        address projectPoll_
+        address firstImpactMaker
     ) external returns (bool) {
         require(!_initialized, "Already initialized");
 
         owner = initOwner_;
-        AMORxGuild = AMORxGuild_;
+        AMORxGuild = IERC20(AMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
         guild = guild_;
-        impactPoll = impactPoll_;
-        projectPoll = projectPoll_;
+        impactMakers.push(firstImpactMaker);
+        weights[firstImpactMaker] = 1;
+        totalWeight = 1;
 
         _initialized = true;
         emit Initialized(_initialized, initOwner_, AMORxGuild_);
@@ -86,37 +82,30 @@ contract GuildController {
 
     /// @notice allows to donate AMORxGuild tokens to the Guild
     /// @param amount The amount to donate
-    // It automatically distributes tokens between Impact and project polls
-    // (which are both multisigs and governed by the owners of dAMOR) in the 80%-20% distribution.
-    // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
-    // which are going to be owned by the user.
+    // It automatically distributes tokens between Impact makers. 
+    // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens, 
+    // which are going to be owned by the user. 
+    // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     function donate(uint256 amount) external returns (uint256) {
-        console.log("   IERC20(AMORxGuild).balanceOf(msg.sender) is %s", IERC20(AMORxGuild).balanceOf(msg.sender));
-        console.log("   amount is %s", amount);
-        if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
+        if (AMORxGuild.balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }
-
-        // send donation to the Controller
-        // IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount);
-
-        uint256 ipAmount = (amount * impactFees) / FEE_DENOMINATOR; // amount to Impact poll
-        uint256 ppAmount = (amount * projectFees) / FEE_DENOMINATOR; // amount to project poll
-
-        uint256 FxGAmount = (ipAmount * 100) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact poll AMORxGuildAmount * 100 / 10
+        
         // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
         // which are going to be owned by the user.
-        console.log("   FxGAmount is %s", FxGAmount);
-        IERC20(AMORxGuild).transferFrom(msg.sender, address(this), FxGAmount);
-        IERC20(AMORxGuild).approve(FXAMORxGuild, FxGAmount);
-        console.log("   address(this) is %s", address(this));
-        console.log("   E IERC20(AMORxGuild).balanceOf(address(this)) is %s", IERC20(AMORxGuild).balanceOf(address(this)));
-
+        uint256 FxGAmount = (amount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
+        AMORxGuild.transferFrom(msg.sender, address(this), FxGAmount);
+        AMORxGuild.approve(FXAMORxGuild, FxGAmount);
         IFXAMORxGuild(FXAMORxGuild).stake(msg.sender, FxGAmount);
 
-        uint256 decIpAmount = ipAmount - FxGAmount; //decreased ipAmount
-        IERC20(AMORxGuild).transferFrom(msg.sender, impactPoll, decIpAmount);
-        IERC20(AMORxGuild).transferFrom(msg.sender, projectPoll, ppAmount);
+        uint256 decAmount = amount - FxGAmount; //decreased amount: other 90%
+
+        // based on the weights distribution, tokens will be automatically redirected to the impact makers
+        for (uint256 i = 0; i < impactMakers.length; i++) {
+            uint256 weight = weights[impactMakers[i]] / totalWeight; // impartMakerWeight / totalWeight
+            uint256 amountToSendVoter = decAmount * weight;
+            AMORxGuild.transferFrom(msg.sender, impactMakers[i], amountToSendVoter);
+        }
 
         return amount;
     }
@@ -140,7 +129,6 @@ contract GuildController {
 
         uint256 newReportId = reportsVoting.length;
 
-        reportsContent[newReportId] = report; // save report info
         reportsAuthors[newReportId] = msg.sender;
         reportsWeight.push(0);
         reportsVoting.push(0);
@@ -168,13 +156,10 @@ contract GuildController {
         }
 
         if (IERC20(FXAMORxGuild).balanceOf(msg.sender) < amount) {
-            console.log("IERC20(FXAMORxGuild).balanceOf(msg.sender) is %s", IERC20(FXAMORxGuild).balanceOf(msg.sender));
-            console.log("amount is %s", amount);
             revert InvalidAmount();
         }
 
         IFXAMORxGuild(FXAMORxGuild).burn(msg.sender, amount);
-console.log("msg.sender is %s", msg.sender);
         voters[id].push(msg.sender);
         reportsWeight[id] += amount;
 
@@ -208,7 +193,7 @@ console.log("msg.sender is %s", msg.sender);
         if (reportsVoting[id] > necessaryPercent) {
             // If report has positive voting weight, then funds go 50-50%, 
             // 50% go to the report creater,
-            IERC20(AMORxGuild).transfer(reportsAuthors[id], fiftyPercent);
+            AMORxGuild.transfer(reportsAuthors[id], fiftyPercent);
 
             // and 50% goes to the people who voted positively
             for (uint256 i = 0; i < voters[id].length; i++) {
@@ -216,7 +201,7 @@ console.log("msg.sender is %s", msg.sender);
                     uint256 weight = votes[id][people[i]] / reportsWeight[id]; // amountFromUser / allAmount
                     // 50% * user weigth / all 100%
                     uint256 amountToSendVoter = (fiftyPercent * weight) / 100;//reportsWeight[id];
-                    IERC20(AMORxGuild).transfer(people[i], amountToSendVoter);
+                    AMORxGuild.transfer(people[i], amountToSendVoter);
                 }
             }
 
@@ -228,7 +213,7 @@ console.log("msg.sender is %s", msg.sender);
                     uint256 weight = votes[id][people[i]] / reportsWeight[id]; // weightFromUser / allWeight
                     // allAmountToDistribute(50%) * user weigth in % / all 100%
                     uint256 amountToSendVoter = (fiftyPercent * weight) / reportsWeight[id];
-                    IERC20(AMORxGuild).transfer(people[i], amountToSendVoter);
+                    AMORxGuild.transfer(people[i], amountToSendVoter);
                 }
             }
             // and 50% gets redistributed between the passed reports based on their weights
@@ -237,7 +222,7 @@ console.log("msg.sender is %s", msg.sender);
                     uint256 weight = reportsWeight[i] / totalReportsWeight; // weightFromReport / allWeight
                     // allAmountToDistribute(50%) * report weigth in % / all 100%
                     uint256 amountToSendReport = (fiftyPercent * weight) / 100;
-                    IERC20(AMORxGuild).transfer(reportsAuthors[i], amountToSendReport);
+                    AMORxGuild.transfer(reportsAuthors[i], amountToSendReport);
                 }
             }
         }

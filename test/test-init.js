@@ -78,13 +78,13 @@ const getTokens = async (setup) => {
 const controller = async (setup, impactPoll, projectPoll) => {
   const controllerFactory = await ethers.getContractFactory('GuildController');
   const controller = await controllerFactory.deploy();
+
   await controller.init(
     setup.roles.root.address, // owner
     setup.tokens.AmorTokenImplementation.address, // AMORxGuild
     setup.tokens.FXAMORxGuild.address, // FXAMORxGuild
     setup.roles.authorizer_adaptor.address, // guild
-    impactPoll.address,
-    projectPoll.address
+    setup.roles.doingud_multisig.address // firstImpactMaker
   );
 
   await setup.tokens.AmorTokenImplementation.init(
@@ -99,7 +99,8 @@ const controller = async (setup, impactPoll, projectPoll) => {
     "DoinGud MetaDAO", 
     "FXAMORxGuild", 
     controller.address, //controller
-    setup.tokens.AmorTokenImplementation.address
+    setup.tokens.AmorTokenImplementation.address,
+    setup.roles.root.address
   );
 
   return controller;
