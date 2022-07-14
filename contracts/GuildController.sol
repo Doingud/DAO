@@ -22,8 +22,10 @@ contract GuildController {
     uint256 totalWeight; // total Weight of all of the impact makers
     uint256[] timeVoting; // time of the forst vote the report with specific id
 
-    uint256 public constant VOTING_TIME = 7 days; // 1 week is the time for the users to vore for the specific report
-
+    uint256 public VOTING_TIME;
+    uint256 public constant WEEK = 7 days; // 1 week is the time for the users to vore for the specific report
+    uint constant DAY_IN_SECONDS = 86400;
+    
     address public owner;
     address public FXAMORxGuild;
     address public guild;
@@ -68,6 +70,8 @@ contract GuildController {
         weights[firstImpactMaker] = 1;
         totalWeight = 1;
 
+        VOTING_TIME = WEEK;
+
         _initialized = true;
         emit Initialized(_initialized, initOwner_, AMORxGuild_);
         return true;
@@ -78,6 +82,13 @@ contract GuildController {
             revert Unauthorized();
         }
         _;
+    }
+
+    function setVotingPeriod(uint256 newTime) external onlyAddress(owner) {
+        if (newTime < 2 days) {
+            revert InvalidAmount();
+        }
+        VOTING_TIME = newTime;
     }
 
     /// @notice allows to donate AMORxGuild tokens to the Guild
@@ -155,7 +166,21 @@ contract GuildController {
         }
 
         if (voters[id].length == 0) {
-            timeVoting[id] = block.timestamp;
+            uint256 endTime = block.timestamp;
+            uint256 day = getWeekday(block.timestamp);
+            
+            // SUNDAY-CHECK
+            if (day == 0){
+                endTime += WEEK;
+            } else if (day == 6 || day == 5) {
+                // if vote started on Friday/Saturday, then the end will be next week
+                // end of the next week
+                endTime += WEEK + (DAY_IN_SECONDS * (7 - day));
+            } else {
+                endTime += WEEK - (DAY_IN_SECONDS * 7);
+            }
+
+            timeVoting[id] = endTime;
         } else if (block.timestamp > (timeVoting[id] + VOTING_TIME)) {
             //check if the week has passed - can vote only a week from first vote
             revert VotingTimeExpired();
@@ -234,4 +259,8 @@ contract GuildController {
             }
         }
     }
+    function getWeekday(uint timestamp) public pure returns (uint8) {
+        return uint8((timestamp / DAY_IN_SECONDS + 4) % 7); // day of week = (floor(T / 86400) + 4) mod 7.
+    }
+
 }
