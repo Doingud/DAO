@@ -11,10 +11,8 @@ const maxLockTime = time.duration.days(365);
 let AMORxGuild;
 let dAMORxGuild
 let root;
-let authorizer_adaptor;
 let operator;
 let staker;
-let user1;
 let timeTooSmall;
 let timeTooBig;
 let normalTime;
@@ -31,10 +29,8 @@ describe('unit - Contract: dAMORxGuild Token', function () {
         AMORxGuild = setup.tokens.ERC20Token;
         dAMORxGuild = setup.tokens.dAMORxGuild;
         root = setup.roles.root;
-        authorizer_adaptor = setup.roles.authorizer_adaptor;
         operator = setup.roles.operator;
         staker = setup.roles.staker;
-        user1 = setup.roles.user1;
     });
 
     before('>>> setup', async function() {
