@@ -168,7 +168,7 @@ contract GuildController {
         if (voters[id].length == 0) {
             uint256 endTime = block.timestamp;
             uint256 day = getWeekday(block.timestamp);
-            
+
             // SUNDAY-CHECK
             if (day == 0){
                 endTime += WEEK;

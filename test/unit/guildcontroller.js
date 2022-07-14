@@ -185,16 +185,8 @@ describe('unit - Contract: GuildController', function () {
     context('» finalizeReportVoting testing', () => {
 
         it('it fails to finalize report voting if ReportNotExists', async function () {
-            await AMORxGuild.connect(root).transfer(controller.address, TEST_TRANSFER);
-
-            await AMORxGuild.connect(root).transfer(operator.address, TEST_TRANSFER_BIGGER);
-            await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER);
-            await controller.connect(operator).addReport(report, v, r, s); 
-
-            const id = 11;
-            const amount = 12;
-            const sign = true;            
-            await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
+            const id = 11;        
+            await expect(controller.connect(authorizer_adaptor).finalizeReportVoting(id)).to.be.revertedWith(
                 'ReportNotExists()'
             );
         });
@@ -206,11 +198,13 @@ describe('unit - Contract: GuildController', function () {
             await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER);
             await controller.connect(operator).addReport(report, v, r, s); 
 
-            const id = 11;
-            const amount = 12;
-            const sign = true;            
-            await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
-                'ReportNotExists()'
+            const id = 1;
+            const amount = 2;
+            const sign = true;
+            await controller.connect(operator).voteForReport(id, amount, sign);
+
+            await expect(controller.connect(authorizer_adaptor).finalizeReportVoting(id)).to.be.revertedWith(
+                'VotingTimeNotFinished()'
             );
         });
 
@@ -220,10 +214,13 @@ describe('unit - Contract: GuildController', function () {
             await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER_SMALLER);
             await controller.connect(operator).donate(TEST_TRANSFER_SMALLER);
 
-            const id = 0;
+            const id = 1;
             const amount = 2;
             const sign = true;
             await controller.connect(operator).voteForReport(id, amount, sign); 
+
+            time.increase(maxLockTime);
+            await controller.connect(operator).finalizeReportVoting(id);
         });
 
     });
