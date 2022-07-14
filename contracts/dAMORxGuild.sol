@@ -6,10 +6,13 @@
 
 pragma solidity 0.8.15;
 
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/ERC20Base.sol";
 
 contract dAMORxGuild is ERC20Base, Ownable {
+    using SafeERC20 for IERC20;
+
     // staker => time staked for
     mapping(address => uint256) public stakesTimes;
     // staker => all staker balance
@@ -17,7 +20,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     // those who delegated to a specific address
     mapping(address => address[]) public delegators;
     // delegation of all balance from one address to one address
-    mapping(address => address) public delegations;
+    mapping(address => address) public delegation;
 
     event Initialized(bool success, address owner, address AMORxGuild, uint256 amount);
 
@@ -43,29 +46,22 @@ contract dAMORxGuild is ERC20Base, Ownable {
      *          It can only be run once.
      */
     function init(
-        string memory _name,
-        string memory _symbol,
-        address _initOwner,
+        string memory name,
+        string memory symbol,
+        address initOwner,
         address _AMORxGuild,
         uint256 amount
-    ) external returns (bool) {
+    ) external onlyOwner returns (bool) {
         require(!_initialized, "Already initialized");
 
-        _transferOwnership(_initOwner);
+        _transferOwnership(initOwner);
 
         AMORxGuild = IERC20(_AMORxGuild);
-        _setTokenDetail(_name, _symbol);
+        _setTokenDetail(name, symbol);
 
         _initialized = true;
-        emit Initialized(_initialized, _initOwner, _AMORxGuild, amount);
+        emit Initialized(_initialized, initOwner, _AMORxGuild, amount);
         return true;
-    }
-
-    modifier onlyAddress(address authorizedAddress) {
-        if (msg.sender != authorizedAddress) {
-            revert Unauthorized();
-        }
-        _;
     }
 
     /// @notice Mint AMORxGuild tokens to staker
@@ -99,7 +95,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
             revert InvalidAmount();
         }
         // send to AMORxGuild contract to stake
-        AMORxGuild.transferFrom(msg.sender, address(this), amount);
+        AMORxGuild.safeTransferFrom(msg.sender, address(this), amount);
 
         uint256 newAmount = _stake(amount, time);
 
@@ -117,7 +113,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
             revert InvalidAmount();
         }
         // send to AMORxGuild contract to stake
-        AMORxGuild.transferFrom(msg.sender, address(this), amount);
+        AMORxGuild.safeTransferFrom(msg.sender, address(this), amount);
 
         // mint AMORxGuild tokens to staker
         // msg.sender receives funds, based on the amount of time remaining until the end of his stake
@@ -139,20 +135,32 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
 
         uint256 amount = stakes[msg.sender];
-        if (amount <= 0) {
-            revert InvalidAmount();
-        }
 
         //burn used dAMORxGuild tokens from staker
         _burn(msg.sender, amount);
         stakes[msg.sender] = 0;
 
-        for (uint256 i = 0; i < delegators[msg.sender].length; i++) {
-            delete delegations[delegators[msg.sender][i]];
+        // clear msg.sender delegation from delegators who delegated to msg.sender
+        address[] memory people = delegators[msg.sender];
+        for (uint256 i = 0; i < people.length; i++) {
+            delete delegation[people[i]];
         }
-        delete delegations[msg.sender];
 
-        AMORxGuild.transfer(msg.sender, amount);
+        address toWhom = delegation[msg.sender];
+        // clear msg.sender delegation from list of delegators to `toWhom` address
+        for (uint256 i = 0; i < delegators[toWhom].length; i++) {
+            if (delegators[toWhom][i] == msg.sender) {
+                delegators[toWhom][i] = delegators[toWhom][delegators[toWhom].length - 1];
+                delegators[toWhom].pop();
+                break;
+            }
+        }
+
+        // clear msg.sender delegation
+        delete delegation[msg.sender];
+        delete delegators[msg.sender];
+
+        AMORxGuild.safeTransfer(msg.sender, amount);
 
         return amount;
     }
@@ -165,7 +173,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
 
         delegators[to].push(msg.sender);
-        delegations[msg.sender] = to;
+        delegation[msg.sender] = to;
     }
 
     /// @notice Undelegate your dAMORxGuild to the address `account`
@@ -187,7 +195,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
                 break;
             }
         }
-        delete delegations[msg.sender];
+        delete delegation[msg.sender];
     }
 
     /// @notice non-transferable

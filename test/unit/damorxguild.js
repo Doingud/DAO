@@ -170,12 +170,6 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
     context('» withdraw testing', () => {
 
-        it('it fails to withdraw dAMORxGuild tokens if amount <= 0', async function () {
-            await expect(dAMORxGuild.connect(root).withdraw()).to.be.revertedWith(
-                'InvalidAmount()'
-            ); 
-        });
-
         it('it fails to withdraw dAMORxGuild tokens if stake is not finished', async function () {
             await expect(dAMORxGuild.connect(staker).withdraw()).to.be.revertedWith(
                 'TimeTooSmall()'
