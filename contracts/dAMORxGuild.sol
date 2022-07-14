@@ -11,62 +11,55 @@ import "./utils/ERC20Base.sol";
 
 contract dAMORxGuild is ERC20Base, Ownable {
     // staker => time staked for
-    mapping(address => uint256) stakesTimes;
+    mapping(address => uint256) public stakesTimes;
     // staker => all staker balance
-    mapping(address => uint256) stakes;
+    mapping(address => uint256) public stakes;
     // those who delegated to a specific address
-    mapping(address => address[]) delegators;
+    mapping(address => address[]) public delegators;
     // staker => delegated to (many accounts) => amount
     // list of delegations from one address
-    mapping(address => mapping(address => uint256)) delegations;
+    mapping(address => mapping(address => uint256)) public delegations;
     // amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
 
     event Initialized(bool success, address owner, address AMORxGuild, uint256 amount);
 
     bool private _initialized;
-
+    uint256 public constant COEFFICIENT = 2;
     uint256 public constant TIME_DENOMINATOR = 1000000000000000000;
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     uint256 public constant MIN_LOCK_TIME = 7 days; // 1 week is the time for the new deposided tokens to be locked until they can be withdrawn
-
-    address public _owner; //GuildController
 
     IERC20 private AMORxGuild;
 
     error Unauthorized();
     error EmptyArray();
     error NotDelegatedAny();
-
     /// Invalid address. Needed address != address(0)
     error AddressZero();
-
     /// Invalid address to transfer. Needed `to` != msg.sender
     error InvalidSender();
-
     error TimeTooSmall();
     error TimeTooBig();
-
     /*  @dev    The init() function takes the place of the constructor.
      *          It can only be run once.
      */
     function init(
-        string memory name_,
-        string memory symbol_,
-        address initOwner_,
-        address AMORxGuild_,
+        string memory _name,
+        string memory _symbol,
+        address _initOwner,
+        address _AMORxGuild,
         uint256 amount
     ) external returns (bool) {
         require(!_initialized, "Already initialized");
 
-        _transferOwnership(initOwner_);
+        _transferOwnership(_initOwner);
 
-        _owner = initOwner_;
-        AMORxGuild = IERC20(AMORxGuild_);
-        _setTokenDetail(name_, symbol_);
+        AMORxGuild = IERC20(_AMORxGuild);
+        _setTokenDetail(_name, _symbol);
 
         _initialized = true;
-        emit Initialized(_initialized, initOwner_, AMORxGuild_, amount);
+        emit Initialized(_initialized, _initOwner, _AMORxGuild, amount);
         return true;
     }
 
@@ -78,12 +71,12 @@ contract dAMORxGuild is ERC20Base, Ownable {
     }
 
     /// @notice Mint AMORxGuild tokens to staker
-    /// @dev    Tokens are by following formula: NdAMOR = f(t)^2 *nAMOR
+    /// @dev    Tokens are by following formula: NdAMOR =  k * f(t)^2 * nAMOR
     /// @param  amount uint256 amount of AMORxGuild to be staked
     /// @param  time uint256 time how long tokens wll be staked
     function _stake(uint256 amount, uint256 time) internal returns (uint256) {
         uint256 koef = (time * TIME_DENOMINATOR) / MAX_LOCK_TIME;
-        uint256 newAmount = ((koef * koef) * amount) / (TIME_DENOMINATOR * TIME_DENOMINATOR);
+        uint256 newAmount = (COEFFICIENT * (koef * koef) * amount) / (TIME_DENOMINATOR * TIME_DENOMINATOR);
         _mint(msg.sender, newAmount);
         return newAmount;
     }
