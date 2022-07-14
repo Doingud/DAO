@@ -6,6 +6,9 @@
 
 /**
  *  @dev Implementation of the MetaDAO controller logic for DoinGud MetaDAO
+ *
+ *  The MetaDAO creates new guilds and collects fees from AMOR token transfers.
+ *  The collected funds can then be claimed by guilds. 
  *  
  */
 
@@ -16,12 +19,10 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract MetaDaoController {
 
-    /// Array of addresses of Guilds
-    address[] public guilds;
-    /// The total weight of the guilds
+    //  Array of addresses of Guilds
+    mapping(address => uint256) public guildWeight;
+    //  The total weight of the guilds
     uint256 public guildsTotalWeight;
-    /// Amounts for Guilds' distributions
-    uint256[] public guildDistribution;
 
     /// Donation distribution weights
     uint256 constant internal WEIGHT_TOTAL = 100;
@@ -35,12 +36,19 @@ contract MetaDaoController {
     /// Clone Factory
     address public guildFactory;
 
-    //  AMOR token
+    /// AMOR token
     IERC20 public amorToken;
 
     constructor(address _amor, address _cloneFactory) {
         amorToken = IERC20(_amor);
         guildFactory = _cloneFactory;
+    }
+
+    /// @notice Updates the MetaDAOs accounting of AMOR
+    /// @param  amount uint256 representing the amount of AMORxGuild staked in a guild
+    function updatePool(uint256 amount) public {
+        guildWeight[msg.sender] += amount;
+        guildsTotalWeight += amount;
     }
 
     /// @notice Explain to an end user what this does
@@ -61,9 +69,20 @@ contract MetaDaoController {
 
     /// @notice Explain to an end user what this does
     /// @dev Explain to a developer any extra details
-    /// @param guild a parameter just like in doxygen (must be followed by parameter name)
-    function claim(uint16 guild) public {
+    function claim() public {
+        /// Calculate the claim amount
+        uint256 amount = amorToken.balanceOf(address(this)) * guildWeight[msg.sender] / guildsTotalWeight;
+        
+        /// Revert if claimant has no claimable funds or no funds to distribute
+        if (amount == 0) {
+            revert InvalidClaim();
+        }
+        /// Transfer the AMOR to the claimant
+        amorToken.transfer(msg.sender, amount);
 
+        /// Update guildWeight and guildsTotalWeight
+        guildWeight[msg.sender] = 0;
+        guildsTotalWeight -= amount;
     }
 
     /// @notice Explain to an end user what this does
@@ -71,6 +90,14 @@ contract MetaDaoController {
     /// @param name a parameter just like in doxygen (must be followed by parameter name)
     /// @param tokenSymbol the symbol for the Guild's token
     function createGuild(string memory name, string memory tokenSymbol) public {
+        
+    }
+
+    /// @notice Explain to an end user what this does
+    /// @dev Explain to a developer any extra details
+    /// @param name a parameter just like in doxygen (must be followed by parameter name)
+    /// @param tokenSymbol the symbol for the Guild's token
+    function removeGuild(string memory name, string memory tokenSymbol) public {
         
     }
 
