@@ -53,7 +53,6 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             expect(await dAMORxGuild.name()).to.equals("DoinGud MetaDAO");
             expect(await dAMORxGuild.symbol()).to.equals("FXAMORxGuild");
             expect(await dAMORxGuild.owner()).to.equals(operator.address);
-            expect(await dAMORxGuild.guardianThreshold()).to.equals(10);
         });
 
         it("Should fail if called more than once", async function () {
@@ -206,52 +205,5 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             
             expect(withdrawedTokens).to.equal(currentAmount);
         });        
-    });
-
-    context('» setGuardian testing', () => {
-
-        it('it fails to set guardian of dAMORxGuild in not enouth dAMORxGuild', async function () {
-            await AMORxGuild.connect(root).mint(user1.address, ONE_HUNDRED_ETHER);
-            await AMORxGuild.connect(user1).approve(dAMORxGuild.address, ONE_HUNDRED_ETHER);
-    
-            await dAMORxGuild.connect(user1).stake(1, normalTime);        
-            const newRealAmount = (await dAMORxGuild.balanceOf(user1.address)).toString();
-            const roundedRealAmount = Math.round(newRealAmount * 100) / 100;
-            
-            expect(roundedRealAmount.toString()).to.equal("0");
-        });
-
-        it('set guardian of dAMORxGuild', async function () {
-            await AMORxGuild.connect(root).mint(user1.address, FIFTY_ETHER);
-            await AMORxGuild.connect(user1).approve(dAMORxGuild.address, FIFTY_ETHER);
-
-            // increaseStake() or stake() --> setGuardian
-            await dAMORxGuild.connect(user1).increaseStake(FIFTY_ETHER);
-            expect((await dAMORxGuild.guardians(0))).to.equal(staker.address);
-            expect((await dAMORxGuild.guardians(2))).to.equal(user1.address);
-        });
-    });
-
-    context('» addDelegateGuardians testing', () => {
-
-        it('it fails to add delegate guardians of dAMORxGuild if not an Owner', async function () {
-            const guardiansToAdd = [root.address, authorizer_adaptor.address]
-            await expect(dAMORxGuild.connect(root).addDelegateGuardians(guardiansToAdd)).to.be.revertedWith(
-                'Unauthorized()'
-            ); 
-        });  
-
-        it('add delegate guardians of dAMORxGuild', async function () {
-            const guardiansToAdd = [root.address, authorizer_adaptor.address]
-            await dAMORxGuild.connect(operator).addDelegateGuardians(guardiansToAdd);
-            expect((await dAMORxGuild.delegateGuardians(0))).to.equal(root.address);
-            expect((await dAMORxGuild.delegateGuardians(1))).to.equal(authorizer_adaptor.address);  
-        });
-        it('add different delegate guardians of dAMORxGuild', async function () {
-            const guardiansToAdd = [operator.address, staker.address]
-            await dAMORxGuild.connect(operator).addDelegateGuardians(guardiansToAdd);
-            expect((await dAMORxGuild.delegateGuardians(0))).to.equal(operator.address);
-            expect((await dAMORxGuild.delegateGuardians(1))).to.equal(staker.address);  
-        });     
     });
 });

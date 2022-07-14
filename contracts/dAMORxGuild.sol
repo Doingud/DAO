@@ -26,16 +26,11 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
     bool private _initialized;
 
-    uint256 public guardianThreshold; // minimal amount of dAMORxGuild(dAMOR) to become guardian
-    address[] public guardians;
-    address[] public delegateGuardians; //array of delegated guardians(based on the popular vote)
-
     uint256 public constant TIME_DENOMINATOR = 1000000000000000000;
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     uint256 public constant MIN_LOCK_TIME = 7 days; // 1 week is the time for the new deposided tokens to be locked until they can be withdrawn
 
     address public _owner; //GuildController
-    address public guardian;
 
     IERC20 private AMORxGuild;
 
@@ -69,7 +64,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
         _owner = initOwner_;
         AMORxGuild = IERC20(AMORxGuild_);
         _setTokenDetail(name_, symbol_);
-        guardianThreshold = amount;
 
         _initialized = true;
         emit Initialized(_initialized, initOwner_, AMORxGuild_, amount);
@@ -81,10 +75,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
             revert Unauthorized();
         }
         _;
-    }
-
-    function setGuardianThreshold(uint256 _guardianThreshold) external onlyAddress(_owner) {
-        guardianThreshold = _guardianThreshold;
     }
 
     /// @notice Mint AMORxGuild tokens to staker
@@ -125,8 +115,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
         stakesTimes[msg.sender] = block.timestamp + time;
         stakes[msg.sender] = newAmount;
 
-        setGuardian(stakes[msg.sender]);
-
         return newAmount;
     }
 
@@ -147,8 +135,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
         uint256 newAmount = _stake(amount, time);
 
         stakes[msg.sender] += newAmount;
-
-        setGuardian(stakes[msg.sender]);
 
         return newAmount;
     }
@@ -172,7 +158,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
         address[] memory people = delegators[msg.sender];
         for (uint256 i = 0; i < people.length; i++) {
-            delegations[msg.sender][people[i]] = 0;
+            delete delegations[msg.sender][people[i]];
         }
         amountDelegated[msg.sender] = 0;
 
@@ -219,26 +205,10 @@ contract dAMORxGuild is ERC20Base, Ownable {
             delegations[msg.sender][account] -= amount;
             amountDelegated[msg.sender] -= amount;
         } else {
+            amountDelegated[msg.sender] -= delegations[msg.sender][account];
             delegations[msg.sender][account] = 0;
-            amountDelegated[msg.sender] = 0;
         }
         delete delegations[msg.sender][account];
-    }
-
-    /// @notice Sets msg.sender as a guardian if a new amount of dAMORxGuild(dAMOR) tokens > guardianThreshold
-    function setGuardian(uint256 amount) internal {
-        if (balanceOf(msg.sender) > guardianThreshold) {
-            guardians.push(msg.sender);
-        }
-    }
-
-    function addDelegateGuardians(address[] memory _delegateGuardians) public onlyAddress(_owner) {
-        delete delegateGuardians;
-
-        for (uint256 i = 0; i < _delegateGuardians.length; i++) {
-            address newAddress = _delegateGuardians[i];
-            delegateGuardians.push(newAddress);
-        }
     }
 
     /// @notice non-transferable
