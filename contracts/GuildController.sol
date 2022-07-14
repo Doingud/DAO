@@ -17,9 +17,9 @@ contract GuildController {
     uint256 public totalReportsWeight; // total Weight of all of reports
 
     address[] impactMakers; // list of impactMakers of this DAO
-    mapping(address => uint) claimableTokens; // amount of tokens each specific address(impactMaker) can claim.
-    mapping(address => uint) weights;// weight of each specific Impact Maker/Builder.
-    uint256 totalWeight; // total Weight of all of the impact makers.
+    mapping(address => uint256) claimableTokens; // amount of tokens each specific address(impactMaker) can claim
+    mapping(address => uint256) weights; // weight of each specific Impact Maker/Builder
+    uint256 totalWeight; // total Weight of all of the impact makers
     uint256[] timeVoting; // time of the forst vote the report with specific id
 
     uint256 public constant VOTING_TIME = 7 days; // 1 week is the time for the users to vore for the specific report
@@ -29,7 +29,7 @@ contract GuildController {
     address public guild;
 
     IERC20 private AMORxGuild;
-    
+
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public percentToConvert = 100; //10% // FEE_DENOMINATOR/100*80
 
@@ -82,15 +82,15 @@ contract GuildController {
 
     /// @notice allows to donate AMORxGuild tokens to the Guild
     /// @param amount The amount to donate
-    // It automatically distributes tokens between Impact makers. 
-    // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens, 
-    // which are going to be owned by the user. 
+    // It automatically distributes tokens between Impact makers.
+    // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
+    // which are going to be owned by the user.
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     function donate(uint256 amount) external returns (uint256) {
         if (AMORxGuild.balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }
-        
+
         // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
         // which are going to be owned by the user.
         uint256 FxGAmount = (amount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
@@ -110,13 +110,16 @@ contract GuildController {
         return amount;
     }
 
-
-    /// @notice adds another element to the reportsWeight, with weight 0, and starts voting on it. 
+    /// @notice adds another element to the reportsWeight, with weight 0, and starts voting on it.
     /// @dev As soon as the report added, voting on it can start.
     /// @param report Hash of report (timestamp and report header)
     /// param signature Signature of this report (splitted into uint8 v, bytes32 r, bytes32 s)
-    function addReport(bytes32 report, uint8 v, bytes32 r, bytes32 s) external { 
-
+    function addReport(
+        bytes32 report,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
         // each report is an NFT (maybe hash-id of NFT and sign this NFT-hash)
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, report));
@@ -135,14 +138,17 @@ contract GuildController {
         timeVoting.push(0);
     }
 
-    /// @notice burns the amount of FXTokens, and changes a report weight, based on a sign provided. 
-    /// It also sets a vote info for a specific voter. 
+    /// @notice burns the amount of FXTokens, and changes a report weight, based on a sign provided.
+    /// It also sets a vote info for a specific voter.
     /// @dev As soon as the first vote goes for report, we create a time limit for vote(a week).
     /// @param id ID of report to vote for
     /// @param amount Amount of FXTokens to use for vote and burn
     /// @param sign Boolean value: true (for) or false (against) user is voting
-    function voteForReport(uint256 id, uint256 amount, bool sign) external {
-
+    function voteForReport(
+        uint256 id,
+        uint256 amount,
+        bool sign
+    ) external {
         // check if report with that id exists
         if (reportsWeight.length < id) {
             revert ReportNotExists();
@@ -172,10 +178,9 @@ contract GuildController {
         }
     }
 
-    /// @notice distributes funds, depending on the report ids, for which votings were conducted. 
+    /// @notice distributes funds, depending on the report ids, for which votings were conducted.
     /// @param id ID of report from distributes funds
     function finalizeReportVoting(uint256 id) external {
-
         // check if report with that id exists
         if (reportsWeight.length < id) {
             revert ReportNotExists();
@@ -191,25 +196,26 @@ contract GuildController {
         address[] memory people = voters[id];
 
         if (reportsVoting[id] > necessaryPercent) {
-            // If report has positive voting weight, then funds go 50-50%, 
+            // If report has positive voting weight, then funds go 50-50%,
             // 50% go to the report creater,
             AMORxGuild.transfer(reportsAuthors[id], fiftyPercent);
 
             // and 50% goes to the people who voted positively
             for (uint256 i = 0; i < voters[id].length; i++) {
-                if (votes[id][people[i]] > 0) { // voted positively
+                // if voted positively
+                if (votes[id][people[i]] > 0) {
                     uint256 weight = votes[id][people[i]] / reportsWeight[id]; // amountFromUser / allAmount
                     // 50% * user weigth / all 100%
-                    uint256 amountToSendVoter = (fiftyPercent * weight) / 100;//reportsWeight[id];
+                    uint256 amountToSendVoter = (fiftyPercent * weight) / 100; //reportsWeight[id];
                     AMORxGuild.transfer(people[i], amountToSendVoter);
                 }
             }
-
         } else {
-            // If report has negative voting weight, then 
+            // If report has negative voting weight, then
             // 50% goes to the people who voted negatively,
             for (uint256 i = 0; i < voters[id].length; i++) {
-                if (votes[id][people[i]] < 0) { // voted negatively
+                if (votes[id][people[i]] < 0) {
+                    // voted negatively
                     uint256 weight = votes[id][people[i]] / reportsWeight[id]; // weightFromUser / allWeight
                     // allAmountToDistribute(50%) * user weigth in % / all 100%
                     uint256 amountToSendVoter = (fiftyPercent * weight) / reportsWeight[id];
@@ -218,7 +224,8 @@ contract GuildController {
             }
             // and 50% gets redistributed between the passed reports based on their weights
             for (uint256 i = 0; i < reportsWeight.length; i++) {
-                if (reportsWeight[i] > 0) { // passed reports // TODO: check. maybe add mappint uint --> bool - if passed
+                if (reportsWeight[i] > 0) {
+                    // passed reports // TODO: check. maybe add mappint uint --> bool - if passed
                     uint256 weight = reportsWeight[i] / totalReportsWeight; // weightFromReport / allWeight
                     // allAmountToDistribute(50%) * report weigth in % / all 100%
                     uint256 amountToSendReport = (fiftyPercent * weight) / 100;

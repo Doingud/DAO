@@ -75,7 +75,7 @@ const getTokens = async (setup) => {
     return tokens;
 };
 
-const controller = async (setup, impactPoll, projectPoll) => {
+const controller = async (setup) => {
   const controllerFactory = await ethers.getContractFactory('GuildController');
   const controller = await controllerFactory.deploy();
 

@@ -2,7 +2,6 @@ const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { ONE_HUNDRED_ETHER,
-        TWO_HUNDRED_ETHER,
         TEST_TRANSFER,
         TAX_RATE,
         BASIS_POINTS
@@ -18,26 +17,14 @@ const TEST_TRANSFER_SMALLER = 80;
 let AMORxGuild;
 let FXAMORxGuild
 let controller;
-let impactPoll;
-let projectPoll;
 let root;
 let authorizer_adaptor;
 let impactMaker;
 let operator;
 let report;
-let signature;
 let r;
 let s;
 let v;
-
-//  The contract with the execution logic
-let IMPLEMENTATION;
-//  Mock upgrade contract for proxy tests
-let MOCK_UPGRADE_IMPLEMENTATION;
-//  The contract with exposed ABI for proxy specific functions
-let PROXY_CONTRACT;
-//  The PROXY_CONTRACT with the implemenation
-let PROXY;
 
 describe('unit - Contract: GuildController', function () {
 
@@ -74,8 +61,7 @@ describe('unit - Contract: GuildController', function () {
                 AMORxGuild.address,
                 FXAMORxGuild.address,
                 authorizer_adaptor.address, // guild
-                impactPoll.address,
-                projectPoll.address
+                impactMaker.address
             )).to.be.reverted;
         });
     });
@@ -195,16 +181,62 @@ describe('unit - Contract: GuildController', function () {
         });
 
     });
+
+    context('» finalizeReportVoting testing', () => {
+
+        it('it fails to finalize report voting if ReportNotExists', async function () {
+            await AMORxGuild.connect(root).transfer(controller.address, TEST_TRANSFER);
+
+            await AMORxGuild.connect(root).transfer(operator.address, TEST_TRANSFER_BIGGER);
+            await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER);
+            await controller.connect(operator).addReport(report, v, r, s); 
+
+            const id = 11;
+            const amount = 12;
+            const sign = true;            
+            await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
+                'ReportNotExists()'
+            );
+        });
+
+        it('it fails to finalize report voting if VotingTimeNotFinished', async function () {
+            await AMORxGuild.connect(root).transfer(controller.address, TEST_TRANSFER);
+
+            await AMORxGuild.connect(root).transfer(operator.address, TEST_TRANSFER_BIGGER);
+            await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER);
+            await controller.connect(operator).addReport(report, v, r, s); 
+
+            const id = 11;
+            const amount = 12;
+            const sign = true;            
+            await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
+                'ReportNotExists()'
+            );
+        });
+
+        it('finalizes voting for report', async function () {
+            await FXAMORxGuild.connect(root).setController(controller.address); 
+
+            await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER_SMALLER);
+            await controller.connect(operator).donate(TEST_TRANSFER_SMALLER);
+
+            const id = 0;
+            const amount = 2;
+            const sign = true;
+            await controller.connect(operator).voteForReport(id, amount, sign); 
+        });
+
+    });
 });
 
-function splitSignature(sig) {
-    const hash = sig.slice(0,66);
-    const signature = sig.slice(66, sig.length);
-    const r = signature.slice(0, 66);
-    const s = "0x" + signature.slice(66, 130);
-    const v = parseInt(signature.slice(130, 132), 16);
-    signatureParts = { r, s, v };
-    console.log([hash,signatureParts])
-    return ([hash,signatureParts]);
-}
+// function splitSignature(sig) {
+//     const hash = sig.slice(0,66);
+//     const signature = sig.slice(66, sig.length);
+//     const r = signature.slice(0, 66);
+//     const s = "0x" + signature.slice(66, 130);
+//     const v = parseInt(signature.slice(130, 132), 16);
+//     signatureParts = { r, s, v };
+//     console.log([hash,signatureParts])
+//     return ([hash,signatureParts]);
+// }
 
