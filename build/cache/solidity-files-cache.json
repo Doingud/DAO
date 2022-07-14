@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/decadanse/DAO/contracts/AMORToken.sol": {
-      "lastModificationDate": 1657787284604,
-      "contentHash": "d39efed3ca8566d60a5ae6ab828a270e",
+      "lastModificationDate": 1657793364659,
+      "contentHash": "52577a6005a69bef5bc7d306e74075e9",
       "sourceName": "contracts/AMORToken.sol",
       "solcConfig": {
         "version": "0.8.15",
@@ -579,7 +579,7 @@
       ]
     },
     "/home/decadanse/DAO/contracts/utils/ERC20Base.sol": {
-      "lastModificationDate": 1657724805754,
+      "lastModificationDate": 1657793270477,
       "contentHash": "8332293f44c63659e8910099c72b2a96",
       "sourceName": "contracts/utils/ERC20Base.sol",
       "solcConfig": {
@@ -716,7 +716,7 @@
       ]
     },
     "/home/decadanse/DAO/contracts/test/ERC20Mock.sol": {
-      "lastModificationDate": 1657724805754,
+      "lastModificationDate": 1657793329854,
       "contentHash": "550ae4b57ce4be9dd2844e64c6ad6d70",
       "sourceName": "contracts/test/ERC20Mock.sol",
       "solcConfig": {
@@ -936,8 +936,8 @@
       ]
     },
     "/home/decadanse/DAO/contracts/GuildController.sol": {
-      "lastModificationDate": 1657789748736,
-      "contentHash": "aeda35e25dea491d5e5fb167e3f729ec",
+      "lastModificationDate": 1657793531128,
+      "contentHash": "f1c93a7dbc2897c3ad8502538dfadde7",
       "sourceName": "contracts/GuildController.sol",
       "solcConfig": {
         "version": "0.8.15",
@@ -982,7 +982,7 @@
       ]
     },
     "/home/decadanse/DAO/contracts/utils/interfaces/IFXAMORxGuild.sol": {
-      "lastModificationDate": 1657724805754,
+      "lastModificationDate": 1657793312954,
       "contentHash": "98a4e6cc027f3c7dba2c7771d6b711d7",
       "sourceName": "contracts/utils/interfaces/IFXAMORxGuild.sol",
       "solcConfig": {
@@ -1025,7 +1025,7 @@
       ]
     },
     "/home/decadanse/DAO/contracts/FXAMORxGuildToken.sol": {
-      "lastModificationDate": 1657787384059,
+      "lastModificationDate": 1657793660543,
       "contentHash": "65c8cd32f2dd175ca58830999288b58b",
       "sourceName": "contracts/FXAMORxGuildToken.sol",
       "solcConfig": {

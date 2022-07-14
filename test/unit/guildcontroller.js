@@ -31,7 +31,7 @@ describe('unit - Contract: GuildController', function () {
         FXAMORxGuild = setup.tokens.FXAMORxGuild;
         impactPoll = setup.roles.user1;
         projectPoll = setup.roles.user2;
-        controller = await init.controller(setup, impactPoll, projectPoll);
+        controller = await init.controller(setup);
         root = setup.roles.root;
         authorizer_adaptor = setup.roles.authorizer_adaptor;
         operator = setup.roles.operator;

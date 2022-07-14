@@ -6,7 +6,7 @@
  *  The contract houses the token logic for FXAMORxGuild.
  *
  */
-pragma solidity 0.8.14;
+pragma solidity 0.8.15;
 
 interface IFXAMORxGuild {
     /// Events
