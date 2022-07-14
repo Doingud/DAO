@@ -38,6 +38,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     error InvalidSender();
     error TimeTooSmall();
     error TimeTooBig();
+
     /*  @dev    The init() function takes the place of the constructor.
      *          It can only be run once.
      */
@@ -146,9 +147,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
         _burn(msg.sender, amount);
         stakes[msg.sender] = 0;
 
-        address[] memory people = delegators[msg.sender];
-        for (uint256 i = 0; i < people.length; i++) {
-            delete delegations[people[i]];
+        for (uint256 i = 0; i < delegators[msg.sender].length; i++) {
+            delete delegations[delegators[msg.sender][i]];
         }
         delete delegations[msg.sender];
 
@@ -181,7 +181,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
 
         for (uint256 i = 0; i < delegators[account].length; i++) {
-            if (delegators[account][i] == account) {
+            if (delegators[account][i] == msg.sender) {
                 delegators[account][i] = delegators[account][delegators[account].length - 1];
                 delegators[account].pop();
                 break;

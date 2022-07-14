@@ -1,7 +1,7 @@
 const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { FIFTY_ETHER, ONE_HUNDRED_ETHER, TWO_HUNDRED_ETHER, MOCK_GUILD_NAMES, MOCK_GUILD_SYMBOLS } = require('../helpers/constants.js');
+const { FIFTY_ETHER, ONE_HUNDRED_ETHER, MOCK_GUILD_NAMES, MOCK_GUILD_SYMBOLS } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
 // const MIN_LOCK_TIME = 604800; // 1 week
@@ -141,7 +141,11 @@ describe('unit - Contract: dAMORxGuild Token', function () {
         });
 
         it('delegate dAMORxGuild tokens', async function () {
+            await expect(dAMORxGuild.delegators(operator.address, 0)).to.be.reverted; 
+
             await dAMORxGuild.connect(staker).delegate(operator.address);
+            let addressAfter = await dAMORxGuild.delegators(operator.address, 0);
+            expect(addressAfter).to.equal(staker.address);
         });
     });
 
@@ -154,7 +158,13 @@ describe('unit - Contract: dAMORxGuild Token', function () {
         });
 
         it('it undelegates dAMORxGuild tokens', async function () {
+            await dAMORxGuild.connect(staker).delegate(operator.address);
+
+            let addressBefore = await dAMORxGuild.delegators(operator.address, 1);
+            expect(addressBefore).to.equal(staker.address);
             await dAMORxGuild.connect(staker).undelegate(operator.address);
+
+            await expect(dAMORxGuild.delegators(operator.address, 1)).to.be.reverted; 
         });
     });
 
