@@ -2,7 +2,7 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/decadanse/DAO/contracts/AMORToken.sol": {
-      "lastModificationDate": 1657793364659,
+      "lastModificationDate": 1657826676697,
       "contentHash": "52577a6005a69bef5bc7d306e74075e9",
       "sourceName": "contracts/AMORToken.sol",
       "solcConfig": {
@@ -761,7 +761,7 @@
       ]
     },
     "/home/decadanse/DAO/contracts/DoinGudProxy.sol": {
-      "lastModificationDate": 1657710158845,
+      "lastModificationDate": 1657793251736,
       "contentHash": "de7043c10d5531a778caeb55a46b46d3",
       "sourceName": "contracts/DoinGudProxy.sol",
       "solcConfig": {
@@ -936,8 +936,8 @@
       ]
     },
     "/home/decadanse/DAO/contracts/GuildController.sol": {
-      "lastModificationDate": 1657793531128,
-      "contentHash": "f1c93a7dbc2897c3ad8502538dfadde7",
+      "lastModificationDate": 1657873621236,
+      "contentHash": "011f7f418a994c28c481975b2b41f5fb",
       "sourceName": "contracts/GuildController.sol",
       "solcConfig": {
         "version": "0.8.15",
@@ -972,7 +972,9 @@
       },
       "imports": [
         "./utils/interfaces/IFXAMORxGuild.sol",
-        "@openzeppelin/contracts/token/ERC20/IERC20.sol"
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol"
       ],
       "versionPragmas": [
         "0.8.15"
@@ -982,7 +984,7 @@
       ]
     },
     "/home/decadanse/DAO/contracts/utils/interfaces/IFXAMORxGuild.sol": {
-      "lastModificationDate": 1657793312954,
+      "lastModificationDate": 1657826676697,
       "contentHash": "98a4e6cc027f3c7dba2c7771d6b711d7",
       "sourceName": "contracts/utils/interfaces/IFXAMORxGuild.sol",
       "solcConfig": {
@@ -1025,7 +1027,7 @@
       ]
     },
     "/home/decadanse/DAO/contracts/FXAMORxGuildToken.sol": {
-      "lastModificationDate": 1657793660543,
+      "lastModificationDate": 1657826676697,
       "contentHash": "65c8cd32f2dd175ca58830999288b58b",
       "sourceName": "contracts/FXAMORxGuildToken.sol",
       "solcConfig": {
@@ -1068,6 +1070,96 @@
       ],
       "artifacts": [
         "FXAMORxGuild"
+      ]
+    },
+    "/home/decadanse/DAO/node_modules/@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol": {
+      "lastModificationDate": 1657571389290,
+      "contentHash": "3a843b05b85a270e9455e3d2e804e633",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol",
+      "solcConfig": {
+        "version": "0.8.15",
+        "settings": {
+          "viaIR": false,
+          "optimizer": {
+            "enabled": true,
+            "runs": 100000
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "devdoc",
+                "userdoc",
+                "storageLayout",
+                "evm.gasEstimates"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "metadata": {
+            "useLiteralContent": true
+          }
+        }
+      },
+      "imports": [
+        "../IERC20.sol",
+        "../extensions/draft-IERC20Permit.sol",
+        "../../../utils/Address.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "SafeERC20"
+      ]
+    },
+    "/home/decadanse/DAO/node_modules/@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol": {
+      "lastModificationDate": 1657571386366,
+      "contentHash": "fb77f144244b9ab12533aa6ce85ef8c5",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol",
+      "solcConfig": {
+        "version": "0.8.15",
+        "settings": {
+          "viaIR": false,
+          "optimizer": {
+            "enabled": true,
+            "runs": 100000
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "devdoc",
+                "userdoc",
+                "storageLayout",
+                "evm.gasEstimates"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          },
+          "metadata": {
+            "useLiteralContent": true
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IERC20Permit"
       ]
     }
   }

@@ -82,9 +82,7 @@ const controller = async (setup) => {
   await controller.init(
     setup.roles.root.address, // owner
     setup.tokens.AmorTokenImplementation.address, // AMORxGuild
-    setup.tokens.FXAMORxGuild.address, // FXAMORxGuild
-    setup.roles.authorizer_adaptor.address, // guild
-    setup.roles.doingud_multisig.address // firstImpactMaker
+    setup.tokens.FXAMORxGuild.address // FXAMORxGuild
   );
 
   await setup.tokens.AmorTokenImplementation.init(

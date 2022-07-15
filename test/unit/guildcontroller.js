@@ -28,8 +28,6 @@ describe('unit - Contract: GuildController', function () {
 
         AMORxGuild = setup.tokens.AmorTokenImplementation;
         FXAMORxGuild = setup.tokens.FXAMORxGuild;
-        impactPoll = setup.roles.user1;
-        projectPoll = setup.roles.user2;
         controller = await init.controller(setup);
         root = setup.roles.root;
         authorizer_adaptor = setup.roles.authorizer_adaptor;
@@ -45,7 +43,6 @@ describe('unit - Contract: GuildController', function () {
         it('initialized variables check', async function () {
             expect(await controller.owner()).to.equals(root.address);
             expect(await controller.FXAMORxGuild()).to.equals(FXAMORxGuild.address);
-            expect(await controller.guild()).to.equals(authorizer_adaptor.address);
         });
 
         it("Should fail if called more than once", async function () {
@@ -58,7 +55,28 @@ describe('unit - Contract: GuildController', function () {
             )).to.be.reverted;
         });
     });
-    
+    context('» ImpactMakers testing', () => {
+        it('it fails to set ImpactMakers if not the owner', async function () {
+            const impactMakers = [operator.address, authorizer_adaptor.address, impactMaker.address];
+            const weigths = [20, 34, 923];
+            await expect(controller.connect(operator).setImpactMakers(impactMakers, weigths)).to.be.revertedWith(
+                'Ownable: caller is not the owner'
+            );
+        });
+
+        it('it sets ImpactMakers', async function () {
+            const impactMakers = [operator.address, authorizer_adaptor.address, impactMaker.address];
+            const weigths = [20, 34, 923];
+            await controller.connect(root).setImpactMakers(impactMakers, weigths);
+            expect(await controller.impactMakers(0)).to.equals(operator.address);
+            expect(await controller.impactMakers(1)).to.equals(authorizer_adaptor.address);
+            expect(await controller.impactMakers(2)).to.equals(impactMaker.address);
+            expect(await controller.weights(operator.address)).to.equals(20);
+            expect(await controller.weights(authorizer_adaptor.address)).to.equals(34);
+            expect(await controller.weights(impactMaker.address)).to.equals(923);
+        });
+    });
+
     context('» donate testing', () => {
 
         it('it fails to donate AMORxGuild tokens if not enough AMORxGuild', async function () {
