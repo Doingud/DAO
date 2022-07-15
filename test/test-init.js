@@ -14,6 +14,7 @@ const initialize = async (accounts) => {
     doingud_multisig: accounts[1],
     user1: accounts[2],
     user2: accounts[3],
+    user3: accounts[4],
     authorizer_adaptor: accounts[5],
     operator: accounts[6],
     staker: accounts[7],

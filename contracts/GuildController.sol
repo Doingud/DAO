@@ -91,9 +91,7 @@ contract GuildController is Ownable {
 
         // based on the weights distribution, tokens will be automatically redirected to the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
-            // uint256 weight = weights[impactMakers[i]] / totalWeight; // WONT DO: TODO: UPD
-            uint256 weight = (totalWeight / weights[impactMakers[i]]) / WEIGHT_DENOMINATOR; // ???
-            uint256 amountToSendVoter = decAmount * weight;
+            uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
             AMORxGuild.transferFrom(msg.sender, impactMakers[i], amountToSendVoter);
         }
 
@@ -108,21 +106,6 @@ contract GuildController is Ownable {
             impactMakers.push(arrImpactMakers[i]);
             weights[arrImpactMakers[i]] = arrWeight[i];
             totalWeight += arrWeight[i];
-
-            // uint256 weight = weights[impactMakers[i]] / totalWeight; // WONT DO: TODO: UPD
-            // uint256 amountToSendVoter = decAmount * weight;
-            // AMORxGuild.transferFrom(msg.sender, impactMakers[i], amountToSendVoter);
         }
-        // uint256 public constant WEIGHT_DENOMINATOR = 10000;
-        // uint256 public percentToConvert = 100; //10% // WEIGHT_DENOMINATOR/1000*100
-
-        // uint256 decAmount = amount - FxGAmount; //decreased amount: other 90%
-
-        // // based on the weights distribution, tokens will be automatically redirected to the impact makers
-        // for (uint256 i = 0; i < impactMakers.length; i++) {
-        //     uint256 weight = weights[impactMakers[i]] / totalWeight; // WONT DO: TODO: UPD
-        //     uint256 amountToSendVoter = decAmount * weight;
-        //     AMORxGuild.transferFrom(msg.sender, impactMakers[i], amountToSendVoter);
-        // }
     }
 }
