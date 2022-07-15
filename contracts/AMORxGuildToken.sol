@@ -110,8 +110,8 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
         //  Calculate mint amount and mint this to the address `to`
         //  Note there is a tax on staking into AMORxGuild
         uint256 mintAmount = COEFFICIENT * ((amount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
-        _mint(guildController, mintAmount * stakingTaxRate / tokenAmor.BASIS_POINTS());
-        _mint(to, mintAmount * (tokenAmor.BASIS_POINTS() - stakingTaxRate) / tokenAmor.BASIS_POINTS());
+        _mint(guildController, (mintAmount * stakingTaxRate) / tokenAmor.BASIS_POINTS());
+        _mint(to, (mintAmount * (tokenAmor.BASIS_POINTS() - stakingTaxRate)) / tokenAmor.BASIS_POINTS());
 
         return mintAmount;
     }
