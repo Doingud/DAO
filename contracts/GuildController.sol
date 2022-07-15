@@ -3,27 +3,29 @@ pragma solidity 0.8.15;
 
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// @title GuildController contract
 /// @author Daoism Systems Team
 /// @notice GuildController contract controls the all of the deployed contracts of the guild
 
-contract GuildController {
-    address[] impactMakers; // list of impactMakers of this DAO
-    mapping(address => uint256) weights; // weight of each specific Impact Maker/Builder
-    uint256 totalWeight; // total Weight of all of the impact makers
-    uint256[] timeVoting; // time of the forst vote the report with specific id
+contract GuildController is Ownable {
+    using SafeERC20 for IERC20;
+
+    address[] public impactMakers; // list of impactMakers of this DAO
+    mapping(address => uint256) public weights; // weight of each specific Impact Maker/Builder
+    uint256 public totalWeight; // total Weight of all of the impact makers
+    uint256[] public timeVoting; // deadlines for the vote for reports
 
     uint256 public constant VOTING_TIME = 7 days; // 1 week is the time for the users to vore for the specific report
 
-    address public owner;
-    address public FXAMORxGuild;
-    address public guild;
-
     IERC20 private AMORxGuild;
+    address public FXAMORxGuild;
 
+    uint256 public constant WEIGHT_DENOMINATOR = 10000;
     uint256 public constant FEE_DENOMINATOR = 1000;
-    uint256 public percentToConvert = 100; //10% // FEE_DENOMINATOR/100*80
+    uint256 public percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
 
     event Initialized(bool success, address owner, address AMORxGuild);
 
@@ -44,24 +46,19 @@ contract GuildController {
     error InvalidSender();
 
     function init(
-        address initOwner_,
+        address initOwner,
         address AMORxGuild_,
-        address FXAMORxGuild_,
-        address guild_,
-        address firstImpactMaker
+        address FXAMORxGuild_
     ) external returns (bool) {
         require(!_initialized, "Already initialized");
 
-        owner = initOwner_;
+        _transferOwnership(initOwner);
+
         AMORxGuild = IERC20(AMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
-        guild = guild_;
-        impactMakers.push(firstImpactMaker);
-        weights[firstImpactMaker] = 1;
-        totalWeight = 1;
 
         _initialized = true;
-        emit Initialized(_initialized, initOwner_, AMORxGuild_);
+        emit Initialized(_initialized, initOwner, AMORxGuild_);
         return true;
     }
 
@@ -94,11 +91,41 @@ contract GuildController {
 
         // based on the weights distribution, tokens will be automatically redirected to the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
-            uint256 weight = weights[impactMakers[i]] / totalWeight; // impartMakerWeight / totalWeight
+            // uint256 weight = weights[impactMakers[i]] / totalWeight; // WONT DO: TODO: UPD
+            uint256 weight = (totalWeight / weights[impactMakers[i]]) / WEIGHT_DENOMINATOR;  // ???
             uint256 amountToSendVoter = decAmount * weight;
             AMORxGuild.transferFrom(msg.sender, impactMakers[i], amountToSendVoter);
         }
 
         return amount;
+    }
+
+    /// @notice removes impact makers, resets mapping and array, and creates new array, mapping, and sets weights
+    /// @param impactMakers The array of impact makers
+    /// @param weight The array of weights of impact makers
+    function setImpactMakers(address[] arrImpactMakers, uint[] arrWeight) onlyOwner external {
+
+        for (uint256 i = 0; i < arrImpactMakers.length; i++) {
+            impactMakers.push(arrImpactMakers[i]);
+            weights[arrImpactMakers[i]] = arrWeight[i];
+            totalWeight += arrWeight[i];
+
+    uint256 public constant WEIGHT_DENOMINATOR = 10000;
+    uint256 public percentToConvert = 100; //10% // WEIGHT_DENOMINATOR/1000*100
+
+            uint256 weight = weights[impactMakers[i]] / totalWeight; // WONT DO: TODO: UPD
+            uint256 amountToSendVoter = decAmount * weight;
+            AMORxGuild.transferFrom(msg.sender, impactMakers[i], amountToSendVoter);
+        }
+        
+        uint256 decAmount = amount - FxGAmount; //decreased amount: other 90%
+
+        // based on the weights distribution, tokens will be automatically redirected to the impact makers
+        for (uint256 i = 0; i < impactMakers.length; i++) {
+            uint256 weight = weights[impactMakers[i]] / totalWeight; // WONT DO: TODO: UPD
+            uint256 amountToSendVoter = decAmount * weight;
+            AMORxGuild.transferFrom(msg.sender, impactMakers[i], amountToSendVoter);
+        }
+
     }
 }
