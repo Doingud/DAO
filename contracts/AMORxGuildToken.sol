@@ -41,9 +41,9 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// Co-efficient
     uint256 private constant COEFFICIENT = 10**9;
 
-    /// Constants
-    uint256 public constant BASIS_POINTS = 10000;
-    uint8 public taxRate;
+    /// Tax on staking
+    uint16 public stakingTaxRate;
+    address public guildController;
 
     /// Custom errors
     /// Error if the AmorxGuild has already been initialized
@@ -65,7 +65,8 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     function init(
         address amorAddress,
         string memory name,
-        string memory symbol
+        string memory symbol,
+        address controller
     ) public {
         if (_initialized) {
             revert AlreadyInitialized();
@@ -74,6 +75,7 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
         safeAmor = IERC20(address(tokenAmor));
         //_setImplementationAddress(implementationAddress);
         _setTokenDetail(name, symbol);
+        guildController = controller;
         _initialized = true;
         emit Initialized(name, symbol, amorAddress);
     }
@@ -81,16 +83,16 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// @notice Sets the tax on staking AMORxGuild
     /// @dev    Requires the new tax rate in basis points, where each point equals 0.01% change
     /// @param  newRate uint8 representing the new tax rate expressed in basis points.
-    function setTax(uint8 newRate) public onlyOwner {
+    function setTax(uint16 newRate) public onlyOwner {
         if (newRate > 2000) {
             revert InvalidTaxRate();
         }
 
-        taxRate = newRate;
+        stakingTaxRate = newRate;
     }
 
     /// @notice Allows a user to stake their AMOR and receive AMORxGuild in return
-    /// @param  to a parameter just like in doxygen (must be followed by parameter name)
+    /// @param  to address where the AMORxGuild will be sent to
     /// @param  amount uint256 amount of AMOR to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
     function stakeAmor(address to, uint256 amount) public whenNotPaused returns (uint256) {
@@ -102,12 +104,14 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
         uint256 stakedAmor = tokenAmor.balanceOf(address(this));
 
         //  Must have enough AMOR to stake
-        //  Note that this transferFrom() is taxed
+        //  Note that this transferFrom() is taxed due to AMOR tax
         safeAmor.safeTransferFrom(msg.sender, address(this), amount);
 
         //  Calculate mint amount and mint this to the address `to`
+        //  Note there is a tax on staking into AMORxGuild
         uint256 mintAmount = COEFFICIENT * ((amount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
-        _mint(to, mintAmount);
+        _mint(guildController, mintAmount * stakingTaxRate / tokenAmor.BASIS_POINTS());
+        _mint(to, mintAmount * (tokenAmor.BASIS_POINTS() - stakingTaxRate) / tokenAmor.BASIS_POINTS());
 
         return mintAmount;
     }
