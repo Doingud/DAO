@@ -23,7 +23,6 @@ contract GuildController is Ownable {
     IERC20 private AMORxGuild;
     address public FXAMORxGuild;
 
-    uint256 public constant WEIGHT_DENOMINATOR = 10000;
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
 
