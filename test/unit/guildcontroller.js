@@ -10,7 +10,9 @@ const init = require('../test-init.js');
 
 const FEE_DENOMINATOR = 1000;
 const percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
-const maxLockTime = time.duration.days(7);
+const averageLockTime = time.duration.days(7);
+const twoWeeks = time.duration.days(14);
+
 const TEST_TRANSFER_BIGGER = 100000;
 const TEST_TRANSFER_SMALLER = 80;
 
@@ -191,7 +193,9 @@ describe('unit - Contract: GuildController', function () {
             const id = 0;
             const amount = 2;
             const sign = true;
-            await controller.connect(operator).voteForReport(id, amount, sign); 
+            await controller.connect(operator).voteForReport(id, amount, sign);
+            expect(await controller.reportsVoting(0)).to.equals(2);
+            expect(await controller.reportsWeight(0)).to.equals(2);
         });
 
         it('it fails to vote for report if try to vote more than user have', async function () {
@@ -204,11 +208,12 @@ describe('unit - Contract: GuildController', function () {
         });
 
         it('it fails to vote for report if VotingTimeExpired', async function () {
-            time.increase(maxLockTime);
-
             const id = 0;
-            const amount = 12;
+            const amount = 2;
             const sign = true;
+            await controller.connect(operator).voteForReport(id, amount, sign);
+            time.increase(twoWeeks);
+
             await expect(controller.connect(operator).voteForReport(id, amount, sign)).to.be.revertedWith(
                 'VotingTimeExpired()'
             );
@@ -253,7 +258,7 @@ describe('unit - Contract: GuildController', function () {
             const sign = true;
             await controller.connect(operator).voteForReport(id, amount, sign); 
 
-            time.increase(maxLockTime);
+            time.increase(averageLockTime);
             await controller.connect(operator).finalizeReportVoting(id);
         });
 

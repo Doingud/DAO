@@ -5,7 +5,7 @@ import "./utils/interfaces/IFXAMORxGuild.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
+import "hardhat/console.sol";
 /// @title GuildController contract
 /// @author Daoism Systems Team
 /// @notice GuildController contract controls the all of the deployed contracts of the guild
@@ -151,10 +151,13 @@ contract GuildController is Ownable {
             revert ReportNotExists();
         }
 
+console.log("block.timestamp is %s", block.timestamp);
+console.log("timeVoting[id] + VOTING_TIME is %s", timeVoting[id] + VOTING_TIME);
+console.log("voters[id].length is %s", voters[id].length);
         if (voters[id].length == 0) {
             uint256 endTime = block.timestamp;
             uint256 day = getWeekday(block.timestamp);
-
+console.log("day is %s", day);
             // SUNDAY-CHECK
             if (day == 0) {
                 endTime += WEEK;
@@ -165,13 +168,17 @@ contract GuildController is Ownable {
             } else {
                 endTime += WEEK - (DAY_IN_SECONDS * 7);
             }
-
+console.log("endTime is %s", endTime);
             timeVoting[id] = endTime;
-        } else if (block.timestamp > (timeVoting[id] + VOTING_TIME)) {
+        }
+// TODO: fix this if-else / if-if
+        if (block.timestamp > (timeVoting[id] + VOTING_TIME)) {
             //check if the week has passed - can vote only a week from first vote
             revert VotingTimeExpired();
         }
 
+console.log("   IERC20(FXAMORxGuild).balanceOf(msg.sender) is %s", IERC20(FXAMORxGuild).balanceOf(msg.sender));
+console.log("   amount is %s", amount);
         if (IERC20(FXAMORxGuild).balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }
