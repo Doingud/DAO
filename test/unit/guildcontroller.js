@@ -15,7 +15,6 @@ let AMORxGuild;
 let FXAMORxGuild
 let controller;
 let root;
-let authorizer_adaptor;
 let impactMaker;
 let user;
 let staker;
@@ -35,7 +34,6 @@ describe('unit - Contract: GuildController', function () {
         controller = await init.controller(setup);
         root = setup.roles.root;
         staker = setup.roles.staker;
-        authorizer_adaptor = setup.roles.authorizer_adaptor;
         operator = setup.roles.operator;
         impactMaker = setup.roles.doingud_multisig;
         user = setup.roles.user3;
@@ -59,6 +57,7 @@ describe('unit - Contract: GuildController', function () {
             )).to.be.reverted;
         });
     });
+
     context('» ImpactMakers testing', () => {
         it('it fails to set ImpactMakers if not the owner', async function () {
             impactMakers = [staker.address, operator.address, impactMaker.address];
