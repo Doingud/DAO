@@ -3,12 +3,16 @@ pragma solidity 0.8.15;
 
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// @title GuildController contract
 /// @author Daoism Systems Team
 /// @notice GuildController contract controls the all of the deployed contracts of the guild
 
-contract GuildController {
+contract GuildController is Ownable {
+    using SafeERC20 for IERC20;
+
     uint256[] public reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
     mapping(uint256 => mapping(address => uint256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
     mapping(uint256 => address[]) public voters; // voters mapping(uint report => address [] voters)
@@ -16,24 +20,20 @@ contract GuildController {
     mapping(uint256 => address) public reportsAuthors;
     uint256 public totalReportsWeight; // total Weight of all of reports
 
-    address[] impactMakers; // list of impactMakers of this DAO
+    address[] public impactMakers; // list of impactMakers of this DAO
     mapping(address => uint256) claimableTokens; // amount of tokens each specific address(impactMaker) can claim
-    mapping(address => uint256) weights; // weight of each specific Impact Maker/Builder
-    uint256 totalWeight; // total Weight of all of the impact makers
-    uint256[] timeVoting; // time of the forst vote the report with specific id
+    mapping(address => uint256) public weights; // weight of each specific Impact Maker/Builder
+    uint256 public totalWeight; // total Weight of all of the impact makers
+    uint256[] public timeVoting; // deadlines for the vote for reports
+
+    IERC20 private AMORxGuild;
+    address public FXAMORxGuild;
 
     uint256 public VOTING_TIME;
     uint256 public constant WEEK = 7 days; // 1 week is the time for the users to vore for the specific report
-    uint256 constant DAY_IN_SECONDS = 86400;
-
-    address public owner;
-    address public FXAMORxGuild;
-    address public guild;
-
-    IERC20 private AMORxGuild;
-
+    uint256 public constant DAY_IN_SECONDS = 86400;
     uint256 public constant FEE_DENOMINATOR = 1000;
-    uint256 public percentToConvert = 100; //10% // FEE_DENOMINATOR/100*80
+    uint256 public percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
 
     event Initialized(bool success, address owner, address AMORxGuild);
 
@@ -54,37 +54,24 @@ contract GuildController {
     error InvalidSender();
 
     function init(
-        address initOwner_,
+        address initOwner,
         address AMORxGuild_,
-        address FXAMORxGuild_,
-        address guild_,
-        address firstImpactMaker
+        address FXAMORxGuild_
     ) external returns (bool) {
         require(!_initialized, "Already initialized");
 
-        owner = initOwner_;
+        _transferOwnership(initOwner);
+
         AMORxGuild = IERC20(AMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
-        guild = guild_;
-        impactMakers.push(firstImpactMaker);
-        weights[firstImpactMaker] = 1;
-        totalWeight = 1;
-
         VOTING_TIME = WEEK;
 
         _initialized = true;
-        emit Initialized(_initialized, initOwner_, AMORxGuild_);
+        emit Initialized(_initialized, initOwner, AMORxGuild_);
         return true;
     }
 
-    modifier onlyAddress(address authorizedAddress) {
-        if (msg.sender != authorizedAddress) {
-            revert Unauthorized();
-        }
-        _;
-    }
-
-    function setVotingPeriod(uint256 newTime) external onlyAddress(owner) {
+    function setVotingPeriod(uint256 newTime) external onlyOwner {
         if (newTime < 2 days) {
             revert InvalidAmount();
         }
@@ -113,8 +100,7 @@ contract GuildController {
 
         // based on the weights distribution, tokens will be automatically redirected to the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
-            uint256 weight = weights[impactMakers[i]] / totalWeight; // impartMakerWeight / totalWeight
-            uint256 amountToSendVoter = decAmount * weight;
+            uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
             AMORxGuild.transferFrom(msg.sender, impactMakers[i], amountToSendVoter);
         }
 
@@ -262,5 +248,15 @@ contract GuildController {
 
     function getWeekday(uint timestamp) public pure returns (uint8) {
         return uint8((timestamp / DAY_IN_SECONDS + 4) % 7); // day of week = (floor(T / 86400) + 4) mod 7.
+    }
+    /// @notice removes impact makers, resets mapping and array, and creates new array, mapping, and sets weights
+    /// @param arrImpactMakers The array of impact makers
+    /// @param arrWeight The array of weights of impact makers
+    function setImpactMakers(address[] memory arrImpactMakers, uint256[] memory arrWeight) external onlyOwner {
+        for (uint256 i = 0; i < arrImpactMakers.length; i++) {
+            impactMakers.push(arrImpactMakers[i]);
+            weights[arrImpactMakers[i]] = arrWeight[i];
+            totalWeight += arrWeight[i];
+        }
     }
 }

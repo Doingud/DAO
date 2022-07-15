@@ -14,6 +14,7 @@ const initialize = async (accounts) => {
     doingud_multisig: accounts[1],
     user1: accounts[2],
     user2: accounts[3],
+    user3: accounts[4],
     authorizer_adaptor: accounts[5],
     operator: accounts[6],
     staker: accounts[7],
@@ -82,9 +83,7 @@ const controller = async (setup) => {
   await controller.init(
     setup.roles.root.address, // owner
     setup.tokens.AmorTokenImplementation.address, // AMORxGuild
-    setup.tokens.FXAMORxGuild.address, // FXAMORxGuild
-    setup.roles.authorizer_adaptor.address, // guild
-    setup.roles.doingud_multisig.address // firstImpactMaker
+    setup.tokens.FXAMORxGuild.address // FXAMORxGuild
   );
 
   await setup.tokens.AmorTokenImplementation.init(

@@ -119,7 +119,6 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         _beforeTokenTransfer(from, to, amount);
 
         uint256 fromBalance = _balances[from];
-
         if (fromBalance <= amount) {
             revert InvalidTransfer();
         }
