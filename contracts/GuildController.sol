@@ -205,12 +205,11 @@ contract GuildController is Ownable {
             revert VotingTimeNotFinished();
         }
 
-        // if > 80% positive FX tokens then report is accepted
-        uint256 necessaryPercent = (reportsWeight[id] * 80) / 100;
+        // If report has positive voting weight (positive FX tokens) then report is accepted
         uint256 fiftyPercent = (reportsWeight[id] * 50) / 100;
         address[] memory people = voters[id];
 
-        if (reportsVoting[id] > necessaryPercent) {
+        if (reportsVoting[id] > 0) {
             // If report has positive voting weight, then funds go 50-50%,
             // 50% go to the report creater,
             AMORxGuild.transfer(reportsAuthors[id], fiftyPercent);
@@ -238,8 +237,7 @@ contract GuildController is Ownable {
             // and 50% gets redistributed between the passed reports based on their weights
             for (uint256 i = 0; i < reportsWeight.length; i++) {
                 // passed reports 
-                if (reportsWeight[i] > 0) { // TODO: add/check stored pass-criteria info
-                    // TODO: check. maybe add mappint uint --> bool - if passed
+                if (reportsWeight[i] > 0) {
                     // TODO: add smth what will be solving no-passed-at-this-week-reports isssue
                     // allAmountToDistribute(50%) * report weigth in % / all 100%
                     uint256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / totalReportsWeight;
