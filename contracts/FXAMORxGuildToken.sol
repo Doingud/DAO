@@ -122,8 +122,8 @@ contract FXAMORxGuild is ERC20Base, Ownable {
         }
         //burn used FXAMORxGuild tokens from staker
         _burn(account, amount);
-        stakes[account] -= amount;
         IERC20(AMORxGuild).transfer(controller, amount);
+        stakes[account] -= amount;
     }
 
     /// @notice Allows some external account to vote with your FXAMORxGuild tokens
@@ -137,8 +137,7 @@ contract FXAMORxGuild is ERC20Base, Ownable {
             revert AddressZero();
         }
 
-        uint256 alreadyDelegated = amountDelegated[msg.sender];
-        uint256 availableAmount = stakes[msg.sender] - alreadyDelegated;
+        uint256 availableAmount = stakes[msg.sender] - amountDelegated[msg.sender];
         if (availableAmount < amount) {
             revert InvalidAmount();
         }
