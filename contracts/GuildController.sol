@@ -101,6 +101,7 @@ contract GuildController is Ownable {
     /// @param arrImpactMakers The array of impact makers
     /// @param arrWeight The array of weights of impact makers
     function setImpactMakers(address[] memory arrImpactMakers, uint256[] memory arrWeight) external onlyOwner {
+        delete impactMakers;
         for (uint256 i = 0; i < arrImpactMakers.length; i++) {
             impactMakers.push(arrImpactMakers[i]);
             weights[arrImpactMakers[i]] = arrWeight[i];

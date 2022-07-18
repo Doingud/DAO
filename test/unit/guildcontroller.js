@@ -58,7 +58,7 @@ describe('unit - Contract: GuildController', function () {
         });
     });
 
-    context('» ImpactMakers testing', () => {
+    context('» setImpactMakers testing', () => {
         it('it fails to set ImpactMakers if not the owner', async function () {
             impactMakers = [staker.address, operator.address, impactMaker.address];
             weigths = [20, 34, 923];
@@ -67,7 +67,7 @@ describe('unit - Contract: GuildController', function () {
             );
         });
 
-        it('it ImpactMakers', async function () {
+        it('it sets ImpactMakers', async function () {
             await controller.connect(root).setImpactMakers(impactMakers, weigths);
             expect(await controller.impactMakers(0)).to.equals(staker.address);
             expect(await controller.impactMakers(1)).to.equals(operator.address);
