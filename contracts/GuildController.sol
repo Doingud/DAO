@@ -5,7 +5,7 @@ import "./utils/interfaces/IFXAMORxGuild.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "hardhat/console.sol";
+
 /// @title GuildController contract
 /// @author Daoism Systems Team
 /// @notice GuildController contract controls the all of the deployed contracts of the guild
@@ -32,6 +32,7 @@ contract GuildController is Ownable {
     uint256 public VOTING_TIME;
     uint256 public constant WEEK = 7 days; // 1 week is the time for the users to vore for the specific report
     uint256 public constant DAY_IN_SECONDS = 86400;
+    uint256 constant HOUR_IN_SECONDS = 3600;
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
 
@@ -151,13 +152,9 @@ contract GuildController is Ownable {
             revert ReportNotExists();
         }
 
-console.log("block.timestamp is %s", block.timestamp);
-console.log("timeVoting[id] + VOTING_TIME is %s", timeVoting[id] + VOTING_TIME);
-console.log("voters[id].length is %s", voters[id].length);
         if (voters[id].length == 0) {
             uint256 endTime = block.timestamp;
             uint256 day = getWeekday(block.timestamp);
-console.log("day is %s", day);
             // SUNDAY-CHECK
             if (day == 0) {
                 endTime += WEEK;
@@ -168,17 +165,23 @@ console.log("day is %s", day);
             } else {
                 endTime += WEEK - (DAY_IN_SECONDS * 7);
             }
-console.log("endTime is %s", endTime);
+
+            uint256 hour = getHour(block.timestamp); // day % 24;
+            // 12AM-CHECK
+            if (hour > 12) {
+                endTime -= (hour - 12) * HOUR_IN_SECONDS;
+            } else {
+                endTime += (12 - hour) * HOUR_IN_SECONDS;
+            }
+
             timeVoting[id] = endTime;
         }
-// TODO: fix this if-else / if-if
+
         if (block.timestamp > (timeVoting[id] + VOTING_TIME)) {
             //check if the week has passed - can vote only a week from first vote
             revert VotingTimeExpired();
         }
 
-console.log("   IERC20(FXAMORxGuild).balanceOf(msg.sender) is %s", IERC20(FXAMORxGuild).balanceOf(msg.sender));
-console.log("   amount is %s", amount);
         if (IERC20(FXAMORxGuild).balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }
@@ -253,9 +256,14 @@ console.log("   amount is %s", amount);
         }
     }
 
-    function getWeekday(uint timestamp) public pure returns (uint8) {
+    function getWeekday(uint256 timestamp) public pure returns (uint8) {
         return uint8((timestamp / DAY_IN_SECONDS + 4) % 7); // day of week = (floor(T / 86400) + 4) mod 7.
     }
+
+    function getHour(uint256 timestamp) public pure returns (uint8) {
+        return uint8((timestamp / 60 / 60) % 24);
+    }
+
     /// @notice removes impact makers, resets mapping and array, and creates new array, mapping, and sets weights
     /// @param arrImpactMakers The array of impact makers
     /// @param arrWeight The array of weights of impact makers
