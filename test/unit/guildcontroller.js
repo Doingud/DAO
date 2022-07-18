@@ -268,7 +268,7 @@ describe('unit - Contract: GuildController', function () {
             const balanceBefore = await AMORxGuild.balanceOf(operator.address);
             time.increase(twoWeeks);
             await controller.connect(operator).finalizeReportVoting(id);
-            const balanceAfter = balanceBefore.add(1);
+            const balanceAfter = balanceBefore.add(2);
             expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
         });
 
