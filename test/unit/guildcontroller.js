@@ -212,13 +212,30 @@ describe('unit - Contract: GuildController', function () {
             const amount = 2;
             const sign = true;
             await controller.connect(operator).voteForReport(id, amount, sign);
-            time.increase(twoWeeks);
+            time.increase(averageLockTime);
 
             await expect(controller.connect(operator).voteForReport(id, amount, sign)).to.be.revertedWith(
                 'VotingTimeExpired()'
             );
         });
 
+        it('it fails to vote for report if VotingTimeExpired', async function () {
+            const id = 1;
+            const amount = 2;
+            const sign = true;
+            time.increase(time.duration.days(5));
+
+            await controller.connect(operator).voteForReport(id, amount, sign);
+            time.increase(averageLockTime);
+
+            await controller.connect(operator).voteForReport(id, amount, sign);
+
+            time.increase(twoWeeks);
+
+            await expect(controller.connect(operator).voteForReport(id, amount, sign)).to.be.revertedWith(
+                'VotingTimeExpired()'
+            );
+        });
     });
 
     context('» finalizeReportVoting testing', () => {
@@ -232,12 +249,11 @@ describe('unit - Contract: GuildController', function () {
 
         it('it fails to finalize report voting if VotingTimeNotFinished', async function () {
             await AMORxGuild.connect(root).transfer(controller.address, TEST_TRANSFER);
-
             await AMORxGuild.connect(root).transfer(operator.address, TEST_TRANSFER_BIGGER);
             await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER);
+            await controller.connect(operator).donate(TEST_TRANSFER_SMALLER);
             await controller.connect(operator).addReport(report, v, r, s); 
-
-            const id = 1;
+            const id = 2;
             const amount = 2;
             const sign = true;
             await controller.connect(operator).voteForReport(id, amount, sign);
@@ -248,18 +264,12 @@ describe('unit - Contract: GuildController', function () {
         });
 
         it('finalizes voting for report', async function () {
-            await FXAMORxGuild.connect(root).setController(controller.address); 
-
-            await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER_SMALLER);
-            await controller.connect(operator).donate(TEST_TRANSFER_SMALLER);
-
-            const id = 1;
-            const amount = 2;
-            const sign = true;
-            await controller.connect(operator).voteForReport(id, amount, sign); 
-
-            time.increase(averageLockTime);
+            const id = 2;
+            const balanceBefore = await AMORxGuild.balanceOf(operator.address);
+            time.increase(twoWeeks);
             await controller.connect(operator).finalizeReportVoting(id);
+            const balanceAfter = balanceBefore.add(1);
+            expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
         });
 
     });

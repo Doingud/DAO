@@ -29,7 +29,7 @@ contract GuildController is Ownable {
     IERC20 private AMORxGuild;
     address public FXAMORxGuild;
 
-    uint256 public VOTING_TIME;
+    uint256 public ADDITIONAL_VOTING_TIME;
     uint256 public constant WEEK = 7 days; // 1 week is the time for the users to vore for the specific report
     uint256 public constant DAY_IN_SECONDS = 86400;
     uint256 constant HOUR_IN_SECONDS = 3600;
@@ -65,7 +65,7 @@ contract GuildController is Ownable {
 
         AMORxGuild = IERC20(AMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
-        VOTING_TIME = WEEK;
+        ADDITIONAL_VOTING_TIME = 0;//WEEK;
 
         _initialized = true;
         emit Initialized(_initialized, initOwner, AMORxGuild_);
@@ -76,7 +76,7 @@ contract GuildController is Ownable {
         if (newTime < 2 days) {
             revert InvalidAmount();
         }
-        VOTING_TIME = newTime;
+        ADDITIONAL_VOTING_TIME = newTime;
     }
 
     /// @notice allows to donate AMORxGuild tokens to the Guild
@@ -163,7 +163,7 @@ contract GuildController is Ownable {
                 // end of the next week
                 endTime += WEEK + (DAY_IN_SECONDS * (7 - day));
             } else {
-                endTime += WEEK - (DAY_IN_SECONDS * 7);
+                endTime += WEEK - (DAY_IN_SECONDS * day);
             }
             endTime = endTime / DAY_IN_SECONDS * DAY_IN_SECONDS;
             endTime += 12 * HOUR_IN_SECONDS;
@@ -171,7 +171,7 @@ contract GuildController is Ownable {
             timeVoting[id] = endTime;
         }
 
-        if (block.timestamp > (timeVoting[id] + VOTING_TIME)) {
+        if (block.timestamp > (timeVoting[id] + ADDITIONAL_VOTING_TIME)) {
             //check if the week has passed - can vote only a week from first vote
             revert VotingTimeExpired();
         }
@@ -201,7 +201,7 @@ contract GuildController is Ownable {
             revert ReportNotExists();
         }
 
-        if (block.timestamp < (timeVoting[id] + VOTING_TIME)) {
+        if (block.timestamp < (timeVoting[id] + ADDITIONAL_VOTING_TIME)) {
             revert VotingTimeNotFinished();
         }
 
