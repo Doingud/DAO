@@ -84,7 +84,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     /// @param  amount uint256 amount of dAMOR to be staked
     /// @param  time uint256
     /// @return uint256 the amount of dAMORxGuild received from staking
-    function stake(uint256 amount, uint256 time) public returns (uint256) {
+    function stake(uint256 amount, uint256 time) external returns (uint256) {
         if (time < MIN_LOCK_TIME) {
             revert TimeTooSmall();
         }
@@ -108,7 +108,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     /// @notice Increases stake of already staken AMORxGuild and receive dAMORxGuild in return
     /// @dev    Front end must still call approve() on AMORxGuild token to allow transferFrom()
     /// @param  amount uint256 amount of dAMOR to be staked
-    function increaseStake(uint256 amount) public returns (uint256) {
+    function increaseStake(uint256 amount) external returns (uint256) {
         if (AMORxGuild.balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }
@@ -129,7 +129,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     /// @notice Withdraws AMORxGuild tokens; burns dAMORxGuild
     /// @dev When this tokens are burned, staked AMORxGuild is being transfered
     ///      to the controller(contract that has a voting function)
-    function withdraw() public returns (uint256) {
+    function withdraw() external returns (uint256) {
         if (block.timestamp < stakesTimes[msg.sender]) {
             revert TimeTooSmall();
         }
@@ -167,7 +167,12 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
     /// @notice Delegate your dAMORxGuild to the address `account`
     /// @param  to address to which delegate users FXAMORxGuild
-    function delegate(address to) public {
+    function delegate(address to) external {
+        /// remove old delegation if already delagated to someone
+        if (delegation[msg.sender] != address(0)) {
+            undelegate();
+        }
+
         if (to == msg.sender) {
             revert InvalidSender();
         }
@@ -176,12 +181,9 @@ contract dAMORxGuild is ERC20Base, Ownable {
         delegation[msg.sender] = to;
     }
 
-    /// @notice Undelegate your dAMORxGuild to the address `account`
-    /// @param  account address from which delegating will be taken away
-    function undelegate(address account) public {
-        if (account == msg.sender) {
-            revert InvalidSender();
-        }
+    /// @notice Undelegate your dAMORxGuild
+    function undelegate() public {
+        address account = delegation[msg.sender];
 
         //Nothing to undelegate
         if (delegators[account].length == 0) {
@@ -199,7 +201,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     }
 
     /// @notice non-transferable
-    function transfer(address to, uint256 amount) public virtual override returns (bool) {
+    function transfer(address to, uint256 amount) public override returns (bool) {
         return false;
     }
 
@@ -207,7 +209,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         address from,
         address to,
         uint256 amount
-    ) public virtual override returns (bool) {
+    ) public override returns (bool) {
         return false;
     }
 }
