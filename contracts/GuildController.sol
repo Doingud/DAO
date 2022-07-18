@@ -219,9 +219,8 @@ contract GuildController is Ownable {
             for (uint256 i = 0; i < voters[id].length; i++) {
                 // if voted positively
                 if (votes[id][people[i]] > 0) {
-                    uint256 weight = votes[id][people[i]] / reportsWeight[id]; // amountFromUser / allAmount
                     // 50% * user weigth / all 100%
-                    uint256 amountToSendVoter = (fiftyPercent * weight) / 100; //reportsWeight[id];
+                    uint256 amountToSendVoter = (fiftyPercent *  votes[id][people[i]]) / reportsWeight[id];
                     AMORxGuild.transfer(people[i], amountToSendVoter);
                 }
             }
@@ -229,21 +228,21 @@ contract GuildController is Ownable {
             // If report has negative voting weight, then
             // 50% goes to the people who voted negatively,
             for (uint256 i = 0; i < voters[id].length; i++) {
+                // if voted negatively
                 if (votes[id][people[i]] < 0) {
-                    // voted negatively
-                    uint256 weight = votes[id][people[i]] / reportsWeight[id]; // weightFromUser / allWeight
                     // allAmountToDistribute(50%) * user weigth in % / all 100%
-                    uint256 amountToSendVoter = (fiftyPercent * weight) / reportsWeight[id];
+                    uint256 amountToSendVoter = (fiftyPercent *  votes[id][people[i]]) / reportsWeight[id];
                     AMORxGuild.transfer(people[i], amountToSendVoter);
                 }
             }
             // and 50% gets redistributed between the passed reports based on their weights
             for (uint256 i = 0; i < reportsWeight.length; i++) {
-                if (reportsWeight[i] > 0) {
-                    // passed reports // TODO: check. maybe add mappint uint --> bool - if passed
-                    uint256 weight = reportsWeight[i] / totalReportsWeight; // weightFromReport / allWeight
+                // passed reports 
+                if (reportsWeight[i] > 0) { // TODO: add/check stored pass-criteria info
+                    // TODO: check. maybe add mappint uint --> bool - if passed
+                    // TODO: add smth what will be solving no-passed-at-this-week-reports isssue
                     // allAmountToDistribute(50%) * report weigth in % / all 100%
-                    uint256 amountToSendReport = (fiftyPercent * weight) / 100;
+                    uint256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / totalReportsWeight;
                     AMORxGuild.transfer(reportsAuthors[i], amountToSendReport);
                 }
             }
