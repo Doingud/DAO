@@ -165,14 +165,8 @@ contract GuildController is Ownable {
             } else {
                 endTime += WEEK - (DAY_IN_SECONDS * 7);
             }
-
-            uint256 hour = getHour(block.timestamp); // day % 24;
-            // 12AM-CHECK
-            if (hour > 12) {
-                endTime -= (hour - 12) * HOUR_IN_SECONDS;
-            } else {
-                endTime += (12 - hour) * HOUR_IN_SECONDS;
-            }
+            endTime = endTime / DAY_IN_SECONDS * DAY_IN_SECONDS;
+            endTime += 12 * HOUR_IN_SECONDS;
 
             timeVoting[id] = endTime;
         }
@@ -258,10 +252,6 @@ contract GuildController is Ownable {
 
     function getWeekday(uint256 timestamp) public pure returns (uint8) {
         return uint8((timestamp / DAY_IN_SECONDS + 4) % 7); // day of week = (floor(T / 86400) + 4) mod 7.
-    }
-
-    function getHour(uint256 timestamp) public pure returns (uint8) {
-        return uint8((timestamp / 60 / 60) % 24);
     }
 
     /// @notice removes impact makers, resets mapping and array, and creates new array, mapping, and sets weights
