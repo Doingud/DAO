@@ -184,7 +184,7 @@ describe('unit - Contract: GuildController', function () {
             );
         });
 
-        it('votes for report', async function () {
+        it('votes for report positivly', async function () {
             await FXAMORxGuild.connect(root).setController(controller.address); 
 
             await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER_SMALLER);
@@ -196,6 +196,19 @@ describe('unit - Contract: GuildController', function () {
             await controller.connect(operator).voteForReport(id, amount, sign);
             expect(await controller.reportsVoting(0)).to.equals(2);
             expect(await controller.reportsWeight(0)).to.equals(2);
+        });
+
+        it('votes for report negatively', async function () {
+            await FXAMORxGuild.connect(root).setController(controller.address); 
+            await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER_SMALLER);
+            await controller.connect(operator).donate(TEST_TRANSFER_SMALLER);
+
+            const id = 1;
+            const amount = 2;
+            const sign = false;
+            await controller.connect(operator).voteForReport(id, amount, sign);
+            expect(await controller.reportsVoting(1)).to.equals(-2);
+            expect(await controller.reportsWeight(1)).to.equals(2);
         });
 
         it('it fails to vote for report if try to vote more than user have', async function () {
@@ -213,24 +226,6 @@ describe('unit - Contract: GuildController', function () {
             const sign = true;
             await controller.connect(operator).voteForReport(id, amount, sign);
             time.increase(averageLockTime);
-
-            await expect(controller.connect(operator).voteForReport(id, amount, sign)).to.be.revertedWith(
-                'VotingTimeExpired()'
-            );
-        });
-
-        it('it fails to vote for report if VotingTimeExpired', async function () {
-            const id = 1;
-            const amount = 2;
-            const sign = true;
-            time.increase(time.duration.days(5));
-
-            await controller.connect(operator).voteForReport(id, amount, sign);
-            time.increase(averageLockTime);
-
-            await controller.connect(operator).voteForReport(id, amount, sign);
-
-            time.increase(twoWeeks);
 
             await expect(controller.connect(operator).voteForReport(id, amount, sign)).to.be.revertedWith(
                 'VotingTimeExpired()'
@@ -263,12 +258,21 @@ describe('unit - Contract: GuildController', function () {
             );
         });
 
-        it('finalizes voting for report', async function () {
+        it('finalizes voting for positive report', async function () {
             const id = 2;
             const balanceBefore = await AMORxGuild.balanceOf(operator.address);
             time.increase(twoWeeks);
             await controller.connect(operator).finalizeReportVoting(id);
             const balanceAfter = balanceBefore.add(2);
+            expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
+        });
+
+        it('finalizes voting for negative report', async function () {
+            const id = 1;
+            const balanceBefore = await AMORxGuild.balanceOf(operator.address);
+            time.increase(twoWeeks);
+            await controller.connect(operator).finalizeReportVoting(id);
+            const balanceAfter = balanceBefore.add(1);
             expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
         });
 

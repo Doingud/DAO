@@ -13,10 +13,10 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 contract GuildController is Ownable {
     using SafeERC20 for IERC20;
 
-    uint256[] public reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
-    mapping(uint256 => mapping(address => uint256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
+    int256[] public reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
+    mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
     mapping(uint256 => address[]) public voters; // voters mapping(uint report => address [] voters)
-    uint256[] public reportsVoting; // results of the vote for the report with spe
+    int256[] public reportsVoting; // results of the vote for the report with spe
     mapping(uint256 => address) public reportsAuthors;
     uint256 public totalReportsWeight; // total Weight of all of reports
 
@@ -65,7 +65,7 @@ contract GuildController is Ownable {
 
         AMORxGuild = IERC20(AMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
-        ADDITIONAL_VOTING_TIME = 0;//WEEK;
+        ADDITIONAL_VOTING_TIME = 0;
 
         _initialized = true;
         emit Initialized(_initialized, initOwner, AMORxGuild_);
@@ -165,7 +165,7 @@ contract GuildController is Ownable {
             } else {
                 endTime += WEEK - (DAY_IN_SECONDS * day);
             }
-            endTime = endTime / DAY_IN_SECONDS * DAY_IN_SECONDS;
+            endTime = (endTime / DAY_IN_SECONDS) * DAY_IN_SECONDS;
             endTime += 12 * HOUR_IN_SECONDS;
 
             timeVoting[id] = endTime;
@@ -182,14 +182,16 @@ contract GuildController is Ownable {
 
         IFXAMORxGuild(FXAMORxGuild).burn(msg.sender, amount);
         voters[id].push(msg.sender);
-        reportsWeight[id] += amount;
+
+        reportsWeight[id] += int256(amount);
+        totalReportsWeight += amount;
 
         if (sign == true) {
-            reportsVoting[id] += amount;
-            votes[id][msg.sender] += amount;
+            reportsVoting[id] += int256(amount);
+            votes[id][msg.sender] += int256(amount);
         } else {
-            reportsVoting[id] -= amount;
-            votes[id][msg.sender] -= amount;
+            reportsVoting[id] -= int256(amount);
+            votes[id][msg.sender] -= int256(amount);
         }
     }
 
@@ -206,21 +208,21 @@ contract GuildController is Ownable {
         }
 
         // If report has positive voting weight (positive FX tokens) then report is accepted
-        uint256 fiftyPercent = (reportsWeight[id] * 50) / 100;
+        int256 fiftyPercent = (reportsWeight[id] * 50) / 100;
         address[] memory people = voters[id];
 
         if (reportsVoting[id] > 0) {
             // If report has positive voting weight, then funds go 50-50%,
             // 50% go to the report creater,
-            AMORxGuild.transfer(reportsAuthors[id], fiftyPercent);
+            AMORxGuild.transfer(reportsAuthors[id], uint256(fiftyPercent));
 
             // and 50% goes to the people who voted positively
             for (uint256 i = 0; i < voters[id].length; i++) {
                 // if voted positively
                 if (votes[id][people[i]] > 0) {
                     // 50% * user weigth / all 100%
-                    uint256 amountToSendVoter = (fiftyPercent *  votes[id][people[i]]) / reportsWeight[id];
-                    AMORxGuild.transfer(people[i], amountToSendVoter);
+                    int256 amountToSendVoter = (int256(fiftyPercent) * votes[id][people[i]]) / reportsWeight[id];
+                    AMORxGuild.transfer(people[i], uint256(amountToSendVoter));
                 }
             }
         } else {
@@ -230,25 +232,22 @@ contract GuildController is Ownable {
                 // if voted negatively
                 if (votes[id][people[i]] < 0) {
                     // allAmountToDistribute(50%) * user weigth in % / all 100%
-                    uint256 amountToSendVoter = (fiftyPercent *  votes[id][people[i]]) / reportsWeight[id];
-                    AMORxGuild.transfer(people[i], amountToSendVoter);
+                    int256 absVotes = abs(votes[id][people[i]]);
+                    int256 amountToSendVoter = (fiftyPercent * absVotes) / reportsWeight[id];
+                    AMORxGuild.transfer(people[i], uint256(amountToSendVoter));
                 }
             }
             // and 50% gets redistributed between the passed reports based on their weights
             for (uint256 i = 0; i < reportsWeight.length; i++) {
-                // passed reports 
+                // passed reports
                 if (reportsWeight[i] > 0) {
                     // TODO: add smth what will be solving no-passed-at-this-week-reports isssue
                     // allAmountToDistribute(50%) * report weigth in % / all 100%
-                    uint256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / totalReportsWeight;
-                    AMORxGuild.transfer(reportsAuthors[i], amountToSendReport);
+                    int256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / int256(totalReportsWeight);
+                    AMORxGuild.transfer(reportsAuthors[i], uint256(amountToSendReport));
                 }
             }
         }
-    }
-
-    function getWeekday(uint256 timestamp) public pure returns (uint8) {
-        return uint8((timestamp / DAY_IN_SECONDS + 4) % 7); // day of week = (floor(T / 86400) + 4) mod 7.
     }
 
     /// @notice removes impact makers, resets mapping and array, and creates new array, mapping, and sets weights
@@ -260,5 +259,13 @@ contract GuildController is Ownable {
             weights[arrImpactMakers[i]] = arrWeight[i];
             totalWeight += arrWeight[i];
         }
+    }
+
+    function getWeekday(uint256 timestamp) public pure returns (uint8) {
+        return uint8((timestamp / DAY_IN_SECONDS + 4) % 7); // day of week = (floor(T / 86400) + 4) mod 7.
+    }
+
+    function abs(int256 x) private pure returns (int256) {
+        return x >= 0 ? x : -x;
     }
 }
