@@ -84,9 +84,11 @@ describe("unit - AMOR Token", function () {
         TAX_RATE,
         root.address
       )).
-      to.be.reverted;
+      to.be.reverted.revertedWith(`AlreadyInitialized`);
     });
   });
+
+
 
     context("function: viewImplementation()", () => {
         it("retrieves the correct contract address", async function () {
@@ -161,6 +163,18 @@ describe("unit - AMOR Token", function () {
       });
     });
 
+    
+    context("function: setTaxRate", () => {
+      it("Should not allow the tax rate to be set over 500", async function () {
+       await expect(PROXY.setTaxRate(4000)).to.be.revertedWith(`InvalidRate`);
+      });
+
+      it("Should allow the tax rate to be set", async function () {
+       await PROXY.setTaxRate(500);
+      });
+    });
+
+
     context("function: viewRate()", () => {
       it("returns the current tax rate", async function () {
         expect(await PROXY.taxRate()).
@@ -174,6 +188,17 @@ describe("unit - AMOR Token", function () {
           to.equal(multisig.address);
       });
     });
+
+    context("function: updateController", () => {
+      it("Should not allow the tax collector to be set to the address of the token", async function () {
+       await expect(PROXY.updateController(PROXY.address)).to.be.revertedWith(`InvalidTaxCollector`);
+      });
+
+      it("Should allow tax collector to be set to another address", async function () {
+        await PROXY.updateController(user1.address);
+      });
+    });
+
 
     context("function: upgradeTo()", () => {
       it("upgrades the implementation used for the proxy", async function () {

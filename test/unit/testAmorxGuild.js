@@ -77,6 +77,10 @@ describe("unit - AMORxGuild", function () {
   });
 
   context("function: setTax", () => {
+    it("Should not allow the tax rate to be set over 2000", async function () {
+      await expect(AMOR_GUILD_TOKEN.setTax(4000)).to.be.revertedWith(`InvalidTaxRate`);
+    });
+
     it("Should allow the tax rate to be set", async function () {
       await AMOR_GUILD_TOKEN.setTax(2000);
     });
