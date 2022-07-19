@@ -5,7 +5,7 @@ import "./utils/interfaces/IFXAMORxGuild.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "hardhat/console.sol";
+
 /// @title GuildController contract
 /// @author Daoism Systems Team
 /// @notice GuildController contract controls the all of the deployed contracts of the guild
@@ -241,7 +241,6 @@ contract GuildController is Ownable {
             // and 50% gets redistributed between the passed reports based on their weights
             for (uint256 i = 0; i < reportsWeight.length; i++) {
                 // passed reports
-                console.log("reportsWeight[i]  is %s", uint256(reportsWeight[i]));
                 if (reportsWeight[i] > 0) {
                     // TODO: add smth what will be solving no-passed-at-this-week-reports isssue
                     // allAmountToDistribute(50%) * report weigth in % / all 100%
