@@ -196,6 +196,10 @@ describe('unit - Contract: GuildController', function () {
             await controller.connect(operator).voteForReport(id, amount, sign);
             expect(await controller.reportsVoting(0)).to.equals(2);
             expect(await controller.reportsWeight(0)).to.equals(2);
+
+            await controller.connect(user).voteForReport(id, 1, false);
+            expect(await controller.reportsVoting(0)).to.equals(1);
+            expect(await controller.reportsWeight(0)).to.equals(3);
         });
 
         it('votes for report negatively', async function () {
@@ -209,6 +213,8 @@ describe('unit - Contract: GuildController', function () {
             await controller.connect(operator).voteForReport(id, amount, sign);
             expect(await controller.reportsVoting(1)).to.equals(-2);
             expect(await controller.reportsWeight(1)).to.equals(2);
+
+            await controller.connect(user).voteForReport(id, 1, true);
         });
 
         it('it fails to vote for report if try to vote more than user have', async function () {
@@ -259,11 +265,11 @@ describe('unit - Contract: GuildController', function () {
         });
 
         it('finalizes voting for positive report', async function () {
-            const id = 2;
+            const id = 0;
             const balanceBefore = await AMORxGuild.balanceOf(operator.address);
             time.increase(twoWeeks);
             await controller.connect(operator).finalizeReportVoting(id);
-            const balanceAfter = balanceBefore.add(2);
+            const balanceAfter = balanceBefore.add(4);
             expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
         });
 
@@ -272,7 +278,7 @@ describe('unit - Contract: GuildController', function () {
             const balanceBefore = await AMORxGuild.balanceOf(operator.address);
             time.increase(twoWeeks);
             await controller.connect(operator).finalizeReportVoting(id);
-            const balanceAfter = balanceBefore.add(1);
+            const balanceAfter = balanceBefore;
             expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
         });
 
