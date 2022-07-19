@@ -246,6 +246,7 @@ contract GuildController is Ownable {
                     // allAmountToDistribute(50%) * report weigth in % / all 100%
                     int256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / int256(totalReportsWeight);
                     AMORxGuild.transfer(reportsAuthors[i], uint256(amountToSendReport));
+                    claimableTokens[reportsAuthors[i]] += uint256(amountToSendReport);
                 }
             }
         }
@@ -260,6 +261,49 @@ contract GuildController is Ownable {
             weights[arrImpactMakers[i]] = arrWeight[i];
             totalWeight += arrWeight[i];
         }
+    }
+
+    /// @notice allows to add impactMaker with a specific weight
+    /// Only avatar can add one, based on the popular vote
+    /// @param impactMaker New impact maker to be added
+    /// @param weight Weight of the impact maker
+    function addImpactMaker(address impactMaker, uint weight) external onlyOwner {
+        impactMakers.push(impactMaker);
+        weights[impactMaker] = weight;
+        totalWeight += weight;
+    }
+
+    /// @notice allows to add change impactMaker weight
+    /// @param impactMaker Impact maker to be changed
+    /// @param weight Weight of the impact maker
+    function changeImpactMaker(address impactMaker, uint weight) external onlyOwner {
+        weights[impactMaker] = weight;
+        totalWeight = totalWeight + (weights[impactMaker] - weight);
+    }
+
+    /// @notice allows to remove impactMaker with specific address
+    /// @param impactMaker Impact maker to be removed
+    function removeImpactMaker(address impactMaker) external onlyOwner {
+        for (uint256 i = 0; i < impactMakers.length; i++) {
+            if (impactMakers[i] == impactMaker) {
+                impactMakers[i] = impactMakers[impactMakers.length - 1];
+                impactMakers.pop();
+                break;
+            }
+        }
+        totalWeight -= weights[impactMaker];
+        delete weights[impactMaker];
+    }
+
+    /// @notice allows to claim tokens for specific ImpactMaker address
+    /// @param impact Impact maker to to claim tokens from
+    function claim(address impact) external {
+        if (impact != msg.sender) {
+            revert Unauthorized();
+        }
+
+        AMORxGuild.transferFrom(address(this), impact, claimableTokens[impact]);
+        claimableTokens[impact] = 0;
     }
 
     function getWeekday(uint256 timestamp) public pure returns (uint8) {

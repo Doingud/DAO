@@ -24,6 +24,7 @@ let authorizer_adaptor;
 let impactMaker;
 let operator;
 let user;
+let user2;
 let staker;
 let impactMakers;
 let weigths;
@@ -47,6 +48,7 @@ describe('unit - Contract: GuildController', function () {
         operator = setup.roles.operator;
         impactMaker = setup.roles.doingud_multisig;
         user = setup.roles.user3;
+        user2 = setup.roles.user2;
         authorizer_adaptor = setup.roles.authorizer_adaptor;
         operator = setup.roles.operator;
     });
@@ -70,9 +72,9 @@ describe('unit - Contract: GuildController', function () {
         });
     });
     
-    context('» ImpactMakers testing', () => {
+    context('» setImpactMakers testing', () => {
 
-        it('it fails to set ImpactMakers if not the owner', async function () {
+        it('it fails to set ImpactMaker if not the owner', async function () {
             impactMakers = [staker.address, operator.address, impactMaker.address];
             weigths = [20, 34, 923];
             await expect(controller.connect(user).setImpactMakers(impactMakers, weigths)).to.be.revertedWith(
@@ -80,7 +82,7 @@ describe('unit - Contract: GuildController', function () {
             );
         });
 
-        it('it ImpactMakers', async function () {
+        it('it sets ImpactMakers', async function () {
             await controller.connect(root).setImpactMakers(impactMakers, weigths);
             expect(await controller.impactMakers(0)).to.equals(staker.address);
             expect(await controller.impactMakers(1)).to.equals(operator.address);
@@ -88,6 +90,53 @@ describe('unit - Contract: GuildController', function () {
             expect(await controller.weights(staker.address)).to.equals(20);
             expect(await controller.weights(operator.address)).to.equals(34);
             expect(await controller.weights(impactMaker.address)).to.equals(923);
+        });
+    });
+
+    context('» addImpactMaker testing', () => {
+
+        it('it fails to add ImpactMaker if not the owner', async function () {
+            await expect(controller.connect(user).addImpactMaker(user2.address, 30)).to.be.revertedWith(
+                'Ownable: caller is not the owner'
+            );
+        });
+
+        it('it adds ImpactMaker', async function () {
+            await controller.connect(root).addImpactMaker(user2.address, 30);
+            expect(await controller.impactMakers(3)).to.equals(user2.address);
+            expect(await controller.weights(user2.address)).to.equals(30);
+        });
+    });
+
+    context('» changeImpactMaker testing', () => {
+
+        it('it fails to change ImpactMaker if not the owner', async function () {
+            await expect(controller.connect(user).changeImpactMaker(user2.address, 900)).to.be.revertedWith(
+                'Ownable: caller is not the owner'
+            );
+        });
+
+        it('it changes ImpactMaker', async function () {
+            await controller.connect(root).changeImpactMaker(user2.address, 900);
+            expect(await controller.impactMakers(3)).to.equals(user2.address);
+            expect(await controller.weights(user2.address)).to.equals(900);
+        });
+    });
+
+    context('» removeImpactMaker testing', () => {
+
+        it('it fails to removes ImpactMaker if not the owner', async function () {
+            await expect(controller.connect(user).removeImpactMaker(user2.address)).to.be.revertedWith(
+                'Ownable: caller is not the owner'
+            );
+        });
+
+        it('it removes ImpactMaker', async function () {
+            await controller.connect(root).removeImpactMaker(user2.address);
+            // const b = await controller.impactMakers(3);
+            // console.log("b is %s", b);
+            // expect(await controller.impactMakers(3)).to.be.reverted;
+            // expect(await controller.weights(user2.address)).to.be.reverted;
         });
     });
 
@@ -281,7 +330,6 @@ describe('unit - Contract: GuildController', function () {
             const balanceAfter = balanceBefore;
             expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
         });
-
     });
 });
 
