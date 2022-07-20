@@ -88,8 +88,6 @@ describe("unit - AMOR Token", function () {
     });
   });
 
-
-
     context("function: viewImplementation()", () => {
         it("retrieves the correct contract address", async function () {
           expect(await PROXY_CONTRACT.viewImplementation()).
