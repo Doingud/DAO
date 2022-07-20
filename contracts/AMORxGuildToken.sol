@@ -40,6 +40,10 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     address public guildController;
 
     /// Constants
+    /// Basis points as used in financial math
+    /// It allows fine-grained control over the tax rate
+    /// 1 basis point change == 0.01% change in the tax rate
+    /// Here it is the deonimator for tax-related calculations
     uint256 public BASIS_POINTS = 10000;
     /// Co-efficient
     uint256 private constant COEFFICIENT = 10**9;
@@ -110,9 +114,10 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
         //  Note there is a tax on staking into AMORxGuild
         uint256 mintAmount = COEFFICIENT * ((taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
         _mint(guildController, (mintAmount * stakingTaxRate) / BASIS_POINTS);
-        _mint(to, (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS);
+        mintAmount = (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS;
+        _mint(to, mintAmount);
 
-        return ((mintAmount * stakingTaxRate) / BASIS_POINTS);
+        return mintAmount;
     }
 
     /// @notice Allows the user to unstake their AMOR
@@ -122,7 +127,6 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
         if (amount > balanceOf(msg.sender)) {
             revert UnsufficientAmount();
         }
-        uint256 amorBalance = tokenAmor.balanceOf(address(this));
         uint256 currentSupply = totalSupply();
         uint256 amorReturned = ((currentSupply**2) - ((currentSupply - amount)**2)) / (COEFFICIENT**2);
 
@@ -132,9 +136,8 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
         //  Correct for the tax on transfer
         //  Transfer AMOR to the tx.origin, but note: this is taxed!
         tokenAmor.safeTransfer(msg.sender, amorReturned);
-        amorBalance -= tokenAmor.balanceOf(address(this));
         //  Return the amount of AMOR returned to the user
-        return amorBalance;
+        return amorReturned;
     }
 
     function pause() external onlyOwner {
