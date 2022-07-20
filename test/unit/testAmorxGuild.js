@@ -154,6 +154,10 @@ describe("unit - AMORxGuild", function () {
       await AMOR_GUILD_TOKEN.pause();
     });
 
+    it("Should return status as `paused`", async function () {
+      expect(await AMOR_GUILD_TOKEN.paused()).to.be.equal(true);
+    });
+
     it("Should revert if trying to stake tokens while paused", async function () {
       await expect(AMOR_GUILD_TOKEN.stakeAmor(root.address, MOCK_TEST_AMOUNT)).to.be.reverted;
     });
@@ -162,6 +166,10 @@ describe("unit - AMORxGuild", function () {
   context("function: unpause()", () => {
     it("Should allow the contract to be unpaused", async function () {
       await AMOR_GUILD_TOKEN.unpause();
+    });
+
+    it("Should return status as `not paused`", async function () {
+      expect(await AMOR_GUILD_TOKEN.paused()).to.be.equal(false);
     });
 
     it("Should allow a user to stake AMOR after being unpaused", async function () {
