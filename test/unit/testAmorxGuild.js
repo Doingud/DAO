@@ -78,6 +78,7 @@ describe("unit - AMORxGuild", function () {
 
   context("function: setTax", () => {
     it("Should allow the tax rate to be set", async function () {
+      //  This sets the tax rate to 20%
       await AMOR_GUILD_TOKEN.setTax(2000);
     });
   });
