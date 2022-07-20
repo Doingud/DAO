@@ -41,6 +41,7 @@ describe('unit - Contract: GuildController', function () {
         await init.getTokens(setup);
 
         AMORxGuild = setup.tokens.AmorTokenImplementation;
+        // AMORxGuild = setup.tokens.AmorGuildToken;//AmorTokenImplementation;
         FXAMORxGuild = setup.tokens.FXAMORxGuild;
         controller = await init.controller(setup);
         root = setup.roles.root;
@@ -333,6 +334,24 @@ describe('unit - Contract: GuildController', function () {
             await controller.connect(operator).finalizeReportVoting(id);
             const balanceAfter = balanceBefore;
             expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
+        });
+    });
+
+    context('» claim testing', () => {
+
+        it('it fails to removes ImpactMaker if not the owner', async function () {
+            await expect(controller.connect(user).claim(user2.address)).to.be.revertedWith(
+                'Unauthorized()'
+            );
+        });
+
+        it('it removes ImpactMaker', async function () {
+            const balanceBefore = await AMORxGuild.balanceOf(impactMaker.address);
+            console.log("balanceBefore is %s", balanceBefore);
+            await controller.connect(impactMaker).claim(impactMaker.address);
+            const balanceAfter = await controller.claimableTokens[impactMaker.address];
+            console.log("balanceAfter is %s", balanceAfter);
+            expect((await AMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal(balanceAfter.toString());
         });
     });
 });

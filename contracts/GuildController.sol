@@ -5,7 +5,7 @@ import "./utils/interfaces/IFXAMORxGuild.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "hardhat/console.sol";
+
 /// @title GuildController contract
 /// @author Daoism Systems Team
 /// @notice GuildController contract controls the all of the deployed contracts of the guild
@@ -103,6 +103,7 @@ contract GuildController is Ownable {
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
             AMORxGuild.transferFrom(msg.sender, impactMakers[i], amountToSendVoter);
+            claimableTokens[impactMakers[i]] += amountToSendVoter; // TODO: fix formula
         }
 
         return amount;
@@ -267,7 +268,7 @@ contract GuildController is Ownable {
     /// Only avatar can add one, based on the popular vote
     /// @param impactMaker New impact maker to be added
     /// @param weight Weight of the impact maker
-    function addImpactMaker(address impactMaker, uint weight) external onlyOwner {
+    function addImpactMaker(address impactMaker, uint256 weight) external onlyOwner {
         impactMakers.push(impactMaker);
         weights[impactMaker] = weight;
         totalWeight += weight;
@@ -276,8 +277,8 @@ contract GuildController is Ownable {
     /// @notice allows to add change impactMaker weight
     /// @param impactMaker Impact maker to be changed
     /// @param weight Weight of the impact maker
-    function changeImpactMaker(address impactMaker, uint weight) external onlyOwner {
-        if(weight > weights[impactMaker]) {
+    function changeImpactMaker(address impactMaker, uint256 weight) external onlyOwner {
+        if (weight > weights[impactMaker]) {
             totalWeight += weight - weights[impactMaker];
         } else {
             totalWeight -= weights[impactMaker] - weight;
@@ -305,7 +306,6 @@ contract GuildController is Ownable {
         if (impact != msg.sender) {
             revert Unauthorized();
         }
-
         AMORxGuild.transferFrom(address(this), impact, claimableTokens[impact]);
         claimableTokens[impact] = 0;
     }
