@@ -45,6 +45,8 @@ describe("unit - AMORxGuild", function () {
       TAX_RATE, 
       root.address
     );
+
+    await AMOR_TOKEN.approve(AMOR_GUILD_TOKEN.address, MOCK_TEST_AMOUNT);
   });
 
   context("function: init()", () => {
@@ -76,14 +78,19 @@ describe("unit - AMORxGuild", function () {
       //  This sets the tax rate to 20%
       await AMOR_GUILD_TOKEN.setTax(2000);
     });
+
+    it("Should return the newly set taxRate", async function () {
+      expect(await AMOR_GUILD_TOKEN.stakingTaxRate()).to.equal(2000);
+    });
+
+    it("Should revert if tax rate is above maximum", async function () {
+      await expect(AMOR_GUILD_TOKEN.setTax(2001)).
+        to.be.revertedWith("InvalidTaxRate()")
+    });
   });
 
   context("function: stakeAmor()", () => {
     describe("staking behaviour", function () {
-      it("Approve AMOR for stake", async function () {
-        await AMOR_TOKEN.approve(AMOR_GUILD_TOKEN.address, MOCK_TEST_AMOUNT);
-      });
-
       it("Should allow a user to stake AMOR", async function () {
         expect(await AMOR_GUILD_TOKEN.stakeAmor(root.address, MOCK_TEST_AMOUNT)).
          to.emit(AMOR_TOKEN, "Transfer").
@@ -119,16 +126,25 @@ describe("unit - AMORxGuild", function () {
 
   context("function: withdrawAmor()", () => {
     describe("unstaking behaviour", function () {
+      let userBalance;
+      let guildTokenSupply;
+
       it("Should allow the user to withdraw their AMOR", async function () {
-        let userBalance = await AMOR_GUILD_TOKEN.balanceOf(root.address);
+        userBalance = await AMOR_GUILD_TOKEN.balanceOf(root.address);
+        guildTokenSupply = await AMOR_GUILD_TOKEN.totalSupply();
 
         expect(await AMOR_GUILD_TOKEN.withdrawAmor(userBalance)).
           to.emit(AMOR_TOKEN, "Transfer").
           to.emit(AMOR_GUILD_TOKEN, "Transfer");
       });
+
       it("Should revert if unsufficient AMORxGuild", async function () {
         await expect(AMOR_GUILD_TOKEN.withdrawAmor(ethers.utils.parseEther("100"))).
           to.be.reverted;
+      });
+
+      it("Should decrease the totalSupply of AMORxGuild", async function () {
+        expect(await AMOR_GUILD_TOKEN.totalSupply()).to.equal(BigInt(guildTokenSupply) - BigInt(userBalance));
       });
     })
   })
