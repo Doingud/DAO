@@ -29,6 +29,10 @@ contract GuildController is Ownable {
     IERC20 private AMORxGuild;
     address public FXAMORxGuild;
 
+    uint256 public triggerCounter;
+    bool public trigger; // set true for a week if previous week were added >= 10 reports; users can vote only if trigger == true
+    uint256[] public reportsQueue;
+
     uint256 public ADDITIONAL_VOTING_TIME;
     uint256 public constant WEEK = 7 days; // 1 week is the time for the users to vore for the specific report
     uint256 public constant DAY_IN_SECONDS = 86400;
@@ -47,6 +51,7 @@ contract GuildController is Ownable {
     error VotingTimeNotFinished();
     error ReportNotExists();
     error InvalidAmount();
+    error VotingNotStarted();
 
     /// Invalid address. Needed address != address(0)
     error AddressZero();
@@ -134,6 +139,21 @@ contract GuildController is Ownable {
         reportsWeight.push(0);
         reportsVoting.push(0);
         timeVoting.push(0);
+
+        // Reports are getting collected, up until the point there are at least ten untouched reports. 
+        // If there are ten reports, then the week is given to vote on the 10 reports.
+        triggerCounter += 1;
+        if (triggerCounter >= 10 && trigger == false) {
+            trigger = true;
+        }
+
+        // During the vote reports can be added, but they will be waiting and vote for them won’t start. 
+        // When the voting for the 10 reports is finished, and there are ≥ 10 reports in the queue, 
+        // than the vote for the next report set instantly starts. 
+        // The vote starts for all of the untouched reports in the queue.
+        if (trigger == true){
+            reportsQueue.push(newReportId);
+        }
     }
 
     /// @notice burns the amount of FXTokens, and changes a report weight, based on a sign provided.
@@ -146,7 +166,16 @@ contract GuildController is Ownable {
         uint256 id,
         uint256 amount,
         bool sign
-    ) external {
+    ) public {
+        // check if tthe voting for this report has started
+        if (trigger == false) {
+            revert VotingNotStarted();
+        }
+
+        if (amount == 0 && msg.sender != address(this)) {
+            revert InvalidAmount();
+        }
+
         // check if report with that id exists
         if (reportsWeight.length < id) {
             revert ReportNotExists();
@@ -247,6 +276,21 @@ contract GuildController is Ownable {
                     int256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / int256(totalReportsWeight);
                     AMORxGuild.transfer(reportsAuthors[i], uint256(amountToSendReport));
                 }
+            }
+        }
+        // after last report will be finalized trigger will be swithched to false
+        triggerCounter -= 1;
+        if (triggerCounter == 0) {
+            trigger = false;
+            // When the voting for the 10 reports is finished, and there are ≥ 10 reports in the queue, 
+            // than the vote for the next report set instantly starts. 
+            if (reportsQueue.length >= 10) {
+                // The vote starts for all of the untouched reports in the queue.
+                for (uint256 i = 0; i < reportsQueue.length; i++) {
+                    voteForReport(reportsQueue[i], 0, true);
+                }
+                // clear queue
+                delete reportsQueue;
             }
         }
     }
