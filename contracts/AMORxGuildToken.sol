@@ -25,7 +25,7 @@ import "./utils/ABDKMath64x64.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./utils/ERC20Base.sol";
-
+import "hardhat/console.sol";
 contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     using ABDKMath64x64 for uint256;
     using SafeERC20 for IERC20;
@@ -94,6 +94,8 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// @return uint256 the amount of AMORxGuild received from staking
     function stakeAmor(address to, uint256 amount) external whenNotPaused returns (uint256) {
         uint256 userAmor = tokenAmor.balanceOf(msg.sender);
+        console.log("userAmor is %s", userAmor);
+        console.log("amount is %s", amount);
         if (userAmor < amount) {
             revert UnsufficientAmount();
         }

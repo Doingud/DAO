@@ -16,6 +16,7 @@ const twoWeeks = time.duration.days(14);
 const TEST_TRANSFER_BIGGER = 100000;
 const TEST_TRANSFER_SMALLER = 80;
 
+let AMOR;
 let AMORxGuild;
 let FXAMORxGuild
 let controller;
@@ -40,8 +41,8 @@ describe('unit - Contract: GuildController', function () {
         const setup = await init.initialize(signers);
         await init.getTokens(setup);
 
-        AMORxGuild = setup.tokens.AmorTokenImplementation;
-        // AMORxGuild = setup.tokens.AmorGuildToken;//AmorTokenImplementation;
+        AMOR = setup.tokens.AmorTokenImplementation;
+        AMORxGuild = setup.tokens.AmorGuildToken;//AmorTokenImplementation;
         FXAMORxGuild = setup.tokens.FXAMORxGuild;
         controller = await init.controller(setup);
         root = setup.roles.root;
@@ -154,9 +155,17 @@ describe('unit - Contract: GuildController', function () {
         });
 
         it('donates AMORxGuild tokens', async function () {
-            await AMORxGuild.connect(root).transfer(controller.address, TEST_TRANSFER);
-            await AMORxGuild.connect(root).transfer(user.address, TEST_TRANSFER);
-            await AMORxGuild.connect(user).approve(controller.address, TEST_TRANSFER_SMALLER);
+            await AMOR.connect(root).transfer(controller.address, TEST_TRANSFER);
+            await AMOR.connect(root).transfer(user.address, TEST_TRANSFER);
+
+            await AMOR.connect(user).approve(AMORxGuild.address, TEST_TRANSFER);
+            let AMORDeducted = Math.ceil(TEST_TRANSFER * (1 - TAX_RATE / BASIS_POINTS));
+            let nextAMORDeducted = Math.ceil(AMORDeducted * (1 - TAX_RATE / BASIS_POINTS));
+console.log("AMORDeducted is %s", AMORDeducted);
+console.log("nextAMORDeducted is %s", nextAMORDeducted);
+            await AMORxGuild.connect(user).stakeAmor(user.address, nextAMORDeducted);
+            await AMORxGuild.connect(user).approve(controller.address, nextAMORDeducted);
+
             await controller.connect(user).donate(TEST_TRANSFER_SMALLER);        
 
             const totalWeight = await controller.totalWeight();
@@ -339,13 +348,13 @@ describe('unit - Contract: GuildController', function () {
 
     context('» claim testing', () => {
 
-        it('it fails to removes ImpactMaker if not the owner', async function () {
+        it('it fails to claim if not the owner', async function () {
             await expect(controller.connect(user).claim(user2.address)).to.be.revertedWith(
                 'Unauthorized()'
             );
         });
 
-        it('it removes ImpactMaker', async function () {
+        it('it claims tokens', async function () {
             const balanceBefore = await AMORxGuild.balanceOf(impactMaker.address);
             console.log("balanceBefore is %s", balanceBefore);
             await controller.connect(impactMaker).claim(impactMaker.address);

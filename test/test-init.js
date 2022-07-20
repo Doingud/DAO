@@ -82,7 +82,7 @@ const controller = async (setup) => {
 
   await controller.init(
     setup.roles.root.address, // owner
-    setup.tokens.AmorTokenImplementation.address, // AMORxGuild
+    setup.tokens.AmorGuildToken.address, // AMORxGuild
     setup.tokens.FXAMORxGuild.address // FXAMORxGuild
   );
 
@@ -105,7 +105,7 @@ const controller = async (setup) => {
     "DoinGud MetaDAO", 
     "FXAMORxGuild", 
     controller.address, //controller
-    setup.tokens.AmorTokenImplementation.address,
+    setup.tokens.AmorGuildToken.address, // AMORxGuild
     setup.roles.root.address
   );
 
