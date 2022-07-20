@@ -116,10 +116,16 @@ describe('unit - Contract: GuildController', function () {
             );
         });
 
-        it('it changes ImpactMaker', async function () {
+        it('it changes ImpactMaker to bigger value', async function () {
             await controller.connect(root).changeImpactMaker(user2.address, 900);
             expect(await controller.impactMakers(3)).to.equals(user2.address);
             expect(await controller.weights(user2.address)).to.equals(900);
+        });
+
+        it('it changes ImpactMaker to less value', async function () {
+            await controller.connect(root).changeImpactMaker(user2.address, 3);
+            expect(await controller.impactMakers(3)).to.equals(user2.address);
+            expect(await controller.weights(user2.address)).to.equals(3);
         });
     });
 
@@ -133,10 +139,8 @@ describe('unit - Contract: GuildController', function () {
 
         it('it removes ImpactMaker', async function () {
             await controller.connect(root).removeImpactMaker(user2.address);
-            // const b = await controller.impactMakers(3);
-            // console.log("b is %s", b);
-            // expect(await controller.impactMakers(3)).to.be.reverted;
-            // expect(await controller.weights(user2.address)).to.be.reverted;
+            await expect(controller.impactMakers(3)).to.be.reverted;
+            expect(await controller.weights(user2.address)).to.equals(0);
         });
     });
 

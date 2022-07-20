@@ -5,7 +5,7 @@ import "./utils/interfaces/IFXAMORxGuild.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
+import "hardhat/console.sol";
 /// @title GuildController contract
 /// @author Daoism Systems Team
 /// @notice GuildController contract controls the all of the deployed contracts of the guild
@@ -277,8 +277,12 @@ contract GuildController is Ownable {
     /// @param impactMaker Impact maker to be changed
     /// @param weight Weight of the impact maker
     function changeImpactMaker(address impactMaker, uint weight) external onlyOwner {
+        if(weight > weights[impactMaker]) {
+            totalWeight += weight - weights[impactMaker];
+        } else {
+            totalWeight -= weights[impactMaker] - weight;
+        }
         weights[impactMaker] = weight;
-        totalWeight = totalWeight + (weights[impactMaker] - weight);
     }
 
     /// @notice allows to remove impactMaker with specific address
