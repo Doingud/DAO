@@ -43,7 +43,7 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// Basis points as used in financial math
     /// It allows fine-grained control over the tax rate
     /// 1 basis point change == 0.01% change in the tax rate
-    /// Here it is the deonimator for tax-related calculations
+    /// Here it is the denominator for tax-related calculations
     uint256 public BASIS_POINTS = 10000;
     /// Co-efficient
     uint256 private constant COEFFICIENT = 10**9;
