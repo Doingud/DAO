@@ -168,7 +168,8 @@ describe("unit - AMOR Token", function () {
       });
 
       it("Should allow the tax rate to be set", async function () {
-       await PROXY.setTaxRate(500);
+       await PROXY.setTaxRate(TAX_RATE);
+       expect(await PROXY.taxRate()).to.equal(TAX_RATE);
       });
     });
 
@@ -194,6 +195,7 @@ describe("unit - AMOR Token", function () {
 
       it("Should allow tax collector to be set to another address", async function () {
         await PROXY.updateController(user1.address);
+        expect(await PROXY.taxController()).to.equal(user1.address);
       });
     });
 
