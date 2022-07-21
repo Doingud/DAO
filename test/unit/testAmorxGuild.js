@@ -163,9 +163,6 @@ describe("unit - AMORxGuild", function () {
   context("function: unpause()", () => {
     it("Should allow the contract to be unpaused", async function () {
       await AMOR_GUILD_TOKEN.unpause();
-    });
-
-    it("Should return status as `not paused`", async function () {
       expect(await AMOR_GUILD_TOKEN.paused()).to.be.equal(false);
     });
 
