@@ -43,7 +43,7 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// Basis points as used in financial math
     /// It allows fine-grained control over the tax rate
     /// 1 basis point change == 0.01% change in the tax rate
-    /// Here it is the deonimator for tax-related calculations
+    /// Here it is the denominator for tax-related calculations
     uint256 public BASIS_POINTS = 10000;
     /// Co-efficient
     uint256 private constant COEFFICIENT = 10**9;
@@ -97,8 +97,7 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// @param  amount uint256 amount of AMOR to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
     function stakeAmor(address to, uint256 amount) external whenNotPaused returns (uint256) {
-        uint256 userAmor = tokenAmor.balanceOf(msg.sender);
-        if (userAmor < amount) {
+        if (tokenAmor.balanceOf(msg.sender) < amount) {
             revert UnsufficientAmount();
         }
         //  Must calculate stakedAmor prior to transferFrom()

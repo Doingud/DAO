@@ -119,7 +119,7 @@ describe("unit - AMORxGuild", function () {
 
       it("Should revert if unsufficient AMOR", async function () {
         await expect(AMOR_GUILD_TOKEN.stakeAmor(root.address, ethers.utils.parseEther(MOCK_TEST_AMOUNT.toString())))
-          .to.be.reverted;
+          .to.be.revertedWith("UnsufficientAmount");
       });
     });
   });
@@ -140,7 +140,7 @@ describe("unit - AMORxGuild", function () {
 
       it("Should revert if unsufficient AMORxGuild", async function () {
         await expect(AMOR_GUILD_TOKEN.withdrawAmor(ethers.utils.parseEther("100"))).
-          to.be.reverted;
+          to.be.revertedWith("UnsufficientAmount");
       });
 
       it("Should decrease the totalSupply of AMORxGuild", async function () {
@@ -152,9 +152,6 @@ describe("unit - AMORxGuild", function () {
   context("function: pause()", () => {
     it("Should allow the contract to be paused", async function () {
       await AMOR_GUILD_TOKEN.pause();
-    });
-
-    it("Should return status as `paused`", async function () {
       expect(await AMOR_GUILD_TOKEN.paused()).to.be.equal(true);
     });
 
@@ -166,9 +163,6 @@ describe("unit - AMORxGuild", function () {
   context("function: unpause()", () => {
     it("Should allow the contract to be unpaused", async function () {
       await AMOR_GUILD_TOKEN.unpause();
-    });
-
-    it("Should return status as `not paused`", async function () {
       expect(await AMOR_GUILD_TOKEN.paused()).to.be.equal(false);
     });
 
