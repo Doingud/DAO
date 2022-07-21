@@ -25,8 +25,9 @@ import "./utils/ABDKMath64x64.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./utils/ERC20Base.sol";
-import "hardhat/console.sol";
-contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
+import "./utils/interfaces/IAmorGuildToken.sol";
+
+contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     using ABDKMath64x64 for uint256;
     using SafeERC20 for IERC20;
 
@@ -40,6 +41,10 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     address public guildController;
 
     /// Constants
+    /// Basis points as used in financial math
+    /// It allows fine-grained control over the tax rate
+    /// 1 basis point change == 0.01% change in the tax rate
+    /// Here it is the denominator for tax-related calculations
     uint256 public BASIS_POINTS = 10000;
     /// Co-efficient
     uint256 private constant COEFFICIENT = 10**9;
@@ -52,10 +57,6 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// New rate above maximum
     error InvalidTaxRate();
 
-    /// Events
-    /// Emitted once token has been initialized
-    event Initialized(string name, string symbol, address amorToken);
-
     /// @notice Initializes the AMORxGuild contract
     /// @dev    Sets the token details as well as the required addresses for token logic
     /// @param  amorAddress the address of the AMOR token proxy
@@ -66,7 +67,7 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
         string memory name,
         string memory symbol,
         address controller
-    ) external {
+    ) external override {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -92,11 +93,8 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// @param  to address where the AMORxGuild will be sent to
     /// @param  amount uint256 amount of AMOR to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
-    function stakeAmor(address to, uint256 amount) external whenNotPaused returns (uint256) {
-        uint256 userAmor = tokenAmor.balanceOf(msg.sender);
-        console.log("userAmor is %s", userAmor);
-        console.log("amount is %s", amount);
-        if (userAmor < amount) {
+    function stakeAmor(address to, uint256 amount) external override whenNotPaused returns (uint256) {
+        if (tokenAmor.balanceOf(msg.sender) < amount) {
             revert UnsufficientAmount();
         }
         //  Must calculate stakedAmor prior to transferFrom()
@@ -112,19 +110,19 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
         //  Note there is a tax on staking into AMORxGuild
         uint256 mintAmount = COEFFICIENT * ((taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
         _mint(guildController, (mintAmount * stakingTaxRate) / BASIS_POINTS);
-        _mint(to, (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS);
+        mintAmount = (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS;
+        _mint(to, mintAmount);
 
-        return ((mintAmount * stakingTaxRate) / BASIS_POINTS);
+        return mintAmount;
     }
 
     /// @notice Allows the user to unstake their AMOR
     /// @param  amount uint256 amount of AMORxGuild to exchange for AMOR
     /// @return uint256 the amount of AMOR returned from burning AMORxGuild
-    function withdrawAmor(uint256 amount) external whenNotPaused returns (uint256) {
+    function withdrawAmor(uint256 amount) external override whenNotPaused returns (uint256) {
         if (amount > balanceOf(msg.sender)) {
             revert UnsufficientAmount();
         }
-        uint256 amorBalance = tokenAmor.balanceOf(address(this));
         uint256 currentSupply = totalSupply();
         uint256 amorReturned = ((currentSupply**2) - ((currentSupply - amount)**2)) / (COEFFICIENT**2);
 
@@ -134,9 +132,8 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
         //  Correct for the tax on transfer
         //  Transfer AMOR to the tx.origin, but note: this is taxed!
         tokenAmor.safeTransfer(msg.sender, amorReturned);
-        amorBalance -= tokenAmor.balanceOf(address(this));
         //  Return the amount of AMOR returned to the user
-        return amorBalance;
+        return amorReturned;
     }
 
     function pause() external onlyOwner {

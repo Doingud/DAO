@@ -62,6 +62,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         //  Set the name and symbol
         name = _name;
         symbol = _symbol;
+        decimals = 18;
         //  Pre-mint to the multisig address
         _mint(_multisig, 10000000 * 10**decimals);
         //  Set the tax collector address
@@ -119,7 +120,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         _beforeTokenTransfer(from, to, amount);
 
         uint256 fromBalance = _balances[from];
-        if (fromBalance <= amount) {
+        if (fromBalance < amount) {
             revert InvalidTransfer();
         }
 
