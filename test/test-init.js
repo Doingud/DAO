@@ -71,10 +71,5 @@ const getTokens = async (setup) => {
 
 module.exports = {
   initialize,
-  getTokens
-};
-
-module.exports = {
-  initialize,
   getTokens,
 };
