@@ -25,4 +25,4 @@ contract ERC20Mock is ERC20 {
         uint256 amount = balanceOf(_address);
         _burn(_address, amount);
     }
-}
+} 
