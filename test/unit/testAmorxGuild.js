@@ -119,7 +119,7 @@ describe("unit - AMORxGuild", function () {
 
       it("Should revert if unsufficient AMOR", async function () {
         await expect(AMOR_GUILD_TOKEN.stakeAmor(root.address, ethers.utils.parseEther(MOCK_TEST_AMOUNT.toString())))
-          .to.be.reverted;
+          .to.be.revertedWith("UnsufficientAmount()");
       });
     });
   });
