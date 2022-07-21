@@ -152,9 +152,6 @@ describe("unit - AMORxGuild", function () {
   context("function: pause()", () => {
     it("Should allow the contract to be paused", async function () {
       await AMOR_GUILD_TOKEN.pause();
-    });
-
-    it("Should return status as `paused`", async function () {
       expect(await AMOR_GUILD_TOKEN.paused()).to.be.equal(true);
     });
 
