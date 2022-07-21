@@ -156,7 +156,7 @@ describe("unit - AMORxGuild", function () {
     });
 
     it("Should revert if trying to stake tokens while paused", async function () {
-      await expect(AMOR_GUILD_TOKEN.stakeAmor(root.address, MOCK_TEST_AMOUNT)).to.be.reverted;
+      await expect(AMOR_GUILD_TOKEN.stakeAmor(root.address, MOCK_TEST_AMOUNT)).to.be.revertedWith('Pausable: paused');
     });
   });
 
