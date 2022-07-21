@@ -24,8 +24,6 @@ interface IAmorxGuild {
     /// Proxy Address Change
     event ProxyAddressChange(address indexed newProxyAddress);
 
-    function initProxy(address _logic, bytes memory _data) external;
-
     /// @notice Initializes the AMORxGuild contract
     /// @dev    Sets the token details as well as the required addresses for token logic
     /// @param  amorAddress the address of the AMOR token proxy
@@ -34,7 +32,8 @@ interface IAmorxGuild {
     function init(
         address amorAddress,
         string memory name,
-        string memory symbol
+        string memory symbol,
+        address controller
     ) external;
 
     /// @notice Allows a user to stake their AMOR and receive AMORxGuild in return
