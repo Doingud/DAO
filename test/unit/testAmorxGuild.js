@@ -119,7 +119,7 @@ describe("unit - AMORxGuild", function () {
 
       it("Should revert if unsufficient AMOR", async function () {
         await expect(AMOR_GUILD_TOKEN.stakeAmor(root.address, ethers.utils.parseEther(MOCK_TEST_AMOUNT.toString())))
-          .to.be.revertedWith("UnsufficientAmount()");
+          .to.be.revertedWith("UnsufficientAmount");
       });
     });
   });
@@ -140,7 +140,7 @@ describe("unit - AMORxGuild", function () {
 
       it("Should revert if unsufficient AMORxGuild", async function () {
         await expect(AMOR_GUILD_TOKEN.withdrawAmor(ethers.utils.parseEther("100"))).
-          to.be.reverted;
+          to.be.revertedWith("UnsufficientAmount");
       });
 
       it("Should decrease the totalSupply of AMORxGuild", async function () {
