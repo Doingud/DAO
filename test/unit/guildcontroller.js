@@ -159,35 +159,38 @@ describe('unit - Contract: GuildController', function () {
             await AMOR.connect(root).transfer(user.address, TEST_TRANSFER);
 
             await AMOR.connect(user).approve(AMORxGuild.address, TEST_TRANSFER);
-            let AMORDeducted = TEST_TRANSFER*(TAX_RATE/BASIS_POINTS);//Math.ceil(TEST_TRANSFER * (1 - TAX_RATE / BASIS_POINTS));
-            let nextAMORDeducted = AMORDeducted*(TAX_RATE/BASIS_POINTS);//Math.ceil(AMORDeducted * (1 - TAX_RATE / BASIS_POINTS));
+
+            let AMORDeducted = ethers.BigNumber.from((TEST_TRANSFER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());//Math.ceil(TEST_TRANSFER * (1 - TAX_RATE / BASIS_POINTS));
+            let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());//Math.ceil(AMORDeducted * (1 - TAX_RATE / BASIS_POINTS));
 console.log("AMORDeducted is %s", AMORDeducted);
 console.log("nextAMORDeducted is %s", nextAMORDeducted);
+
             await AMORxGuild.connect(user).stakeAmor(user.address, nextAMORDeducted);
             await AMORxGuild.connect(user).approve(controller.address, nextAMORDeducted);
-
+console.log("0");
             await controller.connect(user).donate(TEST_TRANSFER_SMALLER);        
-
+console.log("0.1");
             const totalWeight = await controller.totalWeight();
             const FxGAmount = (TEST_TRANSFER_SMALLER * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of amount to Impact poll
             const decIpAmount = (TEST_TRANSFER_SMALLER - FxGAmount); //decreased amount
-
+console.log("0.2");
             let weight = await controller.weights(impactMaker.address);
-            let amountToSendImpactMaker = (decIpAmount * weight) / totalWeight;
-            let taxDeducted = amountToSendImpactMaker*(TAX_RATE/BASIS_POINTS);//Math.ceil(amountToSendImpactMaker * (1 - TAX_RATE / BASIS_POINTS));
+            let amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
+            // let taxDeducted = amountToSendImpactMaker*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS;//Math.ceil(amountToSendImpactMaker * (1 - TAX_RATE / BASIS_POINTS));
+console.log("1");
 
             expect((await FXAMORxGuild.balanceOf(user.address)).toString()).to.equal(FxGAmount.toString());
-            expect((await AMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal(taxDeducted.toString());            
+            expect((await AMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal(amountToSendImpactMaker.toString());            
 
             weight = await controller.weights(staker.address);
-            amountToSendImpactMaker = (decIpAmount * weight) / totalWeight;
-            taxDeducted = amountToSendImpactMaker*(TAX_RATE/BASIS_POINTS);//Math.floor(amountToSendImpactMaker * (1 - TAX_RATE / BASIS_POINTS));
-            expect((await AMORxGuild.balanceOf(staker.address)).toString()).to.equal(taxDeducted.toString());
-
+            amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
+            // taxDeducted = amountToSendImpactMaker*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS;//Math.floor(amountToSendImpactMaker * (1 - TAX_RATE / BASIS_POINTS));
+            expect((await AMORxGuild.balanceOf(staker.address)).toString()).to.equal(amountToSendImpactMaker.toString());
+console.log("2");
             weight = await controller.weights(operator.address);
-            amountToSendImpactMaker = (decIpAmount * weight) / totalWeight;
-            taxDeducted = amountToSendImpactMaker*(TAX_RATE/BASIS_POINTS);//Math.floor(amountToSendImpactMaker * (1 - TAX_RATE / BASIS_POINTS));
-            expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(taxDeducted.toString());
+            amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
+            // taxDeducted = amountToSendImpactMaker*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS;//Math.floor(amountToSendImpactMaker * (1 - TAX_RATE / BASIS_POINTS));
+            expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(amountToSendImpactMaker.toString());
         });
     });
 
