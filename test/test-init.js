@@ -9,14 +9,30 @@ const initialize = async (accounts) => {
     root: accounts[0],
     doingud_multisig: accounts[1],
     user1: accounts[2],
-    user2: accounts[3]
-
+    user2: accounts[3],
+    authorizer_adaptor: accounts[5],
+    operator: accounts[6],
+    staker: accounts[7],
   };
 
   return setup;
 };
 
 const getTokens = async (setup) => {
+    const ERC20Factory = await ethers.getContractFactory('ERC20Mock', setup.roles.root);
+    const ERC20Token = await ERC20Factory.deploy('ERC20Token', 'ERC20Token'); // test token
+    
+    const guardianThreshold = 10;
+    const dAMORxGuildFactory = await ethers.getContractFactory('dAMORxGuild');
+    const dAMORxGuild = await dAMORxGuildFactory.deploy();
+    await dAMORxGuild.init(
+      "DoinGud MetaDAO", 
+      "FXAMORxGuild", 
+      setup.roles.operator.address, 
+      ERC20Token.address, 
+      guardianThreshold
+    ); 
+
     const AmorTokenFactory = await ethers.getContractFactory('AMORToken', setup.roles.root);
 
     const AmorTokenProxyFactory = await ethers.getContractFactory('DoinGudProxy', setup.roles.root);
@@ -41,6 +57,8 @@ const getTokens = async (setup) => {
     */
 
     const tokens = {
+      ERC20Token,
+      dAMORxGuild,
       AmorTokenImplementation,
       AmorTokenProxy,
       AmorTokenMockUpgrade
@@ -55,10 +73,5 @@ const getTokens = async (setup) => {
 
 module.exports = {
   initialize,
-  getTokens
-};
-
-module.exports = {
-  initialize,
   getTokens,
-}; 
+};
