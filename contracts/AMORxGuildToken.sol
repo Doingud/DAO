@@ -97,8 +97,7 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// @param  amount uint256 amount of AMOR to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
     function stakeAmor(address to, uint256 amount) external whenNotPaused returns (uint256) {
-        uint256 userAmor = tokenAmor.balanceOf(msg.sender);
-        if (userAmor < amount) {
+        if (tokenAmor.balanceOf(msg.sender) < amount) {
             revert UnsufficientAmount();
         }
         //  Must calculate stakedAmor prior to transferFrom()
