@@ -116,7 +116,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             await AMORxGuild.connect(staker).approve(dAMORxGuild.address, ONE_HUNDRED_ETHER);
 
             koef = normalTime/MAX_LOCK_TIME;
-            const newAmount = ONE_HUNDRED_ETHER; //COEFFICIENT* (koef*koef) *ONE_HUNDRED_ETHER; // (koef)^2 *amount | NdAMOR = f(t)^2 *nAMOR
+            const newAmount = COEFFICIENT* (koef*koef) *ONE_HUNDRED_ETHER; // (koef)^2 *amount | NdAMOR = f(t)^2 *nAMOR
             const expectedAmount =  ethers.BigNumber.from(realAmount).add(ethers.BigNumber.from(newAmount.toString()));
 
             await dAMORxGuild.connect(staker).increaseStake(ONE_HUNDRED_ETHER);        

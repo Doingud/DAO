@@ -159,8 +159,8 @@ describe('unit - Contract: GuildController', function () {
             await AMOR.connect(root).transfer(user.address, TEST_TRANSFER);
 
             await AMOR.connect(user).approve(AMORxGuild.address, TEST_TRANSFER);
-            let AMORDeducted = Math.ceil(TEST_TRANSFER * (1 - TAX_RATE / BASIS_POINTS));
-            let nextAMORDeducted = Math.ceil(AMORDeducted * (1 - TAX_RATE / BASIS_POINTS));
+            let AMORDeducted = TEST_TRANSFER*(TAX_RATE/BASIS_POINTS);//Math.ceil(TEST_TRANSFER * (1 - TAX_RATE / BASIS_POINTS));
+            let nextAMORDeducted = AMORDeducted*(TAX_RATE/BASIS_POINTS);//Math.ceil(AMORDeducted * (1 - TAX_RATE / BASIS_POINTS));
 console.log("AMORDeducted is %s", AMORDeducted);
 console.log("nextAMORDeducted is %s", nextAMORDeducted);
             await AMORxGuild.connect(user).stakeAmor(user.address, nextAMORDeducted);
@@ -174,19 +174,19 @@ console.log("nextAMORDeducted is %s", nextAMORDeducted);
 
             let weight = await controller.weights(impactMaker.address);
             let amountToSendImpactMaker = (decIpAmount * weight) / totalWeight;
-            let taxDeducted = Math.ceil(amountToSendImpactMaker * (1 - TAX_RATE / BASIS_POINTS));
+            let taxDeducted = amountToSendImpactMaker*(TAX_RATE/BASIS_POINTS);//Math.ceil(amountToSendImpactMaker * (1 - TAX_RATE / BASIS_POINTS));
 
             expect((await FXAMORxGuild.balanceOf(user.address)).toString()).to.equal(FxGAmount.toString());
             expect((await AMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal(taxDeducted.toString());            
 
             weight = await controller.weights(staker.address);
             amountToSendImpactMaker = (decIpAmount * weight) / totalWeight;
-            taxDeducted = Math.floor(amountToSendImpactMaker * (1 - TAX_RATE / BASIS_POINTS));
+            taxDeducted = amountToSendImpactMaker*(TAX_RATE/BASIS_POINTS);//Math.floor(amountToSendImpactMaker * (1 - TAX_RATE / BASIS_POINTS));
             expect((await AMORxGuild.balanceOf(staker.address)).toString()).to.equal(taxDeducted.toString());
 
             weight = await controller.weights(operator.address);
             amountToSendImpactMaker = (decIpAmount * weight) / totalWeight;
-            taxDeducted = Math.floor(amountToSendImpactMaker * (1 - TAX_RATE / BASIS_POINTS));
+            taxDeducted = amountToSendImpactMaker*(TAX_RATE/BASIS_POINTS);//Math.floor(amountToSendImpactMaker * (1 - TAX_RATE / BASIS_POINTS));
             expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(taxDeducted.toString());
         });
     });
