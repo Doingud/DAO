@@ -15,7 +15,7 @@ use(solidity);
   let AMOR_TOKEN;
   let AMOR_GUILD_TOKEN;
 
-describe("unit - AMORxGuild", function () {
+describe("unit - DoinGudProxy", function () {
 
   const setupTests = deployments.createFixture(async () => {
     const signers = await ethers.getSigners();
