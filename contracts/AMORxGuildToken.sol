@@ -25,8 +25,9 @@ import "./utils/ABDKMath64x64.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./utils/ERC20Base.sol";
+import "./utils/interfaces/IAmorGuildToken.sol";
 
-contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
+contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     using ABDKMath64x64 for uint256;
     using SafeERC20 for IERC20;
 
@@ -56,10 +57,6 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// New rate above maximum
     error InvalidTaxRate();
 
-    /// Events
-    /// Emitted once token has been initialized
-    event Initialized(string name, string symbol, address amorToken);
-
     /// @notice Initializes the AMORxGuild contract
     /// @dev    Sets the token details as well as the required addresses for token logic
     /// @param  amorAddress the address of the AMOR token proxy
@@ -70,7 +67,7 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
         string memory name,
         string memory symbol,
         address controller
-    ) external {
+    ) external override {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -96,7 +93,7 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// @param  to address where the AMORxGuild will be sent to
     /// @param  amount uint256 amount of AMOR to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
-    function stakeAmor(address to, uint256 amount) external whenNotPaused returns (uint256) {
+    function stakeAmor(address to, uint256 amount) external override whenNotPaused returns (uint256) {
         if (tokenAmor.balanceOf(msg.sender) < amount) {
             revert UnsufficientAmount();
         }
@@ -122,7 +119,7 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// @notice Allows the user to unstake their AMOR
     /// @param  amount uint256 amount of AMORxGuild to exchange for AMOR
     /// @return uint256 the amount of AMOR returned from burning AMORxGuild
-    function withdrawAmor(uint256 amount) external whenNotPaused returns (uint256) {
+    function withdrawAmor(uint256 amount) external override whenNotPaused returns (uint256) {
         if (amount > balanceOf(msg.sender)) {
             revert UnsufficientAmount();
         }
