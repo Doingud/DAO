@@ -29,15 +29,26 @@ const getTokens = async (setup) => {
       "FXAMORxGuild", 
       setup.roles.operator.address, 
       ERC20Token.address
+    
+    const guardianThreshold = 10;
+    const dAMORxGuildFactory = await ethers.getContractFactory('dAMORxGuild');
+    const dAMORxGuild = await dAMORxGuildFactory.deploy();
+    await dAMORxGuild.init(
+      "DoinGud MetaDAO", 
+      "FXAMORxGuild", 
+      setup.roles.operator.address, 
+      ERC20Token.address, 
+      guardianThreshold
     ); 
 
     const AmorTokenFactory = await ethers.getContractFactory('AMORToken', setup.roles.root);
 
     const AmorTokenProxyFactory = await ethers.getContractFactory('DoinGudProxy', setup.roles.root);
 
-    /* Constants for AmorGuild tokens - Still to be merged
+    // Constants for AmorGuild tokens - Still to be merged
     const AmorGuildTokenFactory = await ethers.getContractFactory('AMORxGuildToken', setup.roles.root);
 
+    /*
     const AmorGuildTokenProxyFactory = await ethers.getContractFactory('AmorGuildProxy', setup.roles.root);
 
     const GuildTokenFactory = await ethers.getContractFactory('GuildTokenFactory', setup.roles.root);
@@ -48,8 +59,10 @@ const getTokens = async (setup) => {
     const AmorTokenMockUpgrade = await AmorTokenFactory.deploy();
     const AmorTokenProxy = await AmorTokenProxyFactory.deploy();
     
-    /*  AmorGuild Tokens
+    //  AmorGuild Tokens
     const AmorGuildToken = await AmorGuildTokenFactory.deploy();
+    
+    /*
     const AmorGuildTokenProxy = await AmorGuildTokenProxyFactory.deploy();
     const AmorGuildCloneFactory = await GuildTokenFactory.deploy(AmorGuildTokenProxy.address, AmorGuildToken.address, AmorTokenProxy.address );
     */
@@ -57,10 +70,12 @@ const getTokens = async (setup) => {
     const tokens = {
       ERC20Token,
       FXAMORxGuild,
+      dAMORxGuild,
       AmorTokenImplementation,
       AmorTokenProxy,
-      AmorTokenMockUpgrade
-      /*AmorGuildToken,
+      AmorTokenMockUpgrade,
+      AmorGuildToken
+      /*
       AmorGuildTokenProxy,
       AmorGuildCloneFactory*/
     };
@@ -68,11 +83,6 @@ const getTokens = async (setup) => {
     setup.tokens = tokens;
     return tokens;
 }
-
-module.exports = {
-  initialize,
-  getTokens
-};
 
 module.exports = {
   initialize,
