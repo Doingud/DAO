@@ -170,7 +170,6 @@ contract GuildController is Ownable {
         if (impact != msg.sender) {
             revert Unauthorized();
         }
-        IERC20Base(AMORxGuild).increaseAllowance(address(this), claimableTokens[impact]);
         ERC20AMORxGuild.safeTransfer(impact, claimableTokens[impact]);
         claimableTokens[impact] = 0;
     }
