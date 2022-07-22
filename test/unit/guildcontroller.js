@@ -66,12 +66,11 @@ describe('unit - Contract: GuildController', function () {
                 root.address, // owner
                 AMORxGuild.address,
                 FXAMORxGuild.address
-            )).to.be.reverted;
+            )).to.be.revertedWith("Already initialized");
         });
     });
-    
-    context('» ImpactMakers testing', () => {
 
+    context('» setImpactMakers testing', () => {
         it('it fails to set ImpactMakers if not the owner', async function () {
             impactMakers = [staker.address, operator.address, impactMaker.address];
             weigths = [20, 34, 923];
@@ -80,7 +79,7 @@ describe('unit - Contract: GuildController', function () {
             );
         });
 
-        it('it ImpactMakers', async function () {
+        it('it sets ImpactMakers', async function () {
             await controller.connect(root).setImpactMakers(impactMakers, weigths);
             expect(await controller.impactMakers(0)).to.equals(staker.address);
             expect(await controller.impactMakers(1)).to.equals(operator.address);
@@ -239,50 +238,50 @@ describe('unit - Contract: GuildController', function () {
         });
     });
 
-    context('» finalizeReportVoting testing', () => {
+    // context('» finalizeReportVoting testing', () => {
 
-        it('it fails to finalize report voting if ReportNotExists', async function () {
-            const id = 11;        
-            await expect(controller.connect(authorizer_adaptor).finalizeReportVoting(id)).to.be.revertedWith(
-                'ReportNotExists()'
-            );
-        });
+    //     it('it fails to finalize report voting if ReportNotExists', async function () {
+    //         const id = 11;        
+    //         await expect(controller.connect(authorizer_adaptor).finalizeReportVoting(id)).to.be.revertedWith(
+    //             'ReportNotExists()'
+    //         );
+    //     });
 
-        it('it fails to finalize report voting if VotingTimeNotFinished', async function () {
-            await AMORxGuild.connect(root).transfer(controller.address, TEST_TRANSFER);
-            await AMORxGuild.connect(root).transfer(operator.address, TEST_TRANSFER_BIGGER);
-            await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER);
-            await controller.connect(operator).donate(TEST_TRANSFER_SMALLER);
-            await controller.connect(operator).addReport(report, v, r, s); 
-            const id = 2;
-            const amount = 2;
-            const sign = true;
-            await controller.connect(operator).voteForReport(id, amount, sign);
+    //     it('it fails to finalize report voting if VotingTimeNotFinished', async function () {
+    //         await AMORxGuild.connect(root).transfer(controller.address, TEST_TRANSFER);
+    //         await AMORxGuild.connect(root).transfer(operator.address, TEST_TRANSFER_BIGGER);
+    //         await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER);
+    //         await controller.connect(operator).donate(TEST_TRANSFER_SMALLER);
+    //         await controller.connect(operator).addReport(report, v, r, s); 
+    //         const id = 2;
+    //         const amount = 2;
+    //         const sign = true;
+    //         await controller.connect(operator).voteForReport(id, amount, sign);
 
-            await expect(controller.connect(authorizer_adaptor).finalizeReportVoting(id)).to.be.revertedWith(
-                'VotingTimeNotFinished()'
-            );
-        });
+    //         await expect(controller.connect(authorizer_adaptor).finalizeReportVoting(id)).to.be.revertedWith(
+    //             'VotingTimeNotFinished()'
+    //         );
+    //     });
 
-        it('finalizes voting for positive report', async function () {
-            const id = 0;
-            const balanceBefore = await AMORxGuild.balanceOf(operator.address);
-            time.increase(twoWeeks);
-            await controller.connect(operator).finalizeReportVoting(id);
-            const balanceAfter = balanceBefore.add(4);
-            expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
-        });
+    //     it('finalizes voting for positive report', async function () {
+    //         const id = 0;
+    //         const balanceBefore = await AMORxGuild.balanceOf(operator.address);
+    //         time.increase(twoWeeks);
+    //         await controller.connect(operator).finalizeReportVoting(id);
+    //         const balanceAfter = balanceBefore.add(4);
+    //         expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
+    //     });
 
-        it('finalizes voting for negative report', async function () {
-            const id = 1;
-            const balanceBefore = await AMORxGuild.balanceOf(operator.address);
-            time.increase(twoWeeks);
-            await controller.connect(operator).finalizeReportVoting(id);
-            const balanceAfter = balanceBefore;
-            expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
-        });
+    //     it('finalizes voting for negative report', async function () {
+    //         const id = 1;
+    //         const balanceBefore = await AMORxGuild.balanceOf(operator.address);
+    //         time.increase(twoWeeks);
+    //         await controller.connect(operator).finalizeReportVoting(id);
+    //         const balanceAfter = balanceBefore;
+    //         expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
+    //     });
 
-    });
+    // });
 });
 
 // function splitSignature(sig) {
