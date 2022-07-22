@@ -2,10 +2,13 @@
 pragma solidity 0.8.15;
 
 import "./utils/interfaces/IFXAMORxGuild.sol";
+import "./utils/interfaces/IAmorGuildToken.sol";
+import "./utils/interfaces/IERC20Base.sol";
+
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "hardhat/console.sol";
+
 /// @title GuildController contract
 /// @author Daoism Systems Team
 /// @notice GuildController contract controls the all of the deployed contracts of the guild
@@ -21,12 +24,12 @@ contract GuildController is Ownable {
     uint256 public totalReportsWeight; // total Weight of all of reports
 
     address[] public impactMakers; // list of impactMakers of this DAO
-    mapping(address => uint256) claimableTokens; // amount of tokens each specific address(impactMaker) can claim
+    mapping(address => uint256) public claimableTokens; // amount of tokens each specific address(impactMaker) can claim
     mapping(address => uint256) public weights; // weight of each specific Impact Maker/Builder
     uint256 public totalWeight; // total Weight of all of the impact makers
     uint256[] public timeVoting; // deadlines for the vote for reports
 
-    IERC20 private AMORxGuild;
+    address private AMORxGuild;
     address public FXAMORxGuild;
 
     uint256 public ADDITIONAL_VOTING_TIME;
@@ -63,7 +66,7 @@ contract GuildController is Ownable {
 
         _transferOwnership(initOwner);
 
-        AMORxGuild = IERC20(AMORxGuild_);
+        AMORxGuild = AMORxGuild_;
         FXAMORxGuild = FXAMORxGuild_;
         ADDITIONAL_VOTING_TIME = 0;
 
@@ -86,17 +89,15 @@ contract GuildController is Ownable {
     // which are going to be owned by the user.
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     function donate(uint256 amount) external returns (uint256) {
-        console.log("   AMORxGuild.balanceOf(msg.sender) is %s", AMORxGuild.balanceOf(msg.sender));
-        console.log("   amount is %s", amount);
-        if (AMORxGuild.balanceOf(msg.sender) < amount) {
+        if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }
 
         // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
         // which are going to be owned by the user.
         uint256 FxGAmount = (amount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
-        AMORxGuild.transferFrom(msg.sender, address(this), FxGAmount);
-        AMORxGuild.approve(FXAMORxGuild, FxGAmount);
+        IERC20(AMORxGuild).transferFrom(msg.sender, address(this), FxGAmount);
+        IERC20(AMORxGuild).approve(FXAMORxGuild, FxGAmount);
         IFXAMORxGuild(FXAMORxGuild).stake(msg.sender, FxGAmount);
 
         uint256 decAmount = amount - FxGAmount; //decreased amount: other 90%
@@ -104,10 +105,10 @@ contract GuildController is Ownable {
         // based on the weights distribution, tokens will be automatically redirected to the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
-            AMORxGuild.transferFrom(msg.sender, impactMakers[i], amountToSendVoter);
+            // IERC20(AMORxGuild).transferFrom(msg.sender, impactMakers[i], amountToSendVoter);
+            IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amountToSendVoter);
+
             claimableTokens[impactMakers[i]] += amountToSendVoter; // TODO: fix formula
-            console.log("   claimableTokens[impactMakers[i]] is %s", claimableTokens[impactMakers[i]]);
-            console.log("   AMORxGuild.balanceOf(impactMakers[i]) is %s", AMORxGuild.balanceOf(impactMakers[i]));
         }
 
         return amount;
@@ -166,8 +167,8 @@ contract GuildController is Ownable {
         if (impact != msg.sender) {
             revert Unauthorized();
         }
-        console.log("claimableTokens[impact] is %s", claimableTokens[impact]);
-        AMORxGuild.transferFrom(address(this), impact, claimableTokens[impact]);
+        IERC20Base(AMORxGuild).increaseAllowance(address(this), claimableTokens[impact]);
+        IERC20(AMORxGuild).transferFrom(address(this), impact, claimableTokens[impact]);
         claimableTokens[impact] = 0;
     }
 

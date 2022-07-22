@@ -1,4 +1,3 @@
-const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { ONE_HUNDRED_ETHER,
@@ -10,10 +9,7 @@ const init = require('../test-init.js');
 
 const FEE_DENOMINATOR = 1000;
 const percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
-const averageLockTime = time.duration.days(7);
-const twoWeeks = time.duration.days(14);
 
-const TEST_TRANSFER_BIGGER = 100000;
 const TEST_TRANSFER_SMALLER = 80;
 
 let AMOR;
@@ -21,7 +17,6 @@ let AMORxGuild;
 let FXAMORxGuild
 let controller;
 let root;
-let authorizer_adaptor;
 let impactMaker;
 let operator;
 let user;
@@ -29,10 +24,6 @@ let user2;
 let staker;
 let impactMakers;
 let weigths;
-let report;
-let r;
-let s;
-let v;
 
 describe('unit - Contract: GuildController', function () {
 
@@ -51,7 +42,6 @@ describe('unit - Contract: GuildController', function () {
         impactMaker = setup.roles.doingud_multisig;
         user = setup.roles.user3;
         user2 = setup.roles.user2;
-        authorizer_adaptor = setup.roles.authorizer_adaptor;
         operator = setup.roles.operator;
     });
 
@@ -162,35 +152,35 @@ describe('unit - Contract: GuildController', function () {
 
             let AMORDeducted = ethers.BigNumber.from((TEST_TRANSFER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());//Math.ceil(TEST_TRANSFER * (1 - TAX_RATE / BASIS_POINTS));
             let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());//Math.ceil(AMORDeducted * (1 - TAX_RATE / BASIS_POINTS));
-console.log("AMORDeducted is %s", AMORDeducted);
-console.log("nextAMORDeducted is %s", nextAMORDeducted);
 
             await AMORxGuild.connect(user).stakeAmor(user.address, nextAMORDeducted);
             await AMORxGuild.connect(user).approve(controller.address, nextAMORDeducted);
-console.log("0");
+
             await controller.connect(user).donate(TEST_TRANSFER_SMALLER);        
-console.log("0.1");
+
             const totalWeight = await controller.totalWeight();
             const FxGAmount = (TEST_TRANSFER_SMALLER * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of amount to Impact poll
             const decIpAmount = (TEST_TRANSFER_SMALLER - FxGAmount); //decreased amount
-console.log("0.2");
+
+            let sum = 0;
             let weight = await controller.weights(impactMaker.address);
             let amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
-            // let taxDeducted = amountToSendImpactMaker*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS;//Math.ceil(amountToSendImpactMaker * (1 - TAX_RATE / BASIS_POINTS));
-console.log("1");
 
+            sum += amountToSendImpactMaker;
             expect((await FXAMORxGuild.balanceOf(user.address)).toString()).to.equal(FxGAmount.toString());
-            expect((await AMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal(amountToSendImpactMaker.toString());            
+            expect((await controller.claimableTokens(impactMaker.address)).toString()).to.equal(amountToSendImpactMaker.toString());            
 
             weight = await controller.weights(staker.address);
             amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
-            // taxDeducted = amountToSendImpactMaker*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS;//Math.floor(amountToSendImpactMaker * (1 - TAX_RATE / BASIS_POINTS));
-            expect((await AMORxGuild.balanceOf(staker.address)).toString()).to.equal(amountToSendImpactMaker.toString());
-console.log("2");
+            sum += amountToSendImpactMaker;
+            expect((await controller.claimableTokens(staker.address)).toString()).to.equal(amountToSendImpactMaker.toString());
+
             weight = await controller.weights(operator.address);
             amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
-            // taxDeducted = amountToSendImpactMaker*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS;//Math.floor(amountToSendImpactMaker * (1 - TAX_RATE / BASIS_POINTS));
-            expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(amountToSendImpactMaker.toString());
+            sum += amountToSendImpactMaker;
+            expect((await controller.claimableTokens(operator.address)).toString()).to.equal(amountToSendImpactMaker.toString());
+        
+            expect((await AMORxGuild.balanceOf(controller.address)).toString()).to.equal(sum.toString());            
         });
     });
 
@@ -204,10 +194,10 @@ console.log("2");
 
         it('it claims tokens', async function () {
             const balanceBefore = await AMORxGuild.balanceOf(impactMaker.address);
-            console.log("balanceBefore is %s", balanceBefore);
+            expect(balanceBefore).to.equal(0);
+
+            const balanceAfter = await controller.claimableTokens(impactMaker.address);
             await controller.connect(impactMaker).claim(impactMaker.address);
-            const balanceAfter = await controller.claimableTokens[impactMaker.address];
-            console.log("balanceAfter is %s", balanceAfter);
             expect((await AMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal(balanceAfter.toString());
         });
     });
