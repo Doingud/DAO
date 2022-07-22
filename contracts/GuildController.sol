@@ -29,6 +29,7 @@ contract GuildController is Ownable {
     uint256 public totalWeight; // total Weight of all of the impact makers
     uint256[] public timeVoting; // deadlines for the vote for reports
 
+    IERC20 private ERC20AMORxGuild;
     address public AMORxGuild;
     address public FXAMORxGuild;
 
@@ -67,6 +68,7 @@ contract GuildController is Ownable {
         _transferOwnership(initOwner);
 
         AMORxGuild = AMORxGuild_;
+        ERC20AMORxGuild = IERC20(AMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
         ADDITIONAL_VOTING_TIME = 0;
 
@@ -90,15 +92,15 @@ contract GuildController is Ownable {
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     function donate(uint256 amount) external returns (uint256) {
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
-        if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount || amount < 10) {
+        if (ERC20AMORxGuild.balanceOf(msg.sender) < amount || amount < 10) {
             revert InvalidAmount();
         }
 
         // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
         // which are going to be owned by the user.
         uint256 FxGAmount = (amount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
-        IERC20(AMORxGuild).transferFrom(msg.sender, address(this), FxGAmount);
-        IERC20(AMORxGuild).approve(FXAMORxGuild, FxGAmount);
+        ERC20AMORxGuild.transferFrom(msg.sender, address(this), FxGAmount);
+        ERC20AMORxGuild.approve(FXAMORxGuild, FxGAmount);
         IFXAMORxGuild(FXAMORxGuild).stake(msg.sender, FxGAmount);
 
         uint256 decAmount = amount - FxGAmount; //decreased amount: other 90%
@@ -106,8 +108,7 @@ contract GuildController is Ownable {
         // based on the weights distribution, tokens will be automatically redirected to the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
-            // IERC20(AMORxGuild).transferFrom(msg.sender, impactMakers[i], amountToSendVoter);
-            IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amountToSendVoter);
+            ERC20AMORxGuild.transferFrom(msg.sender, address(this), amountToSendVoter);
 
             claimableTokens[impactMakers[i]] += amountToSendVoter; // TODO: fix formula
         }
@@ -170,7 +171,7 @@ contract GuildController is Ownable {
             revert Unauthorized();
         }
         IERC20Base(AMORxGuild).increaseAllowance(address(this), claimableTokens[impact]);
-        IERC20(AMORxGuild).transferFrom(address(this), impact, claimableTokens[impact]);
+        ERC20AMORxGuild.transferFrom(address(this), impact, claimableTokens[impact]);
         claimableTokens[impact] = 0;
     }
 
