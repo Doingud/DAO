@@ -20,6 +20,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract MetaDaoController is AccessControl {
 
+    address[] public guilds;
     //  Array of addresses of Guilds
     mapping(address => uint256) public guildWeight;
     //  The total weight of the guilds
@@ -52,15 +53,17 @@ contract MetaDaoController is AccessControl {
 
     /// Errors
     error AlreadyDistributing();
+    error InvalidClaim();
 
-    constructor(address _amor, address _cloneFactory) {
+    constructor(address _amor, address _cloneFactory, address admin) {
+        _setupRole(DEFAULT_ADMIN_ROLE, admin);
         amorToken = IERC20(_amor);
         guildFactory = _cloneFactory;
         claimDuration = 5 days;
     }
 
     /// @notice Updates a guild's weight
-    /// @param  amount the amount of staked AMORxGuild in this guild
+    /// @param  newWeight the amount of staked AMORxGuild in this guild
     /// @return bool the guild's balance was updated successfully
     function updateGuildWeight(uint256 newWeight) external onlyRole(GUILD_ROLE) returns (bool) {
         if (claimStart + claimDuration && inDistribution) {
@@ -90,20 +93,46 @@ contract MetaDaoController is AccessControl {
     /// @dev Explain to a developer any extra details
     /// @param amount Amount of AMOR to be donated
     function donate(uint256 amount) public {
-        uint256 distributedAmount = amount*operationsWeight/WEIGHT_TOTAL;
+        uint256 distributedAmount = amount*operationsWeight/guildsTotalWeight;
         amorToken.transferFrom(msg.sender, operationsPool, distributedAmount);
         amorToken.transferFrom(msg.sender, buildersPool, amount-distributedAmount);
     }
 
     /// @notice Explain to an end user what this does
     /// @dev Explain to a developer any extra details
-    /// @param amount Amount of AMOR to be distributed
-    function distribute(uint256 amount) public {
+    function distribute() public {
         if (inDistribution) {
             revert AlreadyDistributing();
         }
         inDistribution = true;
         claimStart = block.timestamp;
+        uint[] memory currentGuildWeight;
+        for (uint i = 0; i < guilds.length; i++){
+            currentGuildWeight[i] = guildWeight[guilds[i]];
+        }
+        
+
+
+    }
+
+    function _distribute(uint[] calldata _currentGuildWeight) internal {
+         uint256 currentBalance = amorToken.balanceOf(address(this));
+         uint256 totalAmmountSent;
+        for (uint i = 0; i < guilds.length; i++){
+            uint ammountToDistribute = _currentGuildWeight[i] * currentBalance;
+            if(ammountToDistribute == 0) {
+            continue;
+             //it skip  to next iteration of loop
+            }
+            guildWeight[msg.sender] = 0;
+            totalAmmountSent = totalAmmountSent + ammountToDistribute;
+            amorToken.transfer(guilds[i], ammountToDistribute);
+
+        }
+        // Potential re-entrancy? May have to put state change inside Loop
+        guildsTotalWeight -= totalAmmountSent;
+
+
     }
 
     /// @notice Explain to an end user what this does
@@ -116,13 +145,14 @@ contract MetaDaoController is AccessControl {
         if (amount == 0) {
             revert InvalidClaim();
         }
-        /// Transfer the AMOR to the claimant
-        amorToken.transfer(msg.sender, amount);
-
         /// Update guildWeight and guildsTotalWeight
         guildWeight[msg.sender] = 0;
         guildsTotalWeight -= amount;
+
+        /// Transfer the AMOR to the claimant
+        amorToken.transfer(msg.sender, amount);
     }
+
 
     /// @notice Explain to an end user what this does
     /// @dev Explain to a developer any extra details
@@ -130,14 +160,33 @@ contract MetaDaoController is AccessControl {
     /// @param tokenSymbol the symbol for the Guild's token
     function createGuild(string memory name, string memory tokenSymbol) public {
         
+        
     }
 
-    /// @notice Explain to an end user what this does
+
+
+    /// @notice adds guild based on the controller address provided
     /// @dev Explain to a developer any extra details
-    /// @param name a parameter just like in doxygen (must be followed by parameter name)
-    /// @param tokenSymbol the symbol for the Guild's token
-    function removeGuild(string memory name, string memory tokenSymbol) public {
-        
+    /// @param controller the controller address of the guild
+    function addGuild(address controller) external {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
+        guilds.push(controller);
+
+    }
+
+    /// @notice removes guild based on id
+    /// @dev Explain to a developer any extra details
+    /// @param id the index of the guild in guilds[]
+    function removeGuild(uint256 id) external {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
+
+        require(id < guilds.length, "index out of bound");
+
+        for (uint i = id; i < guilds.length - 1; i++) {
+            guilds[i] = guilds[i + 1];
+        }
+        guilds.pop();
+
     }
 
 }
