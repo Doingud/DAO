@@ -60,13 +60,12 @@ describe('unit - Contract: GuildController', function () {
                 root.address, // owner
                 AMORxGuild.address,
                 FXAMORxGuild.address
-            )).to.be.reverted;
+            )).to.be.revertedWith("Already initialized");
         });
     });
-    
-    context('» setImpactMakers testing', () => {
 
-        it('it fails to set ImpactMaker if not the owner', async function () {
+    context('» setImpactMakers testing', () => {
+        it('it fails to set ImpactMakers if not the owner', async function () {
             impactMakers = [staker.address, operator.address, impactMaker.address];
             weigths = [20, 34, 923];
             await expect(controller.connect(user).setImpactMakers(impactMakers, weigths)).to.be.revertedWith(

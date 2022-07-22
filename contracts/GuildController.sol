@@ -29,7 +29,7 @@ contract GuildController is Ownable {
     uint256 public totalWeight; // total Weight of all of the impact makers
     uint256[] public timeVoting; // deadlines for the vote for reports
 
-    address private AMORxGuild;
+    address public AMORxGuild;
     address public FXAMORxGuild;
 
     uint256 public ADDITIONAL_VOTING_TIME;
@@ -89,7 +89,8 @@ contract GuildController is Ownable {
     // which are going to be owned by the user.
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     function donate(uint256 amount) external returns (uint256) {
-        if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
+        // if amount is below 10, most of the calculations will round down to zero, only wasting gas
+        if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount || amount < 10) {
             revert InvalidAmount();
         }
 
@@ -118,6 +119,7 @@ contract GuildController is Ownable {
     /// @param arrImpactMakers The array of impact makers
     /// @param arrWeight The array of weights of impact makers
     function setImpactMakers(address[] memory arrImpactMakers, uint256[] memory arrWeight) external onlyOwner {
+        delete impactMakers;
         for (uint256 i = 0; i < arrImpactMakers.length; i++) {
             impactMakers.push(arrImpactMakers[i]);
             weights[arrImpactMakers[i]] = arrWeight[i];
