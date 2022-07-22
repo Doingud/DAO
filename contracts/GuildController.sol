@@ -224,75 +224,157 @@ contract GuildController is Ownable {
         }
     }
 
+    // /// @notice distributes funds, depending on the report ids, for which votings were conducted.
+    // /// @param id ID of report from distributes funds
+    // function finalizeReportVoting(uint256 id) external {
+    //     // check if report with that id exists
+    //     if (reportsWeight.length < id) {
+    //         revert ReportNotExists();
+    //     }
+
+    //     if (block.timestamp < (timeVoting[id] + ADDITIONAL_VOTING_TIME)) {
+    //         revert VotingTimeNotFinished();
+    //     }
+
+    //     // If report has positive voting weight (positive FX tokens) then report is accepted
+    //     int256 fiftyPercent = (reportsWeight[id] * 50) / 100;
+    //     address[] memory people = voters[id];
+
+    //     if (reportsVoting[id] > 0) {
+    //         // If report has positive voting weight, then funds go 50-50%,
+    //         // 50% go to the report creater,
+    //         AMORxGuild.transfer(reportsAuthors[id], uint256(fiftyPercent));
+
+    //         // and 50% goes to the people who voted positively
+    //         for (uint256 i = 0; i < voters[id].length; i++) {
+    //             // if voted positively
+    //             if (votes[id][people[i]] > 0) {
+    //                 // 50% * user weigth / all 100%
+    //                 int256 amountToSendVoter = (int256(fiftyPercent) * votes[id][people[i]]) / reportsWeight[id];
+    //                 AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
+    //             }
+    //         }
+    //     } else {
+    //         // If report has negative voting weight, then
+    //         // 50% goes to the people who voted negatively,
+    //         for (uint256 i = 0; i < voters[id].length; i++) {
+    //             // if voted negatively
+    //             if (votes[id][people[i]] < 0) {
+    //                 // allAmountToDistribute(50%) * user weigth in % / all 100%
+    //                 int256 absVotes = abs(votes[id][people[i]]);
+    //                 int256 amountToSendVoter = (fiftyPercent * absVotes) / reportsWeight[id];
+    //                 AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
+    //             }
+    //         }
+    //         reportsWeight[id] = -reportsWeight[id];
+    //         // and 50% gets redistributed between the passed reports based on their weights
+    //         for (uint256 i = 0; i < reportsWeight.length; i++) {
+    //             // passed reports
+    //             if (reportsWeight[i] > 0) {
+    //                 // TODO: add smth what will be solving no-passed-at-this-week-reports isssue
+    //                 // allAmountToDistribute(50%) * report weigth in % / all 100%
+    //                 int256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / int256(totalReportsWeight);
+    //                 AMORxGuild.safeTransfer(to, value);(reportsAuthors[i], uint256(amountToSendReport));
+    //             }
+    //         }
+    //     }
+    //     // after last report will be finalized trigger will be swithched to false
+    //     triggerCounter -= 1;
+    //     if (triggerCounter == 0) {
+    //         trigger = false;
+    //         // When the voting for the 10 reports is finished, and there are ≥ 10 reports in the queue, 
+    //         // than the vote for the next report set instantly starts. 
+    //         if (reportsQueue.length >= 10) {
+    //             // The vote starts for all of the untouched reports in the queue.
+    //             for (uint256 i = 0; i < reportsQueue.length; i++) {
+    //                 voteForReport(reportsQueue[i], 0, true);
+    //             }
+    //             // clear queue
+    //             delete reportsQueue;
+    //         }
+    //     }
+    // }
+
     /// @notice distributes funds, depending on the report ids, for which votings were conducted.
     /// @param id ID of report from distributes funds
-    function finalizeReportVoting(uint256 id) external {
-        // check if report with that id exists
-        if (reportsWeight.length < id) {
-            revert ReportNotExists();
-        }
-
+    function finalizeReportsVotings(uint256 id) external {
         if (block.timestamp < (timeVoting[id] + ADDITIONAL_VOTING_TIME)) {
             revert VotingTimeNotFinished();
         }
 
-        // If report has positive voting weight (positive FX tokens) then report is accepted
-        int256 fiftyPercent = (reportsWeight[id] * 50) / 100;
-        address[] memory people = voters[id];
+        // // check if report with that id exists
+        // if (reportsWeight.length < id) {
+        //     // TODO: exit from this 'for' iteration // UPD: no need. we know that it is
+        //     // revert ReportNotExists();
+        // }
+        for (uint256 i = 0; i < reportsWeight.length; i++) {
 
-        if (reportsVoting[id] > 0) {
-            // If report has positive voting weight, then funds go 50-50%,
-            // 50% go to the report creater,
-            AMORxGuild.transfer(reportsAuthors[id], uint256(fiftyPercent));
+            // If report has positive voting weight (positive FX tokens) then report is accepted
+            int256 fiftyPercent = (reportsWeight[id] * 50) / 100;
+            address[] memory people = voters[id];
 
-            // and 50% goes to the people who voted positively
-            for (uint256 i = 0; i < voters[id].length; i++) {
-                // if voted positively
-                if (votes[id][people[i]] > 0) {
-                    // 50% * user weigth / all 100%
-                    int256 amountToSendVoter = (int256(fiftyPercent) * votes[id][people[i]]) / reportsWeight[id];
-                    AMORxGuild.transfer(people[i], uint256(amountToSendVoter));
+            if (reportsVoting[id] > 0) {
+                // If report has positive voting weight, then funds go 50-50%,
+                // 50% go to the report creater,
+                AMORxGuild.transfer(reportsAuthors[id], uint256(fiftyPercent));
+
+                // and 50% goes to the people who voted positively
+                for (uint256 i = 0; i < voters[id].length; i++) {
+                    // if voted positively
+                    if (votes[id][people[i]] > 0) {
+                        // 50% * user weigth / all 100%
+                        int256 amountToSendVoter = (int256(fiftyPercent) * votes[id][people[i]]) / reportsWeight[id];
+                        AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
+                    }
+                    delete votes[id][people[i]];
+                }
+            } else {
+                // If report has negative voting weight, then
+                // 50% goes to the people who voted negatively,
+                for (uint256 i = 0; i < voters[id].length; i++) {
+                    // if voted negatively
+                    if (votes[id][people[i]] < 0) {
+                        // allAmountToDistribute(50%) * user weigth in % / all 100%
+                        int256 absVotes = abs(votes[id][people[i]]);
+                        int256 amountToSendVoter = (fiftyPercent * absVotes) / reportsWeight[id];
+                        AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
+                    }
+                    delete votes[id][people[i]];
+                }
+                reportsWeight[id] = -reportsWeight[id];
+                // and 50% gets redistributed between the passed reports based on their weights
+                for (uint256 i = 0; i < reportsWeight.length; i++) {
+                    // passed reports
+                    if (reportsWeight[i] > 0) {
+                        // TODO: add smth what will be solving no-passed-at-this-week-reports isssue
+                        // allAmountToDistribute(50%) * report weigth in % / all 100%
+                        int256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / int256(totalReportsWeight);
+                        AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
+                    }
                 }
             }
-        } else {
-            // If report has negative voting weight, then
-            // 50% goes to the people who voted negatively,
-            for (uint256 i = 0; i < voters[id].length; i++) {
-                // if voted negatively
-                if (votes[id][people[i]] < 0) {
-                    // allAmountToDistribute(50%) * user weigth in % / all 100%
-                    int256 absVotes = abs(votes[id][people[i]]);
-                    int256 amountToSendVoter = (fiftyPercent * absVotes) / reportsWeight[id];
-                    AMORxGuild.transfer(people[i], uint256(amountToSendVoter));
+            // after last report will be finalized trigger will be swithched to false
+            triggerCounter -= 1;
+            if (triggerCounter == 0) {
+                trigger = false;
+                // When the voting for the 10 reports is finished, and there are ≥ 10 reports in the queue, 
+                // than the vote for the next report set instantly starts. 
+                if (reportsQueue.length >= 10) {
+                    // The vote starts for all of the untouched reports in the queue.
+                    for (uint256 i = 0; i < reportsQueue.length; i++) {
+                        voteForReport(reportsQueue[i], 0, true);
+                    }
+                    // clear queue
+                    delete reportsQueue;
                 }
             }
-            reportsWeight[id] = -reportsWeight[id];
-            // and 50% gets redistributed between the passed reports based on their weights
-            for (uint256 i = 0; i < reportsWeight.length; i++) {
-                // passed reports
-                if (reportsWeight[i] > 0) {
-                    // TODO: add smth what will be solving no-passed-at-this-week-reports isssue
-                    // allAmountToDistribute(50%) * report weigth in % / all 100%
-                    int256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / int256(totalReportsWeight);
-                    AMORxGuild.transfer(reportsAuthors[i], uint256(amountToSendReport));
-                }
-            }
+
+            delete voters[i];
+            delete reportsAuthors[i];
         }
-        // after last report will be finalized trigger will be swithched to false
-        triggerCounter -= 1;
-        if (triggerCounter == 0) {
-            trigger = false;
-            // When the voting for the 10 reports is finished, and there are ≥ 10 reports in the queue, 
-            // than the vote for the next report set instantly starts. 
-            if (reportsQueue.length >= 10) {
-                // The vote starts for all of the untouched reports in the queue.
-                for (uint256 i = 0; i < reportsQueue.length; i++) {
-                    voteForReport(reportsQueue[i], 0, true);
-                }
-                // clear queue
-                delete reportsQueue;
-            }
-        }
+        delete reportsWeight;
+        delete reportsVoting;
+        totalReportsWeight = 0;
     }
 
     /// @notice removes impact makers, resets mapping and array, and creates new array, mapping, and sets weights
