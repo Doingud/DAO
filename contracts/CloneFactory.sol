@@ -23,8 +23,9 @@ pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
+import "./utils/interfaces/ICloneFactory.sol";
 
-contract GuildCloneFactory {
+contract GuildCloneFactory is ICloneFactory {
     /// The AMOR Token address
     address public amorToken;
     /// The address for the AMORxGuild Token implementation

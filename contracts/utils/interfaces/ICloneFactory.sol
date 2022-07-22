@@ -3,10 +3,10 @@
 
 pragma solidity 0.8.15;
 
-/// @title  Interface for AmorToken.sol
+/// @title  Interface for CloneFactory.sol
 /// @author Daoism Systems Team
 
-interface ICloneFacotry {
+interface ICloneFactory {
 
     error CreationFailed();
 
