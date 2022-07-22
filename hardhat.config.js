@@ -133,7 +133,7 @@ module.exports = {
         root: 0,
         prime: 1,
         beneficiary: 2,
-        rewardManager: 3, // BaseRewardPool reward manager
+        rewardManager: 3,
         treasury: 4,
     },
 };
