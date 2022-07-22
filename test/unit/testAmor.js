@@ -84,7 +84,7 @@ describe("unit - AMOR Token", function () {
         TAX_RATE,
         root.address
       )).
-      to.be.reverted.revertedWith(`AlreadyInitialized`);
+      to.be.revertedWith(`AlreadyInitialized`);
     });
   });
 
