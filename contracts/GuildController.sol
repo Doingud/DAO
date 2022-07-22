@@ -24,7 +24,7 @@ contract GuildController is Ownable {
     mapping(address => uint256) claimableTokens; // amount of tokens each specific address(impactMaker) can claim
     mapping(address => uint256) public weights; // weight of each specific Impact Maker/Builder
     uint256 public totalWeight; // total Weight of all of the impact makers
-    uint256[] public timeVoting; // deadlines for the vote for reports
+    uint256 public timeVoting; // deadlines for the votes for reports
 
     IERC20 private AMORxGuild;
     address public FXAMORxGuild;
@@ -138,7 +138,7 @@ contract GuildController is Ownable {
         reportsAuthors[newReportId] = msg.sender;
         reportsWeight.push(0);
         reportsVoting.push(0);
-        timeVoting.push(0);
+        timeVoting = 0;
 
         // Reports are getting collected, up until the point there are at least ten untouched reports. 
         // If there are ten reports, then the week is given to vote on the 10 reports.
@@ -181,26 +181,26 @@ contract GuildController is Ownable {
             revert ReportNotExists();
         }
 
-        if (voters[id].length == 0) {
-            uint256 endTime = block.timestamp;
-            uint256 day = getWeekday(block.timestamp);
-            // SUNDAY-CHECK
-            if (day == 0) {
-                endTime += WEEK;
-            } else if (day == 6 || day == 5) {
-                // if vote started on Friday/Saturday, then the end will be next week
-                // end of the next week
-                endTime += WEEK + (DAY_IN_SECONDS * (7 - day));
-            } else {
-                endTime += WEEK - (DAY_IN_SECONDS * day);
-            }
-            endTime = (endTime / DAY_IN_SECONDS) * DAY_IN_SECONDS;
-            endTime += 12 * HOUR_IN_SECONDS;
+        // if (voters[id].length == 0) {
+        //     uint256 endTime = block.timestamp;
+        //     uint256 day = getWeekday(block.timestamp);
+        //     // SUNDAY-CHECK
+        //     if (day == 0) {
+        //         endTime += WEEK;
+        //     } else if (day == 6 || day == 5) {
+        //         // if vote started on Friday/Saturday, then the end will be next week
+        //         // end of the next week
+        //         endTime += WEEK + (DAY_IN_SECONDS * (7 - day));
+        //     } else {
+        //         endTime += WEEK - (DAY_IN_SECONDS * day);
+        //     }
+        //     endTime = (endTime / DAY_IN_SECONDS) * DAY_IN_SECONDS;
+        //     endTime += 12 * HOUR_IN_SECONDS;
 
-            timeVoting[id] = endTime;
-        }
+        //     timeVoting = endTime; // TODO: move in StartVoting() function
+        // }
 
-        if (block.timestamp > (timeVoting[id] + ADDITIONAL_VOTING_TIME)) {
+        if (block.timestamp > (timeVoting + ADDITIONAL_VOTING_TIME)) {
             //check if the week has passed - can vote only a week from first vote
             revert VotingTimeExpired();
         }
@@ -296,10 +296,14 @@ contract GuildController is Ownable {
     // }
 
     /// @notice distributes funds, depending on the report ids, for which votings were conducted.
-    /// @param id ID of report from distributes funds
-    function finalizeReportsVotings(uint256 id) external {
-        if (block.timestamp < (timeVoting[id] + ADDITIONAL_VOTING_TIME)) {
+    function finalizeVoting() external {
+        if (block.timestamp < (timeVoting + ADDITIONAL_VOTING_TIME)) {
             revert VotingTimeNotFinished();
+        }
+
+        // nothing to finalize
+        if (trigger == false) {
+            revert ReportNotExists();
         }
 
         // // check if report with that id exists
@@ -307,7 +311,7 @@ contract GuildController is Ownable {
         //     // TODO: exit from this 'for' iteration // UPD: no need. we know that it is
         //     // revert ReportNotExists();
         // }
-        for (uint256 i = 0; i < reportsWeight.length; i++) {
+        for (uint256 id = 0; id < reportsWeight.length; id++) {
 
             // If report has positive voting weight (positive FX tokens) then report is accepted
             int256 fiftyPercent = (reportsWeight[id] * 50) / 100;
@@ -353,30 +357,60 @@ contract GuildController is Ownable {
                     }
                 }
             }
-            // after last report will be finalized trigger will be swithched to false
-            triggerCounter -= 1;
-            if (triggerCounter == 0) {
-                trigger = false;
-                // When the voting for the 10 reports is finished, and there are ≥ 10 reports in the queue, 
-                // than the vote for the next report set instantly starts. 
-                if (reportsQueue.length >= 10) {
-                    // The vote starts for all of the untouched reports in the queue.
-                    for (uint256 i = 0; i < reportsQueue.length; i++) {
-                        voteForReport(reportsQueue[i], 0, true);
-                    }
-                    // clear queue
-                    delete reportsQueue;
-                }
-            }
+            // // after last report will be finalized trigger will be swithched to false
+            // triggerCounter -= 1;
+            // if (triggerCounter == 0) {
+            //     trigger = false;
+            //     // When the voting for the 10 reports is finished, and there are ≥ 10 reports in the queue, 
+            //     // than the vote for the next report set instantly starts. 
+            //     if (reportsQueue.length >= 10) {
+            //         // The vote starts for all of the untouched reports in the queue.
+            //         for (uint256 i = 0; i < reportsQueue.length; i++) {
+            //             voteForReport(reportsQueue[i], 0, true);
+            //         }
+            //         // clear queue
+            //         delete reportsQueue;
+            //     }
+            // }
 
-            delete voters[i];
-            delete reportsAuthors[i];
+            delete voters[id];
+            // delete reportsAuthors[id];
         }
+
         delete reportsWeight;
         delete reportsVoting;
         totalReportsWeight = 0;
+
+        delete reportsQueue;
+        trigger = false;
     }
 
+    /// @notice distributes funds, depending on the report ids, for which votings were conducted.
+    function startVoting() external {
+        // nothing to finalize
+        if (trigger == true) {
+            revert VotingTimeNotFinished();
+        }
+
+        uint256 endTime = block.timestamp;
+        uint256 day = getWeekday(block.timestamp);
+
+        // SUNDAY-CHECK
+        if (day == 0) {
+            endTime += WEEK;
+        } else if (day == 6 || day == 5) {
+            // if vote started on Friday/Saturday, then the end will be next week
+            // end of the next week
+            endTime += WEEK + (DAY_IN_SECONDS * (7 - day));
+        } else {
+            endTime += WEEK - (DAY_IN_SECONDS * day);
+        }
+        endTime = (endTime / DAY_IN_SECONDS) * DAY_IN_SECONDS;
+        endTime += 12 * HOUR_IN_SECONDS;
+
+        timeVoting = endTime;
+        trigger = true;
+    }
     /// @notice removes impact makers, resets mapping and array, and creates new array, mapping, and sets weights
     /// @param arrImpactMakers The array of impact makers
     /// @param arrWeight The array of weights of impact makers
