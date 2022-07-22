@@ -201,15 +201,3 @@ describe('unit - Contract: GuildController', function () {
         });
     });
 });
-
-// function splitSignature(sig) {
-//     const hash = sig.slice(0,66);
-//     const signature = sig.slice(66, sig.length);
-//     const r = signature.slice(0, 66);
-//     const s = "0x" + signature.slice(66, 130);
-//     const v = parseInt(signature.slice(130, 132), 16);
-//     signatureParts = { r, s, v };
-//     console.log([hash,signatureParts])
-//     return ([hash,signatureParts]);
-// }
-
