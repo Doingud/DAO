@@ -99,7 +99,7 @@ contract GuildController is Ownable {
         // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
         // which are going to be owned by the user.
         uint256 FxGAmount = (amount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
-        ERC20AMORxGuild.transferFrom(msg.sender, address(this), FxGAmount);
+        ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
         ERC20AMORxGuild.approve(FXAMORxGuild, FxGAmount);
         IFXAMORxGuild(FXAMORxGuild).stake(msg.sender, FxGAmount);
 
@@ -108,7 +108,7 @@ contract GuildController is Ownable {
         // based on the weights distribution, tokens will be automatically redirected to the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
-            ERC20AMORxGuild.transferFrom(msg.sender, address(this), amountToSendVoter);
+            ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
 
             claimableTokens[impactMakers[i]] += amountToSendVoter; // TODO: fix formula
         }
@@ -171,15 +171,7 @@ contract GuildController is Ownable {
             revert Unauthorized();
         }
         IERC20Base(AMORxGuild).increaseAllowance(address(this), claimableTokens[impact]);
-        ERC20AMORxGuild.transferFrom(address(this), impact, claimableTokens[impact]);
+        ERC20AMORxGuild.safeTransfer(impact, claimableTokens[impact]);
         claimableTokens[impact] = 0;
-    }
-
-    function getWeekday(uint256 timestamp) public pure returns (uint8) {
-        return uint8((timestamp / DAY_IN_SECONDS + 4) % 7); // day of week = (floor(T / 86400) + 4) mod 7.
-    }
-
-    function abs(int256 x) private pure returns (int256) {
-        return x >= 0 ? x : -x;
     }
 }
