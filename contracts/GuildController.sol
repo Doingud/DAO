@@ -75,7 +75,8 @@ contract GuildController is Ownable {
     // which are going to be owned by the user.
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     function donate(uint256 amount) external returns (uint256) {
-        if (AMORxGuild.balanceOf(msg.sender) < amount) {
+        // if amount is below 10, most of the calculations will round down to zero, only wasting gas
+        if (AMORxGuild.balanceOf(msg.sender) < amount || amount < 10) {
             revert InvalidAmount();
         }
 

@@ -54,7 +54,7 @@ describe('unit - Contract: GuildController', function () {
                 root.address, // owner
                 AMORxGuild.address,
                 FXAMORxGuild.address
-            )).to.be.reverted;
+            )).to.be.revertedWith("Already initialized");
         });
     });
 
