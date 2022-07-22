@@ -159,6 +159,7 @@ contract MetaDaoController is AccessControl {
     /// @param name a parameter just like in doxygen (must be followed by parameter name)
     /// @param tokenSymbol the symbol for the Guild's token
     function createGuild(string memory name, string memory tokenSymbol) public {
+        IGuildFactory(guildFactory).deployGuild(name,tokenSymbol);
         
         
     }
@@ -170,6 +171,7 @@ contract MetaDaoController is AccessControl {
     /// @param controller the controller address of the guild
     function addGuild(address controller) external {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
+        _setupRole(GUILD_ROLE, controller);
         guilds.push(controller);
 
     }
