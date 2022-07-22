@@ -5,7 +5,7 @@ const { TWO_HUNDRED_ETHER, ONE_HUNDRED_ETHER, FIFTY_ETHER, MOCK_GUILD_NAMES, MOC
 const init = require('../test-init.js');
 
 let AMORxGuild;
-let FXAMORxGuild
+let FXAMORxGuild;
 let root;
 let authorizer_adaptor;
 let operator;
@@ -24,6 +24,13 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
         authorizer_adaptor = setup.roles.authorizer_adaptor;
         operator = setup.roles.operator;
         staker = setup.roles.staker;
+
+        await FXAMORxGuild.init(
+            "DoinGud MetaDAO", 
+            "FXAMORxGuild", 
+            operator.address, //controller
+            AMORxGuild.address
+        );
     });
 
     before('>>> setup', async function() {

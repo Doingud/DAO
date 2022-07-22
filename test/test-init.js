@@ -98,7 +98,7 @@ const controller = async (setup) => {
     setup.roles.authorizer_adaptor.address, //taxController
     TAX_RATE,
     setup.roles.root.address // multisig
-  ); 
+  );
 
   await setup.tokens.FXAMORxGuild.init(
     "DoinGud MetaDAO", 
