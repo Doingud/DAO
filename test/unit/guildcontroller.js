@@ -1,4 +1,4 @@
-const { time } = require("@openzeppelin/test-helpers");
+// const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { ONE_HUNDRED_ETHER,
@@ -10,8 +10,8 @@ const init = require('../test-init.js');
 
 const FEE_DENOMINATOR = 1000;
 const percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
-const averageLockTime = time.duration.days(7);
-const twoWeeks = time.duration.days(14);
+// const averageLockTime = time.duration.days(7);
+// const twoWeeks = time.duration.days(14);
 
 const TEST_TRANSFER_BIGGER = 100000;
 const TEST_TRANSFER_SMALLER = 80;
@@ -161,82 +161,145 @@ describe('unit - Contract: GuildController', function () {
 
         it('adds report', async function () {
             await controller.connect(operator).addReport(report, v, r, s); 
-            expect((await controller.reportsAuthors(0))).to.equal(operator.address);
+            expect((await controller.queueReportsAuthors(0))).to.equal(operator.address);
         });
 
     });
 
-    context('» voteForReport testing', () => {
+    context('» startVoting testing', () => {
 
-        it('it fails to vote for report if ReportNotExists', async function () {
-            await AMORxGuild.connect(root).transfer(controller.address, TEST_TRANSFER);
-
-            await AMORxGuild.connect(root).transfer(operator.address, TEST_TRANSFER_BIGGER);
-            await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER);
-            await controller.connect(operator).addReport(report, v, r, s); 
-
-            const id = 11;
-            const amount = 12;
-            const sign = true;            
-            await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
-                'ReportNotExists()'
-            );
-        });
-
-        it('votes for report positivly', async function () {
-            await FXAMORxGuild.connect(root).setController(controller.address); 
-
-            await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER_SMALLER);
-            await controller.connect(operator).donate(TEST_TRANSFER_SMALLER);
-
-            const id = 0;
-            const amount = 2;
-            const sign = true;
-            await controller.connect(operator).voteForReport(id, amount, sign);
-            expect(await controller.reportsVoting(0)).to.equals(2);
-            expect(await controller.reportsWeight(0)).to.equals(2);
-
-            await controller.connect(user).voteForReport(id, 1, false);
-            expect(await controller.reportsVoting(0)).to.equals(1);
-            expect(await controller.reportsWeight(0)).to.equals(3);
-        });
-
-        it('votes for report negatively', async function () {
-            await FXAMORxGuild.connect(root).setController(controller.address); 
-            await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER_SMALLER);
-            await controller.connect(operator).donate(TEST_TRANSFER_SMALLER);
-
-            const id = 1;
-            const amount = 2;
-            const sign = false;
-            await controller.connect(operator).voteForReport(id, amount, sign);
-            expect(await controller.reportsVoting(1)).to.equals(-2);
-            expect(await controller.reportsWeight(1)).to.equals(2);
-
-            await controller.connect(user).voteForReport(id, 1, true);
-        });
-
-        it('it fails to vote for report if try to vote more than user have', async function () {
-            const id = 0;
-            const amount = TEST_TRANSFER;
-            const sign = true;
-            await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
+        it('it fails to start report voting if InvalidAmount of the reports in queue', async function () {
+            await expect(controller.connect(root).startVoting()).to.be.revertedWith(
                 'InvalidAmount()'
             );
         });
 
-        it('it fails to vote for report if VotingTimeExpired', async function () {
-            const id = 0;
-            const amount = 2;
-            const sign = true;
-            await controller.connect(operator).voteForReport(id, amount, sign);
-            time.increase(averageLockTime);
+        it('it starts reports voting', async function () {
+            await AMORxGuild.connect(root).transfer(controller.address, TEST_TRANSFER);
+            await AMORxGuild.connect(root).transfer(operator.address, TEST_TRANSFER_BIGGER);
+            await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER);
+            await controller.connect(operator).donate(TEST_TRANSFER_SMALLER);
 
-            await expect(controller.connect(operator).voteForReport(id, amount, sign)).to.be.revertedWith(
-                'VotingTimeExpired()'
+            // add 9 more reports
+            await controller.connect(operator).addReport(report, v, r, s); // 1
+            await controller.connect(operator).addReport(report, v, r, s); // 2
+            await controller.connect(operator).addReport(report, v, r, s); // 3
+            await controller.connect(operator).addReport(report, v, r, s); // 4
+            await controller.connect(operator).addReport(report, v, r, s); // 5
+            await controller.connect(operator).addReport(report, v, r, s); // 6
+            await controller.connect(operator).addReport(report, v, r, s); // 7
+            await controller.connect(operator).addReport(report, v, r, s); // 8
+            await controller.connect(operator).addReport(report, v, r, s); // 9
+            expect((await controller.queueReportsAuthors(9))).to.equal(operator.address);
+
+            await controller.connect(authorizer_adaptor).startVoting();
+
+            expect(await controller.trigger()).to.equal(true);
+            await expect(controller.queueReportsAuthors()).to.be.reverted;
+            expect((await controller.reportsAuthors(9))).to.equal(operator.address);
+
+            // const id = 2;
+            // const amount = 2;
+            // const sign = true;
+            // await controller.connect(operator).voteForReport(id, amount, sign);
+        });
+
+        it('it fails to start report voting if VotingTimeNotFinished', async function () {
+            await expect(controller.connect(authorizer_adaptor).startVoting()).to.be.revertedWith(
+                'VotingTimeNotFinished()'
             );
         });
+        // it('finalizes voting for positive report', async function () {
+        //     const id = 0;
+        //     const balanceBefore = await AMORxGuild.balanceOf(operator.address);
+        //     time.increase(twoWeeks);
+        //     await controller.connect(operator).finalizeReportVoting(id);
+        //     const balanceAfter = balanceBefore.add(4);
+        //     expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
+        // });
+
+        // it('finalizes voting for negative report', async function () {
+        //     const id = 1;
+        //     const balanceBefore = await AMORxGuild.balanceOf(operator.address);
+        //     time.increase(twoWeeks);
+        //     await controller.connect(operator).finalizeReportVoting(id);
+        //     const balanceAfter = balanceBefore;
+        //     expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
+        // });
+
     });
+
+    // context('» voteForReport testing', () => {
+
+    //     it('it fails to vote for report if ReportNotExists', async function () {
+    //         await AMORxGuild.connect(root).transfer(controller.address, TEST_TRANSFER);
+
+    //         await AMORxGuild.connect(root).transfer(operator.address, TEST_TRANSFER_BIGGER);
+    //         await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER);
+    //         await controller.connect(operator).addReport(report, v, r, s); 
+
+    //         const id = 11;
+    //         const amount = 12;
+    //         const sign = true;            
+    //         await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
+    //             'ReportNotExists()'
+    //         );
+    //     });
+
+    //     it('votes for report positivly', async function () {
+    //         await FXAMORxGuild.connect(root).setController(controller.address); 
+
+    //         await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER_SMALLER);
+    //         await controller.connect(operator).donate(TEST_TRANSFER_SMALLER);
+
+    //         const id = 0;
+    //         const amount = 2;
+    //         const sign = true;
+    //         await controller.connect(operator).voteForReport(id, amount, sign);
+    //         expect(await controller.reportsVoting(0)).to.equals(2);
+    //         expect(await controller.reportsWeight(0)).to.equals(2);
+
+    //         await controller.connect(user).voteForReport(id, 1, false);
+    //         expect(await controller.reportsVoting(0)).to.equals(1);
+    //         expect(await controller.reportsWeight(0)).to.equals(3);
+    //     });
+
+    //     it('votes for report negatively', async function () {
+    //         await FXAMORxGuild.connect(root).setController(controller.address); 
+    //         await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER_SMALLER);
+    //         await controller.connect(operator).donate(TEST_TRANSFER_SMALLER);
+
+    //         const id = 1;
+    //         const amount = 2;
+    //         const sign = false;
+    //         await controller.connect(operator).voteForReport(id, amount, sign);
+    //         expect(await controller.reportsVoting(1)).to.equals(-2);
+    //         expect(await controller.reportsWeight(1)).to.equals(2);
+
+    //         await controller.connect(user).voteForReport(id, 1, true);
+    //     });
+
+    //     it('it fails to vote for report if try to vote more than user have', async function () {
+    //         const id = 0;
+    //         const amount = TEST_TRANSFER;
+    //         const sign = true;
+    //         await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
+    //             'InvalidAmount()'
+    //         );
+    //     });
+
+    //     it('it fails to vote for report if VotingTimeExpired', async function () {
+    //         const id = 0;
+    //         const amount = 2;
+    //         const sign = true;
+    //         await controller.connect(operator).voteForReport(id, amount, sign);
+    //         time.increase(averageLockTime);
+
+    //         await expect(controller.connect(operator).voteForReport(id, amount, sign)).to.be.revertedWith(
+    //             'VotingTimeExpired()'
+    //         );
+    //     });
+    // });
 
     // context('» finalizeReportVoting testing', () => {
 

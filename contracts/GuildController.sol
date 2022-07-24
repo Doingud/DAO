@@ -29,9 +29,10 @@ contract GuildController is Ownable {
     IERC20 private AMORxGuild;
     address public FXAMORxGuild;
 
-    uint256 public triggerCounter;
+    // uint256 public triggerCounter;
     bool public trigger; // set true for a week if previous week were added >= 10 reports; users can vote only if trigger == true
     uint256[] public reportsQueue;
+    mapping(uint256 => address) public queueReportsAuthors;
 
     uint256 public ADDITIONAL_VOTING_TIME;
     uint256 public constant WEEK = 7 days; // 1 week is the time for the users to vore for the specific report
@@ -71,6 +72,9 @@ contract GuildController is Ownable {
         AMORxGuild = IERC20(AMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
         ADDITIONAL_VOTING_TIME = 0;
+
+        trigger = false;
+        timeVoting = 0;
 
         _initialized = true;
         emit Initialized(_initialized, initOwner, AMORxGuild_);
@@ -134,25 +138,26 @@ contract GuildController is Ownable {
             revert Unauthorized();
         }
 
-        uint256 newReportId = reportsVoting.length;
+        uint256 newReportId = reportsQueue.length; // reportsVoting.length;
 
-        reportsAuthors[newReportId] = msg.sender;
-        reportsWeight.push(0);
-        reportsVoting.push(0);
-        timeVoting = 0;
+        queueReportsAuthors[newReportId] = msg.sender;
+        // reportsAuthors[newReportId] = msg.sender;
+        // reportsWeight.push(0);
+        // reportsVoting.push(0);
 
-        // Reports are getting collected, up until the point there are at least ten untouched reports. 
+        // Reports are getting collected, up until the point there are at least ten untouched reports.
         // If there are ten reports, then the week is given to vote on the 10 reports.
-        triggerCounter += 1;
-        if (triggerCounter >= 10 && trigger == false) {
-            trigger = true;
-        }
+        // triggerCounter += 1;
+        // if (triggerCounter >= 10 && trigger == false) {
+        //     trigger = true;
+        // }
 
-        // During the vote reports can be added, but they will be waiting and vote for them won’t start. 
-        // When the voting for the 10 reports is finished, and there are ≥ 10 reports in the queue, 
-        // than the vote for the next report set instantly starts. 
+        // During the vote reports can be added, but they will be waiting and vote for them won’t start.
+        // When the voting for the 10 reports is finished, and there are ≥ 10 reports in the queue,
+        // than the vote for the next report set instantly starts.
         // The vote starts for all of the untouched reports in the queue.
-        if (trigger == true){
+        // timeVoting == 0 --> for the first queue when there was no voting yet
+        if (trigger == true || timeVoting == 0) {
             reportsQueue.push(newReportId);
         }
     }
@@ -182,27 +187,8 @@ contract GuildController is Ownable {
             revert ReportNotExists();
         }
 
-        // if (voters[id].length == 0) {
-        //     uint256 endTime = block.timestamp;
-        //     uint256 day = getWeekday(block.timestamp);
-        //     // SUNDAY-CHECK
-        //     if (day == 0) {
-        //         endTime += WEEK;
-        //     } else if (day == 6 || day == 5) {
-        //         // if vote started on Friday/Saturday, then the end will be next week
-        //         // end of the next week
-        //         endTime += WEEK + (DAY_IN_SECONDS * (7 - day));
-        //     } else {
-        //         endTime += WEEK - (DAY_IN_SECONDS * day);
-        //     }
-        //     endTime = (endTime / DAY_IN_SECONDS) * DAY_IN_SECONDS;
-        //     endTime += 12 * HOUR_IN_SECONDS;
-
-        //     timeVoting = endTime; // TODO: move in StartVoting() function
-        // }
-
+        //check if the week has passed - can vote only a week from first vote
         if (block.timestamp > (timeVoting + ADDITIONAL_VOTING_TIME)) {
-            //check if the week has passed - can vote only a week from first vote
             revert VotingTimeExpired();
         }
 
@@ -225,95 +211,22 @@ contract GuildController is Ownable {
         }
     }
 
-    // /// @notice distributes funds, depending on the report ids, for which votings were conducted.
-    // /// @param id ID of report from distributes funds
-    // function finalizeReportVoting(uint256 id) external {
-    //     // check if report with that id exists
-    //     if (reportsWeight.length < id) {
-    //         revert ReportNotExists();
-    //     }
-
-    //     if (block.timestamp < (timeVoting[id] + ADDITIONAL_VOTING_TIME)) {
-    //         revert VotingTimeNotFinished();
-    //     }
-
-    //     // If report has positive voting weight (positive FX tokens) then report is accepted
-    //     int256 fiftyPercent = (reportsWeight[id] * 50) / 100;
-    //     address[] memory people = voters[id];
-
-    //     if (reportsVoting[id] > 0) {
-    //         // If report has positive voting weight, then funds go 50-50%,
-    //         // 50% go to the report creater,
-    //         AMORxGuild.transfer(reportsAuthors[id], uint256(fiftyPercent));
-
-    //         // and 50% goes to the people who voted positively
-    //         for (uint256 i = 0; i < voters[id].length; i++) {
-    //             // if voted positively
-    //             if (votes[id][people[i]] > 0) {
-    //                 // 50% * user weigth / all 100%
-    //                 int256 amountToSendVoter = (int256(fiftyPercent) * votes[id][people[i]]) / reportsWeight[id];
-    //                 AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
-    //             }
-    //         }
-    //     } else {
-    //         // If report has negative voting weight, then
-    //         // 50% goes to the people who voted negatively,
-    //         for (uint256 i = 0; i < voters[id].length; i++) {
-    //             // if voted negatively
-    //             if (votes[id][people[i]] < 0) {
-    //                 // allAmountToDistribute(50%) * user weigth in % / all 100%
-    //                 int256 absVotes = abs(votes[id][people[i]]);
-    //                 int256 amountToSendVoter = (fiftyPercent * absVotes) / reportsWeight[id];
-    //                 AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
-    //             }
-    //         }
-    //         reportsWeight[id] = -reportsWeight[id];
-    //         // and 50% gets redistributed between the passed reports based on their weights
-    //         for (uint256 i = 0; i < reportsWeight.length; i++) {
-    //             // passed reports
-    //             if (reportsWeight[i] > 0) {
-    //                 // TODO: add smth what will be solving no-passed-at-this-week-reports isssue
-    //                 // allAmountToDistribute(50%) * report weigth in % / all 100%
-    //                 int256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / int256(totalReportsWeight);
-    //                 AMORxGuild.safeTransfer(to, value);(reportsAuthors[i], uint256(amountToSendReport));
-    //             }
-    //         }
-    //     }
-    //     // after last report will be finalized trigger will be swithched to false
-    //     triggerCounter -= 1;
-    //     if (triggerCounter == 0) {
-    //         trigger = false;
-    //         // When the voting for the 10 reports is finished, and there are ≥ 10 reports in the queue, 
-    //         // than the vote for the next report set instantly starts. 
-    //         if (reportsQueue.length >= 10) {
-    //             // The vote starts for all of the untouched reports in the queue.
-    //             for (uint256 i = 0; i < reportsQueue.length; i++) {
-    //                 voteForReport(reportsQueue[i], 0, true);
-    //             }
-    //             // clear queue
-    //             delete reportsQueue;
-    //         }
-    //     }
-    // }
-
     /// @notice distributes funds, depending on the report ids, for which votings were conducted.
-    function finalizeVoting() external {
-        if (block.timestamp < (timeVoting + ADDITIONAL_VOTING_TIME)) {
-            revert VotingTimeNotFinished();
-        }
-
+    function finalizeVoting() public {
         // nothing to finalize
         if (trigger == false) {
             revert ReportNotExists();
         }
 
+        if (block.timestamp < (timeVoting + ADDITIONAL_VOTING_TIME)) {
+            revert VotingTimeNotFinished();
+        }
         // // check if report with that id exists
         // if (reportsWeight.length < id) {
         //     // TODO: exit from this 'for' iteration // UPD: no need. we know that it is
         //     // revert ReportNotExists();
         // }
         for (uint256 id = 0; id < reportsWeight.length; id++) {
-
             // If report has positive voting weight (positive FX tokens) then report is accepted
             int256 fiftyPercent = (reportsWeight[id] * 50) / 100;
             address[] memory people = voters[id];
@@ -362,8 +275,8 @@ contract GuildController is Ownable {
             // triggerCounter -= 1;
             // if (triggerCounter == 0) {
             //     trigger = false;
-            //     // When the voting for the 10 reports is finished, and there are ≥ 10 reports in the queue, 
-            //     // than the vote for the next report set instantly starts. 
+            //     // When the voting for the 10 reports is finished, and there are ≥ 10 reports in the queue,
+            //     // than the vote for the next report set instantly starts.
             //     if (reportsQueue.length >= 10) {
             //         // The vote starts for all of the untouched reports in the queue.
             //         for (uint256 i = 0; i < reportsQueue.length; i++) {
@@ -381,7 +294,6 @@ contract GuildController is Ownable {
         delete reportsWeight;
         delete reportsVoting;
         totalReportsWeight = 0;
-
         delete reportsQueue;
         trigger = false;
     }
@@ -389,8 +301,20 @@ contract GuildController is Ownable {
     /// @notice distributes funds, depending on the report ids, for which votings were conducted.
     function startVoting() external {
         // nothing to finalize
-        if (trigger == true) {
+        // startVoting will not start voting if there is another voting in progress
+        if (trigger == true || block.timestamp < (timeVoting + ADDITIONAL_VOTING_TIME)) {
             revert VotingTimeNotFinished();
+        }
+
+        // check queque lenght. must be >= 10 reports
+        if (reportsQueue.length < 10) {
+            revert InvalidAmount();
+        }
+
+        // if the voting time is over, then startVoting will first call finalizeVoting and then start it's own functional
+        // if timeVoting == 0 then skip call finalizeVoting for the first start
+        if (block.timestamp > (timeVoting + ADDITIONAL_VOTING_TIME) && timeVoting != 0) {
+            finalizeVoting();
         }
 
         uint256 endTime = block.timestamp;
@@ -409,9 +333,18 @@ contract GuildController is Ownable {
         endTime = (endTime / DAY_IN_SECONDS) * DAY_IN_SECONDS;
         endTime += 12 * HOUR_IN_SECONDS;
 
+        for (uint256 i = 0; i < reportsQueue.length; i++) {
+            reportsAuthors[i] = queueReportsAuthors[i];
+            reportsWeight.push(0);
+            reportsVoting.push(0);
+            delete queueReportsAuthors[i];
+        }
+
         timeVoting = endTime;
         trigger = true;
+        delete reportsQueue;
     }
+
     /// @notice removes impact makers, resets mapping and array, and creates new array, mapping, and sets weights
     /// @param arrImpactMakers The array of impact makers
     /// @param arrWeight The array of weights of impact makers
