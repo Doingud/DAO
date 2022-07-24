@@ -3,7 +3,6 @@ pragma solidity 0.8.15;
 
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
-import "./utils/interfaces/IERC20Base.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -133,6 +132,10 @@ contract GuildController is Ownable {
     /// @param impactMaker New impact maker to be added
     /// @param weight Weight of the impact maker
     function addImpactMaker(address impactMaker, uint256 weight) external onlyOwner {
+        // check thet ImpactMaker won't be added twice
+        if (weights[impactMaker] > 0 ) {
+            revert InvalidParameters();
+        }
         impactMakers.push(impactMaker);
         weights[impactMaker] = weight;
         totalWeight += weight;
