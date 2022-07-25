@@ -97,6 +97,12 @@ describe('unit - Contract: GuildController', function () {
             expect(await controller.impactMakers(3)).to.equals(user2.address);
             expect(await controller.weights(user2.address)).to.equals(30);
         });
+
+        it('it fails to add ImpactMaker with the same address', async function () {
+            await expect(controller.connect(root).addImpactMaker(user2.address, 30)).to.be.revertedWith(
+                'InvalidParameters()'
+            );
+        });
     });
 
     context('» changeImpactMaker testing', () => {

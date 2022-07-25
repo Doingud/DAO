@@ -133,7 +133,7 @@ contract GuildController is Ownable {
     /// @param weight Weight of the impact maker
     function addImpactMaker(address impactMaker, uint256 weight) external onlyOwner {
         // check thet ImpactMaker won't be added twice
-        if (weights[impactMaker] > 0 ) {
+        if (weights[impactMaker] > 0) {
             revert InvalidParameters();
         }
         impactMakers.push(impactMaker);
