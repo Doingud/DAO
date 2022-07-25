@@ -40,10 +40,6 @@ contract GuildCloneFactory is ICloneFactory {
     address[] public dAMORxGuildTokens;
     address[] public fxAMORxGuildTokens;
 
-    error CreationFailed();
-
-    error ArrayMismatch();
-
     constructor(
         address _amorToken,
         address _amorxGuildToken,
