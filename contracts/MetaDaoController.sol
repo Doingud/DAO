@@ -41,10 +41,6 @@ contract MetaDaoController is AccessControl {
     /// Clone Factory
     address public guildFactory;
 
-    /// Distribution logic
-    /// Is a distribution cycle underway
-    bool public inDistribution;
-
     /// AMOR token
     IERC20 public amorToken;
 
@@ -66,11 +62,8 @@ contract MetaDaoController is AccessControl {
     /// @param  newWeight the amount of staked AMORxGuild in this guild
     /// @return bool the guild's balance was updated successfully
     function updateGuildWeight(uint256 newWeight) external onlyRole(GUILD_ROLE) returns (bool) {
-        if (claimStart + claimDuration && inDistribution) {
-            inDistribution = false;
-        }
         /// If `distribute` is still in cooldown, or if the guild weight does not change
-        if (inDistribution || guildWeight[msg.sender] == newWeight) {
+        if (guildWeight[msg.sender] == newWeight) {
             return false;
         }
         /// If the new weight is less than the current weight:
@@ -101,10 +94,6 @@ contract MetaDaoController is AccessControl {
     /// @notice Explain to an end user what this does
     /// @dev Explain to a developer any extra details
     function distribute() public {
-        if (inDistribution) {
-            revert AlreadyDistributing();
-        }
-        inDistribution = true;
         claimStart = block.timestamp;
         uint[] memory currentGuildWeight;
         for (uint i = 0; i < guilds.length; i++){
@@ -160,7 +149,7 @@ contract MetaDaoController is AccessControl {
     /// @param tokenSymbol the symbol for the Guild's token
     function createGuild(string memory name, string memory tokenSymbol) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
-        IGuildFactory(guildFactory).deployGuild(name,tokenSymbol);
+        ICloneFactory(guildFactory).deployGuild(name,tokenSymbol);
         
         
     }
