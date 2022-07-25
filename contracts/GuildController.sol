@@ -28,8 +28,7 @@ contract GuildController is Ownable {
     uint256 public totalWeight; // total Weight of all of the impact makers
     uint256 public timeVoting; // deadlines for the votes for reports
 
-    IERC20 private ERC20AMORxGuild;
-    address public AMORxGuild;
+    IERC20 private AMORxGuild;
     address public FXAMORxGuild;
 
     // uint256 public triggerCounter;
@@ -72,8 +71,7 @@ contract GuildController is Ownable {
 
         _transferOwnership(initOwner);
 
-        AMORxGuild = AMORxGuild_;
-        ERC20AMORxGuild = IERC20(AMORxGuild_);
+        AMORxGuild = IERC20(AMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
         ADDITIONAL_VOTING_TIME = 0;
 
@@ -100,15 +98,15 @@ contract GuildController is Ownable {
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     function donate(uint256 amount) external returns (uint256) {
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
-        if (ERC20AMORxGuild.balanceOf(msg.sender) < amount || amount < 10) {
+        if (AMORxGuild.balanceOf(msg.sender) < amount || amount < 10) {
             revert InvalidAmount();
         }
 
         // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
         // which are going to be owned by the user.
         uint256 FxGAmount = (amount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
-        ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
-        ERC20AMORxGuild.approve(FXAMORxGuild, FxGAmount);
+        AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
+        AMORxGuild.approve(FXAMORxGuild, FxGAmount);
         IFXAMORxGuild(FXAMORxGuild).stake(msg.sender, FxGAmount);
 
         uint256 decAmount = amount - FxGAmount; //decreased amount: other 90%
@@ -117,7 +115,7 @@ contract GuildController is Ownable {
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
             // AMORxGuild.transferFrom(msg.sender, impactMakers[i], amountToSendVoter);
-            ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
+            AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
             claimableTokens[impactMakers[i]] += amountToSendVoter; // TODO: fix formula
 
         }
@@ -148,16 +146,6 @@ contract GuildController is Ownable {
         uint256 newReportId = reportsQueue.length; // reportsVoting.length;
 
         queueReportsAuthors[newReportId] = msg.sender;
-        // reportsAuthors[newReportId] = msg.sender;
-        // reportsWeight.push(0);
-        // reportsVoting.push(0);
-
-        // Reports are getting collected, up until the point there are at least ten untouched reports.
-        // If there are ten reports, then the week is given to vote on the 10 reports.
-        // triggerCounter += 1;
-        // if (triggerCounter >= 10 && trigger == false) {
-        //     trigger = true;
-        // }
 
         // During the vote reports can be added, but they will be waiting and vote for them won’t start.
         // When the voting for the 10 reports is finished, and there are ≥ 10 reports in the queue,
@@ -218,7 +206,7 @@ contract GuildController is Ownable {
         }
     }
 
-    /// @notice distributes funds, depending on the report ids, for which votings were conducted.
+    /// @notice distributes funds, depending on the report ids, for which votings were conducted
     function finalizeVoting() public {
         // nothing to finalize
         if (trigger == false) {
@@ -228,11 +216,7 @@ contract GuildController is Ownable {
         if (block.timestamp < (timeVoting + ADDITIONAL_VOTING_TIME)) {
             revert VotingTimeNotFinished();
         }
-        // // check if report with that id exists
-        // if (reportsWeight.length < id) {
-        //     // TODO: exit from this 'for' iteration // UPD: no need. we know that it is
-        //     // revert ReportNotExists();
-        // }
+
         for (uint256 id = 0; id < reportsWeight.length; id++) {
             // If report has positive voting weight (positive FX tokens) then report is accepted
             int256 fiftyPercent = (reportsWeight[id] * 50) / 100;
@@ -241,7 +225,7 @@ contract GuildController is Ownable {
             if (reportsVoting[id] > 0) {
                 // If report has positive voting weight, then funds go 50-50%,
                 // 50% go to the report creater,
-                ERC20AMORxGuild.safeTransfer(reportsAuthors[id], uint256(fiftyPercent));
+                AMORxGuild.safeTransfer(reportsAuthors[id], uint256(fiftyPercent));
 
                 // and 50% goes to the people who voted positively
                 for (uint256 i = 0; i < voters[id].length; i++) {
@@ -249,7 +233,7 @@ contract GuildController is Ownable {
                     if (votes[id][people[i]] > 0) {
                         // 50% * user weigth / all 100%
                         int256 amountToSendVoter = (int256(fiftyPercent) * votes[id][people[i]]) / reportsWeight[id];
-                        ERC20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
+                        AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
                     }
                     delete votes[id][people[i]];
                 }
@@ -262,50 +246,36 @@ contract GuildController is Ownable {
                         // allAmountToDistribute(50%) * user weigth in % / all 100%
                         int256 absVotes = abs(votes[id][people[i]]);
                         int256 amountToSendVoter = (fiftyPercent * absVotes) / reportsWeight[id];
-                        ERC20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
+                        AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
                     }
                     delete votes[id][people[i]];
                 }
-                reportsWeight[id] = -reportsWeight[id];
+                // reportsWeight[id] = -reportsWeight[id]; // make the value negative for not-pass check below //wrong
                 // and 50% gets redistributed between the passed reports based on their weights
                 for (uint256 i = 0; i < reportsWeight.length; i++) {
                     // passed reports
-                    if (reportsWeight[i] > 0) {
-                        // TODO: add smth what will be solving no-passed-at-this-week-reports isssue
+                    if (reportsVoting[i] > 0) {
                         // allAmountToDistribute(50%) * report weigth in % / all 100%
                         int256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / int256(totalReportsWeight);
-                        ERC20AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
+                        AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
                     }
                 }
             }
-            // // after last report will be finalized trigger will be swithched to false
-            // triggerCounter -= 1;
-            // if (triggerCounter == 0) {
-            //     trigger = false;
-            //     // When the voting for the 10 reports is finished, and there are ≥ 10 reports in the queue,
-            //     // than the vote for the next report set instantly starts.
-            //     if (reportsQueue.length >= 10) {
-            //         // The vote starts for all of the untouched reports in the queue.
-            //         for (uint256 i = 0; i < reportsQueue.length; i++) {
-            //             voteForReport(reportsQueue[i], 0, true);
-            //         }
-            //         // clear queue
-            //         delete reportsQueue;
-            //     }
-            // }
 
             delete voters[id];
-            // delete reportsAuthors[id];
+        }
+
+        for (uint256 i = 0; i < reportsWeight.length; i++) {
+            delete reportsAuthors[i];
         }
 
         delete reportsWeight;
         delete reportsVoting;
         totalReportsWeight = 0;
-        delete reportsQueue;
         trigger = false;
     }
 
-    /// @notice distributes funds, depending on the report ids, for which votings were conducted.
+    /// @notice starts voting and clears reports queue
     function startVoting() external {
         // nothing to finalize
         // startVoting will not start voting if there is another voting in progress
@@ -410,7 +380,7 @@ contract GuildController is Ownable {
         if (impact != msg.sender) {
             revert Unauthorized();
         }
-        ERC20AMORxGuild.safeTransfer(impact, claimableTokens[impact]);
+        AMORxGuild.safeTransfer(impact, claimableTokens[impact]);
         claimableTokens[impact] = 0;
     }
 
