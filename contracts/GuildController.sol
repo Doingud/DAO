@@ -2,6 +2,8 @@
 pragma solidity 0.8.15;
 
 import "./utils/interfaces/IFXAMORxGuild.sol";
+import "./utils/interfaces/IAmorGuildToken.sol";
+
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -21,12 +23,13 @@ contract GuildController is Ownable {
     uint256 public totalReportsWeight; // total Weight of all of reports
 
     address[] public impactMakers; // list of impactMakers of this DAO
-    mapping(address => uint256) claimableTokens; // amount of tokens each specific address(impactMaker) can claim
+    mapping(address => uint256) public claimableTokens; // amount of tokens each specific address(impactMaker) can claim
     mapping(address => uint256) public weights; // weight of each specific Impact Maker/Builder
     uint256 public totalWeight; // total Weight of all of the impact makers
     uint256 public timeVoting; // deadlines for the votes for reports
 
-    IERC20 private AMORxGuild;
+    IERC20 private ERC20AMORxGuild;
+    address public AMORxGuild;
     address public FXAMORxGuild;
 
     // uint256 public triggerCounter;
@@ -36,8 +39,8 @@ contract GuildController is Ownable {
 
     uint256 public ADDITIONAL_VOTING_TIME;
     uint256 public constant WEEK = 7 days; // 1 week is the time for the users to vore for the specific report
-    uint256 public constant DAY_IN_SECONDS = 86400;
-    uint256 constant HOUR_IN_SECONDS = 3600;
+    uint256 public constant DAY = 1 days;
+    uint256 public constant HOUR = 1 hours;
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
 
@@ -69,7 +72,8 @@ contract GuildController is Ownable {
 
         _transferOwnership(initOwner);
 
-        AMORxGuild = IERC20(AMORxGuild_);
+        AMORxGuild = AMORxGuild_;
+        ERC20AMORxGuild = IERC20(AMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
         ADDITIONAL_VOTING_TIME = 0;
 
@@ -96,15 +100,15 @@ contract GuildController is Ownable {
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     function donate(uint256 amount) external returns (uint256) {
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
-        if (AMORxGuild.balanceOf(msg.sender) < amount || amount < 10) {
+        if (ERC20AMORxGuild.balanceOf(msg.sender) < amount || amount < 10) {
             revert InvalidAmount();
         }
 
         // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
         // which are going to be owned by the user.
         uint256 FxGAmount = (amount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
-        AMORxGuild.transferFrom(msg.sender, address(this), FxGAmount);
-        AMORxGuild.approve(FXAMORxGuild, FxGAmount);
+        ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
+        ERC20AMORxGuild.approve(FXAMORxGuild, FxGAmount);
         IFXAMORxGuild(FXAMORxGuild).stake(msg.sender, FxGAmount);
 
         uint256 decAmount = amount - FxGAmount; //decreased amount: other 90%
@@ -112,7 +116,10 @@ contract GuildController is Ownable {
         // based on the weights distribution, tokens will be automatically redirected to the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
-            AMORxGuild.transferFrom(msg.sender, impactMakers[i], amountToSendVoter);
+            // AMORxGuild.transferFrom(msg.sender, impactMakers[i], amountToSendVoter);
+            ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
+            claimableTokens[impactMakers[i]] += amountToSendVoter; // TODO: fix formula
+
         }
 
         return amount;
@@ -234,7 +241,7 @@ contract GuildController is Ownable {
             if (reportsVoting[id] > 0) {
                 // If report has positive voting weight, then funds go 50-50%,
                 // 50% go to the report creater,
-                AMORxGuild.transfer(reportsAuthors[id], uint256(fiftyPercent));
+                ERC20AMORxGuild.safeTransfer(reportsAuthors[id], uint256(fiftyPercent));
 
                 // and 50% goes to the people who voted positively
                 for (uint256 i = 0; i < voters[id].length; i++) {
@@ -242,7 +249,7 @@ contract GuildController is Ownable {
                     if (votes[id][people[i]] > 0) {
                         // 50% * user weigth / all 100%
                         int256 amountToSendVoter = (int256(fiftyPercent) * votes[id][people[i]]) / reportsWeight[id];
-                        AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
+                        ERC20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
                     }
                     delete votes[id][people[i]];
                 }
@@ -255,7 +262,7 @@ contract GuildController is Ownable {
                         // allAmountToDistribute(50%) * user weigth in % / all 100%
                         int256 absVotes = abs(votes[id][people[i]]);
                         int256 amountToSendVoter = (fiftyPercent * absVotes) / reportsWeight[id];
-                        AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
+                        ERC20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
                     }
                     delete votes[id][people[i]];
                 }
@@ -267,7 +274,7 @@ contract GuildController is Ownable {
                         // TODO: add smth what will be solving no-passed-at-this-week-reports isssue
                         // allAmountToDistribute(50%) * report weigth in % / all 100%
                         int256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / int256(totalReportsWeight);
-                        AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
+                        ERC20AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
                     }
                 }
             }
@@ -326,12 +333,12 @@ contract GuildController is Ownable {
         } else if (day == 6 || day == 5) {
             // if vote started on Friday/Saturday, then the end will be next week
             // end of the next week
-            endTime += WEEK + (DAY_IN_SECONDS * (7 - day));
+            endTime += WEEK + (DAY * (7 - day));
         } else {
-            endTime += WEEK - (DAY_IN_SECONDS * day);
+            endTime += WEEK - (DAY * day);
         }
-        endTime = (endTime / DAY_IN_SECONDS) * DAY_IN_SECONDS;
-        endTime += 12 * HOUR_IN_SECONDS;
+        endTime = (endTime / DAY) * DAY;
+        endTime += 12 * HOUR;
 
         for (uint256 i = 0; i < reportsQueue.length; i++) {
             reportsAuthors[i] = queueReportsAuthors[i];
@@ -357,8 +364,59 @@ contract GuildController is Ownable {
         }
     }
 
+    /// @notice allows to add impactMaker with a specific weight
+    /// Only avatar can add one, based on the popular vote
+    /// @param impactMaker New impact maker to be added
+    /// @param weight Weight of the impact maker
+    function addImpactMaker(address impactMaker, uint256 weight) external onlyOwner {
+        // check thet ImpactMaker won't be added twice
+        if (weights[impactMaker] > 0) {
+            revert InvalidParameters();
+        }
+        impactMakers.push(impactMaker);
+        weights[impactMaker] = weight;
+        totalWeight += weight;
+    }
+
+    /// @notice allows to add change impactMaker weight
+    /// @param impactMaker Impact maker to be changed
+    /// @param weight Weight of the impact maker
+    function changeImpactMaker(address impactMaker, uint256 weight) external onlyOwner {
+        if (weight > weights[impactMaker]) {
+            totalWeight += weight - weights[impactMaker];
+        } else {
+            totalWeight -= weights[impactMaker] - weight;
+        }
+        weights[impactMaker] = weight;
+    }
+
+    /// @notice allows to remove impactMaker with specific address
+    /// @param impactMaker Impact maker to be removed
+    function removeImpactMaker(address impactMaker) external onlyOwner {
+        for (uint256 i = 0; i < impactMakers.length; i++) {
+            if (impactMakers[i] == impactMaker) {
+                impactMakers[i] = impactMakers[impactMakers.length - 1];
+                impactMakers.pop();
+                break;
+            }
+        }
+        totalWeight -= weights[impactMaker];
+        delete weights[impactMaker];
+    }
+
+    /// @notice allows to claim tokens for specific ImpactMaker address
+    /// @param impact Impact maker to to claim tokens from
+    function claim(address impact) external {
+        if (impact != msg.sender) {
+            revert Unauthorized();
+        }
+        ERC20AMORxGuild.safeTransfer(impact, claimableTokens[impact]);
+        claimableTokens[impact] = 0;
+    }
+
+
     function getWeekday(uint256 timestamp) public pure returns (uint8) {
-        return uint8((timestamp / DAY_IN_SECONDS + 4) % 7); // day of week = (floor(T / 86400) + 4) mod 7.
+        return uint8((timestamp / DAY + 4) % 7); // day of week = (floor(T / 86400) + 4) mod 7.
     }
 
     function abs(int256 x) private pure returns (int256) {

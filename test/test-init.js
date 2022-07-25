@@ -50,8 +50,10 @@ const getTokens = async (setup) => {
 
     /*
     const AmorGuildTokenProxyFactory = await ethers.getContractFactory('AmorGuildProxy', setup.roles.root);
+
     const GuildTokenFactory = await ethers.getContractFactory('GuildTokenFactory', setup.roles.root);
     */
+
     //  Amor Tokens
     const AmorTokenImplementation = await AmorTokenFactory.deploy();
     const AmorTokenMockUpgrade = await AmorTokenFactory.deploy();
@@ -88,7 +90,7 @@ const controller = async (setup) => {
 
   await controller.init(
     setup.roles.root.address, // owner
-    setup.tokens.AmorTokenImplementation.address, // AMORxGuild
+    setup.tokens.AmorGuildToken.address, // AMORxGuild
     setup.tokens.FXAMORxGuild.address // FXAMORxGuild
   );
 
@@ -100,11 +102,18 @@ const controller = async (setup) => {
     setup.roles.root.address // multisig
   );
 
+  await setup.tokens.AmorGuildToken.init(
+    setup.tokens.AmorTokenImplementation.address, 
+    'GUILD_ONE', 
+    'TOKEN_ONE',
+    controller.address //controller
+  );
+
   await setup.tokens.FXAMORxGuild.init(
     "DoinGud MetaDAO", 
     "FXAMORxGuild", 
     controller.address, //controller
-    setup.tokens.AmorTokenImplementation.address
+    setup.tokens.AmorGuildToken.address // AMORxGuild
   );
 
   return controller;
