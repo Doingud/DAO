@@ -6,7 +6,7 @@ pragma solidity 0.8.15;
 /// @author Daoism Systems Team
 /// @dev    ERC1167 Pattern
 
-/*  
+/*
  *  @dev https://eips.ethereum.org/EIPS/eip-1167[EIP 1167] is a standard for
  *  deploying minimal proxy contracts, also known as "clones".
  *
@@ -18,8 +18,8 @@ pragma solidity 0.8.15;
  *
  *  In conjunction with this, the token contracts are custom ERC20 implementations
  *  that use the ERC20Base.sol contracts developed for DoinGud.
- *  
-*/
+ *
+ */
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -41,8 +41,8 @@ contract GuildCloneFactory is ICloneFactory, Ownable {
     /// The DoinGud generic proxy contract (the target)
     address public cloneTarget;
     address[] public guilds;
-    address[] public dAMORxGuildTokens;
     address[] public fxAMORxGuildTokens;
+    address[] public dAMORxGuildTokens;
 
     uint256 public defaultGaurdianThreshold = 10;
 
@@ -52,7 +52,7 @@ contract GuildCloneFactory is ICloneFactory, Ownable {
         address _fxAMORxGuildToken,
         address _dAMORxGuildToken,
         address _doinGudProxy
-        ) {
+    ) {
         amorToken = _amorToken;
         /// Set the implementation addresses
         amorxGuildToken = _amorxGuildToken;
@@ -73,35 +73,39 @@ contract GuildCloneFactory is ICloneFactory, Ownable {
         address clonedContract;
 
         /// Deploy AMORxGuild contract
-        tokenName = string.concat("AMORx",_name);
-        tokenSymbol = string.concat("Ax",_symbol);
+        tokenName = string.concat("AMORx", _name);
+        tokenSymbol = string.concat("Ax", _symbol);
         clonedContract = _deployGuild(tokenName, tokenSymbol, amorxGuildToken);
         guilds.push(clonedContract);
 
         /// Deploy FXAMORxGuild contract
-        tokenName = string.concat("FXAMORx",_name);
-        tokenSymbol = string.concat("FXx",_symbol);
+        tokenName = string.concat("FXAMORx", _name);
+        tokenSymbol = string.concat("FXx", _symbol);
         clonedContract = _deployTokenContracts(tokenName, tokenSymbol, fxAMORxGuildToken);
         fxAMORxGuildTokens.push(clonedContract);
 
         /// Deploy dAMORxGuild contract
-        tokenName = string.concat("dAMORx",_name);
-        tokenSymbol = string.concat("Dx",_symbol);
+        tokenName = string.concat("dAMORx", _name);
+        tokenSymbol = string.concat("Dx", _symbol);
         clonedContract = _deployTokenContracts(tokenName, tokenSymbol, dAMORxGuildToken);
         dAMORxGuildTokens.push(clonedContract);
-        
+
         /// Check that all contracts were added to the respective arrays
         if (guilds.length != dAMORxGuildTokens.length || guilds.length != fxAMORxGuildTokens.length) {
             revert ArrayMismatch();
         }
-        }
+    }
 
     /// @notice Internal function to deploy clone of an implementation contract
-    /// @param  guildName name of token 
+    /// @param  guildName name of token
     /// @param  guildSymbol symbol of token
     /// @param  _implementation address of the contract to be cloned
     /// @return address of the deployed contract
-    function _deployGuild(string memory guildName, string memory guildSymbol, address _implementation) internal returns (address) {
+    function _deployGuild(
+        string memory guildName,
+        string memory guildSymbol,
+        address _implementation
+    ) internal returns (address) {
         IAmorxGuild proxyContract;
         proxyContract = IAmorxGuild(Clones.clone(cloneTarget));
 
@@ -115,12 +119,16 @@ contract GuildCloneFactory is ICloneFactory, Ownable {
         return address(proxyContract);
     }
 
-        /// @notice Internal function to deploy clone of an implementation contract
-    /// @param  guildName name of token 
+    /// @notice Internal function to deploy clone of an implementation contract
+    /// @param  guildName name of token
     /// @param  guildSymbol symbol of token
     /// @param  _implementation address of the contract to be cloned
     /// @return address of the deployed contract
-    function _deployTokenContracts(string memory guildName, string memory guildSymbol, address _implementation) internal returns (address) {
+    function _deployTokenContracts(
+        string memory guildName,
+        string memory guildSymbol,
+        address _implementation
+    ) internal returns (address) {
         IDoinGudProxy proxyContract;
         proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
         proxyContract.initProxy(_implementation);
@@ -128,10 +136,17 @@ contract GuildCloneFactory is ICloneFactory, Ownable {
         if (address(proxyContract) == address(0)) {
             revert CreationFailed();
         }
-
+        /// Check which token contract should be deployed
         if (guilds.length == fxAMORxGuildTokens.length) {
-            IdAMORxGuild(address(proxyContract)).init(guildName, guildSymbol, msg.sender, guilds[guilds.length - 1], defaultGaurdianThreshold);
+            IdAMORxGuild(address(proxyContract)).init(
+                guildName,
+                guildSymbol,
+                msg.sender,
+                guilds[guilds.length - 1],
+                defaultGaurdianThreshold
+            );
         } else {
+            /// FXAMOR uses the same `init` layout as IAMORxGuild
             IAmorxGuild(address(proxyContract)).init(guildName, guildSymbol, msg.sender, guilds[guilds.length - 1]);
         }
 

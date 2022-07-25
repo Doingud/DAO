@@ -70,8 +70,6 @@ describe("unit - Clone Factory", function () {
 
   context("function: deployGuildContracts", () => {
       it("Should deploy the Guild Token Contracts", async function () {
-
-
         expect(await GUILD_ONE_AMORXGUILD.name()).to.equal("AMORx"+MOCK_GUILD_NAMES[0]);
       });
 
@@ -94,6 +92,7 @@ describe("unit - Clone Factory", function () {
       it("Should have named the FXAMORxGuild Symbol correctly", async function () {
         expect(await GUILD_ONE_FXAMORXGUILD.symbol()).to.equal("FXx"+MOCK_GUILD_SYMBOLS[0]);
       });
+
   });
 
   context("function: amorToken()", ()=> {
@@ -127,8 +126,27 @@ describe("unit - Clone Factory", function () {
 
     it("Should not return an address outside the array range", async function () {
       await expect(CLONE_FACTORY.guilds(2)).to.be.revertedWith(null);
-    })
-    
+    });
+  })
+
+  context("function: fxAMORxGuildTokens()", () => {
+    it("Should return the FX Token address", async function () {
+      expect(await CLONE_FACTORY.fxAMORxGuildTokens(0)).to.equal(GUILD_ONE_FXAMORXGUILD.address);
+    });
+
+    it("Should not return an address outside the array range", async function () {
+      await expect(CLONE_FACTORY.fxAMORxGuildTokens(2)).to.be.revertedWith(null);
+    });
+  })
+
+  context("function: dAMORxGuildTokens()", () => {
+    it("Should return the dAMORxGuild Token address", async function () {
+      expect(await CLONE_FACTORY.dAMORxGuildTokens(0)).to.equal(GUILD_ONE_DAMORXGUILD.address);
+    });
+
+    it("Should not return an address outside the array range", async function () {
+      await expect(CLONE_FACTORY.dAMORxGuildTokens(2)).to.be.revertedWith(null);
+    });
   })
 
 });
