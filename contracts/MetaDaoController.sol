@@ -20,6 +20,8 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract MetaDaoController is AccessControl {
 
+    error InvalidImpactMaker();
+
     address[] public guilds;
     //  Array of addresses of Guilds
     mapping(address => uint256) public guildWeight;
@@ -171,18 +173,17 @@ contract MetaDaoController is AccessControl {
 
     /// @notice removes guild based on id
     /// @dev Explain to a developer any extra details
-    /// @param id the index of the guild in guilds[]
-    function removeGuild(uint256 id) external {
+    /// @param index the index of the guild in guilds[]
+    /// @param controller the address of the guild controller to remove
+    function removeImpactMaker(uint256 index, address controller) external {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
-
-        require(id < guilds.length, "index out of bound");
-
-        for (uint i = id; i < guilds.length - 1; i++) {
-            guilds[i] = guilds[i + 1];
-        }
-        guilds.pop();
-
-    }
+        if (guilds[index] == controller) {
+            guilds[index] = guilds[guilds.length - 1];
+            guilds.pop();
+            } else {
+                revert InvalidImpactMaker();
+            }
+}
 
   
 
