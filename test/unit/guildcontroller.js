@@ -13,7 +13,6 @@ const percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
 const averageLockTime = time.duration.days(7);
 const twoWeeks = time.duration.days(14);
 
-const TEST_TRANSFER_BIGGER = 100000;
 const TEST_TRANSFER_SMALLER = 80;
 
 let AMOR;
@@ -33,9 +32,6 @@ let report;
 let r;
 let s;
 let v;
-let operatorAmountOfAMORxGuild;
-let userAmountOfAMORxGuild;
-let stakerAmountOfAMORxGuild;
 
 describe('unit - Contract: GuildController', function () {
 
@@ -185,20 +181,17 @@ describe('unit - Contract: GuildController', function () {
             let amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
 
             sum += amountToSendImpactMaker;
-            userAmountOfAMORxGuild = sum;
             expect((await FXAMORxGuild.balanceOf(user.address)).toString()).to.equal(FxGAmount.toString());
             expect((await controller.claimableTokens(impactMaker.address)).toString()).to.equal(amountToSendImpactMaker.toString());            
 
             weight = await controller.weights(staker.address);
             amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
             sum += amountToSendImpactMaker;
-            stakerAmountOfAMORxGuild = sum;
             expect((await controller.claimableTokens(staker.address)).toString()).to.equal(amountToSendImpactMaker.toString());
 
             weight = await controller.weights(operator.address);
             amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
             sum += amountToSendImpactMaker;
-            operatorAmountOfAMORxGuild = sum;
             expect((await controller.claimableTokens(operator.address)).toString()).to.equal(amountToSendImpactMaker.toString());
         
             expect((await AMORxGuild.balanceOf(controller.address)).toString()).to.equal(sum.toString());            
@@ -382,21 +375,11 @@ describe('unit - Contract: GuildController', function () {
     context('» finalizeVoting testing', () => {
 
         it('finalizes voting', async function () {
-            const id = 0;
             const balanceBefore = await AMORxGuild.balanceOf(operator.address);
             time.increase(twoWeeks);
             await controller.connect(operator).finalizeVoting();
             const balanceAfter = balanceBefore.add(2);
             expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
         });
-
-        // it('finalizes voting for negative report', async function () {
-        //     const id = 1;
-        //     const balanceBefore = await AMORxGuild.balanceOf(operator.address);
-        //     time.increase(twoWeeks);
-        //     await controller.connect(operator).finalizeReportVoting(id);
-        //     const balanceAfter = balanceBefore;
-        //     expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
-        // });
     });
 });

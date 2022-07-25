@@ -114,10 +114,8 @@ contract GuildController is Ownable {
         // based on the weights distribution, tokens will be automatically redirected to the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
-            // AMORxGuild.transferFrom(msg.sender, impactMakers[i], amountToSendVoter);
             AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
-            claimableTokens[impactMakers[i]] += amountToSendVoter; // TODO: fix formula
-
+            claimableTokens[impactMakers[i]] += amountToSendVoter;
         }
 
         return amount;
@@ -383,7 +381,6 @@ contract GuildController is Ownable {
         AMORxGuild.safeTransfer(impact, claimableTokens[impact]);
         claimableTokens[impact] = 0;
     }
-
 
     function getWeekday(uint256 timestamp) public pure returns (uint8) {
         return uint8((timestamp / DAY + 4) % 7); // day of week = (floor(T / 86400) + 4) mod 7.
