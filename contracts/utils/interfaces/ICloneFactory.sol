@@ -7,11 +7,9 @@ pragma solidity 0.8.15;
 /// @author Daoism Systems Team
 
 interface ICloneFactory {
-
     error CreationFailed();
 
     error ArrayMismatch();
 
     function deployGuildContracts(string memory _name, string memory _symbol) external;
-
 }
