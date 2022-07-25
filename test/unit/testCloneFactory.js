@@ -120,4 +120,15 @@ describe("unit - Clone Factory", function () {
     })
   });
 
+  context("function: guilds()", () => {
+    it("Should return the guild address", async function () {
+      expect(await CLONE_FACTORY.guilds(0)).to.equal(GUILD_ONE_AMORXGUILD.address);
+    });
+
+    it("Should not return an address outside the array range", async function () {
+      await expect(CLONE_FACTORY.guilds(2)).to.be.revertedWith(null);
+    })
+    
+  })
+
 });

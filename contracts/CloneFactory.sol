@@ -27,6 +27,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
 import "./utils/interfaces/ICloneFactory.sol";
 import "./utils/interfaces/IDoinGudProxy.sol";
+import "./utils/interfaces/IdAMORxGuild.sol";
 
 contract GuildCloneFactory is ICloneFactory, Ownable {
     /// The AMOR Token address
@@ -42,6 +43,8 @@ contract GuildCloneFactory is ICloneFactory, Ownable {
     address[] public guilds;
     address[] public dAMORxGuildTokens;
     address[] public fxAMORxGuildTokens;
+
+    uint256 public defaultGaurdianThreshold = 10;
 
     constructor(
         address _amorToken,
@@ -72,19 +75,19 @@ contract GuildCloneFactory is ICloneFactory, Ownable {
         /// Deploy AMORxGuild contract
         tokenName = string.concat("AMORx",_name);
         tokenSymbol = string.concat("Ax",_symbol);
-        clonedContract = _deployContract(tokenName, tokenSymbol, amorxGuildToken);
+        clonedContract = _deployGuild(tokenName, tokenSymbol, amorxGuildToken);
         guilds.push(clonedContract);
 
         /// Deploy FXAMORxGuild contract
         tokenName = string.concat("FXAMORx",_name);
         tokenSymbol = string.concat("FXx",_symbol);
-        clonedContract = _deployContract(tokenName, tokenSymbol, fxAMORxGuildToken);
+        clonedContract = _deployTokenContracts(tokenName, tokenSymbol, fxAMORxGuildToken);
         fxAMORxGuildTokens.push(clonedContract);
 
         /// Deploy dAMORxGuild contract
         tokenName = string.concat("dAMORx",_name);
         tokenSymbol = string.concat("Dx",_symbol);
-        clonedContract = _deployContract(tokenName, tokenSymbol, dAMORxGuildToken);
+        clonedContract = _deployTokenContracts(tokenName, tokenSymbol, dAMORxGuildToken);
         dAMORxGuildTokens.push(clonedContract);
         
         /// Check that all contracts were added to the respective arrays
@@ -98,7 +101,7 @@ contract GuildCloneFactory is ICloneFactory, Ownable {
     /// @param  guildSymbol symbol of token
     /// @param  _implementation address of the contract to be cloned
     /// @return address of the deployed contract
-    function _deployContract(string memory guildName, string memory guildSymbol, address _implementation) internal returns (address) {
+    function _deployGuild(string memory guildName, string memory guildSymbol, address _implementation) internal returns (address) {
         IAmorxGuild proxyContract;
         proxyContract = IAmorxGuild(Clones.clone(cloneTarget));
 
@@ -107,7 +110,30 @@ contract GuildCloneFactory is ICloneFactory, Ownable {
         }
 
         IDoinGudProxy(address(proxyContract)).initProxy(_implementation);
-        proxyContract.init(amorToken, guildName, guildSymbol, msg.sender);
+        proxyContract.init(guildName, guildSymbol, amorToken, msg.sender);
+
+        return address(proxyContract);
+    }
+
+        /// @notice Internal function to deploy clone of an implementation contract
+    /// @param  guildName name of token 
+    /// @param  guildSymbol symbol of token
+    /// @param  _implementation address of the contract to be cloned
+    /// @return address of the deployed contract
+    function _deployTokenContracts(string memory guildName, string memory guildSymbol, address _implementation) internal returns (address) {
+        IDoinGudProxy proxyContract;
+        proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
+        proxyContract.initProxy(_implementation);
+
+        if (address(proxyContract) == address(0)) {
+            revert CreationFailed();
+        }
+
+        if (guilds.length == fxAMORxGuildTokens.length) {
+            IdAMORxGuild(address(proxyContract)).init(guildName, guildSymbol, msg.sender, guilds[guilds.length - 1], defaultGaurdianThreshold);
+        } else {
+            IAmorxGuild(address(proxyContract)).init(guildName, guildSymbol, msg.sender, guilds[guilds.length - 1]);
+        }
 
         return address(proxyContract);
     }
