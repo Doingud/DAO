@@ -34,8 +34,8 @@ contract GuildController is Ownable {
 
     uint256 public ADDITIONAL_VOTING_TIME;
     uint256 public constant WEEK = 7 days; // 1 week is the time for the users to vore for the specific report
-    uint256 public constant DAY_IN_SECONDS = 86400;
-    uint256 constant HOUR_IN_SECONDS = 3600;
+    uint256 public constant DAY = 1 days;
+    uint256 public constant HOUR = 1 hours;
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
 
