@@ -22,10 +22,13 @@ pragma solidity 0.8.15;
 */
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
 import "./utils/interfaces/IAmorGuildToken.sol";
 import "./utils/interfaces/ICloneFactory.sol";
+import "./utils/interfaces/IDoinGudProxy.sol";
 
-contract GuildCloneFactory is ICloneFactory {
+contract GuildCloneFactory is ICloneFactory, Ownable {
     /// The AMOR Token address
     address public amorToken;
     /// The address for the AMORxGuild Token implementation
@@ -68,20 +71,20 @@ contract GuildCloneFactory is ICloneFactory {
 
         /// Deploy AMORxGuild contract
         tokenName = string.concat("AMORx",_name);
-        tokenSymbol = string.concat("A",_symbol);
-        clonedContract = _deployContract(tokenName, _symbol, amorxGuildToken);
+        tokenSymbol = string.concat("Ax",_symbol);
+        clonedContract = _deployContract(tokenName, tokenSymbol, amorxGuildToken);
         guilds.push(clonedContract);
 
         /// Deploy FXAMORxGuild contract
         tokenName = string.concat("FXAMORx",_name);
-        tokenSymbol = string.concat("FX",_symbol);
-        clonedContract = _deployContract(tokenName, _symbol, fxAMORxGuildToken);
+        tokenSymbol = string.concat("FXx",_symbol);
+        clonedContract = _deployContract(tokenName, tokenSymbol, fxAMORxGuildToken);
         fxAMORxGuildTokens.push(clonedContract);
 
         /// Deploy dAMORxGuild contract
         tokenName = string.concat("dAMORx",_name);
-        tokenSymbol = string.concat("D",_symbol);
-        clonedContract = _deployContract(tokenName, _symbol, dAMORxGuildToken);
+        tokenSymbol = string.concat("Dx",_symbol);
+        clonedContract = _deployContract(tokenName, tokenSymbol, dAMORxGuildToken);
         dAMORxGuildTokens.push(clonedContract);
         
         /// Check that all contracts were added to the respective arrays
@@ -103,8 +106,8 @@ contract GuildCloneFactory is ICloneFactory {
             revert CreationFailed();
         }
 
-        proxyContract.initProxy(_implementation);
-        proxyContract.init(amorToken, guildName, guildSymbol);
+        IDoinGudProxy(address(proxyContract)).initProxy(_implementation);
+        proxyContract.init(amorToken, guildName, guildSymbol, msg.sender);
 
         return address(proxyContract);
     }

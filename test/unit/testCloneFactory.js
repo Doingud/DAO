@@ -18,13 +18,14 @@ use(solidity);
   let AMOR_TOKEN;
   let AMOR_GUILD_TOKEN;
   let CLONE_FACTORY;
+  let FX_AMOR_TOKEN;
+  let DAMOR_GUILD_TOKEN;
   let GUILD_ONE_AMORXGUILD;
   let GUILD_ONE_DAMORXGUILD;
   let GUILD_ONE_FXAMORXGUILD;
-  let GUILD_TWO;
-
-  const TEST_TAX_DEDUCTED_AMOUNT = 95000000000000000000n;
-  const TEST_BALANCE_ROOT = 9999900000000000000000000n;
+  let GUILD_TWO_AMORXGUILD;
+  let GUILD_TWO_DAMORXGUILD;
+  let GUILD_TWO_FXAMORXGUILD;
 
 describe("unit - Clone Factory", function () {
 
@@ -33,8 +34,10 @@ describe("unit - Clone Factory", function () {
     const setup = await init.initialize(signers);
     await init.getTokens(setup);
 
-    //AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
+    AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
     AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
+    FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
+    DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
     CLONE_FACTORY = setup.tokens.CloneFactoryContract;
 
     root = setup.roles.root;
@@ -44,26 +47,30 @@ describe("unit - Clone Factory", function () {
 
   before('Setup', async function() {
     await setupTests();
-    // await AMOR_TOKEN.init(
-    //   AMOR_TOKEN_NAME, 
-    //   AMOR_TOKEN_SYMBOL, 
-    //   multisig.address, 
-    //   TAX_RATE, 
-    //   root.address
-    // );
+    await CLONE_FACTORY.deployGuildContracts(MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0]);
+
+    this.guildOneAmorXGuild = await CLONE_FACTORY.guilds(0);
+    this.guildOneDAmorXGuild = await CLONE_FACTORY.dAMORxGuildTokens(0);
+    this.guildOneFXAmorXGuild = await CLONE_FACTORY.fxAMORxGuildTokens(0);
+    
+    GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildOneAmorXGuild);
+    GUILD_ONE_DAMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildOneDAmorXGuild);
+    GUILD_ONE_FXAMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildOneFXAmorXGuild);
+
+    await CLONE_FACTORY.deployGuildContracts(MOCK_GUILD_NAMES[1],MOCK_GUILD_SYMBOLS[1]);
+
+    this.guildTwoAmorXGuild = await CLONE_FACTORY.guilds(1);
+    this.guildTwoDAmorXGuild = await CLONE_FACTORY.dAMORxGuildTokens(1);
+    this.guildTwoFXAmorXGuild = await CLONE_FACTORY.fxAMORxGuildTokens(1);
+
+    GUILD_TWO_AMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildTwoAmorXGuild);
+    GUILD_TWO_DAMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildTwoDAmorXGuild);
+    GUILD_TWO_FXAMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildTwoFXAmorXGuild);
   });
 
   context("function: deployGuildContracts", () => {
-      it("Should deploy the Guild Contracts", async function () {
-        await CLONE_FACTORY.deployGuildContracts(MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0]);
+      it("Should deploy the Guild Token Contracts", async function () {
 
-        let guildOneAmorXGuild = await CLONE_FACTORY.guilds(0);
-        let guildOneDAmorXGuild = await CLONE_FACTORY.dAMORxGuildTokens(0);
-        let guildOneFXAmorXGuild = await CLONE_FACTORY.fxAMORxGuildTokens(0);
-        
-        GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(guildOneAmorXGuild);
-        GUILD_ONE_DAMORXGUILD = AMOR_GUILD_TOKEN.attach(guildOneDAmorXGuild);
-        GUILD_ONE_FXAMORXGUILD = AMOR_GUILD_TOKEN.attach(guildOneFXAmorXGuild);
 
         expect(await GUILD_ONE_AMORXGUILD.name()).to.equal("AMORx"+MOCK_GUILD_NAMES[0]);
       });
@@ -78,5 +85,39 @@ describe("unit - Clone Factory", function () {
         expect(await GUILD_ONE_FXAMORXGUILD.name()).to.equal("FXAMORx"+MOCK_GUILD_NAMES[0]);
       });
 
-});
+      it("Should have named the AMORxGuild Symbol correctly", async function () {
+        expect(await GUILD_ONE_AMORXGUILD.symbol()).to.equal("Ax"+MOCK_GUILD_SYMBOLS[0]);
+      });
+      it("Should have named the dAMORxGuild Symbol correctly", async function () {
+        expect(await GUILD_ONE_DAMORXGUILD.symbol()).to.equal("Dx"+MOCK_GUILD_SYMBOLS[0]);
+      });
+      it("Should have named the FXAMORxGuild Symbol correctly", async function () {
+        expect(await GUILD_ONE_FXAMORXGUILD.symbol()).to.equal("FXx"+MOCK_GUILD_SYMBOLS[0]);
+      });
+  });
+
+  context("function: amorToken()", ()=> {
+    it("Should return the AMOR token address", async function () {
+      expect(await CLONE_FACTORY.amorToken()).to.equal(AMOR_TOKEN.address);
+    })
+  });
+
+  context("function: amorxGuildToken()", ()=> {
+    it("Should return the AMORxGuild implementation address", async function () {
+      expect(await CLONE_FACTORY.amorxGuildToken()).to.equal(AMOR_GUILD_TOKEN.address);
+    })
+  });
+
+  context("function: fxAMORxGuildToken()", ()=> {
+    it("Should return the FXAMORxGuild implementation address", async function () {
+      expect(await CLONE_FACTORY.fxAMORxGuildToken()).to.equal(FX_AMOR_TOKEN.address);
+    })
+  });
+
+  context("function: dAMORxGuildToken()", ()=> {
+    it("Should return the dAMORxGuild implementation address", async function () {
+      expect(await CLONE_FACTORY.dAMORxGuildToken()).to.equal(DAMOR_GUILD_TOKEN.address);
+    })
+  });
+
 });
