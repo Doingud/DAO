@@ -20,11 +20,27 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract MetaDaoController is AccessControl {
 
+    event proposalCreated(address proposedBy, bytes command);
+
+    // Data struct for proposals 
+    struct Proposal {
+        address avatar;
+        bytes command;  
+        uint voteCount;  
+        uint timeProposed;
+        bool executed;
+    }
+
+    Proposal[] public proposals;
+
     address[] public guilds;
     //  Array of addresses of Guilds
     mapping(address => uint256) public guildWeight;
     //  The total weight of the guilds
     uint256 public guildsTotalWeight;
+
+    // Mapping to keep track of which addresses already voted on a proposal
+    mapping(uint => mapping(address => bool)) public voted;
 
     /// Donation distribution weights
     uint256 internal operationsWeight;
@@ -46,6 +62,7 @@ contract MetaDaoController is AccessControl {
 
     /// Roles
     bytes32 public constant GUILD_ROLE = keccak256("GUILD");
+    Bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN");
 
     /// Errors
     error AlreadyDistributing();
@@ -178,6 +195,48 @@ contract MetaDaoController is AccessControl {
             guilds[i] = guilds[i + 1];
         }
         guilds.pop();
+
+    }
+
+    /// @notice addProposal on a proposal using the proposalId 
+    /// @param command the funcationlity to be executed if the proposal passes
+    function addProposal(bytes memory command)public{
+        proposals.push(Proposal({
+                avatar: avtar,
+                command: command,
+                voteCount: 0,
+                timeProposed: block.timestamp,
+                executed: false
+
+            }));
+            emit proposalCreated(msg.sender,command);
+        
+    }
+
+    /// @notice voteForProposal on a proposal using the proposalId
+    /// @param proposalId the id number used to retreive the proposal 
+    function voteForProposal(uint proposalId)public{
+        require(hasRole(GUARDIAN_ROLE, msg.sender), "NOT_GUARDIAN");
+        Proposal storage currentProposal =  proposals[proposalId];
+        require(!voted[proposalId][msg.sender], "Already Voted");
+        currentProposal.voteCount += 1;
+        voted[proposalId][msg.sender] = true;
+    }
+
+
+    /// @notice Execuded a proposal using the proposalId
+    /// @dev Proposal must be executed in betweeen half a day and 2 weeks of being created
+    /// @param proposalId the id number used to retreive the proposal 
+    function executeProposal(uint proposalId)public{
+        Proposal storage currentProposal =  proposals[proposalId];
+        require(currentProposal.timeProposed + 0.5 days < block.timestamp, "1 day needs to pass");
+        require(currentProposal.timeProposed + 2 weeks > block.timestamp, "Execution window elapsed");
+        require(currentProposal.voteCount > 2000000000, "Vote threshold not reached");
+        require(!currentProposal.executed, "Already executed");
+        (bool success,) = currentProposal.avatar.call(currentProposal.command);
+        require(success,"tx failed");
+        currentProposal.executed = true;
+        emit proposalExecuted(proposalId);
 
     }
 
