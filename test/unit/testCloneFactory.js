@@ -1,19 +1,12 @@
 const { ethers } = require("hardhat");
 const { use, expect } = require("chai");
 const { solidity } = require("ethereum-waffle");
-const { TAX_RATE, 
-        AMOR_TOKEN_NAME, 
-        AMOR_TOKEN_SYMBOL,
-        TEST_TRANSFER,
-        MOCK_GUILD_NAMES,
+const { MOCK_GUILD_NAMES,
         MOCK_GUILD_SYMBOLS 
       } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
 use(solidity);
-
-  let root;
-  let multisig;
 
   let AMOR_TOKEN;
   let AMOR_GUILD_TOKEN;
@@ -23,9 +16,6 @@ use(solidity);
   let GUILD_ONE_AMORXGUILD;
   let GUILD_ONE_DAMORXGUILD;
   let GUILD_ONE_FXAMORXGUILD;
-  let GUILD_TWO_AMORXGUILD;
-  let GUILD_TWO_DAMORXGUILD;
-  let GUILD_TWO_FXAMORXGUILD;
 
 describe("unit - Clone Factory", function () {
 
@@ -57,15 +47,6 @@ describe("unit - Clone Factory", function () {
     GUILD_ONE_DAMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildOneDAmorXGuild);
     GUILD_ONE_FXAMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildOneFXAmorXGuild);
 
-    await CLONE_FACTORY.deployGuildContracts(MOCK_GUILD_NAMES[1],MOCK_GUILD_SYMBOLS[1]);
-
-    this.guildTwoAmorXGuild = await CLONE_FACTORY.guilds(1);
-    this.guildTwoDAmorXGuild = await CLONE_FACTORY.dAMORxGuildTokens(1);
-    this.guildTwoFXAmorXGuild = await CLONE_FACTORY.fxAMORxGuildTokens(1);
-
-    GUILD_TWO_AMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildTwoAmorXGuild);
-    GUILD_TWO_DAMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildTwoDAmorXGuild);
-    GUILD_TWO_FXAMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildTwoFXAmorXGuild);
   });
 
   context("function: deployGuildContracts", () => {

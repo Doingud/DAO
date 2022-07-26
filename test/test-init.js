@@ -24,23 +24,23 @@ const getTokens = async (setup) => {
 
     const FXAMORxGuildFactory = await ethers.getContractFactory('FXAMORxGuild', setup.roles.root);
     const FXAMORxGuild = await FXAMORxGuildFactory.deploy();
-    /*await FXAMORxGuild.init(
+    await FXAMORxGuild.init(
       "DoinGud MetaDAO", 
       "FXAMORxGuild", 
       setup.roles.operator.address, 
       ERC20Token.address
-    );*/
+    );
 
     const guardianThreshold = 10;
     const dAMORxGuildFactory = await ethers.getContractFactory('dAMORxGuild', setup.roles.root);
     const dAMORxGuild = await dAMORxGuildFactory.deploy();
-    /*await dAMORxGuild.init(
+    await dAMORxGuild.init(
       "DoinGud MetaDAO", 
       "DAMORxGuild", 
       setup.roles.operator.address, 
       ERC20Token.address, 
       guardianThreshold
-    );*/ 
+    ); 
 
     const AmorTokenFactory = await ethers.getContractFactory('AMORToken', setup.roles.root);
 
@@ -68,8 +68,6 @@ const getTokens = async (setup) => {
     const AmorGuildCloneFactory = await GuildTokenFactory.deploy(AmorGuildTokenProxy.address, AmorGuildToken.address, AmorTokenProxy.address );
     */
     //  Clone Factory
-    const MockFxAmor = await AmorGuildTokenFactory.deploy();
-    const MockdAmor = await AmorGuildTokenFactory.deploy();
     const CloneFactoryContract = await CloneFactory.deploy(
       AmorTokenImplementation.address,
       AmorGuildToken.address,
