@@ -29,6 +29,7 @@ contract GuildController is Ownable {
     uint256 public timeVoting; // deadlines for the votes for reports
 
     IERC20 private AMORxGuild;
+    IFXAMORxGuild private FXGFXAMORxGuild;
     address public FXAMORxGuild;
 
     // uint256 public triggerCounter;
@@ -72,6 +73,7 @@ contract GuildController is Ownable {
         _transferOwnership(initOwner);
 
         AMORxGuild = IERC20(AMORxGuild_);
+        FXGFXAMORxGuild = IFXAMORxGuild(FXAMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
         ADDITIONAL_VOTING_TIME = 0;
 
@@ -107,7 +109,7 @@ contract GuildController is Ownable {
         uint256 FxGAmount = (amount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
         AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
         AMORxGuild.approve(FXAMORxGuild, FxGAmount);
-        IFXAMORxGuild(FXAMORxGuild).stake(msg.sender, FxGAmount);
+        FXGFXAMORxGuild.stake(msg.sender, FxGAmount);
 
         uint256 decAmount = amount - FxGAmount; //decreased amount: other 90%
 
@@ -141,7 +143,7 @@ contract GuildController is Ownable {
             revert Unauthorized();
         }
 
-        uint256 newReportId = reportsQueue.length; // reportsVoting.length;
+        uint256 newReportId = reportsQueue.length;
 
         queueReportsAuthors[newReportId] = msg.sender;
 
@@ -189,7 +191,7 @@ contract GuildController is Ownable {
             revert InvalidAmount();
         }
 
-        IFXAMORxGuild(FXAMORxGuild).burn(msg.sender, amount);
+        FXGFXAMORxGuild.burn(msg.sender, amount);
         voters[id].push(msg.sender);
 
         reportsWeight[id] += int256(amount);
