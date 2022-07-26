@@ -75,7 +75,7 @@ contract GuildCloneFactory is ICloneFactory, Ownable {
         /// Deploy AMORxGuild contract
         tokenName = string.concat("AMORx", _name);
         tokenSymbol = string.concat("Ax", _symbol);
-        clonedContract = _deployGuild(tokenName, tokenSymbol, amorxGuildToken);
+        clonedContract = _deployGuildToken(tokenName, tokenSymbol, amorxGuildToken);
         guilds.push(clonedContract);
 
         /// Deploy FXAMORxGuild contract
@@ -101,7 +101,7 @@ contract GuildCloneFactory is ICloneFactory, Ownable {
     /// @param  guildSymbol symbol of token
     /// @param  _implementation address of the contract to be cloned
     /// @return address of the deployed contract
-    function _deployGuild(
+    function _deployGuildToken(
         string memory guildName,
         string memory guildSymbol,
         address _implementation
