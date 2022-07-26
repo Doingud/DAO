@@ -30,22 +30,22 @@ contract DoinGudProxy is Proxy, ERC1967Upgrade {
      * If `_data` is nonempty, it's used as data in a delegate call to `_logic`. This will typically be an encoded
      * function call, and allows initializing the storage of the proxy like a Solidity constructor.
      */
-    function initProxy(address _logic) public payable {
+    function initProxy(address logic) external payable {
         if (_initializedProxy) {
             revert Initialized();
         }
-        _upgradeTo(_logic);
+        _upgradeTo(logic);
         _initializedProxy = true;
     }
 
     //  Uprade the token implementation
     //  Still needs access control
-    function upgradeImplementation(address _newImplementation) public {
-        _upgradeTo(_newImplementation);
+    function upgradeImplementation(address newImplementation) external {
+        _upgradeTo(newImplementation);
     }
 
     //  View the current implementation
-    function viewImplementation() public view returns (address) {
+    function viewImplementation() external view returns (address) {
         return _getImplementation();
     }
 
