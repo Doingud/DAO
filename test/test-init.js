@@ -112,9 +112,9 @@ const controller = async (setup) => {
   );
 
   await setup.tokens.AmorGuildToken.init(
-    setup.tokens.AmorTokenImplementation.address, 
     'GUILD_ONE', 
     'TOKEN_ONE',
+    setup.tokens.AmorTokenImplementation.address,
     controller.address //controller
   );
 
