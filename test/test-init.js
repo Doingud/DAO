@@ -2,6 +2,10 @@
 
 //const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants');
 const { ethers } = require('hardhat');
+const { TAX_RATE,
+        AMOR_TOKEN_NAME, 
+        AMOR_TOKEN_SYMBOL, 
+      } = require('./helpers/constants.js');
 
 const initialize = async (accounts) => {
   const setup = {};
@@ -10,6 +14,7 @@ const initialize = async (accounts) => {
     doingud_multisig: accounts[1],
     user1: accounts[2],
     user2: accounts[3],
+    user3: accounts[4],
     authorizer_adaptor: accounts[5],
     operator: accounts[6],
     staker: accounts[7],
@@ -24,12 +29,6 @@ const getTokens = async (setup) => {
 
     const FXAMORxGuildFactory = await ethers.getContractFactory('FXAMORxGuild', setup.roles.root);
     const FXAMORxGuild = await FXAMORxGuildFactory.deploy();
-    await FXAMORxGuild.init(
-      "DoinGud MetaDAO", 
-      "FXAMORxGuild", 
-      setup.roles.operator.address, 
-      ERC20Token.address
-    );
 
     const guardianThreshold = 10;
     const dAMORxGuildFactory = await ethers.getContractFactory('dAMORxGuild', setup.roles.root);
@@ -92,9 +91,45 @@ const getTokens = async (setup) => {
 
     setup.tokens = tokens;
     return tokens;
-}
+};
+
+const controller = async (setup) => {
+  const controllerFactory = await ethers.getContractFactory('GuildController');
+  const controller = await controllerFactory.deploy();
+
+  await controller.init(
+    setup.roles.root.address, // owner
+    setup.tokens.AmorGuildToken.address, // AMORxGuild
+    setup.tokens.FXAMORxGuild.address // FXAMORxGuild
+  );
+
+  await setup.tokens.AmorTokenImplementation.init(
+    AMOR_TOKEN_NAME, 
+    AMOR_TOKEN_SYMBOL, 
+    setup.roles.authorizer_adaptor.address, //taxController
+    TAX_RATE,
+    setup.roles.root.address // multisig
+  );
+
+  await setup.tokens.AmorGuildToken.init(
+    setup.tokens.AmorTokenImplementation.address, 
+    'GUILD_ONE', 
+    'TOKEN_ONE',
+    controller.address //controller
+  );
+
+  await setup.tokens.FXAMORxGuild.init(
+    "DoinGud MetaDAO", 
+    "FXAMORxGuild", 
+    controller.address, //controller
+    setup.tokens.AmorGuildToken.address // AMORxGuild
+  );
+
+  return controller;
+};
 
 module.exports = {
   initialize,
   getTokens,
-};
+  controller,
+}; 

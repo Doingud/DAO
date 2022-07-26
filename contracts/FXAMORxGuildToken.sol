@@ -8,25 +8,34 @@
 pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./utils/ERC20Base.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract FXAMORxGuild is ERC20Base, Ownable {
+/// Advanced math functions for bonding curve
+import "./utils/ABDKMath64x64.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+import "./utils/ERC20Base.sol";
+import "./utils/interfaces/IFXAMORxGuild.sol";
+
+contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
+    using ABDKMath64x64 for uint256;
+    using SafeERC20 for IERC20;
+
     // staker => all staker balance
-    mapping(address => uint256) stakes;
+    mapping(address => uint256) public stakes;
     // those who delegated to a specific address
-    mapping(address => address[]) delegators;
+    mapping(address => address[]) public delegators;
     // list of delegations from one address
-    mapping(address => mapping(address => uint256)) delegations;
+    mapping(address => mapping(address => uint256)) public delegations;
     // amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
-
-    event Initialized(bool success, address owner, address AMORxGuild);
 
     bool private _initialized;
 
     address public _owner; //GuildController
-    address public AMORxGuild;
     address public controller; //contract that has a voting function
+
+    IERC20 public AMORxGuild;
 
     error AlreadyInitialized();
     error Unauthorized();
@@ -47,7 +56,7 @@ contract FXAMORxGuild is ERC20Base, Ownable {
         string memory symbol_,
         address initOwner_,
         address AMORxGuild_
-    ) external returns (bool) {
+    ) external override {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -55,14 +64,13 @@ contract FXAMORxGuild is ERC20Base, Ownable {
         _transferOwnership(initOwner_);
 
         _owner = initOwner_;
-        AMORxGuild = AMORxGuild_;
+        AMORxGuild = IERC20(AMORxGuild_);
         //  Set the name and symbol
         name = name_;
         symbol = symbol_;
 
         _initialized = true;
         emit Initialized(_initialized, initOwner_, AMORxGuild_);
-        return true;
     }
 
     function setController(address _controller) external onlyAddress(_owner) {
@@ -84,8 +92,8 @@ contract FXAMORxGuild is ERC20Base, Ownable {
     //  Tokens are minted 1:1.
 
     /// @notice Stake AMORxGuild and receive FXAMORxGuild in return
-    /// @dev    Front end must still call approve() on AMORxGuild token to allow transferFrom()
-    /// @param  to a parameter just like in doxygen (must be followed by parameter name)
+    /// @dev    Front end must still call approve() on AMORxGuild token to allow safeTransferFrom()
+    /// @param  to Address where FXAMORxGuild must be minted to
     /// @param  amount uint256 amount of AMORxGuild to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
     function stake(address to, uint256 amount) external onlyAddress(_owner) returns (uint256) {
@@ -96,11 +104,11 @@ contract FXAMORxGuild is ERC20Base, Ownable {
             revert AddressZero();
         }
 
-        if (IERC20(AMORxGuild).balanceOf(msg.sender) < amount) {
+        if (AMORxGuild.balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }
         // send to FXAMORxGuild contract to stake
-        IERC20(AMORxGuild).transferFrom(msg.sender, address(this), amount);
+        AMORxGuild.safeTransferFrom(msg.sender, address(this), amount);
 
         // mint FXAMORxGuild tokens to staker
         // Tokens are minted 1:1.
@@ -122,7 +130,7 @@ contract FXAMORxGuild is ERC20Base, Ownable {
         }
         //burn used FXAMORxGuild tokens from staker
         _burn(account, amount);
-        IERC20(AMORxGuild).transfer(controller, amount);
+        AMORxGuild.safeTransfer(controller, amount);
         stakes[account] -= amount;
     }
 
