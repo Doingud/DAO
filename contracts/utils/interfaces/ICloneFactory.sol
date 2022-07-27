@@ -11,5 +11,5 @@ interface ICloneFactory {
 
     error ArrayMismatch();
 
-    function deployGuildContracts(string memory _name, string memory _symbol) external;
+    function deployGuildContracts(address owner, string memory _name, string memory _symbol) external;
 }
