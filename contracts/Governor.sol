@@ -15,7 +15,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// @dev    IGovernor IERC165 Pattern
 /// @notice Governor contract will allow to add and vote for the proposals
 
-contract Governor is IGovernor, Ownable {
+// contract Governor is IGovernor, Ownable { // uncomment in voting part
+contract Governor is Ownable {
     using SafeERC20 for IERC20;
 
     uint256 public GUARDIANS_LIMIT; // amount of guardians for contract to function propperly, until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.

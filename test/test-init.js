@@ -119,8 +119,21 @@ const controller = async (setup) => {
   return controller;
 };
 
+const governor = async (setup) => {
+  const governorFactory = await ethers.getContractFactory('Governor');
+  const governor = await governorFactory.deploy();
+
+  await governor.init(
+    setup.roles.root.address, // owner
+    setup.roles.authorizer_adaptor.address // Snapshot Address
+  );
+
+  return governor;
+};
+
 module.exports = {
   initialize,
   getTokens,
   controller,
+  governor,
 }; 
