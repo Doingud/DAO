@@ -48,12 +48,6 @@ const getTokens = async (setup) => {
     // Constants for AmorGuild tokens - Still to be merged
     const AmorGuildTokenFactory = await ethers.getContractFactory('AMORxGuildToken', setup.roles.root);
 
-    /*
-    const AmorGuildTokenProxyFactory = await ethers.getContractFactory('AmorGuildProxy', setup.roles.root);
-    */
-    
-    const CloneFactory = await ethers.getContractFactory('GuildFactory', setup.roles.root);
-
     //  Amor Tokens
     const AmorTokenImplementation = await AmorTokenFactory.deploy();
     const AmorTokenMockUpgrade = await AmorTokenFactory.deploy();
@@ -61,19 +55,6 @@ const getTokens = async (setup) => {
     
     //  AmorGuild Tokens
     const AmorGuildToken = await AmorGuildTokenFactory.deploy();
-    
-    /*
-    const AmorGuildTokenProxy = await AmorGuildTokenProxyFactory.deploy();
-    const AmorGuildCloneFactory = await GuildTokenFactory.deploy(AmorGuildTokenProxy.address, AmorGuildToken.address, AmorTokenProxy.address );
-    */
-    //  Clone Factory
-    const CloneFactoryContract = await CloneFactory.deploy(
-      AmorTokenImplementation.address,
-      AmorGuildToken.address,
-      FXAMORxGuild.address,
-      dAMORxGuild.address,
-      AmorTokenProxy.address
-      );
 
     const tokens = {
       ERC20Token,
@@ -82,11 +63,7 @@ const getTokens = async (setup) => {
       AmorTokenImplementation,
       AmorTokenProxy,
       AmorTokenMockUpgrade,
-      AmorGuildToken,
-      CloneFactoryContract
-      /*
-      AmorGuildTokenProxy,
-      AmorGuildCloneFactory*/
+      AmorGuildToken
     };
 
     setup.tokens = tokens;
