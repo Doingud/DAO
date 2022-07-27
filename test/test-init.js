@@ -95,6 +95,7 @@ const metadaoMock = async (setup) =>{
 const controller = async (setup) => {
   const controllerFactory = await ethers.getContractFactory('GuildController');
   const controller = await controllerFactory.deploy();
+  console.log(controller.address);
 
   await controller.init(
     setup.roles.root.address, // owner
