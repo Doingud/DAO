@@ -72,7 +72,11 @@ contract GuildFactory is ICloneFactory, Ownable {
     /// @dev    Takes the names and symbols and associates it to a guild
     /// @param  _name The name of the Guild without the prefix "AMORx"
     /// @param  _symbol The symbol of the Guild
-    function deployGuildContracts(address guildOwner, string memory _name, string memory _symbol) external {
+    function deployGuildContracts(
+        address guildOwner,
+        string memory _name,
+        string memory _symbol
+    ) external {
         /// Setup local scope vars
         string memory tokenName;
         string memory tokenSymbol;
@@ -101,7 +105,11 @@ contract GuildFactory is ICloneFactory, Ownable {
         guildControllers.push(clonedContract);
 
         /// Check that all contracts were added to the respective arrays
-        if (amorxGuilds.length != dAMORxGuildTokens.length || amorxGuilds.length != fxAMORxGuildTokens.length || amorxGuilds.length != guildControllers.length) {
+        if (
+            amorxGuilds.length != dAMORxGuildTokens.length ||
+            amorxGuilds.length != fxAMORxGuildTokens.length ||
+            amorxGuilds.length != guildControllers.length
+        ) {
             revert ArrayMismatch();
         }
     }
@@ -155,7 +163,12 @@ contract GuildFactory is ICloneFactory, Ownable {
             );
         } else {
             /// FXAMOR uses the same `init` layout as IAMORxGuild
-            IAmorxGuild(address(proxyContract)).init(guildName, guildSymbol, msg.sender, amorxGuilds[amorxGuilds.length - 1]);
+            IAmorxGuild(address(proxyContract)).init(
+                guildName,
+                guildSymbol,
+                msg.sender,
+                amorxGuilds[amorxGuilds.length - 1]
+            );
         }
 
         return address(proxyContract);
@@ -178,7 +191,7 @@ contract GuildFactory is ICloneFactory, Ownable {
 
         /// Init the Guild Controller
         IGuildController(address(proxyContract)).init(guildOwner, amorxGuild, fxAMORxGuild);
-       
-       return address(proxyContract);
+
+        return address(proxyContract);
     }
 }

@@ -9,7 +9,6 @@
 pragma solidity 0.8.15;
 
 interface IGuildController {
-
     function init(
         address initOwner,
         address AMORxGuild_,

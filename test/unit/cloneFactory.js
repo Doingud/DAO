@@ -13,9 +13,11 @@ use(solidity);
   let CLONE_FACTORY;
   let FX_AMOR_TOKEN;
   let DAMOR_GUILD_TOKEN;
+  let CONTROLLERXGUILD;
   let GUILD_ONE_AMORXGUILD;
   let GUILD_ONE_DAMORXGUILD;
   let GUILD_ONE_FXAMORXGUILD;
+  let GUILD_ONE_CONTROLLERXGUILD;
 
 describe("unit - Clone Factory", function () {
 
@@ -28,51 +30,60 @@ describe("unit - Clone Factory", function () {
     AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
     FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
     DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
-    CLONE_FACTORY = setup.tokens.CloneFactoryContract;
+    await init.getGuildFactory(setup);
+    CLONE_FACTORY = setup.factory.guildFactory;
+    CONTROLLERXGUILD = setup.factory.controller;
 
     root = setup.roles.root;
     multisig = setup.roles.doingud_multisig;
+    user1 = setup.roles.user1;
 
   });
 
   before('Setup', async function() {
     await setupTests();
-    await CLONE_FACTORY.deployGuildContracts(MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0]);
 
-    this.guildOneAmorXGuild = await CLONE_FACTORY.guilds(0);
+    await CLONE_FACTORY.deployGuildContracts(user1.address, MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0]);
+
+    this.guildOneAmorXGuild = await CLONE_FACTORY.amorxGuilds(0);
     this.guildOneDAmorXGuild = await CLONE_FACTORY.dAMORxGuildTokens(0);
     this.guildOneFXAmorXGuild = await CLONE_FACTORY.fxAMORxGuildTokens(0);
+    this.guildOneControllerxGuild = await CLONE_FACTORY.guildControllers(0);
     
     GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildOneAmorXGuild);
     GUILD_ONE_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(this.guildOneDAmorXGuild);
     GUILD_ONE_FXAMORXGUILD = FX_AMOR_TOKEN.attach(this.guildOneFXAmorXGuild);
+    GUILD_ONE_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(this.guildOneControllerxGuild);
 
   });
 
   context("function: deployGuildContracts", () => {
-      it("Should deploy the Guild Token Contracts", async function () {
-        expect(await GUILD_ONE_AMORXGUILD.name()).to.equal("AMORx"+MOCK_GUILD_NAMES[0]);
-      });
+    it("Should deploy the Guild Token Contracts", async function () {
+      expect(await GUILD_ONE_AMORXGUILD.name()).to.equal("AMORx"+MOCK_GUILD_NAMES[0]);
+    });
 
-      it("Should have named the AMORxGuild Token correctly", async function () {
-        expect(await GUILD_ONE_AMORXGUILD.name()).to.equal("AMORx"+MOCK_GUILD_NAMES[0]);
-      });
-      it("Should have named the dAMORxGuild Token correctly", async function () {
-        expect(await GUILD_ONE_DAMORXGUILD.name()).to.equal("dAMORx"+MOCK_GUILD_NAMES[0]);
-      });
-      it("Should have named the FXAMORxGuild Token correctly", async function () {
-        expect(await GUILD_ONE_FXAMORXGUILD.name()).to.equal("FXAMORx"+MOCK_GUILD_NAMES[0]);
-      });
+    it("Should have named the AMORxGuild Token correctly", async function () {
+      expect(await GUILD_ONE_AMORXGUILD.name()).to.equal("AMORx"+MOCK_GUILD_NAMES[0]);
+    });
+    it("Should have named the dAMORxGuild Token correctly", async function () {
+      expect(await GUILD_ONE_DAMORXGUILD.name()).to.equal("dAMORx"+MOCK_GUILD_NAMES[0]);
+    });
+    it("Should have named the FXAMORxGuild Token correctly", async function () {
+      expect(await GUILD_ONE_FXAMORXGUILD.name()).to.equal("FXAMORx"+MOCK_GUILD_NAMES[0]);
+     });
 
-      it("Should have named the AMORxGuild Symbol correctly", async function () {
-        expect(await GUILD_ONE_AMORXGUILD.symbol()).to.equal("Ax"+MOCK_GUILD_SYMBOLS[0]);
-      });
-      it("Should have named the dAMORxGuild Symbol correctly", async function () {
-        expect(await GUILD_ONE_DAMORXGUILD.symbol()).to.equal("Dx"+MOCK_GUILD_SYMBOLS[0]);
-      });
-      it("Should have named the FXAMORxGuild Symbol correctly", async function () {
-        expect(await GUILD_ONE_FXAMORXGUILD.symbol()).to.equal("FXx"+MOCK_GUILD_SYMBOLS[0]);
-      });
+     it("Should have named the AMORxGuild Symbol correctly", async function () {
+       expect(await GUILD_ONE_AMORXGUILD.symbol()).to.equal("Ax"+MOCK_GUILD_SYMBOLS[0]);
+     });
+     it("Should have named the dAMORxGuild Symbol correctly", async function () {
+       expect(await GUILD_ONE_DAMORXGUILD.symbol()).to.equal("Dx"+MOCK_GUILD_SYMBOLS[0]);
+     });
+     it("Should have named the FXAMORxGuild Symbol correctly", async function () {
+       expect(await GUILD_ONE_FXAMORXGUILD.symbol()).to.equal("FXx"+MOCK_GUILD_SYMBOLS[0]);
+     });
+    it("Should have deployed the ControllerxGuild contract", async function () {
+      expect(await CLONE_FACTORY.guildControllers(0)).to.equal(GUILD_ONE_CONTROLLERXGUILD.address);
+     });
 
   });
 
@@ -100,13 +111,19 @@ describe("unit - Clone Factory", function () {
     })
   });
 
+  context("function: controllerxGuild()", ()=> {
+    it("Should return the controllerxGuild implementation address", async function () {
+      expect(await CLONE_FACTORY.controllerxGuild()).to.equal(CONTROLLERXGUILD.address);
+    })
+  });
+
   context("function: guilds()", () => {
     it("Should return the guild address", async function () {
-      expect(await CLONE_FACTORY.guilds(0)).to.equal(GUILD_ONE_AMORXGUILD.address);
+      expect(await CLONE_FACTORY.amorxGuilds(0)).to.equal(GUILD_ONE_AMORXGUILD.address);
     });
 
     it("Should not return an address outside the array range", async function () {
-      await expect(CLONE_FACTORY.guilds(2)).to.be.revertedWith(null);
+      await expect(CLONE_FACTORY.amorxGuilds(2)).to.be.revertedWith(null);
     });
   })
 
@@ -127,6 +144,16 @@ describe("unit - Clone Factory", function () {
 
     it("Should not return an address outside the array range", async function () {
       await expect(CLONE_FACTORY.dAMORxGuildTokens(2)).to.be.revertedWith(null);
+    });
+  })
+
+  context("function: guildControllers()", () => {
+    it("Should return the ControllerxGuild address", async function () {
+      expect(await CLONE_FACTORY.guildControllers(0)).to.equal(GUILD_ONE_CONTROLLERXGUILD.address);
+    });
+
+    it("Should not return an address outside the array range", async function () {
+      await expect(CLONE_FACTORY.guildControllers(2)).to.be.revertedWith(null);
     });
   })
 
