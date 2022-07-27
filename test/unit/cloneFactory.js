@@ -44,8 +44,8 @@ describe("unit - Clone Factory", function () {
     this.guildOneFXAmorXGuild = await CLONE_FACTORY.fxAMORxGuildTokens(0);
     
     GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildOneAmorXGuild);
-    GUILD_ONE_DAMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildOneDAmorXGuild);
-    GUILD_ONE_FXAMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildOneFXAmorXGuild);
+    GUILD_ONE_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(this.guildOneDAmorXGuild);
+    GUILD_ONE_FXAMORXGUILD = FX_AMOR_TOKEN.attach(this.guildOneFXAmorXGuild);
 
   });
 
