@@ -106,8 +106,7 @@ contract GuildCloneFactory is ICloneFactory, Ownable {
         string memory guildSymbol,
         address _implementation
     ) internal returns (address) {
-        IAmorxGuild proxyContract;
-        proxyContract = IAmorxGuild(Clones.clone(cloneTarget));
+        IAmorxGuild proxyContract = IAmorxGuild(Clones.clone(cloneTarget));
 
         if (address(proxyContract) == address(0)) {
             revert CreationFailed();
