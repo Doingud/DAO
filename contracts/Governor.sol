@@ -31,6 +31,7 @@ contract Governor is Ownable {
 
     error NotEnoughGuardians();
     error Unauthorized();
+    error InvalidParameters();
 
     function init(
         address initOwner,
@@ -65,21 +66,56 @@ contract Governor is Ownable {
     }
 
     /// @notice this function resets guardians array, and adds new guardian to the system.
-    /// @param guardians The array of guardians
-    function setGuardians(address[] memory guardians) external onlySnapshot {
-
+    /// @param arrGuardians The array of guardians
+    function setGuardians(address[] memory arrGuardians) external onlySnapshot {
+        // check that the array is not empty
+        if (arrGuardians.length == 0) {
+            revert InvalidParameters();
+        }
+        delete guardians;
+        for (uint256 i = 0; i < arrGuardians.length; i++) {
+            guardians.push(arrGuardians[i]);
+        }
     }
 
     /// @notice this function adds new guardian to the system
     /// @param guardian New guardian to be added
-    function addGuardian(address guardian) external onlySnapshot {
-
+    function addGuardian(address guardian) public onlySnapshot {
+        // check that guardian won't be added twice
+        for (uint256 i = 0; i < guardians.length; i++) {
+            if (guardian == guardians[i]) {
+                revert InvalidParameters();
+            }
+        }
+        guardians.push(guardian);
     }
 
-    /// @notice this function changes guardian as a result of the vote
+    /// @notice this function changes guardian as a result of the vote (propose function)
     /// @param current Current vote value
     /// @param newGuardian Guardian to be changed
-    function changeGuardians(uint current, address newGuardian) external onlySnapshot {
+    function changeGuardian(uint current, address newGuardian) external onlySnapshot {
+        // check that guardian won't be added twice
+        for (uint256 i = 0; i < guardians.length; i++) {
+            if (newGuardian == guardians[i]) {
+                revert InvalidParameters();
+            }
+        }
+        guardians[current] = newGuardian;
+    }
+
+    /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote. 
+    /// Only Avatar(as a result of the Snapshot) contract can add a proposal for voting.
+    /// Proposal execution will happen throught the Avatar contract
+    /// @param targets Targets of the proposal
+    /// @param values Values of the proposal
+    /// @param calldatas Calldatas of the proposal
+    /// @param description Description of the proposal
+    function propose(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory description
+    ) onlySnapshot public {
 
     }
 
