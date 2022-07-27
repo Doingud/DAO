@@ -64,6 +64,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         _transferOwnership(initOwner_);
 
         _owner = initOwner_;
+        controller = initOwner_;
         AMORxGuild = IERC20(AMORxGuild_);
         //  Set the name and symbol
         name = name_;
