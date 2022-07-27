@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-/// @title  DoinGud Guild Token
+/// @title  DoinGud Guild Token Interface
 /// @author Daoism Systems Team
 /// @notice ERC20 implementation for DoinGudDAO
 
