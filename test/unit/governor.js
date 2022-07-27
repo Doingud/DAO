@@ -1,21 +1,9 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { ONE_HUNDRED_ETHER,
-        TEST_TRANSFER,
-        TAX_RATE,
-        BASIS_POINTS
-      } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
-const FEE_DENOMINATOR = 1000;
-const percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
-
-const TEST_TRANSFER_SMALLER = 80;
-
-let AMOR;
-let AMORxGuild;
-let FXAMORxGuild
-let controller;
+// let AMOR;
+// let AMORxGuild; // need for testing propose() function
 let governor;
 let root;
 let authorizer_adaptor;
@@ -32,10 +20,9 @@ describe('unit - Contract: Governor', function () {
         const setup = await init.initialize(signers);
         await init.getTokens(setup);
 
-        AMOR = setup.tokens.AmorTokenImplementation;
-        AMORxGuild = setup.tokens.AmorGuildToken;
-        FXAMORxGuild = setup.tokens.FXAMORxGuild;
-        controller = await init.controller(setup);
+        // AMOR = setup.tokens.AmorTokenImplementation;
+        // AMORxGuild = setup.tokens.AmorGuildToken;
+        await init.controller(setup);
         governor = await init.governor(setup);
         root = setup.roles.root;
         staker = setup.roles.staker;

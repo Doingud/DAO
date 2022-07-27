@@ -33,10 +33,7 @@ contract Governor is Ownable {
     error Unauthorized();
     error InvalidParameters();
 
-    function init(
-        address initOwner,
-        address snapshotAddress_
-    ) external returns (bool) {
+    function init(address initOwner, address snapshotAddress_) external returns (bool) {
         require(!_initialized, "Already initialized");
 
         _transferOwnership(initOwner);
@@ -93,7 +90,7 @@ contract Governor is Ownable {
     /// @notice this function changes guardian as a result of the vote (propose function)
     /// @param current Current vote value
     /// @param newGuardian Guardian to be changed
-    function changeGuardian(uint current, address newGuardian) external onlySnapshot {
+    function changeGuardian(uint256 current, address newGuardian) external onlySnapshot {
         // check that guardian won't be added twice
         for (uint256 i = 0; i < guardians.length; i++) {
             if (newGuardian == guardians[i]) {
@@ -103,7 +100,7 @@ contract Governor is Ownable {
         guardians[current] = newGuardian;
     }
 
-    /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote. 
+    /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote.
     /// Only Avatar(as a result of the Snapshot) contract can add a proposal for voting.
     /// Proposal execution will happen throught the Avatar contract
     /// @param targets Targets of the proposal
@@ -115,8 +112,5 @@ contract Governor is Ownable {
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description
-    ) onlySnapshot public {
-
-    }
-
+    ) public onlySnapshot {}
 }
