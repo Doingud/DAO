@@ -44,7 +44,7 @@ contract GuildFactory is ICloneFactory, Ownable {
     address[] public fxAMORxGuildTokens;
     address[] public dAMORxGuildTokens;
 
-    uint256 public defaultGaurdianThreshold = 10;
+    uint256 public defaultGuardianThreshold = 10;
 
     constructor(
         address _amorToken,
