@@ -98,6 +98,7 @@ contract GuildController is Ownable {
     // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
     // which are going to be owned by the user.
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
+    // Requires the msg.sender to `approve` amount prior to calling this function
     function donate(uint256 amount) external returns (uint256) {
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
         if (AMORxGuild.balanceOf(msg.sender) < amount || amount < 10) {
