@@ -128,8 +128,7 @@ contract GuildCloneFactory is ICloneFactory, Ownable {
         string memory guildSymbol,
         address _implementation
     ) internal returns (address) {
-        IDoinGudProxy proxyContract;
-        proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
+        IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
         proxyContract.initProxy(_implementation);
 
         if (address(proxyContract) == address(0)) {
