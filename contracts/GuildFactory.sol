@@ -141,7 +141,7 @@ contract GuildFactory is ICloneFactory, Ownable {
                 guildSymbol,
                 msg.sender,
                 guilds[guilds.length - 1],
-                defaultGaurdianThreshold
+                defaultGuardianThreshold
             );
         } else {
             /// FXAMOR uses the same `init` layout as IAMORxGuild
