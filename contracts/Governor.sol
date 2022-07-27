@@ -62,6 +62,19 @@ contract Governor is Ownable {
         _;
     }
 
+    modifier onlyGuardian() {
+        bool index = false;
+        for (uint256 i = 0; i < guardians.length; i++) {
+            if (msg.sender == guardians[i]) {
+                index = true;
+            }
+        }
+        if (!index) {
+            revert Unauthorized();
+        }
+        _;
+    }
+
     /// @notice this function resets guardians array, and adds new guardian to the system.
     /// @param arrGuardians The array of guardians
     function setGuardians(address[] memory arrGuardians) external onlySnapshot {
@@ -113,4 +126,24 @@ contract Governor is Ownable {
         bytes[] memory calldatas,
         string memory description
     ) public onlySnapshot {}
+
+    /// @notice function allows guardian to vote for the proposal. 
+    /// Proposal should achieve at least 20% approval of guardians, to be accepted
+    function castVote(uint256 proposalId, uint8 support) external onlyGuardian {
+
+    }
+
+    /// @notice function allows anyone to execute specific proposal, based on the vote.
+    /// @param targets Targets of the proposal
+    /// @param values Values of the proposal
+    /// @param calldatas Calldatas of the proposal
+    /// @param descriptionHash Description hash of the proposal
+    function execute(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        bytes32 descriptionHash
+    ) external {
+    
+    }
 }
