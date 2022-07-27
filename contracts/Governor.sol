@@ -5,6 +5,7 @@ import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
 
 import "@openzeppelin/contracts/governance/IGovernor.sol";
+import "@openzeppelin/contracts/governance/Governor.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -15,8 +16,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// @dev    IGovernor IERC165 Pattern
 /// @notice Governor contract will allow to add and vote for the proposals
 
-// contract Governor is IGovernor, Ownable { // uncomment in voting part
-contract Governor is Ownable {
+abstract contract GoinGudGovernor is Governor, Ownable {
     using SafeERC20 for IERC20;
 
     uint256 public GUARDIANS_LIMIT; // amount of guardians for contract to function propperly, until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.
@@ -125,11 +125,45 @@ contract Governor is Ownable {
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description
-    ) public onlySnapshot {}
+    ) public virtual override onlySnapshot returns (uint256 proposalId) {
+        require(
+            getVotes(_msgSender(), block.number - 1) >= proposalThreshold(),
+            "Governor: proposer votes below proposal threshold"
+        );
+
+        uint256 proposalId = hashProposal(targets, values, calldatas, keccak256(bytes(description)));
+
+        require(targets.length == values.length, "Governor: invalid proposal length");
+        require(targets.length == calldatas.length, "Governor: invalid proposal length");
+        require(targets.length > 0, "Governor: empty proposal");
+
+        ProposalCore storage proposal = _proposals[proposalId];
+        require(proposal.voteStart.isUnset(), "Governor: proposal already exists");
+
+        uint64 snapshot = block.number.toUint64() + votingDelay().toUint64();
+        uint64 deadline = snapshot + votingPeriod().toUint64();
+
+        proposal.voteStart.setDeadline(snapshot);
+        proposal.voteEnd.setDeadline(deadline);
+
+        emit ProposalCreated(
+            proposalId,
+            _msgSender(),
+            targets,
+            values,
+            new string[](targets.length),
+            calldatas,
+            snapshot,
+            deadline,
+            description
+        );
+
+        return proposalId;
+    }
 
     /// @notice function allows guardian to vote for the proposal. 
     /// Proposal should achieve at least 20% approval of guardians, to be accepted
-    function castVote(uint256 proposalId, uint8 support) external onlyGuardian {
+    function castVote(uint256 proposalId, uint8 support) public virtual override onlyGuardian returns (uint256 balance){
 
     }
 
@@ -143,7 +177,8 @@ contract Governor is Ownable {
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) external {
+    ) public payable virtual override returns (uint256 proposalId) {
     
     }
+
 }
