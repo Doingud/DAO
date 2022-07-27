@@ -29,7 +29,7 @@ import "./utils/interfaces/ICloneFactory.sol";
 import "./utils/interfaces/IDoinGudProxy.sol";
 import "./utils/interfaces/IdAMORxGuild.sol";
 
-contract GuildCloneFactory is ICloneFactory, Ownable {
+contract GuildFactory is ICloneFactory, Ownable {
     /// The AMOR Token address
     address public amorToken;
     /// The address for the AMORxGuild Token implementation
