@@ -160,6 +160,7 @@ contract GuildController is Ownable {
 
     /// @notice burns the amount of FXTokens, and changes a report weight, based on a sign provided.
     /// It also sets a vote info for a specific voter.
+    /// It requires the `amount` to be `approved` prior to being called
     /// @dev As soon as the first vote goes for report, we create a time limit for vote(a week).
     /// @param id ID of report to vote for
     /// @param amount Amount of FXTokens to use for vote and burn
