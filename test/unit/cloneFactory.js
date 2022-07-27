@@ -28,7 +28,8 @@ describe("unit - Clone Factory", function () {
     AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
     FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
     DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
-    CLONE_FACTORY = setup.tokens.CloneFactoryContract;
+    //CLONE_FACTORY = setup.tokens.CloneFactoryContract;
+    CLONE_FACTORY = await init.guildFactory(setup);
 
     root = setup.roles.root;
     multisig = setup.roles.doingud_multisig;
@@ -37,6 +38,7 @@ describe("unit - Clone Factory", function () {
 
   before('Setup', async function() {
     await setupTests();
+
     await CLONE_FACTORY.deployGuildContracts(MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0]);
 
     this.guildOneAmorXGuild = await CLONE_FACTORY.guilds(0);

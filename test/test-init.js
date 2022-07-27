@@ -128,8 +128,31 @@ const controller = async (setup) => {
   return controller;
 };
 
+const guildFactory = async (setup) => {
+  const cloneFactory = await ethers.getContractFactory("GuildFactory");
+
+  await setup.tokens.AmorTokenImplementation.init(
+    AMOR_TOKEN_NAME, 
+    AMOR_TOKEN_SYMBOL, 
+    setup.roles.authorizer_adaptor.address, //taxController
+    TAX_RATE,
+    setup.roles.root.address // multisig
+  );
+
+  const guildFactory = await cloneFactory.deploy(
+    setup.tokens.AmorTokenImplementation.address,
+    setup.tokens.AmorGuildToken.address,
+    setup.tokens.FXAMORxGuild.address,
+    setup.tokens.dAMORxGuild.address,
+    setup.tokens.AmorTokenProxy.address
+  );
+
+  return guildFactory;
+}
+
 module.exports = {
   initialize,
   getTokens,
   controller,
+  guildFactory
 }; 
