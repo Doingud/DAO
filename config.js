@@ -1,11 +1,12 @@
-const AMOR = 'AMOR'
-const AMORxGuild = 'AMORxGuild'
-const FXAMORxGuild = 'FXAMORxGuild'
-const dAMORxGuild = 'dAMORxGuild'
-const MetaDAOController = 'MetaDAOController'
-const GuildController = 'GuildController'
-const taxController = 'taxController'
-const multisig = 'multisig'
+const AMOR = 'AMOR';
+const AMORxGuild = 'AMORxGuild';
+const FXAMORxGuild = 'FXAMORxGuild';
+const dAMORxGuild = 'dAMORxGuild';
+const MetaDAOController = 'MetaDAOController';
+const GuildController = 'GuildController';
+const taxController = 'taxController';
+const multisig = 'multisig';
+const dev = '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5';
 
 const contractAddresses = {
     'mainnet': {
@@ -16,17 +17,17 @@ const contractAddresses = {
         [MetaDAOController]: "",
         [GuildController]: ''
     },
-    'kovan': {
-        [AMOR]: "",
-        [AMORxGuild]: "", 
-        [FXAMORxGuild]: "",
+    'goerli': {
+        [AMOR]: '0x9E4A13E5c30e14AA96A0bC147A106e4166248343',
+        [AMORxGuild]: '', 
+        [FXAMORxGuild]: '',
         [dAMORxGuild]: '',
-        [MetaDAOController]: "",
+        [MetaDAOController]: '',
         [GuildController]: '',
-        [taxController]: "",
-        [multisig]: ""
+        [taxController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', // Dev wallet
+        [multisig]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', // Dev wallet
     },
-}
+};
 
 module.exports = {
     contractAddresses,
@@ -34,4 +35,4 @@ module.exports = {
         const blockchainOverride = process.env.BLOCKCHAIN_FORK ? process.env.BLOCKCHAIN_FORK : hre.network.name;
         return contractAddresses[blockchainOverride] ?? [];
     }
-} 
+};
