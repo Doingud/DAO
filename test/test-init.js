@@ -139,8 +139,6 @@ const getGuildFactory = async (setup) => {
 }
 
 const metadao = async(setup) =>{
-  //const cloneFactory = await setup.factory.guildFactory;
-
   const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController');
   const metadao = await MetaDaoFactory.deploy(
     setup.tokens.AmorTokenImplementation.address,

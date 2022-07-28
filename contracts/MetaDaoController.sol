@@ -153,9 +153,9 @@ contract MetaDaoController is AccessControl {
     /// @dev Explain to a developer any extra details
     /// @param name a parameter just like in doxygen (must be followed by parameter name)
     /// @param tokenSymbol the symbol for the Guild's token
-    function createGuild(string memory name, string memory tokenSymbol) public {
+    function createGuild(address guildOwner, string memory name, string memory tokenSymbol) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
-        ICloneFactory(guildFactory).deployGuildContracts(name,tokenSymbol);
+        ICloneFactory(guildFactory).deployGuildContracts(guildOwner, name, tokenSymbol);
         
         
     }

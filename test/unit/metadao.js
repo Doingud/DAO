@@ -33,21 +33,14 @@ describe("unit - MetaDao", function () {
       AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
       FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
       DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
-      //CLONE_FACTORY = setup.tokens.CloneFactoryContract;
-      //CLONE_FACTORY = await init.guildFactory(setup);
       root = setup.roles.root;
       multisig = setup.roles.doingud_multisig;    
       user1 = setup.roles.user1;
       user2 = setup.roles.user2;
+
       await init.getGuildFactory(setup);
       await init.metadao(setup);
       METADAO = setup.metadao;
-      //const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController', root);
-      //METADAO = await MetaDaoFactory.deploy(AMOR_TOKEN.address, user2.address, root.address);
-     // test token
-  
-  
-  
     });
 
     before('setup', async function() {

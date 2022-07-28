@@ -18,32 +18,36 @@ pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
-/// Interface to expose ERC20Taxable functions
-import "./utils/interfaces/IAmorToken.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// Advanced math functions for bonding curve
 import "./utils/ABDKMath64x64.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./utils/ERC20Base.sol";
+import "./utils/interfaces/IAmorGuildToken.sol";
 
-contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
+contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     using ABDKMath64x64 for uint256;
     using SafeERC20 for IERC20;
 
     bool private _initialized;
 
     /// The proxy contract address for AMOR
-    IAmorToken private tokenAmor;
-    IERC20 private safeAmor;
-    /// Co-efficient
-    uint256 private constant COEFFICIENT = 10**9;
+    IERC20 private tokenAmor;
 
     /// Tax on staking
     uint16 public stakingTaxRate;
     address public guildController;
+
+    /// Constants
+    /// Basis points as used in financial math
+    /// It allows fine-grained control over the tax rate
+    /// 1 basis point change == 0.01% change in the tax rate
+    /// Here it is the denominator for tax-related calculations
+    uint256 public BASIS_POINTS = 10000;
+    /// Co-efficient
+    uint256 private constant COEFFICIENT = 10**9;
 
     /// Custom errors
     /// Error if the AmorxGuild has already been initialized
@@ -53,27 +57,21 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// New rate above maximum
     error InvalidTaxRate();
 
-    /// Events
-    /// Emitted once token has been initialized
-    event Initialized(string name, string symbol, address amorToken);
-
     /// @notice Initializes the AMORxGuild contract
     /// @dev    Sets the token details as well as the required addresses for token logic
     /// @param  amorAddress the address of the AMOR token proxy
     /// @param  name the token name (e.g AMORxIMPACT)
     /// @param  symbol the token symbol
     function init(
-        address amorAddress,
         string memory name,
         string memory symbol,
+        address amorAddress,
         address controller
-    ) public {
+    ) external override {
         if (_initialized) {
             revert AlreadyInitialized();
         }
-        tokenAmor = IAmorToken(amorAddress);
-        safeAmor = IERC20(address(tokenAmor));
-        //_setImplementationAddress(implementationAddress);
+        tokenAmor = IERC20(amorAddress);
         _setTokenDetail(name, symbol);
         guildController = controller;
         _initialized = true;
@@ -83,7 +81,7 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// @notice Sets the tax on staking AMORxGuild
     /// @dev    Requires the new tax rate in basis points, where each point equals 0.01% change
     /// @param  newRate uint8 representing the new tax rate expressed in basis points.
-    function setTax(uint16 newRate) public onlyOwner {
+    function setTax(uint16 newRate) external onlyOwner {
         if (newRate > 2000) {
             revert InvalidTaxRate();
         }
@@ -95,9 +93,8 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// @param  to address where the AMORxGuild will be sent to
     /// @param  amount uint256 amount of AMOR to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
-    function stakeAmor(address to, uint256 amount) public whenNotPaused returns (uint256) {
-        uint256 userAmor = tokenAmor.balanceOf(msg.sender);
-        if (userAmor < amount) {
+    function stakeAmor(address to, uint256 amount) external override whenNotPaused returns (uint256) {
+        if (tokenAmor.balanceOf(msg.sender) < amount) {
             revert UnsufficientAmount();
         }
         //  Must calculate stakedAmor prior to transferFrom()
@@ -105,13 +102,16 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
 
         //  Must have enough AMOR to stake
         //  Note that this transferFrom() is taxed due to AMOR tax
-        safeAmor.safeTransferFrom(msg.sender, address(this), amount);
+        tokenAmor.safeTransferFrom(msg.sender, address(this), amount);
 
         //  Calculate mint amount and mint this to the address `to`
+        //  Take AMOR tax into account
+        uint256 taxCorrectedAmount = tokenAmor.balanceOf(address(this)) - stakedAmor;
         //  Note there is a tax on staking into AMORxGuild
-        uint256 mintAmount = COEFFICIENT * ((amount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
-        _mint(guildController, (mintAmount * stakingTaxRate) / tokenAmor.BASIS_POINTS());
-        _mint(to, (mintAmount * (tokenAmor.BASIS_POINTS() - stakingTaxRate)) / tokenAmor.BASIS_POINTS());
+        uint256 mintAmount = COEFFICIENT * ((taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
+        _mint(guildController, (mintAmount * stakingTaxRate) / BASIS_POINTS);
+        mintAmount = (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS;
+        _mint(to, mintAmount);
 
         return mintAmount;
     }
@@ -119,30 +119,28 @@ contract AMORxGuildToken is ERC20Base, Pausable, Ownable {
     /// @notice Allows the user to unstake their AMOR
     /// @param  amount uint256 amount of AMORxGuild to exchange for AMOR
     /// @return uint256 the amount of AMOR returned from burning AMORxGuild
-    function withdrawAmor(uint256 amount) public whenNotPaused returns (uint256) {
+    function withdrawAmor(uint256 amount) external override whenNotPaused returns (uint256) {
         if (amount > balanceOf(msg.sender)) {
             revert UnsufficientAmount();
         }
-        uint256 amorReturned;
         uint256 currentSupply = totalSupply();
-        amorReturned = ((currentSupply**2) - ((currentSupply - amount)**2)) / (COEFFICIENT**2);
+        uint256 amorReturned = ((currentSupply**2) - ((currentSupply - amount)**2)) / (COEFFICIENT**2);
 
         //  Burn the AMORxGuild of the tx.origin
         _burn(msg.sender, amount);
 
         //  Correct for the tax on transfer
-        uint256 taxCorrection = (amorReturned * tokenAmor.taxRate()) / tokenAmor.BASIS_POINTS();
         //  Transfer AMOR to the tx.origin, but note: this is taxed!
-        safeAmor.safeTransfer(msg.sender, amorReturned - taxCorrection);
+        tokenAmor.safeTransfer(msg.sender, amorReturned);
         //  Return the amount of AMOR returned to the user
-        return amorReturned - taxCorrection;
+        return amorReturned;
     }
 
-    function pause() public onlyOwner {
+    function pause() external onlyOwner {
         _pause();
     }
 
-    function unpause() public onlyOwner {
+    function unpause() external onlyOwner {
         _unpause();
     }
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
-/// @title  DoinGud Guild Token
-/// @author @daoism.systems, lourenslinde
+/// @title  DoinGud Guild Token Interface
+/// @author Daoism Systems Team
 /// @notice ERC20 implementation for DoinGudDAO
 
 /**
@@ -24,17 +24,16 @@ interface IAmorxGuild {
     /// Proxy Address Change
     event ProxyAddressChange(address indexed newProxyAddress);
 
-    function initProxy(address _logic, bytes memory _data) external;
-
     /// @notice Initializes the AMORxGuild contract
     /// @dev    Sets the token details as well as the required addresses for token logic
     /// @param  amorAddress the address of the AMOR token proxy
     /// @param  name the token name (e.g AMORxIMPACT)
     /// @param  symbol the token symbol
     function init(
-        address amorAddress,
         string memory name,
-        string memory symbol
+        string memory symbol,
+        address amorAddress,
+        address controller
     ) external;
 
     /// @notice Allows a user to stake their AMOR and receive AMORxGuild in return
