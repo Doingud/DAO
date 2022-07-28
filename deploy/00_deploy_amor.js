@@ -42,8 +42,6 @@
 // module.exports.tags = ["AMORToken"];
 
 
-
-
 async function main() {
     const { deploy, execute } = deployments;
     const [deployer] = await ethers.getSigners();
@@ -54,8 +52,7 @@ async function main() {
     console.log("Account balance:", (await deployer.getBalance()).toString());
   
     const AMORToken = await ethers.getContractFactory("AMORToken");
-    const AMOR = await Token.deploy();
-
+    const AMOR = await AMORToken.deploy();
 
     const tx = await AMOR.init("AMOR Token", "AMOR", admin, defaulTaxRate, admin);
     console.log("tx is %s", tx);
