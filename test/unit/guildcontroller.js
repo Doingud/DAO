@@ -365,6 +365,7 @@ describe('unit - Contract: GuildController', function () {
             const sign = true;
             await controller.connect(operator).voteForReport(id, amount, sign);
             time.increase(averageLockTime);
+            time.increase(averageLockTime);
 
             await expect(controller.connect(operator).voteForReport(id, amount, sign)).to.be.revertedWith(
                 'VotingTimeExpired()'
