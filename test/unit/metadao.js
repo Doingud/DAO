@@ -39,8 +39,11 @@ describe("unit - MetaDao", function () {
       multisig = setup.roles.doingud_multisig;    
       user1 = setup.roles.user1;
       user2 = setup.roles.user2;
-      const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController', root);
-      METADAO = await MetaDaoFactory.deploy(AMOR_TOKEN.address, user2.address, root.address);
+      await init.getGuildFactory(setup);
+      await init.metadao(setup);
+      METADAO = setup.metadao;
+      //const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController', root);
+      //METADAO = await MetaDaoFactory.deploy(AMOR_TOKEN.address, user2.address, root.address);
      // test token
   
   
