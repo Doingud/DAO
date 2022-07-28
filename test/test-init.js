@@ -18,7 +18,6 @@ const initialize = async (accounts) => {
     authorizer_adaptor: accounts[5],
     operator: accounts[6],
     staker: accounts[7],
-    pool: accounts[8]
   };
 
   return setup;
@@ -30,12 +29,6 @@ const getTokens = async (setup) => {
 
     const FXAMORxGuildFactory = await ethers.getContractFactory('FXAMORxGuild');
     const FXAMORxGuild = await FXAMORxGuildFactory.deploy();
-    await FXAMORxGuild.init(
-      "DoinGud MetaDAO", 
-      "FXAMORxGuild", 
-      setup.roles.operator.address, 
-      ERC20Token.address
-    );
 
     const guardianThreshold = 10;
     const dAMORxGuildFactory = await ethers.getContractFactory('dAMORxGuild');
@@ -102,12 +95,12 @@ const controller = async (setup) => {
     controller.address //controller
   );
 
-  /*await setup.tokens.FXAMORxGuild.init(
+  await setup.tokens.FXAMORxGuild.init(
     "DoinGud MetaDAO", 
     "FXAMORxGuild", 
     controller.address, //controller
     setup.tokens.AmorGuildToken.address // AMORxGuild
-  );*/
+  );
 
   return controller;
 };
@@ -147,7 +140,6 @@ const getGuildFactory = async (setup) => {
 const metadao = async(setup) =>{
   const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController');
   const metadao = await MetaDaoFactory.deploy(
-    setup.tokens.AmorTokenImplementation.address,
     setup.tokens.AmorTokenImplementation.address,
     setup.factory.guildFactory.address,
     setup.roles.root.address
