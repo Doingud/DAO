@@ -6,7 +6,6 @@ const MetaDAOController = 'MetaDAOController';
 const GuildController = 'GuildController';
 const taxController = 'taxController';
 const multisig = 'multisig';
-const dev = '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5';
 
 const contractAddresses = {
     'mainnet': {

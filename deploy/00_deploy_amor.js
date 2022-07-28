@@ -43,7 +43,6 @@
 
 
 async function main() {
-    const { deploy, execute } = deployments;
     const [deployer] = await ethers.getSigners();
     const admin = '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5';
     const defaulTaxRate = 0;
