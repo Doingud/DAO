@@ -123,7 +123,8 @@ const metadao = async(setup) =>{
   const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController',setup.roles.root);
 
 
-  const metadao = await MetaDaoFactory.deploy(,setup.roles.clone_factory ,setup.roles.root);
+
+  const metadao = await MetaDaoFactory.deploy(setup.tokens.AmorTokenImplementation.address, setup.roles.user2.address ,setup.roles.root.address);
 
   return metadao
 

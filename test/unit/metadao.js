@@ -35,12 +35,12 @@ describe("unit - MetaDao", function () {
       DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
       //CLONE_FACTORY = setup.tokens.CloneFactoryContract;
       //CLONE_FACTORY = await init.guildFactory(setup);
-      const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController', root);
-      const METADAO = await MetaDaoFactory.deploy(AMOR_TOKEN , user2, root);
       root = setup.roles.root;
       multisig = setup.roles.doingud_multisig;    
       user1 = setup.roles.user1;
       user2 = setup.roles.user2;
+      const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController', root);
+      METADAO = await MetaDaoFactory.deploy(AMOR_TOKEN.address, user2.address, root.address);
      // test token
   
   
@@ -54,7 +54,7 @@ describe("unit - MetaDao", function () {
     context('Add guilds', () => {
         it('it fails add guilds if not an admin address', async function () {
         
-            await expect(METADAO.connect(user1).addGuild(user2)).to.be.revertedWith(
+            await expect(METADAO.connect(user1).addGuild(user2.address)).to.be.revertedWith(
                 'NOT_ADMIN'
             );
         });
