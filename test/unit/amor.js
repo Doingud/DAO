@@ -4,7 +4,7 @@ const { solidity } = require("ethereum-waffle");
 
 use(solidity);
 
-describe("DoinGud MetaDAO", function () {
+describe("DoinGud Amor token", function () {
 
   // quick fix to let gas reporter fetch data from gas station & coinmarketcap
   before((done) => {

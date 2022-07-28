@@ -16,6 +16,7 @@ pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./utils/interfaces/ICloneFactory.sol";
 
 
 contract MetaDaoController is AccessControl {
@@ -154,7 +155,7 @@ contract MetaDaoController is AccessControl {
     /// @param tokenSymbol the symbol for the Guild's token
     function createGuild(string memory name, string memory tokenSymbol) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
-        ICloneFactory(guildFactory).deployGuild(name,tokenSymbol);
+        ICloneFactory(guildFactory).deployGuildContracts(name,tokenSymbol);
         
         
     }
