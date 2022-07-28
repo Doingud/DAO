@@ -119,9 +119,21 @@ const controller = async (setup) => {
   return controller;
 };
 
+const metadao = async(setup) =>{
+  const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController',setup.roles.root);
 
+
+  const metadao = await MetaDaoFactory.deploy(,setup.roles.clone_factory ,setup.roles.root);
+
+  return metadao
+
+
+
+
+}
 module.exports = {
   initialize,
   getTokens,
-  controller
+  controller,
+  metadao
 }; 
