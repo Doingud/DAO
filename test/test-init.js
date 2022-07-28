@@ -137,10 +137,23 @@ const getGuildFactory = async (setup) => {
 
   return factory;
 }
+const metadao = async(setup) =>{
+  const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController');
+  const metadao = await MetaDaoFactory.deploy(
+    setup.tokens.AmorTokenImplementation.address,
+    setup.factory.guildFactory.address,
+    setup.roles.root.address
+  );
+
+  setup.metadao = metadao;
+
+  return metadao;
+}
 
 module.exports = {
-  initialize,
-  getTokens,
   controller,
-  getGuildFactory
+  getGuildFactory,
+  getTokens,
+  initialize,
+  metadao
 }; 
