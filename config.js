@@ -33,5 +33,7 @@ module.exports = {
     getAddresses: function() {
         const blockchainOverride = process.env.BLOCKCHAIN_FORK ? process.env.BLOCKCHAIN_FORK : hre.network.name;
         return contractAddresses[blockchainOverride] ?? [];
-    }
+    },
+    multisig,
+    AMOR,
 };
