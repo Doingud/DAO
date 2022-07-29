@@ -7,6 +7,8 @@ import "./utils/interfaces/IAmorGuildToken.sol";
 import "@openzeppelin/contracts/governance/IGovernor.sol";
 import "@openzeppelin/contracts/governance/Governor.sol";
 import "@openzeppelin/contracts/utils/Timers.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import "@openzeppelin/contracts/utils/structs/DoubleEndedQueue.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -19,7 +21,8 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract GoinGudGovernor is IGovernor, Ownable {
 // contract GoinGudGovernor is Ownable {
-
+    using DoubleEndedQueue for DoubleEndedQueue.Bytes32Deque;
+    using SafeCast for uint256;
     using SafeERC20 for IERC20;
     using Timers for Timers.BlockNumber;
 
@@ -192,11 +195,70 @@ contract GoinGudGovernor is IGovernor, Ownable {
         return proposalId;
     }
 
+    function votingPeriod() public view virtual override returns (uint256);
+
     /// @notice function allows guardian to vote for the proposal. 
     /// Proposal should achieve at least 20% approval of guardians, to be accepted
     function castVote(uint256 proposalId, uint8 support) public virtual override onlyGuardian returns (uint256 balance){
-
+        address voter = _msgSender();
+        return _castVote(proposalId, voter, support, "");
     }
+
+    function _castVote(
+        uint256 proposalId,
+        address account,
+        uint8 support,
+        string memory reason
+    ) internal virtual returns (uint256) {
+        return _castVote(proposalId, account, support, reason, _defaultParams());
+    }
+
+    function _defaultParams() internal view virtual returns (bytes memory) {
+        return "";
+    }
+
+    function _castVote(
+        uint256 proposalId,
+        address account,
+        uint8 support,
+        string memory reason,
+        bytes memory params
+    ) internal virtual returns (uint256) {
+        ProposalCore storage proposal = _proposals[proposalId];
+        require(state(proposalId) == ProposalState.Active, "Governor: vote not currently active");
+
+        uint256 weight = _getVotes(account, proposal.voteStart.getDeadline(), params);
+        _countVote(proposalId, account, support, weight, params);
+
+        if (params.length == 0) {
+            emit VoteCast(account, proposalId, support, weight, reason);
+        } else {
+            emit VoteCastWithParams(account, proposalId, support, weight, reason, params);
+        }
+
+        return weight;
+    }
+
+    function _getVotes(
+        address account,
+        uint256 blockNumber,
+        bytes memory params
+    ) internal view virtual returns (uint256) {
+        // TODO: fill
+    }
+
+    function _countVote(
+        uint256 proposalId,
+        address account,
+        uint8 support,
+        uint256 weight,
+        bytes memory params
+    ) internal virtual {
+        // TODO: fill
+    }
+
+
+
 
     /// @notice function allows anyone to execute specific proposal, based on the vote.
     /// @param targets Targets of the proposal
@@ -209,130 +271,110 @@ contract GoinGudGovernor is IGovernor, Ownable {
         bytes[] memory calldatas,
         bytes32 descriptionHash
     ) public payable virtual override returns (uint256 proposalId) {
-    
+        uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
+
+        ProposalState status = state(proposalId);
+        require(
+            status == ProposalState.Succeeded || status == ProposalState.Queued,
+            "Governor: proposal not successful"
+        );
+        _proposals[proposalId].executed = true;
+
+        emit ProposalExecuted(proposalId);
+
+        _beforeExecute(proposalId, targets, values, calldatas, descriptionHash);
+        _execute(proposalId, targets, values, calldatas, descriptionHash);
+        _afterExecute(proposalId, targets, values, calldatas, descriptionHash);
+
+        return proposalId;
     }
 
 
-    // function version() public view virtual override returns (string memory);
+    function state(uint256 proposalId) public view virtual override returns (ProposalState) {
+        ProposalCore storage proposal = _proposals[proposalId];
 
-    // function COUNTING_MODE() public pure virtual override returns (string memory);
+        if (proposal.executed) {
+            return ProposalState.Executed;
+        }
 
-    // function hashProposal(
-    //     address[] memory targets,
-    //     uint256[] memory values,
-    //     bytes[] memory calldatas,
-    //     bytes32 descriptionHash
-    // ) public pure virtual override returns (uint256);
+        if (proposal.canceled) {
+            return ProposalState.Canceled;
+        }
 
-    // function state(uint256 proposalId) public view virtual override returns (ProposalState);
+        uint256 snapshot = proposalSnapshot(proposalId);
 
-    // function proposalSnapshot(uint256 proposalId) public view virtual override returns (uint256);
+        if (snapshot == 0) {
+            revert("Governor: unknown proposal id");
+        }
 
-    // /**
-    //  * @notice module:core
-    //  * @dev Block number at which votes close. Votes close at the end of this block, so it is possible to cast a vote
-    //  * during this block.
-    //  */
-    // function proposalDeadline(uint256 proposalId) public view virtual override returns (uint256);
+        if (snapshot >= block.number) {
+            return ProposalState.Pending;
+        }
 
-    // /**
-    //  * @notice module:user-config
-    //  * @dev Delay, in number of block, between the proposal is created and the vote starts. This can be increassed to
-    //  * leave time for users to buy voting power, of delegate it, before the voting of a proposal starts.
-    //  */
-    // function votingDelay() public view virtual override returns (uint256);
+        uint256 deadline = proposalDeadline(proposalId);
 
-    // /**
-    //  * @notice module:user-config
-    //  * @dev Delay, in number of blocks, between the vote start and vote ends.
-    //  *
-    //  * NOTE: The {votingDelay} can delay the start of the vote. This must be considered when setting the voting
-    //  * duration compared to the voting delay.
-    //  */
-    // function votingPeriod() public view virtual override returns (uint256);
+        if (deadline >= block.number) {
+            return ProposalState.Active;
+        }
 
-    // /**
-    //  * @notice module:user-config
-    //  * @dev Minimum number of cast voted required for a proposal to be successful.
-    //  *
-    //  * Note: The `blockNumber` parameter corresponds to the snapshot used for counting vote. This allows to scale the
-    //  * quorum depending on values such as the totalSupply of a token at this block (see {ERC20Votes}).
-    //  */
-    // function quorum(uint256 blockNumber) public view virtual override returns (uint256);
+        // TODO: Proposal should achieve at least 20% approval of guardians, to be accepted.
+        if (_quorumReached(proposalId) && _voteSucceeded(proposalId)) { //TODO: change this 'if'
+            return ProposalState.Succeeded;
+        } else {
+            return ProposalState.Defeated;
+        }
+    }
 
-    // /**
-    //  * @notice module:reputation
-    //  * @dev Voting power of an `account` at a specific `blockNumber`.
-    //  *
-    //  * Note: this can be implemented in a number of ways, for example by reading the delegated balance from one (or
-    //  * multiple), {ERC20Votes} tokens.
-    //  */
-    // function getVotes(address account, uint256 blockNumber) public view virtual override returns (uint256);
+    function proposalSnapshot(uint256 proposalId) public view virtual override returns (uint256) {
+        return _proposals[proposalId].voteStart.getDeadline();
+    }
 
-    // /**
-    //  * @notice module:reputation
-    //  * @dev Voting power of an `account` at a specific `blockNumber` given additional encoded parameters.
-    //  */
-    // function getVotesWithParams(
-    //     address account,
-    //     uint256 blockNumber,
-    //     bytes memory params
-    // ) public view virtual override returns (uint256);
+    function proposalDeadline(uint256 proposalId) public view virtual override returns (uint256) {
+        return _proposals[proposalId].voteEnd.getDeadline();
+    }
 
-    // /**
-    //  * @notice module:voting
-    //  * @dev Returns weither `account` has cast a vote on `proposalId`.
-    //  */
-    // function hasVoted(uint256 proposalId, address account) public view virtual override returns (bool);
+    function _execute(
+        uint256, /* proposalId */
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        bytes32 /*descriptionHash*/
+    ) internal virtual {
+        string memory errorMessage = "Governor: call reverted without message";
+        for (uint256 i = 0; i < targets.length; ++i) {
+            (bool success, bytes memory returndata) = targets[i].call{value: values[i]}(calldatas[i]);
+            Address.verifyCallResult(success, returndata, errorMessage);
+        }
+    }
 
-    // /**
-    //  * @dev Cast a vote with a reason
-    //  *
-    //  * Emits a {VoteCast} event.
-    //  */
-    // function castVoteWithReason(
-    //     uint256 proposalId,
-    //     uint8 support,
-    //     string calldata reason
-    // ) public virtual override returns (uint256 balance);
+    function _beforeExecute(
+        uint256, /* proposalId */
+        address[] memory targets,
+        uint256[] memory, /* values */
+        bytes[] memory calldatas,
+        bytes32 /*descriptionHash*/
+    ) internal virtual {
+        if (_executor() != address(this)) {
+            for (uint256 i = 0; i < targets.length; ++i) {
+                if (targets[i] == address(this)) {
+                    _governanceCall.pushBack(keccak256(calldatas[i]));
+                }
+            }
+        }
+    }
 
-    // /**
-    //  * @dev Cast a vote with a reason and additional encoded parameters
-    //  *
-    //  * Emits a {VoteCast} or {VoteCastWithParams} event depending on the length of params.
-    //  */
-    // function castVoteWithReasonAndParams(
-    //     uint256 proposalId,
-    //     uint8 support,
-    //     string calldata reason,
-    //     bytes memory params
-    // ) public virtual override returns (uint256 balance);
+    function _afterExecute(
+        uint256, /* proposalId */
+        address[] memory, /* targets */
+        uint256[] memory, /* values */
+        bytes[] memory, /* calldatas */
+        bytes32 /*descriptionHash*/
+    ) internal virtual {
+        if (_executor() != address(this)) {
+            if (!_governanceCall.empty()) {
+                _governanceCall.clear();
+            }
+        }
+    }
 
-    // /**
-    //  * @dev Cast a vote using the user's cryptographic signature.
-    //  *
-    //  * Emits a {VoteCast} event.
-    //  */
-    // function castVoteBySig(
-    //     uint256 proposalId,
-    //     uint8 support,
-    //     uint8 v,
-    //     bytes32 r,
-    //     bytes32 s
-    // ) public virtual override returns (uint256 balance);
-
-    // /**
-    //  * @dev Cast a vote with a reason and additional encoded parameters using the user's cryptographic signature.
-    //  *
-    //  * Emits a {VoteCast} or {VoteCastWithParams} event depending on the length of params.
-    //  */
-    // function castVoteWithReasonAndParamsBySig(
-    //     uint256 proposalId,
-    //     uint8 support,
-    //     string calldata reason,
-    //     bytes memory params,
-    //     uint8 v,
-    //     bytes32 r,
-    //     bytes32 s
-    // ) public virtual override returns (uint256 balance);
 }
