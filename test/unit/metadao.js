@@ -98,7 +98,7 @@ describe("unit - MetaDao", function () {
 
 
     context('Donate Amor tokens to metadao', () => {
-        it('it fails to update the weight is msg.sender is not a guild', async function () {
+        it('it succeeds if amor token is successfully donated to the metadao', async function () {
             await expect(AMOR_TOKEN.balanceOf(root.address) > 0);
             await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
             await expect(AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
@@ -131,7 +131,7 @@ describe("unit - MetaDao", function () {
     });
 
     context('Distribute Amor tokens from meta dao', () => {
-        it('it succeeds if a guild claims the token according to guildweight', async function () {
+        it('it succeeds if amor tokens are distributed to tbe guild according to guild weight', async function () {
             await METADAO.addGuild(user1.address);
             await METADAO.addGuild(user2.address);;
             await expect(AMOR_TOKEN.balanceOf(root.address) > 0);
