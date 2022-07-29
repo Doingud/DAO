@@ -119,16 +119,19 @@ describe("unit - MetaDao", function () {
             expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
             await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
             expect(await AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
-            await expect(METADAO.connect(user1).claim()).to.be.reverted;
+            await expect(METADAO.connect(user2).claim()).to.be.reverted;
         });
 
         it('it succeeds if a guild claims the token according to guildweight', async function () {
             await METADAO.setOperationsPool(pool.address);
             await METADAO.setBuildersPool(pool.address);
+            /// So here you are adding user1.address as a guild controller
             await METADAO.addGuild(user1.address);
             expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
             await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
-            expect(await AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
+            expect(await AMOR_TOKEN.allowance(root.address, METADAO.address) == 1000);
+            /// Here you donate 100 wei
+            /// The issue here is that in `donate()` we don't transfer AMOR to `address(this)`
             await METADAO.connect(root).donate(100);
             expect(await METADAO.connect(user1).updateGuildWeight(20));
             await METADAO.connect(user1).claim();

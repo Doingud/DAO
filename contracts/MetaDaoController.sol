@@ -106,9 +106,7 @@ contract MetaDaoController is AccessControl {
     /// @dev Explain to a developer any extra details
     /// @param amount Amount of AMOR to be donated
     function donate(uint256 amount) public {
-        uint256 distributedAmount = amount*operationsWeight/guildsTotalWeight;
-        amorToken.transferFrom(msg.sender, operationsPool, distributedAmount);
-        amorToken.transferFrom(msg.sender, buildersPool, amount-distributedAmount);
+        amorToken.transferFrom(msg.sender, address(this), amount);
     }
 
     /// @notice Explain to an end user what this does
@@ -147,8 +145,8 @@ contract MetaDaoController is AccessControl {
 
     /// @notice Explain to an end user what this does
     /// @dev Explain to a developer any extra details
-    function claim() public {
-        require(hasRole(GUILD_ROLE, msg.sender), "NOT_GUILD");
+    function claim() public onlyRole(GUILD_ROLE) {
+        ///require(hasRole(GUILD_ROLE, msg.sender), "NOT_GUILD");
         /// Calculate the claim amount
         uint256 amount = amorToken.balanceOf(address(this)) * guildWeight[msg.sender] / guildsTotalWeight;
         
@@ -158,7 +156,7 @@ contract MetaDaoController is AccessControl {
         }
         /// Update guildWeight and guildsTotalWeight
         guildWeight[msg.sender] = 0;
-        guildsTotalWeight -= amount;
+        ///guildsTotalWeight -= amount;
 
         /// Transfer the AMOR to the claimant
         amorToken.transfer(msg.sender, amount);
