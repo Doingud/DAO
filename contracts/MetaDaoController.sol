@@ -21,7 +21,7 @@ import "./utils/interfaces/ICloneFactory.sol";
 
 contract MetaDaoController is AccessControl {
 
-    error InvalidImpactMaker();
+    error InvalidGuild();
 
     address[] public guilds;
     //  Array of addresses of Guilds
@@ -67,7 +67,8 @@ contract MetaDaoController is AccessControl {
     /// @notice Updates a guild's weight
     /// @param  newWeight the amount of staked AMORxGuild in this guild
     /// @return bool the guild's balance was updated successfully
-    function updateGuildWeight(uint256 newWeight) external onlyRole(GUILD_ROLE) returns (bool) {
+    function updateGuildWeight(uint256 newWeight) external returns (bool) {
+        require(hasRole(GUILD_ROLE, msg.sender), "NOT_GUILD");
         /// If `distribute` is still in cooldown, or if the guild weight does not change
         if (guildWeight[msg.sender] == newWeight) {
             return false;
@@ -100,17 +101,17 @@ contract MetaDaoController is AccessControl {
     /// @notice Explain to an end user what this does
     /// @dev Explain to a developer any extra details
     function distribute() public {
-        claimStart = block.timestamp;
         uint[] memory currentGuildWeight;
         for (uint i = 0; i < guilds.length; i++){
             currentGuildWeight[i] = guildWeight[guilds[i]];
         }
+        _distribute(currentGuildWeight);
         
 
 
     }
 
-    function _distribute(uint[] calldata _currentGuildWeight) internal {
+    function _distribute(uint[] memory _currentGuildWeight) internal {
          uint256 currentBalance = amorToken.balanceOf(address(this));
          uint256 totalAmmountSent;
         for (uint i = 0; i < guilds.length; i++){
@@ -133,6 +134,7 @@ contract MetaDaoController is AccessControl {
     /// @notice Explain to an end user what this does
     /// @dev Explain to a developer any extra details
     function claim() public {
+        require(hasRole(GUILD_ROLE, msg.sender), "NOT_GUILD");
         /// Calculate the claim amount
         uint256 amount = amorToken.balanceOf(address(this)) * guildWeight[msg.sender] / guildsTotalWeight;
         
@@ -156,6 +158,7 @@ contract MetaDaoController is AccessControl {
     function createGuild(address guildOwner, string memory name, string memory tokenSymbol) public {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
         ICloneFactory(guildFactory).deployGuildContracts(guildOwner, name, tokenSymbol);
+
         
         
     }
@@ -176,15 +179,21 @@ contract MetaDaoController is AccessControl {
     /// @dev Explain to a developer any extra details
     /// @param index the index of the guild in guilds[]
     /// @param controller the address of the guild controller to remove
-    function removeImpactMaker(uint256 index, address controller) external {
+    function removeGuild(uint256 index, address controller) external {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
         if (guilds[index] == controller) {
             guilds[index] = guilds[guilds.length - 1];
             guilds.pop();
+            revokeRole(GUILD_ROLE,controller);
             } else {
-                revert InvalidImpactMaker();
+                revert InvalidGuild();
             }
-}
+    }
+
+    function getGuild(uint index) public view returns(address){
+        return guilds[index];
+    }
+
 
   
 

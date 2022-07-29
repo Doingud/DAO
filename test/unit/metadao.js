@@ -57,9 +57,92 @@ describe("unit - MetaDao", function () {
             );
         });
 
+        it('it adds a guild if tx sent by admin', async function () {
+            await METADAO.addGuild(user2.address);
+            expect(await METADAO.getGuild(0)).to.equal(user2.address); 
+        });
+
     });
 
 
+    context('Remove guilds', () => {
+        it('it fails to remove guilds if not an admin address', async function () {
+            await METADAO.addGuild(user2.address);
+            await expect(METADAO.connect(user1).removeGuild(0,user2.address)).to.be.revertedWith(
+                'NOT_ADMIN'
+            );
+        });
+
+        it('it removes a guild if tx sent by admin', async function () {
+            await METADAO.addGuild(user2.address);
+            await METADAO.addGuild(user1.address);
+            await METADAO.removeGuild(0,user2.address);
+            expect(await METADAO.getGuild(0)).to.equal(user1.address);  
+        });
+
+    });
+
+
+    context('Update Guild Weight', () => {
+        it('it fails to update the weight is msg.sender is not a guild', async function () {
+            await expect(METADAO.connect(user2).updateGuildWeight(50)).to.be.reverted;
+        });
+
+        it('it successfully updates the weight when a Guild address calls the function', async function () {
+            await METADAO.addGuild(user1.address);
+            await expect(METADAO.connect(user1).updateGuildWeight(20));
     
+        });
+
+    });
+
+
+    context('Donate Amor tokens to metadao', () => {
+        it('it fails to update the weight is msg.sender is not a guild', async function () {
+            await expect(AMOR_TOKEN.balanceOf(root.address) > 0);
+            await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
+            await expect(AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
+            await METADAO.connect(root).donate(10);
+        });
+
+
+    });
+
+    context('Claim amor tokens from metadao', () => {
+        it('it fails to claim if msg.sender is not a guild', async function () {
+            await expect(AMOR_TOKEN.balanceOf(root.address) > 0);
+            await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
+            await expect(AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
+            await expect(METADAO.connect(user1).claim()).to.be.reverted;
+        });
+
+        it('it succeeds if a guild claims the token according to guildweight', async function () {
+            await METADAO.addGuild(user1.address);
+            await METADAO.addGuild(user2.address);
+            await METADAO.connect(root).donate(100);
+            await expect(AMOR_TOKEN.balanceOf(root.address) > 0);
+            await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
+            await expect(AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
+            await expect(METADAO.connect(user1).updateGuildWeight(20));
+            await expect(METADAO.connect(user2).updateGuildWeight(30));
+            await METADAO.connect(user1).claim();
+        });
+
+    });
+
+    context('Distribute Amor tokens from meta dao', () => {
+        it('it succeeds if a guild claims the token according to guildweight', async function () {
+            await METADAO.addGuild(user1.address);
+            await METADAO.addGuild(user2.address);
+            await METADAO.connect(root).donate(100);
+            await expect(AMOR_TOKEN.balanceOf(root.address) > 0);
+            await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
+            await expect(AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
+            await expect(METADAO.connect(user1).updateGuildWeight(20));
+            await expect(METADAO.connect(user2).updateGuildWeight(30));
+            await METADAO.distribute();
+        });
+
+    });
 
 });
