@@ -116,9 +116,9 @@ describe("unit - MetaDao", function () {
 
     context('Claim amor tokens from metadao', () => {
         it('it fails to claim if msg.sender is not a guild', async function () {
-            await expect(AMOR_TOKEN.balanceOf(root.address) > 0);
+            expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
             await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
-            await expect(AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
+            expect(await AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
             await expect(METADAO.connect(user1).claim()).to.be.reverted;
         });
 
@@ -126,11 +126,11 @@ describe("unit - MetaDao", function () {
             await METADAO.setOperationsPool(pool.address);
             await METADAO.setBuildersPool(pool.address);
             await METADAO.addGuild(user1.address);
-            await expect(AMOR_TOKEN.balanceOf(root.address) > 0);
+            expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
             await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
-            await expect(AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
+            expect(await AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
             await METADAO.connect(root).donate(100);
-            await expect(METADAO.connect(user1).updateGuildWeight(20));
+            expect(await METADAO.connect(user1).updateGuildWeight(20));
             await METADAO.connect(user1).claim();
         });
 

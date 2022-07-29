@@ -114,17 +114,18 @@ contract MetaDaoController is AccessControl {
     /// @notice Explain to an end user what this does
     /// @dev Explain to a developer any extra details
     function distribute() public {
-        uint[] memory currentGuildWeight;
+        /// Quick and dirty fix to be able to utilize memory array
+        /// We can't use `i` to access an index in an unbounded array
+        /// We won't iterate through 101 indexes, because the loops use guilds.length
+        uint256[100] memory currentGuildWeight;
         for (uint i = 0; i < guilds.length; i++){
             currentGuildWeight[i] = guildWeight[guilds[i]];
         }
         _distribute(currentGuildWeight);
         
-
-
     }
 
-    function _distribute(uint[] memory _currentGuildWeight) internal {
+    function _distribute(uint[100] memory _currentGuildWeight) internal {
          uint256 currentBalance = amorToken.balanceOf(address(this));
          uint256 totalAmmountSent;
         for (uint i = 0; i < guilds.length; i++){
