@@ -89,6 +89,19 @@ contract MetaDaoController is AccessControl {
 
     }
 
+
+    function setOperationsPool(address pool)public{
+         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
+         operationsPool = pool;
+
+    }
+
+    function setBuildersPool(address pool)public{
+         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
+         buildersPool = pool;
+
+    }
+
     /// @notice Explain to an end user what this does
     /// @dev Explain to a developer any extra details
     /// @param amount Amount of AMOR to be donated

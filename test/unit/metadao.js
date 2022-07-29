@@ -100,9 +100,11 @@ describe("unit - MetaDao", function () {
     context('Donate Amor tokens to metadao', () => {
         it('it succeeds if amor token is successfully donated to the metadao', async function () {
             await expect(AMOR_TOKEN.balanceOf(root.address) > 0);
+            await expect(AMOR_TOKEN.balanceOf(METADAO.address) == 0);
             await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
             await expect(AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
             await METADAO.connect(root).donate(10);
+            
         });
 
 
