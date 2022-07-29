@@ -18,6 +18,7 @@ const initialize = async (accounts) => {
     authorizer_adaptor: accounts[5],
     operator: accounts[6],
     staker: accounts[7],
+    pool: accounts[8]
   };
 
   return setup;
