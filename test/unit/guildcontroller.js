@@ -8,7 +8,7 @@ const { ONE_HUNDRED_ETHER,
 const init = require('../test-init.js');
 
 const FEE_DENOMINATOR = 1000;
-const percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
+const percentToConvert = 100; //10% // (FEE_DENOMINATOR*10)/100
 
 const TEST_TRANSFER_SMALLER = 80;
 
@@ -188,7 +188,7 @@ describe('unit - Contract: GuildController', function () {
             expect((await AMORxGuild.balanceOf(controller.address)).toString()).to.equal(sum.toString());            
         });
     });
-
+    
     context('» claim testing', () => {
 
         it('it fails to claim if not the owner', async function () {
