@@ -10,16 +10,15 @@ const init = require('../test-init.js');
 
 const FEE_DENOMINATOR = 1000;
 const percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
+const averageLockTime = time.duration.days(7);
 const twoWeeks = time.duration.days(14);
+
 const TEST_TRANSFER_SMALLER = 80;
-// const COEFFICIENT = 10**19;
 
 let AMOR;
 let AMORxGuild;
 let FXAMORxGuild
 let controller;
-let metadao;
-let USDC;
 let root;
 let authorizer_adaptor;
 let impactMaker;
@@ -33,7 +32,6 @@ let report;
 let r;
 let s;
 let v;
-let sum;
 
 describe('unit - Contract: GuildController', function () {
 
@@ -41,19 +39,11 @@ describe('unit - Contract: GuildController', function () {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(signers);
         await init.getTokens(setup);
-        await init.metadao(setup);
-        await init.controller(setup);
-        await init.avatar(setup);
-        await init.governor(setup);
 
         AMOR = setup.tokens.AmorTokenImplementation;
-        AMORxGuild = setup.tokens.AmorGuildToken;
+        AMORxGuild = setup.tokens.AmorGuildToken;//AmorTokenImplementation;
         FXAMORxGuild = setup.tokens.FXAMORxGuild;
-        USDC = setup.tokens.ERC20Token;    
-        metadao = setup.metadao;
-        controller = setup.controller;
-        guildFactory = await init.getGuildFactory(setup);
-        await metadao.init(AMOR.address, setup.factory.address);
+        controller = await init.controller(setup);
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;
@@ -77,12 +67,9 @@ describe('unit - Contract: GuildController', function () {
         it("Should fail if called more than once", async function () {
             await expect(controller.init(
                 root.address, // owner
-                AMOR.address,
                 AMORxGuild.address,
-                FXAMORxGuild.address,
-                root.address,
-                root.address
-            )).to.be.revertedWith("AlreadyInitialized()");
+                FXAMORxGuild.address
+            )).to.be.revertedWith("Already initialized");
         });
     });
 
@@ -166,176 +153,55 @@ describe('unit - Contract: GuildController', function () {
     context('» donate testing', () => {
 
         it('it fails to donate AMORxGuild tokens if not enough AMORxGuild', async function () {
-            await metadao.connect(root).addWhitelist(AMORxGuild.address);
-            await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER, AMORxGuild.address)).to.be.revertedWith(
+            await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER)).to.be.revertedWith(
                 'InvalidAmount()'
             );
         });
 
-        it('it fails to donate if token not in the whitelist', async function () {
-            await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER, root.address)).to.be.revertedWith(
-                'NotListed()'
-            );
-        });
-
         it('donates AMORxGuild tokens', async function () {
-            expect((await FXAMORxGuild.balanceOf(user.address)).toString()).to.equal("0");
-
             await AMOR.connect(root).transfer(controller.address, TEST_TRANSFER);
             await AMOR.connect(root).transfer(user.address, TEST_TRANSFER);
 
-            await AMOR.connect(user).approve(AMORxGuild.address, TEST_TRANSFER);
-
-            let AMORDeducted = ethers.BigNumber.from((TEST_TRANSFER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
-            let nextAMORDeducted = ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
-
-            await AMORxGuild.connect(user).stakeAmor(user.address, nextAMORDeducted);
-            await AMORxGuild.connect(user).approve(controller.address, nextAMORDeducted);
-
-            await controller.connect(user).donate(TEST_TRANSFER_SMALLER, AMORxGuild.address);
-
-            const totalWeight = await controller.totalWeight();
-            const FxGAmount = (TEST_TRANSFER_SMALLER * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of amount to Impact poll
-            const decIpAmount = (TEST_TRANSFER_SMALLER - FxGAmount); //decreased amount
-
-            sum = 0;
-            let weight = await controller.weights(impactMaker.address);
-            let amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
-
-            sum += amountToSendImpactMaker;
-            expect((await FXAMORxGuild.balanceOf(user.address)).toString()).to.equal(FxGAmount.toString());
-            expect((await controller.claimableTokens(impactMaker.address, AMORxGuild.address)).toString()).to.equal(amountToSendImpactMaker.toString());            
-
-            weight = await controller.weights(staker.address);
-            amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
-            sum += amountToSendImpactMaker;
-            expect((await controller.claimableTokens(staker.address, AMORxGuild.address)).toString()).to.equal(amountToSendImpactMaker.toString());
-
-            weight = await controller.weights(operator.address);
-            amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
-            sum += amountToSendImpactMaker;
-            expect((await controller.claimableTokens(operator.address, AMORxGuild.address)).toString()).to.equal(amountToSendImpactMaker.toString());
-        
-            const difference = 1; // rounding error
-            sum += difference;
-            expect((await AMORxGuild.balanceOf(controller.address)).toString()).to.equal(sum.toString());            
-        });
-    });
-
-    context('» gatherDonation and distribute testing', () => {
-
-        it('it fails to gatherDonation if token not in the whitelist', async function () {
-            // gatherDonation --> distribute
-            await expect(controller.connect(operator).gatherDonation(root.address)).to.be.revertedWith(
-                'NotListed()'
-            );
-        });
-
-        it('gathers donation in AMOR', async function () {
-            await metadao.addExternalGuild(controller.address);
-            const abi = ethers.utils.defaultAbiCoder;
-            let encodedIndex = abi.encode(
-                ["tuple(address, uint256)"],
-                [
-                [controller.address, 100]
-                ]
-            );
-            await metadao.updateIndex([encodedIndex], 0);
-            await AMOR.transfer(controller.address, TEST_TRANSFER);
-
-            // add some funds to MetaDaoController
-            await AMOR.approve(metadao.address, TEST_TRANSFER);
-            await metadao.donate(AMOR.address, TEST_TRANSFER, 0);
-
-            const amountOfAMOR = await AMOR.balanceOf(metadao.address);
-            let AMORDeducted = ethers.BigNumber.from((amountOfAMOR*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
-            let previous = await AMOR.balanceOf(controller.address);
-
-            await controller.connect(operator).gatherDonation(AMOR.address);
-
-            let current = await AMOR.balanceOf(controller.address);
-            expect((current - previous).toString()).to.equal(AMORDeducted.toString());
-        });
-
-        it('gathers donation in USDC', async function () {
-            await metadao.connect(root).addWhitelist(USDC.address);
-
-            // add some funds to MetaDaoController
-            await USDC.connect(root).approve(metadao.address, TEST_TRANSFER);
-            await metadao.donate(USDC.address, TEST_TRANSFER, 0);
-            
-            await USDC.connect(root).transfer(metadao.address, TEST_TRANSFER);
-
-            const multisig = root;
-            await AMOR.connect(multisig).approve(controller.address, TEST_TRANSFER);
-
-            await controller.connect(operator).gatherDonation(USDC.address);
-        });
-
-        it('gathers donation in AMORxGuild', async function () {
-            await AMOR.connect(root).transfer(controller.address, TEST_TRANSFER);
-            await AMOR.connect(root).transfer(user.address, TEST_TRANSFER);
             await AMOR.connect(user).approve(AMORxGuild.address, TEST_TRANSFER);
 
             let AMORDeducted = ethers.BigNumber.from((TEST_TRANSFER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
             let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
 
             await AMORxGuild.connect(user).stakeAmor(user.address, nextAMORDeducted);
+            await AMORxGuild.connect(user).approve(controller.address, nextAMORDeducted);
 
-            let impactMakerClaimableBefore = await controller.claimableTokens(impactMaker.address, AMORxGuild.address);
-            let stakerClaimableBefore = await controller.claimableTokens(staker.address, AMORxGuild.address);
-            let operatorClaimableBefore = await controller.claimableTokens(operator.address, AMORxGuild.address);
+            await controller.connect(user).donate(TEST_TRANSFER_SMALLER);        
 
-            let totalWeight = await controller.totalWeight();
+            const totalWeight = await controller.totalWeight();
+            const FxGAmount = (TEST_TRANSFER_SMALLER * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of amount to Impact poll
+            const decIpAmount = (TEST_TRANSFER_SMALLER - FxGAmount); //decreased amount
 
-            // test
-            let AMORxGuildAmount = await AMORxGuild.connect(user).balanceOf(user.address);
-            await AMORxGuild.connect(user).approve(metadao.address, AMORxGuildAmount);
-            await metadao.connect(user).donate(AMORxGuild.address, AMORxGuildAmount, 0);
-            let amount = await metadao.guildFunds(controller.address, AMORxGuild.address);
-            await controller.connect(user).gatherDonation(AMORxGuild.address);
-
-            let difference = 0; // difference -604 appears here: (decAmount * weights[impactMakers[i]]) / totalWeight
+            let sum = 0;
             let weight = await controller.weights(impactMaker.address);
-            weight = weight / totalWeight;
-            let amountToSendImpactMaker = amount * weight;
+            let amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
 
-            sum = 0;
-            sum += amountToSendImpactMaker + difference;
-            let currentClaimable = ethers.BigNumber.from(impactMakerClaimableBefore.toString())
-                .add(ethers.BigNumber.from(amountToSendImpactMaker.toString()))
-                .add(ethers.BigNumber.from(difference.toString()));
-
-            expect((await controller.claimableTokens(impactMaker.address, AMORxGuild.address))).to.be.closeTo(currentClaimable, 5000);
-
+            sum += amountToSendImpactMaker;
+            expect((await FXAMORxGuild.balanceOf(user.address)).toString()).to.equal(FxGAmount.toString());
+            expect((await controller.claimableTokens(impactMaker.address)).toString()).to.equal(amountToSendImpactMaker.toString());            
 
             weight = await controller.weights(staker.address);
-            amountToSendImpactMaker = Math.floor((amount * weight) / totalWeight);
-            difference = 8;
-            sum += amountToSendImpactMaker - difference;
-            currentClaimable = ethers.BigNumber.from(stakerClaimableBefore.toString())
-                .add(ethers.BigNumber.from(amountToSendImpactMaker.toString()))
-                .sub(ethers.BigNumber.from(difference.toString()));
-                
-            expect((await controller.claimableTokens(staker.address, AMORxGuild.address)).toString()).to.be.closeTo(currentClaimable, 200);
-
+            amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
+            sum += amountToSendImpactMaker;
+            expect((await controller.claimableTokens(staker.address)).toString()).to.equal(amountToSendImpactMaker.toString());
 
             weight = await controller.weights(operator.address);
-            amountToSendImpactMaker = ((amount * weight) / totalWeight);
-            
-            difference = 12;
-            sum += amountToSendImpactMaker + difference;
-            currentClaimable = ethers.BigNumber.from(operatorClaimableBefore.toString())
-                .add(ethers.BigNumber.from(amountToSendImpactMaker.toString()))
-                .add(ethers.BigNumber.from(difference.toString()));
-            expect((await controller.claimableTokens(operator.address, AMORxGuild.address)).toString()).to.be.closeTo(currentClaimable, 200);        
+            amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
+            sum += amountToSendImpactMaker;
+            expect((await controller.claimableTokens(operator.address)).toString()).to.equal(amountToSendImpactMaker.toString());
+        
+            expect((await AMORxGuild.balanceOf(controller.address)).toString()).to.equal(sum.toString());            
         });
     });
-
+    
     context('» claim testing', () => {
 
         it('it fails to claim if not the owner', async function () {
-            await expect(controller.connect(user).claim(user2.address, [AMORxGuild.address])).to.be.revertedWith(
+            await expect(controller.connect(user).claim(user2.address)).to.be.revertedWith(
                 'Unauthorized()'
             );
         });
@@ -344,14 +210,9 @@ describe('unit - Contract: GuildController', function () {
             const balanceBefore = await AMORxGuild.balanceOf(impactMaker.address);
             expect(balanceBefore).to.equal(0);
 
-            const balanceAfter = await controller.claimableTokens(impactMaker.address, AMORxGuild.address);
-            // check that passing empty-claimable token in array would cause no errors
-            expect((await controller.claimableTokens(impactMaker.address, FXAMORxGuild.address)).toString()).to.equal("0");
-            expect((await FXAMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal("0");
-
-            await controller.connect(impactMaker).claim(impactMaker.address, [AMORxGuild.address, FXAMORxGuild.address]);
+            const balanceAfter = await controller.claimableTokens(impactMaker.address);
+            await controller.connect(impactMaker).claim(impactMaker.address);
             expect((await AMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal(balanceAfter.toString());
-            expect((await FXAMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal("0");
         });
     });
 
@@ -457,7 +318,7 @@ describe('unit - Contract: GuildController', function () {
             let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
             await AMORxGuild.connect(operator).stakeAmor(operator.address, nextAMORDeducted);
             await AMORxGuild.connect(operator).approve(controller.address, nextAMORDeducted);
-            await controller.connect(operator).donate(TEST_TRANSFER_SMALLER, AMORxGuild.address);        
+            await controller.connect(operator).donate(TEST_TRANSFER_SMALLER);        
 
             const id = 0;
             const amount = 2;
@@ -482,15 +343,6 @@ describe('unit - Contract: GuildController', function () {
             await controller.connect(user).voteForReport(id, 1, true);
         });
 
-        it('it fails to vote for report if InvalidAmount', async function () {
-            const id = 0;
-            const amount = 0;
-            const sign = true;
-            await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
-                'InvalidAmount()'
-            );
-        });
-
         it('it fails to vote for report if try to vote more than user have', async function () {
             const id = 0;
             const amount = TEST_TRANSFER;
@@ -512,7 +364,7 @@ describe('unit - Contract: GuildController', function () {
             const amount = 2;
             const sign = true;
             await controller.connect(operator).voteForReport(id, amount, sign);
-            time.increase(time.duration.days(15));
+            time.increase(averageLockTime);
 
             await expect(controller.connect(operator).voteForReport(id, amount, sign)).to.be.revertedWith(
                 'VotingTimeExpired()'
@@ -528,144 +380,6 @@ describe('unit - Contract: GuildController', function () {
             await controller.connect(operator).finalizeVoting();
             const balanceAfter = balanceBefore.add(2);
             expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
-        });
-
-        it('adds report when voting is not active', async function () {
-            const timestamp = Date.now();
-
-            let messageHash = ethers.utils.solidityKeccak256(
-                ["address", "uint", "string"],
-                [user.address, timestamp, "next report info"]
-            );
-            let messageHashBinary = ethers.utils.arrayify(messageHash);
-            let signature = await user.signMessage(messageHashBinary);
-            let r = signature.slice(0, 66);
-            let s = "0x" + signature.slice(66, 130);
-            let v = parseInt(signature.slice(130, 132), 16);
-            let report = messageHash;
-
-            await controller.connect(user).addReport(report, v, r, s);
-            expect((await controller.queueReportsAuthors(0))).to.equal(user.address);
-            expect((await controller.reportsQueue(0))).to.equal(0);
-        });
-
-        it('it fails to vote for report if VotingNotStarted', async function () {
-            const id = 0;
-            const amount = TEST_TRANSFER;
-            const sign = true;
-            await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
-                'VotingNotStarted()'
-            );
-        });
-
-        it('it starts reports voting if finalizeVoting wasn not called', async function () {
-            const timestamp = Date.now();
-
-            // building hash has to come from system address
-            // 32 bytes of data
-            let messageHash = ethers.utils.solidityKeccak256(
-                ["address", "uint", "string"],
-                [user2.address, timestamp, "next report info"]
-            );
-
-            // 32 bytes of data in Uint8Array
-            let messageHashBinary = ethers.utils.arrayify(messageHash);
-            
-            // To sign the 32 bytes of data, make sure you pass in the data
-            let signature = await user2.signMessage(messageHashBinary);
-
-            // split signature
-            r = signature.slice(0, 66);
-            s = "0x" + signature.slice(66, 130);
-            v = parseInt(signature.slice(130, 132), 16);
-            report = messageHash;
-
-            await AMORxGuild.connect(user2).approve(controller.address, TEST_TRANSFER);
-            await controller.connect(user2).addReport(report, v, r, s); // 0
-            await controller.connect(user2).addReport(report, v, r, s); // 1
-            await controller.connect(user2).addReport(report, v, r, s); // 2
-            await controller.connect(user2).addReport(report, v, r, s); // 3
-            await controller.connect(user2).addReport(report, v, r, s); // 4
-            await controller.connect(user2).addReport(report, v, r, s); // 5
-            await controller.connect(user2).addReport(report, v, r, s); // 6
-            await controller.connect(user2).addReport(report, v, r, s); // 7
-            await controller.connect(user2).addReport(report, v, r, s); // 8
-            await controller.connect(user2).addReport(report, v, r, s); // 9
-            expect((await controller.queueReportsAuthors(9))).to.equal(user2.address);
-
-            // 0 2 3 4 5 6 days in a week
-            // test another else-path in SUNDAY-CHECK
-            time.increase(time.duration.days(3));
-
-            await controller.connect(authorizer_adaptor).startVoting();
-            expect(await controller.trigger()).to.equal(true);
-
-            time.increase(twoWeeks);
-
-            messageHash = ethers.utils.solidityKeccak256(
-                ["address", "uint", "string"],
-                [user.address, timestamp, "next report info"]
-            );
-            messageHashBinary = ethers.utils.arrayify(messageHash);
-            signature = await user.signMessage(messageHashBinary);
-            r = signature.slice(0, 66);
-            s = "0x" + signature.slice(66, 130);
-            v = parseInt(signature.slice(130, 132), 16);
-            report = messageHash;
-
-            await controller.connect(user).addReport(report, v, r, s); // 0
-            await controller.connect(user).addReport(report, v, r, s); // 1
-            await controller.connect(user).addReport(report, v, r, s); // 2
-            await controller.connect(user).addReport(report, v, r, s); // 3
-            await controller.connect(user).addReport(report, v, r, s); // 4
-            await controller.connect(user).addReport(report, v, r, s); // 5
-            await controller.connect(user).addReport(report, v, r, s); // 6
-            await controller.connect(user).addReport(report, v, r, s); // 7
-            await controller.connect(user).addReport(report, v, r, s); // 8
-            await controller.connect(user).addReport(report, v, r, s); // 9
-
-            // test another else-path in SUNDAY-CHECK
-            time.increase(time.duration.days(5));
-            await controller.connect(authorizer_adaptor).startVoting();
-            expect((await controller.reportsAuthors(9))).to.equal(user.address);
-        });
-    });
-
-    context('» setVotingPeriod testing', () => {
-
-        it('it fails to set new voting period if not the owner', async function () {
-            await expect(controller.connect(user).setVotingPeriod(12)).to.be.revertedWith(
-                'Ownable: caller is not the owner'
-            );
-        });
-
-        it('it fails to set new voting period if newTime < 2 days', async function () {
-            await expect(controller.connect(root).setVotingPeriod(12)).to.be.revertedWith(
-                'InvalidAmount()'
-            );
-        });
-
-        it('it sets new voting period', async function () {
-            let newTime = 60 * 60 *24 * 2;
-            await controller.connect(root).setVotingPeriod(newTime);
-            expect((await controller.ADDITIONAL_VOTING_TIME())).to.equal(newTime);
-        });
-    });
-
-    context('» setPercentToConvert testing', () => {
-
-        it('it fails to set new percent to convert if not the owner', async function () {
-            expect((await controller.percentToConvert())).to.equal(percentToConvert);
-            let fiftyPercent = 500;
-            await expect(controller.connect(user).setPercentToConvert(fiftyPercent)).to.be.revertedWith(
-                'Ownable: caller is not the owner'
-            );
-        });
-
-        it('it sets new percent to convert', async function () {
-            let fiftyPercent = 500;
-            await controller.connect(root).setPercentToConvert(fiftyPercent);
-            expect((await controller.percentToConvert())).to.equal(fiftyPercent);
         });
     });
 });
