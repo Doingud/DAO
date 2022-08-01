@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
 import "./utils/Enum.sol";
-
-contract AvatarxGuild {
+import "./Executor.sol";
+contract AvatarxGuild is Executor {
     event EnabledModule(address module);
     event DisabledModule(address module);
     event ExecutionFromModuleSuccess(address indexed module);
