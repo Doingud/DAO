@@ -10,11 +10,9 @@ contract AvatarxGuild is Executor {
 
     address internal constant SENTINEL_MODULES = address(0x1);
 
-
     mapping(address => bool) public voters;
     mapping(address => address) internal modules;
-
-
+    
     /// @dev Allows to add a module to the whitelist.
     ///      This can only be done via a Safe transaction.
     /// @notice Enables the module `module` for the Safe.
