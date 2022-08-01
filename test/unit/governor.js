@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const init = require('../test-init.js');
 
-// let AMOR;
+// let AMOR; // need for AMORxGuild
 // let AMORxGuild; // need for testing propose() function
 let governor;
 let root;
@@ -12,6 +12,11 @@ let user;
 let user2;
 let staker;
 let guardians;
+
+let targets;
+let values;
+let calldatas;
+let description;
 
 describe('unit - Contract: Governor', function () {
 
@@ -109,6 +114,52 @@ describe('unit - Contract: Governor', function () {
 
         it('it changes guardian', async function () {
             await governor.connect(authorizer_adaptor).changeGuardian(1, root.address);
+            expect(await governor.guardians(1)).to.equals(root.address);
+        });
+    });
+
+    context('» propose testing', () => {
+
+        it('it fails to propose if not the snapshot', async function () {
+            targets = [authorizer_adaptor];
+            values = [12];
+            // building hash has to come from system address
+            // 32 bytes of data
+            let messageHash = ethers.utils.solidityKeccak256(
+                ["address"],
+                [authorizer_adaptor.address]
+            );
+
+            // 32 bytes of data in Uint8Array
+            let messageHashBinary = ethers.utils.arrayify(messageHash);
+            calldatas = [messageHash];
+            description = 'proposal';
+
+            await expect(governor.connect(user).propose(targets, values, calldatas,description)).to.be.revertedWith(
+                'Unauthorized()'
+            );
+        });
+
+        it('it fails to propose if invalid proposal length', async function () {
+            await expect(governor.connect(authorizer_adaptor).propose(1, user2.address)).to.be.revertedWith(
+                'Governor: invalid proposal length'
+            );
+        });
+
+        it('it fails to propose if empty proposal', async function () {
+            await expect(governor.connect(authorizer_adaptor).propose(1, user2.address)).to.be.revertedWith(
+                'Governor: empty proposal'
+            );
+        });
+
+        it('it fails to propose if proposal already exists', async function () {
+            await expect(governor.connect(authorizer_adaptor).propose(1, user2.address)).to.be.revertedWith(
+                'Governor: proposal already exists'
+            );
+        });
+
+        it('it proposes', async function () {
+            await governor.connect(authorizer_adaptor).propose(1, root.address);
             expect(await governor.guardians(1)).to.equals(root.address);
         });
     });
