@@ -4,11 +4,12 @@ pragma solidity 0.8.15;
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
 
-import "@openzeppelin/contracts/governance/IGovernor.sol";
 import "@openzeppelin/contracts/governance/Governor.sol";
-import "@openzeppelin/contracts/utils/Timers.sol";
-import "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import "@openzeppelin/contracts/utils/structs/DoubleEndedQueue.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
+import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -19,43 +20,124 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// @dev    IGovernor IERC165 Pattern
 /// @notice Governor contract will allow to add and vote for the proposals
 
-contract GoinGudGovernor is IGovernor, Ownable {
-// contract GoinGudGovernor is Ownable {
-    using DoubleEndedQueue for DoubleEndedQueue.Bytes32Deque;
-    using SafeCast for uint256;
+// contract GoinGudGovernor is Governor, IGovernor, Ownable {
+contract GoinGudGovernor is 
+  Governor,
+  GovernorCountingSimple,
+  GovernorVotes,
+  GovernorTimelockControl
+{
     using SafeERC20 for IERC20;
-    using Timers for Timers.BlockNumber;
+
+    uint256[] public proposals; // it’s an array of proposals hashes to execute. After proposal was voted for, an executor provides a complete data about the proposal, which gets hashed and if hashes correspond, then the proposal is executed.
+    mapping(uint256 => ProposalCore) private _proposals;
+
+    mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
+    mapping(uint256 => address[]) public voters; // voters mapping(uint report => address [] voters)
+    int256[] public reportsVoting; // results of the vote for the report with spe
+
+
 
     uint256 public GUARDIANS_LIMIT; // amount of guardians for contract to function propperly, until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.
-    uint256[] public proposals; // it’s an array of proposals hashes to execute. After proposal was voted for, an executor provides a complete data about the proposal, which gets hashed and if hashes correspond, then the proposal is executed.
     address[] public guardians; // this is an array guardians who are allowed to vote for the proposals.
+    int256[] public proposalsWeight;
+    mapping(address => uint256) public weights; // weight of each specific guardian
 
     address public snapshotAddress;
 
-    mapping(uint256 => ProposalCore) private _proposals;
+    IERC20 private AMORxGuild;
 
     event Initialized(bool success, address owner, address snapshotAddress);
 
     string public _name;
     bool private _initialized;
 
+  uint256 public _votingDelay;
+  uint256 public _votingPeriod;
+  uint256 public _quorum;
+
     error NotEnoughGuardians();
     error Unauthorized();
     error InvalidParameters();
+    error InvalidAmount();
 
     struct ProposalCore {
         Timers.BlockNumber voteStart;
         Timers.BlockNumber voteEnd;
         bool executed;
         bool canceled;
+        uint256 weights;
     }
+
+    struct Proposal {
+        /// @notice Unique id for looking up a proposal
+        uint id;
+
+        /// @notice Creator of the proposal
+        address proposer;
+
+        /// @notice The timestamp that the proposal will be available for execution, set once the vote succeeds
+        uint eta;
+
+        /// @notice the ordered list of target addresses for calls to be made
+        address[] targets;
+
+        /// @notice The ordered list of values (i.e. msg.value) to be passed to the calls to be made
+        uint[] values;
+
+        /// @notice The ordered list of function signatures to be called
+        string[] signatures;
+
+        /// @notice The ordered list of calldata to be passed to each call
+        bytes[] calldatas;
+
+        /// @notice The block at which voting begins: holders must delegate their votes prior to this block
+        // uint startBlock;
+        Timers.BlockNumber voteStart;
+
+        /// @notice The block at which voting ends: votes must be cast prior to this block
+        // uint endBlock;
+        Timers.BlockNumber voteEnd;
+
+        /// @notice Current number of votes for this proposal
+        int Votes;
+
+        /// @notice Flag marking whether the proposal has been canceled
+        bool canceled;
+
+        /// @notice Flag marking whether the proposal has been executed
+        bool executed;
+
+        /// @notice Receipts of ballots for the entire set of voters
+        mapping (address => Receipt) receipts;
+    }
+
+    // constructor(IVotes _token, TimelockController _timelock)
+    //     Governor("MyGovernor")
+    //     GovernorSettings(1 /* 1 block */, 45818 /* 1 week */, 0)
+    //     GovernorVotes(_token)
+    //     GovernorVotesQuorumFraction(4)
+    //     GovernorTimelockControl(_timelock)
+    // {}
 
     function init(
         string memory name_,
-        address initOwner, address snapshotAddress_) external returns (bool) {
+        // IVotes  AMORxGuild_,
+        // TimelockController _timelock,
+        address AMORxGuild_,
+        address initOwner, 
+        address snapshotAddress_
+    ) external returns (bool) {
         require(!_initialized, "Already initialized");
 
         _transferOwnership(initOwner);
+
+    __Governor_init('Unlock Protocol Governor');
+    __GovernorCountingSimple_init();
+    __GovernorVotes_init(AMORxGuild_);
+    __GovernorTimelockControl_init(_timelock);
+
+        AMORxGuild = IERC20(AMORxGuild_);
 
         // person who inflicted the creation of the contract is set as the only guardian of the system
         guardians.push(msg.sender);
@@ -63,6 +145,12 @@ contract GoinGudGovernor is IGovernor, Ownable {
 
         _name = name_;
         _initialized = true;
+    _votingDelay = 1; // 1 block
+    _votingPeriod = 45818; // 1 week
+    _quorum = 11000e18; // 11k AMORxGuild
+        proposalThreshold = proposalThreshold_;
+
+
         emit Initialized(_initialized, initOwner, snapshotAddress_);
         return true;
     }
@@ -158,6 +246,13 @@ contract GoinGudGovernor is IGovernor, Ownable {
     /// @param values Values of the proposal
     /// @param calldatas Calldatas of the proposal
     /// @param description Description of the proposal
+
+    /// @param targets Target addresses for proposal calls
+    /// @param values Eth values for proposal calls
+    /// @param signatures Function signatures for proposal calls
+    /// @param calldatas Calldatas for proposal calls
+    /// @param description String description of the proposal
+    /// @return proposalId id of new proposal
     function propose(
         address[] memory targets,
         uint256[] memory values,
@@ -167,11 +262,13 @@ contract GoinGudGovernor is IGovernor, Ownable {
 
         uint256 proposalId = hashProposal(targets, values, calldatas, keccak256(bytes(description)));
 
-        require(targets.length == values.length, "Governor: invalid proposal length");
-        require(targets.length == calldatas.length, "Governor: invalid proposal length");
+        require(comp.getPriorVotes(msg.sender, sub256(block.number, 1)) > proposalThreshold, "Governor::propose: proposer votes below proposal threshold");
+        require(targets.length == values.length && targets.length == signatures.length && targets.length == calldatas.length, "Governor::propose: proposal function information arity mismatch");
         require(targets.length > 0, "Governor: empty proposal");
+        require(targets.length <= proposalMaxOperations, "Governor::propose: too many actions");
 
-        ProposalCore storage proposal = _proposals[proposalId];
+
+        Proposal storage proposal = _proposals[proposalId];
         require(proposal.voteStart.isUnset(), "Governor: proposal already exists");
 
         uint64 snapshot = block.number.toUint64() + votingDelay().toUint64();
@@ -180,12 +277,29 @@ contract GoinGudGovernor is IGovernor, Ownable {
         proposal.voteStart.setDeadline(snapshot);
         proposal.voteEnd.setDeadline(deadline);
 
+        Proposal memory newProposal = Proposal({
+            id: proposalId,
+            proposer: msg.sender,
+            eta: 0,
+            targets: targets,
+            values: values,
+            // signatures: signatures,
+            calldatas: calldatas,
+            voteStart: snapshot,
+            voteEnd: deadline,
+            Votes: 0,
+            canceled: false,
+            executed: false
+        });
+
+        _proposals[proposalId] = newProposal;
+
         emit ProposalCreated(
             proposalId,
-            _msgSender(),
+            _msgSender(), // proposer
             targets,
             values,
-            new string[](targets.length),
+            new string[](targets.length), // signatures
             calldatas,
             snapshot,
             deadline,
@@ -221,44 +335,40 @@ contract GoinGudGovernor is IGovernor, Ownable {
         uint256 proposalId,
         address account,
         uint8 support,
-        string memory reason,
-        bytes memory params
-    ) internal virtual returns (uint256) {
-        ProposalCore storage proposal = _proposals[proposalId];
-        require(state(proposalId) == ProposalState.Active, "Governor: vote not currently active");
-
-        uint256 weight = _getVotes(account, proposal.voteStart.getDeadline(), params);
-        _countVote(proposalId, account, support, weight, params);
-
-        if (params.length == 0) {
-            emit VoteCast(account, proposalId, support, weight, reason);
-        } else {
-            emit VoteCastWithParams(account, proposalId, support, weight, reason, params);
+        string memory reason
+    ) internal virtual override(Governor) returns (uint256)
+    {
+        uint256 _weight = super._castVote(proposalId, account, support, reason);
+        if(proposalReward[proposalId].totalDistributed < proposalReward[proposalId].totalCountedReward){
+            uint256 myReward = getProposalReward(proposalId, account);
+            if(posi.balanceOf(address(this)) > myReward){
+                posi.transfer(_msgSender(), myReward);
+                proposalReward[proposalId].totalDistributed+=myReward;
+            }
         }
-
-        return weight;
+        return _weight;
     }
+}
 
-    function _getVotes(
-        address account,
-        uint256 blockNumber,
-        bytes memory params
-    ) internal view virtual returns (uint256) {
-        // TODO: fill
-    }
+    // function _getVotes(
+    //     address account,
+    //     uint256 blockNumber,
+    //     bytes memory params
+    // ) internal view virtual returns (uint256) {
+    //     // TODO: fill
+    // }
 
-    function _countVote(
-        uint256 proposalId,
-        address account,
-        uint8 support,
-        uint256 weight,
-        bytes memory params
-    ) internal virtual {
-        // TODO: fill
-    }
-
-
-
+    // function _countVote(
+    //     uint256 proposalId,
+    //     address account,
+    //     uint8 support,
+    //     uint256 weight,
+    //     bytes memory params
+    // ) internal virtual {
+    //     // TODO: fill
+    //     // modify weight
+    //     // add weight
+    // }
 
     /// @notice function allows anyone to execute specific proposal, based on the vote.
     /// @param targets Targets of the proposal
@@ -289,7 +399,6 @@ contract GoinGudGovernor is IGovernor, Ownable {
         return proposalId;
     }
 
-
     function state(uint256 proposalId) public view virtual override returns (ProposalState) {
         ProposalCore storage proposal = _proposals[proposalId];
 
@@ -318,12 +427,20 @@ contract GoinGudGovernor is IGovernor, Ownable {
         }
 
         // TODO: Proposal should achieve at least 20% approval of guardians, to be accepted.
-        if (_quorumReached(proposalId) && _voteSucceeded(proposalId)) { //TODO: change this 'if'
+        // if (_quorumReached(proposalId) && _voteSucceeded(proposalId)) { //TODO: change this 'if'
+        if (proposal.weights >= (20 * guardians.length) / 100) { //TODO: chengs this "proposal.weights"
             return ProposalState.Succeeded;
         } else {
             return ProposalState.Defeated;
         }
     }
+    // uint256[] public proposals; // it’s an array of proposals hashes to execute. After proposal was voted for, an executor provides a complete data about the proposal, which gets hashed and if hashes correspond, then the proposal is executed.
+    // mapping(uint256 => ProposalCore) private _proposals;
+
+    // uint256 public GUARDIANS_LIMIT; // amount of guardians for contract to function propperly, until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.
+    // address[] public guardians; // this is an array guardians who are allowed to vote for the proposals.
+    // int256[] public proposalsWeight;
+    // mapping(address => uint256) public weights; // weight of each specific guardian
 
     function proposalSnapshot(uint256 proposalId) public view virtual override returns (uint256) {
         return _proposals[proposalId].voteStart.getDeadline();
@@ -347,34 +464,111 @@ contract GoinGudGovernor is IGovernor, Ownable {
         }
     }
 
-    function _beforeExecute(
-        uint256, /* proposalId */
-        address[] memory targets,
-        uint256[] memory, /* values */
-        bytes[] memory calldatas,
-        bytes32 /*descriptionHash*/
-    ) internal virtual {
-        if (_executor() != address(this)) {
-            for (uint256 i = 0; i < targets.length; ++i) {
-                if (targets[i] == address(this)) {
-                    _governanceCall.pushBack(keccak256(calldatas[i]));
-                }
-            }
-        }
+    function _executor() internal view virtual returns (address) {
+        return address(this);
     }
 
-    function _afterExecute(
-        uint256, /* proposalId */
-        address[] memory, /* targets */
-        uint256[] memory, /* values */
-        bytes[] memory, /* calldatas */
-        bytes32 /*descriptionHash*/
-    ) internal virtual {
-        if (_executor() != address(this)) {
-            if (!_governanceCall.empty()) {
-                _governanceCall.clear();
-            }
+    // function _executor()
+    //     internal
+    //     view
+    //     override(Governor, GovernorTimelockControl)
+    //     returns (address)
+    // {
+    //     return timelockController;
+    // }
+
+
+    /**
+      * @notice Cancels a proposal only if sender is the proposer, or proposer delegates dropped below proposal threshold
+      * @param proposalId The id of the proposal to cancel
+      */
+    function cancel(uint proposalId) external {
+        require(state(proposalId) != ProposalState.Executed, "Governor::cancel: cannot cancel executed proposal");
+
+        Proposal storage proposal = proposals[proposalId];
+        require(msg.sender == proposal.proposer || comp.getPriorVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold, "Governor::cancel: proposer above threshold");
+
+        proposal.canceled = true;
+        for (uint i = 0; i < proposal.targets.length; i++) {
+            timelock.cancelTransaction(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
         }
+
+        emit ProposalCanceled(proposalId);
     }
+
+
+
+
+
+
+
+
+    function COUNTING_MODE() public pure virtual override returns (string memory);
+
+    /**
+     * @notice module:user-config
+     * @dev Minimum number of cast voted required for a proposal to be successful.
+     *
+     * Note: The `blockNumber` parameter corresponds to the snapshot used for counting vote. This allows to scale the
+     * quorum depending on values such as the totalSupply of a token at this block (see {ERC20Votes}).
+     */
+    function quorum(uint256 blockNumber) public view virtual override returns (uint256);
+
+    /**
+     * @notice module:voting
+     * @dev Returns weither `account` has cast a vote on `proposalId`.
+     */
+    function hasVoted(uint256 proposalId, address account) public view virtual override returns (bool);
+
+    /**
+     * @dev Cast a vote with a reason
+     *
+     * Emits a {VoteCast} event.
+     */
+    function castVoteWithReason(
+        uint256 proposalId,
+        uint8 support,
+        string calldata reason
+    ) public virtual override returns (uint256 balance);
+
+    /**
+     * @dev Cast a vote with a reason and additional encoded parameters
+     *
+     * Emits a {VoteCast} or {VoteCastWithParams} event depending on the length of params.
+     */
+    function castVoteWithReasonAndParams(
+        uint256 proposalId,
+        uint8 support,
+        string calldata reason,
+        bytes memory params
+    ) public virtual override returns (uint256 balance);
+
+    /**
+     * @dev Cast a vote using the user's cryptographic signature.
+     *
+     * Emits a {VoteCast} event.
+     */
+    function castVoteBySig(
+        uint256 proposalId,
+        uint8 support,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public virtual override returns (uint256 balance);
+
+    /**
+     * @dev Cast a vote with a reason and additional encoded parameters using the user's cryptographic signature.
+     *
+     * Emits a {VoteCast} or {VoteCastWithParams} event depending on the length of params.
+     */
+    function castVoteWithReasonAndParamsBySig(
+        uint256 proposalId,
+        uint8 support,
+        string calldata reason,
+        bytes memory params,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) public virtual override returns (uint256 balance);
 
 }
