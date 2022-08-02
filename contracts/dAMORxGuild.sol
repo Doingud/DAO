@@ -236,11 +236,12 @@ contract dAMORxGuild is ERC20Base, Ownable {
         delete delegation[msg.sender];
     }
 
-    /// @notice non-transferable
+    /// @notice This token is non-transferable
     function transfer(address to, uint256 amount) public override returns (bool) {
         return false;
     }
 
+    /// @notice This token is non-transferable
     function transferFrom(
         address from,
         address to,
