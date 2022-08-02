@@ -4,28 +4,66 @@
 /// @title  ERC20Base
 /// @author Initial author OpenZeppelin, modified by Daoism Systems
 /// @notice To be used in clones where constructor calls cannot be used
-/// @dev    No constructor, but has a setToken detail function which can only be called once
+/// @dev    
 
 pragma solidity 0.8.15;
 
+/**
+ * @title  Daoism Systems: ERC20Base.sol
+ * @author Daoism Systems
+ * @notice Custom ERC20 implementation
+ * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
+ * @dev Implementation of a clone-friendly, ERC20 Token Standard
+ *
+ * This abstract contract is intended to be extnded by another contract.
+ * The contract has no constructor, but has a `setTokenDetail` function
+ * which can only be called once
+ *
+ * The contract implements of IERC20.sol from OpenZeppelin Contracts 
+ * (last updated v4.6.0) (token/ERC20/ERC20.sol).
+ *
+ * MIT License
+ * ===========
+ *
+ * Copyright (c) 2022 Daoism Systems
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *
+ */
+
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 
-abstract contract ERC20Base is Context, IERC20, IERC20Metadata {
+abstract contract ERC20Base is Context, IERC20 {
     mapping(address => uint256) internal _balances;
 
     mapping(address => mapping(address => uint256)) internal _allowances;
 
     uint256 internal _totalSupply;
 
-    /// ***Non-standard implementation of _name and _symbol***
+    /// ***Non-standard implementation of name and symbol***
     string public name;
     string public symbol;
     bool internal _detailsSet;
 
     uint8 public decimals;
 
+    /// Errors
     /// Reverts if invalid transfer address
     error InvalidTransfer();
 
