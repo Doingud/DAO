@@ -15,8 +15,8 @@ pragma solidity 0.8.15;
  * GuildFactory.sol contract.
  *
  *  The contract extends the ERC1967Proxy contract from OpenZeppelin.
- *  All calls to this contract (except getImplementation()) should
- *  default to the fallback() function which calls delegateCall()
+ *  All calls to this contract (except `initProxy` and `getImplementation()`) should
+ *  default to the `fallback()` function which calls `delegateCall()`
  *  to the implementation contract.
  *
  * MIT License

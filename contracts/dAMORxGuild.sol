@@ -14,7 +14,7 @@ pragma solidity 0.8.15;
  * This Token Implementation contract is intended to be referenced by a proxy contract.
  *
  * The contract is an extension of ERC20Base, which is an initializable
- * ERC20 Token Standard contract, itself derived from the ERC20.sol implementation
+ * ERC20 Token Standard contract, itself derived from the IERC20.sol implementation
  * from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol).
  * Please see ERC20Base.sol for licensing and copyright info.
  *

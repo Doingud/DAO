@@ -1,10 +1,4 @@
 // SPDX-License-Identifier: MIT
-// Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
-
-/// @title  ERC20Base
-/// @author Initial author OpenZeppelin, modified by Daoism Systems
-/// @notice To be used in clones where constructor calls cannot be used
-/// @dev    
 
 pragma solidity 0.8.15;
 
@@ -15,8 +9,8 @@ pragma solidity 0.8.15;
  * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
  * @dev Implementation of a clone-friendly, ERC20 Token Standard
  *
- * This abstract contract is intended to be extnded by another contract.
- * The contract has no constructor, but has a `setTokenDetail` function
+ * This abstract contract is intended to be extended by another contract.
+ * The contract has no constructor, but has a `_setTokenDetail` function
  * which can only be called once
  *
  * The contract implements of IERC20.sol from OpenZeppelin Contracts 
