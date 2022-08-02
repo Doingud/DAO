@@ -33,15 +33,17 @@ contract GoinGudGovernor is
     using Timers for Timers.BlockNumber;
 
 uint256 public proposalMaxOperations = 10;
-// uint256 public override proposalThreshold;
+// uint256 public _proposalThreshold;
     mapping(uint256 => ProposalCore) private _proposals;
-    // proposalId --> number in the row
+    // id in array --> Id of passed proposal from _proposals
     uint256[] public proposals; // it’s an array of proposals hashes to execute. 
-    // After proposal was voted for, an executor provides a complete data about the proposal, 
+    // After proposal was voted for, an !executor provides a complete data about the proposal!, 
     // which gets hashed and if hashes correspond, then the proposal is executed.
 
     mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
-    mapping(uint256 => address[]) public voters; // voters mapping(uint report => address [] voters)
+    mapping(uint256 => address[]) public voters; // voters mapping(uint proposal => address [] voters)
+
+// was thinking about those two arrays below, but can't find better solution (exept mapping)
     int256[] public proposalVoting; // results of the vote for the proposal
     int256[] public proposalWeight;
 
@@ -88,19 +90,13 @@ uint256 public proposalMaxOperations = 10;
         address AMORxGuild_,
         address initOwner, 
         address snapshotAddress_,
-        address avatarAddress_,
+        address avatarAddress_
         // uint256 proposalThreshold_
     ) external returns (bool) {
         require(!_initialized, "Already initialized");
 
         // _transferOwnership(initOwner);
 
-    // __Governor_init('Unlock Protocol Governor');
-    // __GovernorCountingSimple_init();
-    // __GovernorVotes_init(AMORxGuild_);
-    // __GovernorTimelockControl_init(_timelock);
-
-        // timelock = TimelockInterface(timelock_);
         AMORxGuild = IERC20(AMORxGuild_);
 
         // person who inflicted the creation of the contract is set as the only guardian of the system
@@ -113,7 +109,7 @@ uint256 public proposalMaxOperations = 10;
     _votingDelay = 1; // 1 block
     _votingPeriod = 45818; // 1 week
     _quorum = 11000e18; // 11k AMORxGuild
-        // proposalThreshold = proposalThreshold_;
+        // _proposalThreshold = proposalThreshold_;
 
 
         emit Initialized(_initialized, initOwner, snapshotAddress_);
@@ -234,7 +230,7 @@ uint256 public proposalMaxOperations = 10;
         proposal.voteStart.setDeadline(snapshot);
         proposal.voteEnd.setDeadline(deadline);
 
-        proposals.push(proposals.length);
+        // proposals.push(proposals.length); // TODO: not there. _proposals[proposalId] will be added to proposals ONLY IF successful
         proposalVoting.push(0);
         proposalWeight.push(0);
 
@@ -259,17 +255,16 @@ uint256 public proposalMaxOperations = 10;
         address voter = _msgSender();
         return _castVote(proposalId, voter, support, "");
 
-    // mapping(uint256 => ProposalCore) private _proposals;
+        // mapping(uint256 => ProposalCore) private _proposals;
 
-    // uint256[] public proposals; // Q: it’s an array of proposals hashes to execute. // ??? how this value are getted? 
-    // // After proposal was voted for, an executor provides a complete data about the proposal, 
-    // // which gets hashed and if hashes correspond, then the proposal is executed.
+        // uint256[] public proposals; // Q: it’s an array of proposals hashes to execute. // ??? how this value are getted? 
+        // // After proposal was voted for, an executor provides a complete data about the proposal, 
+        // // which gets hashed and if hashes correspond, then the proposal is executed.
 
-    // mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
-    // mapping(uint256 => address[]) public voters; // voters mapping(uint report => address [] voters)
-    // int256[] public proposalVoting; // results of the vote for the proposal
-    // int256[] public proposalWeight;
-
+        // mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
+        // mapping(uint256 => address[]) public voters; // voters mapping(uint report => address [] voters)
+        // int256[] public proposalVoting; // results of the vote for the proposal
+        // int256[] public proposalWeight;
     }
 
 
@@ -284,7 +279,7 @@ uint256 public proposalMaxOperations = 10;
         ProposalCore storage proposal = _proposals[proposalId];
         require(state(proposalId) == ProposalState.Active, "Governor: vote not currently active");
 
-//Q: guardian votes with some choosable amount of AMORxGuild / all amount / 1 point???
+        //Q: guardian votes with some choosable amount of AMORxGuild / all amount / 1 point???
         uint256 voterBalance = AMORxGuild.balanceOf(msg.sender);
         if(voterBalance > 0){
             AMORxGuild.safeTransferFrom(_msgSender(), address(this), voterBalance);
@@ -427,32 +422,22 @@ uint256 public proposalMaxOperations = 10;
       * @param proposalId The id of the proposal to cancel
       */
     function cancel(uint proposalId) external {
-        require(state(proposalId) != ProposalState.Executed, "Governor::cancel: cannot cancel executed proposal");
+        // require(state(proposalId) != ProposalState.Executed, "Governor::cancel: cannot cancel executed proposal");
 
-        ProposalCore storage proposal = proposals[proposalId];
-        require(msg.sender == proposal.proposer || comp.getPriorVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold, "Governor::cancel: proposer above threshold");
+        // ProposalCore storage proposal = _proposals[proposalId];
 
-        proposal.canceled = true;
-        for (uint i = 0; i < proposal.targets.length; i++) {
-            timelock.cancelTransaction(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
-        }
+        // uint256 canselledId = _cancel();
 
-        emit ProposalCanceled(proposalId);
-    }
+        // require(msg.sender == proposal.proposer || comp.getPriorVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold(), "Governor::cancel: proposer above threshold");
 
-    /**
-     * @dev Internal cancel mechanism: locks up the proposal timer, preventing it from being re-submitted. Marks it as
-     * canceled to allow distinguishing it from executed proposals.
-     *
-     * Emits a {IGovernor-ProposalCanceled} event.
-     */
-    function _cancel(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        bytes32 descriptionHash
-    ) internal virtual override(Governor, GovernorTimelockControl) returns (uint256) {
-        uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        // proposal.canceled = true;
+        // for (uint i = 0; i < proposal.targets.length; i++) {
+        //     timelock.cancelTransaction(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
+        // }
+
+        // emit ProposalCanceled(proposalId);
+
+        // uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
         ProposalState status = state(proposalId);
 
         require(
@@ -461,10 +446,46 @@ uint256 public proposalMaxOperations = 10;
         );
         _proposals[proposalId].canceled = true;
 
-        emit ProposalCanceled(proposalId);
+    mapping(uint256 => ProposalCore) private _proposals;
+    // proposalId --> number in the row
+    uint256[] public proposals; // it’s an array of proposals hashes to execute. 
+    // After proposal was voted for, an executor provides a complete data about the proposal, 
+    // which gets hashed and if hashes correspond, then the proposal is executed.
 
-        return proposalId;
+    mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
+    mapping(uint256 => address[]) public voters; // voters mapping(uint report => address [] voters)
+    int256[] public proposalVoting; // results of the vote for the proposal
+    int256[] public proposalWeight;
+
+
+        emit ProposalCanceled(proposalId);
     }
+
+    // /**
+    //  * @dev Internal cancel mechanism: locks up the proposal timer, preventing it from being re-submitted. Marks it as
+    //  * canceled to allow distinguishing it from executed proposals.
+    //  *
+    //  * Emits a {IGovernor-ProposalCanceled} event.
+    //  */
+    // function _cancel(
+    //     address[] memory targets,
+    //     uint256[] memory values,
+    //     bytes[] memory calldatas,
+    //     bytes32 descriptionHash
+    // ) internal virtual override(Governor, GovernorTimelockControl) returns (uint256) {
+    //     uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
+    //     ProposalState status = state(proposalId);
+
+    //     require(
+    //         status != ProposalState.Canceled && status != ProposalState.Expired && status != ProposalState.Executed,
+    //         "Governor: proposal not active"
+    //     );
+    //     _proposals[proposalId].canceled = true;
+
+    //     emit ProposalCanceled(proposalId);
+
+    //     return proposalId;
+    // }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(Governor, GovernorTimelockControl) returns (bool) {
         // In addition to the current interfaceId, also support previous version of the interfaceId that did not
@@ -505,6 +526,8 @@ uint256 public proposalMaxOperations = 10;
         override(IGovernor, GovernorVotesQuorumFraction)
         returns (uint256)
     {
+        return 0;//(token.getPastTotalSupply(blockNumber) * quorumNumerator(blockNumber)) / quorumDenominator();
+    }
      
     function proposalThreshold()
         public
@@ -512,7 +535,7 @@ uint256 public proposalMaxOperations = 10;
         override(Governor, GovernorSettings)
         returns (uint256)
     {
-        return super.proposalThreshold();
+        return 0;//_proposalThreshold;
     }
 
     // function COUNTING_MODE() public pure virtual override returns (string memory);
