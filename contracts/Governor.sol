@@ -32,20 +32,33 @@ contract GoinGudGovernor is
     using SafeERC20 for IERC20;
     using Timers for Timers.BlockNumber;
 
-uint256 public proposalMaxOperations = 10;
-// uint256 public _proposalThreshold;
+    // struct ProposalCore {
+    //     Timers.BlockNumber voteStart;
+    //     Timers.BlockNumber voteEnd;
+    //     int256 proposalVoting;
+    //     uint256 proposalWeight;
+    //     bool executed;
+    //     bool canceled;
+    // }
+
+    uint256 public proposalMaxOperations = 10;
+    // uint256 public _proposalThreshold;
     mapping(uint256 => ProposalCore) private _proposals;
+
     // id in array --> Id of passed proposal from _proposals
     uint256[] public proposals; // it’s an array of proposals hashes to execute. 
     // After proposal was voted for, an !executor provides a complete data about the proposal!, 
     // which gets hashed and if hashes correspond, then the proposal is executed.
 
-    mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
+
+    // mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
     mapping(uint256 => address[]) public voters; // voters mapping(uint proposal => address [] voters)
 
-// was thinking about those two arrays below, but can't find better solution (exept mapping)
-    int256[] public proposalVoting; // results of the vote for the proposal
-    int256[] public proposalWeight;
+// was thinking about those two arrays below, but can't find better solution than just struct(exept mapping)
+    // int256[] public proposalVoting; // results of the vote for the proposal
+    // int256[] public proposalWeight;
+    mapping(uint256 => int256) public proposalVoting;
+    mapping(uint256 => uint256) public proposalWeight;
 
 
     uint256 public GUARDIANS_LIMIT; // amount of guardians for contract to function propperly, 
@@ -82,6 +95,15 @@ uint256 public proposalMaxOperations = 10;
     error InvalidAmount();
     error ProposalNotExists();
     error VotingTimeExpired();
+    error AlreadyVoted();
+
+    constructor(IVotes _token, TimelockController _timelock)
+        Governor("MyGovernor")
+        GovernorSettings(1 /* 1 block */, 45818 /* 1 week */, 0)
+        GovernorVotes(_token)
+        GovernorVotesQuorumFraction(4)
+        GovernorTimelockControl(_timelock)
+    {}
 
     function init(
         string memory name_,
@@ -231,8 +253,11 @@ uint256 public proposalMaxOperations = 10;
         proposal.voteEnd.setDeadline(deadline);
 
         // proposals.push(proposals.length); // TODO: not there. _proposals[proposalId] will be added to proposals ONLY IF successful
-        proposalVoting.push(0);
-        proposalWeight.push(0);
+        // proposal.proposalVoting = 0;
+        // proposal.proposalWeight = 0;
+
+        proposalVoting[proposalId] = 0;
+        proposalWeight[proposalId] = 0;
 
         emit ProposalCreated(
             proposalId,
@@ -279,45 +304,37 @@ uint256 public proposalMaxOperations = 10;
         ProposalCore storage proposal = _proposals[proposalId];
         require(state(proposalId) == ProposalState.Active, "Governor: vote not currently active");
 
-        //Q: guardian votes with some choosable amount of AMORxGuild / all amount / 1 point???
-        uint256 voterBalance = AMORxGuild.balanceOf(msg.sender);
+        for (uint256 i = 0; i < voters[proposalId].length; i++) {
+            if (voters[proposalId][i] == account) {
+                // this guardian already voted for this proposal
+                revert AlreadyVoted();
+            }
+        }
+
+        // Q: guardian votes with some choosable amount of AMORxGuild / all amount / 1 point???
+        // 1 point for now
+        uint256 voterBalance = AMORxGuild.balanceOf(account);
         if(voterBalance > 0){
             AMORxGuild.safeTransferFrom(_msgSender(), address(this), voterBalance);
         }
 
-        proposalWeight[proposalId] += int256(voterBalance);
+        // proposal.proposalWeight += 1;//voterBalance;
+        proposalWeight[proposalId] += 1;
 
         if (support == 1) { //if for
-            proposalVoting[proposalId] += int256(voterBalance);
-            votes[proposalId][msg.sender] += int256(voterBalance);
+            proposalVoting[proposalId] += 1;
+            // proposal.proposalVoting += 1;//int256(voterBalance);
+            // votes[proposalId][msg.sender] += int256(voterBalance);
         } else { // if against
-            proposalVoting[proposalId] -= int256(voterBalance);
-            votes[proposalId][msg.sender] -= int256(voterBalance);
+            proposalVoting[proposalId] -= 1;
+            // proposal.proposalVoting -= 1;//int256(voterBalance);
+            // votes[proposalId][msg.sender] -= int256(voterBalance);
         }
+
+        voters[proposalId].push(account);
 
         return voterBalance; // weight = voterBalance
     }
-// }
-
-    // function _getVotes(
-    //     address account,
-    //     uint256 blockNumber,
-    //     bytes memory params
-    // ) internal view virtual returns (uint256) {
-    //     // TODO: fill
-    // }
-
-    // function _countVote(
-    //     uint256 proposalId,
-    //     address account,
-    //     uint8 support,
-    //     uint256 weight,
-    //     bytes memory params
-    // ) internal virtual {
-    //     // TODO: fill
-    //     // modify weight
-    //     // add weight
-    // }
 
     /// @notice function allows anyone to execute specific proposal, based on the vote.
     /// @param targets Targets of the proposal
@@ -329,7 +346,7 @@ uint256 public proposalMaxOperations = 10;
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) public payable virtual override returns (uint256 proposalId) {
+    ) public payable virtual override(Governor, IGovernor) returns (uint256 proposalId) {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
 
         ProposalState status = state(proposalId);
@@ -377,20 +394,13 @@ uint256 public proposalMaxOperations = 10;
 
         // TODO: Proposal should achieve at least 20% approval of guardians, to be accepted.
         // if (_quorumReached(proposalId) && _voteSucceeded(proposalId)) { //TODO: change this 'if'
-        if (proposalWeight[proposalId] >= int256((20 * guardians.length) / 100)) { //TODO: chengs this "proposal.weights"
+        // if (proposal.proposalVoting >= int256((20 * guardians.length) / 100)) {
+        if (proposalVoting[proposalId] >= int256((20 * guardians.length) / 100)) {
             return ProposalState.Succeeded;
         } else {
             return ProposalState.Defeated;
         }
     }
-    // uint256[] public proposals; // it’s an array of proposals hashes to execute. After proposal was voted for, an executor provides a complete data about the proposal, which gets hashed and if hashes correspond, then the proposal is executed.
-    // mapping(uint256 => ProposalCore) private _proposals;
-
-    // uint256 public GUARDIANS_LIMIT; // amount of guardians for contract to function propperly, until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.
-    // address[] public guardians; // this is an array guardians who are allowed to vote for the proposals.
-    // int256[] public proposalWeight;
-    // mapping(address => uint256) public weights; // weight of each specific guardian
-
 
     function _execute(
         uint256, /* proposalId */
@@ -446,46 +456,35 @@ uint256 public proposalMaxOperations = 10;
         );
         _proposals[proposalId].canceled = true;
 
-    mapping(uint256 => ProposalCore) private _proposals;
-    // proposalId --> number in the row
-    uint256[] public proposals; // it’s an array of proposals hashes to execute. 
-    // After proposal was voted for, an executor provides a complete data about the proposal, 
-    // which gets hashed and if hashes correspond, then the proposal is executed.
-
-    mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
-    mapping(uint256 => address[]) public voters; // voters mapping(uint report => address [] voters)
-    int256[] public proposalVoting; // results of the vote for the proposal
-    int256[] public proposalWeight;
-
-
+        // delete voters[proposalId];
         emit ProposalCanceled(proposalId);
     }
 
-    // /**
-    //  * @dev Internal cancel mechanism: locks up the proposal timer, preventing it from being re-submitted. Marks it as
-    //  * canceled to allow distinguishing it from executed proposals.
-    //  *
-    //  * Emits a {IGovernor-ProposalCanceled} event.
-    //  */
-    // function _cancel(
-    //     address[] memory targets,
-    //     uint256[] memory values,
-    //     bytes[] memory calldatas,
-    //     bytes32 descriptionHash
-    // ) internal virtual override(Governor, GovernorTimelockControl) returns (uint256) {
-    //     uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
-    //     ProposalState status = state(proposalId);
+    /**
+     * @dev Internal cancel mechanism: locks up the proposal timer, preventing it from being re-submitted. Marks it as
+     * canceled to allow distinguishing it from executed proposals.
+     *
+     * Emits a {IGovernor-ProposalCanceled} event.
+     */
+    function _cancel(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        bytes32 descriptionHash
+    ) internal virtual override(Governor, GovernorTimelockControl) returns (uint256) {
+        uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        ProposalState status = state(proposalId);
 
-    //     require(
-    //         status != ProposalState.Canceled && status != ProposalState.Expired && status != ProposalState.Executed,
-    //         "Governor: proposal not active"
-    //     );
-    //     _proposals[proposalId].canceled = true;
+        require(
+            status != ProposalState.Canceled && status != ProposalState.Expired && status != ProposalState.Executed,
+            "Governor: proposal not active"
+        );
+        _proposals[proposalId].canceled = true;
 
-    //     emit ProposalCanceled(proposalId);
+        emit ProposalCanceled(proposalId);
 
-    //     return proposalId;
-    // }
+        return proposalId;
+    }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(Governor, GovernorTimelockControl) returns (bool) {
         // In addition to the current interfaceId, also support previous version of the interfaceId that did not
@@ -538,75 +537,6 @@ uint256 public proposalMaxOperations = 10;
         return 0;//_proposalThreshold;
     }
 
-    // function COUNTING_MODE() public pure virtual override returns (string memory);
-
-    // /**
-    //  * @notice module:user-config
-    //  * @dev Minimum number of cast voted required for a proposal to be successful.
-    //  *
-    //  * Note: The `blockNumber` parameter corresponds to the snapshot used for counting vote. This allows to scale the
-    //  * quorum depending on values such as the totalSupply of a token at this block (see {ERC20Votes}).
-    //  */
-    // function quorum(uint256 blockNumber) public view virtual override returns (uint256);
-
-    // /**
-    //  * @notice module:voting
-    //  * @dev Returns weither `account` has cast a vote on `proposalId`.
-    //  */
-    // function hasVoted(uint256 proposalId, address account) public view virtual override returns (bool);
-
-    /**
-     * @dev Cast a vote with a reason
-     *
-     * Emits a {VoteCast} event.
-     */
-    // function castVoteWithReason(
-    //     uint256 proposalId,
-    //     uint8 support,
-    //     string calldata reason
-    // ) public virtual override returns (uint256 balance);
-
-    // /**
-    //  * @dev Cast a vote with a reason and additional encoded parameters
-    //  *
-    //  * Emits a {VoteCast} or {VoteCastWithParams} event depending on the length of params.
-    //  */
-    // function castVoteWithReasonAndParams(
-    //     uint256 proposalId,
-    //     uint8 support,
-    //     string calldata reason,
-    //     bytes memory params
-    // ) public virtual override returns (uint256 balance);
-
-    /**
-     * @dev Cast a vote using the user's cryptographic signature.
-     *
-     * Emits a {VoteCast} event.
-     */
-    // function castVoteBySig(
-    //     uint256 proposalId,
-    //     uint8 support,
-    //     uint8 v,
-    //     bytes32 r,
-    //     bytes32 s
-    // ) public virtual override returns (uint256 balance);
-
-    /**
-     * @dev Cast a vote with a reason and additional encoded parameters using the user's cryptographic signature.
-     *
-     * Emits a {VoteCast} or {VoteCastWithParams} event depending on the length of params.
-     */
-    // function castVoteWithReasonAndParamsBySig(
-    //     uint256 proposalId,
-    //     uint8 support,
-    //     string calldata reason,
-    //     bytes memory params,
-    //     uint8 v,
-    //     bytes32 r,
-    //     bytes32 s
-    // ) public virtual override returns (uint256 balance){
-
-    // }
 
     function sub256(uint256 a, uint256 b) internal pure returns (uint) {
         require(b <= a, "subtraction underflow");
