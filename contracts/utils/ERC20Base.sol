@@ -13,7 +13,7 @@ pragma solidity 0.8.15;
  * The contract has no constructor, but has a `_setTokenDetail` function
  * which can only be called once
  *
- * The contract implements of IERC20.sol from OpenZeppelin Contracts 
+ * The contract implements of IERC20.sol from OpenZeppelin Contracts
  * (last updated v4.6.0) (token/ERC20/ERC20.sol).
  *
  * MIT License
