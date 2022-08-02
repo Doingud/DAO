@@ -22,11 +22,12 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 // contract GoinGudGovernor is Governor, IGovernor, Ownable {
 contract GoinGudGovernor is 
-  Governor,
-  GovernorCountingSimple,
-  GovernorVotes,
-  GovernorTimelockControl,
-  Ownable
+    Governor,
+    GovernorSettings,
+    GovernorCountingSimple,
+    GovernorVotes,
+    GovernorVotesQuorumFraction,
+    GovernorTimelockControl
 {
     using SafeERC20 for IERC20;
     using Timers for Timers.BlockNumber;
@@ -88,11 +89,11 @@ uint256 public proposalMaxOperations = 10;
         address initOwner, 
         address snapshotAddress_,
         address avatarAddress_,
-        uint256 proposalThreshold_
+        // uint256 proposalThreshold_
     ) external returns (bool) {
         require(!_initialized, "Already initialized");
 
-        _transferOwnership(initOwner);
+        // _transferOwnership(initOwner);
 
     // __Governor_init('Unlock Protocol Governor');
     // __GovernorCountingSimple_init();
@@ -483,7 +484,7 @@ uint256 public proposalMaxOperations = 10;
     function votingDelay()
         public
         view
-        override(IGovernor)
+        override(IGovernor, GovernorSettings)
         returns (uint256)
     {
         return super.votingDelay();
@@ -492,7 +493,7 @@ uint256 public proposalMaxOperations = 10;
     function votingPeriod()
         public
         view
-        override(IGovernor)
+        override(IGovernor, GovernorSettings)
         returns (uint256)
     {
         return super.votingPeriod();
@@ -501,22 +502,18 @@ uint256 public proposalMaxOperations = 10;
     function quorum(uint256 blockNumber)
         public
         view
-        override(IGovernor)
+        override(IGovernor, GovernorVotesQuorumFraction)
         returns (uint256)
     {
-        return super.quorum(blockNumber);
-    }
-
-
+     
     function proposalThreshold()
         public
         view
-        override(Governor)
+        override(Governor, GovernorSettings)
         returns (uint256)
     {
         return super.proposalThreshold();
     }
-
 
     // function COUNTING_MODE() public pure virtual override returns (string memory);
 
