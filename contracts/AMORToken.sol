@@ -65,9 +65,13 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
 
     bool private _initialized;
 
-    /*  @dev    The init() function takes the place of the constructor.
-     *          It can only be run once.
-     */
+    /// @notice Initializes the token
+    /// @dev    Must call `_setTokenDetail` to set `name` and `symol`
+    /// @param  _name the token name
+    /// @param  _symbol the token symbol
+    /// @param  _initCollector the tax/fee collector (DoinGud MetaDAO)
+    /// @param  _multisig the multisig address of the MetaDAO, which owns the token
+    /// @return bool value, true if successful
     function init(
         string memory _name,
         string memory _symbol,
@@ -81,8 +85,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         //  Set the owner to the Multisig
         _transferOwnership(_multisig);
         //  Set the name and symbol
-        name = _name;
-        symbol = _symbol;
+        _setTokenDetail(_name, _symbol);
         decimals = 18;
         //  Pre-mint to the multisig address
         _mint(_multisig, 10000000 * 10**decimals);
@@ -170,6 +173,8 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
 
     /// @notice Pause functionality for AMOR
     /// @dev    For security purposes, should there be an exploit.
+    ///         The owner should be a multisig and have strong security practices
+    //          Actions invoking `pause` and `unpause` must be transparent to the community
     function pause() external onlyOwner {
         _pause();
     }

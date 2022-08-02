@@ -93,6 +93,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     /// @param  amorAddress the address of the AMOR token proxy
     /// @param  name the token name (e.g AMORxIMPACT)
     /// @param  symbol the token symbol
+    /// @param  controller the GuildController owning this token
     function init(
         address amorAddress,
         string memory name,
