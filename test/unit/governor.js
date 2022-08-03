@@ -2,8 +2,8 @@ const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const init = require('../test-init.js');
 
-// let AMOR; // need for AMORxGuild
-// let AMORxGuild; // need for testing propose() function
+let AMOR; // need for AMORxGuild
+let AMORxGuild; // need for testing propose() function
 let governor;
 let root;
 let authorizer_adaptor;
@@ -17,6 +17,7 @@ let targets;
 let values;
 let calldatas;
 let description;
+let firstProposalId;
 
 describe('unit - Contract: Governor', function () {
 
@@ -25,8 +26,8 @@ describe('unit - Contract: Governor', function () {
         const setup = await init.initialize(signers);
         await init.getTokens(setup);
 
-        // AMOR = setup.tokens.AmorTokenImplementation;
-        // AMORxGuild = setup.tokens.AmorGuildToken;
+        AMOR = setup.tokens.AmorTokenImplementation;
+        AMORxGuild = setup.tokens.AmorGuildToken;
         await init.controller(setup);
         governor = await init.governor(setup);
         root = setup.roles.root;
@@ -50,8 +51,9 @@ describe('unit - Contract: Governor', function () {
 
         it("Should fail if called more than once", async function () {
             await expect(governor.init(
-                root.address, // owner
-                authorizer_adaptor.address // snapshot
+                AMORxGuild.address, //AMORxGuild
+                authorizer_adaptor.address, // Snapshot Address
+                authorizer_adaptor.address // Avatar Address
             )).to.be.revertedWith("Already initialized");
         });
     });
@@ -120,8 +122,8 @@ describe('unit - Contract: Governor', function () {
 
     context('» propose testing', () => {
 
-        it('it fails to propose if not the snapshot', async function () {
-            targets = [authorizer_adaptor];
+        it('it fails to propose if not the avatar', async function () {
+            targets = [authorizer_adaptor.address];
             values = [12];
             // building hash has to come from system address
             // 32 bytes of data
@@ -135,32 +137,89 @@ describe('unit - Contract: Governor', function () {
             calldatas = [messageHash];
             description = 'proposal';
 
-            await expect(governor.connect(user).propose(targets, values, calldatas,description)).to.be.revertedWith(
+            await expect(governor.connect(user).propose(targets, values, calldatas, description)).to.be.revertedWith(
                 'Unauthorized()'
             );
         });
-
-        it('it fails to propose if invalid proposal length', async function () {
-            await expect(governor.connect(authorizer_adaptor).propose(1, user2.address)).to.be.revertedWith(
-                'Governor: invalid proposal length'
-            );
-        });
-
-        it('it fails to propose if empty proposal', async function () {
-            await expect(governor.connect(authorizer_adaptor).propose(1, user2.address)).to.be.revertedWith(
-                'Governor: empty proposal'
-            );
+        
+        it('it proposes', async function () {
+            firstProposalId = await governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description);
+            // expect(await governor.proposalVoting(firstProposalId)).to.equals(0);
+            // expect((await governor.proposalWeight(firstProposalId)).toString()).to.equals("0");
         });
 
         it('it fails to propose if proposal already exists', async function () {
-            await expect(governor.connect(authorizer_adaptor).propose(1, user2.address)).to.be.revertedWith(
+            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description)).to.be.revertedWith(
                 'Governor: proposal already exists'
             );
         });
 
-        it('it proposes', async function () {
-            await governor.connect(authorizer_adaptor).propose(1, root.address);
-            expect(await governor.guardians(1)).to.equals(root.address);
+        it('it fails to propose if information arity mismatch', async function () {
+            targets = [];
+            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description)).to.be.revertedWith(
+                'Governor::propose: proposal function information arity mismatch'
+            );
         });
+
+        it('it fails to propose if empty proposal', async function () {
+            values = [];
+            calldatas = [];
+            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description)).to.be.revertedWith(
+                'Governor: empty proposal'
+            );
+        });
+
     });
+
+    context('» castVote testing', () => {
+
+        it('it fails to propose if not the avatar', async function () {
+            targets = [authorizer_adaptor.address];
+            values = [12];
+            // building hash has to come from system address
+            // 32 bytes of data
+            let messageHash = ethers.utils.solidityKeccak256(
+                ["address"],
+                [authorizer_adaptor.address]
+            );
+
+            // 32 bytes of data in Uint8Array
+            let messageHashBinary = ethers.utils.arrayify(messageHash);
+            calldatas = [messageHash];
+            description = 'proposal';
+
+            await expect(governor.connect(user).propose(targets, values, calldatas, description)).to.be.revertedWith(
+                'Unauthorized()'
+            );
+        });
+        
+        it('it proposes', async function () {
+            firstProposalId = await governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description);
+            // expect(await governor.proposalVoting(firstProposalId)).to.equals(0);
+            // expect((await governor.proposalWeight(firstProposalId)).toString()).to.equals("0");
+        });
+
+        it('it fails to propose if proposal already exists', async function () {
+            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description)).to.be.revertedWith(
+                'Governor: proposal already exists'
+            );
+        });
+
+        it('it fails to propose if information arity mismatch', async function () {
+            targets = [];
+            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description)).to.be.revertedWith(
+                'Governor::propose: proposal function information arity mismatch'
+            );
+        });
+
+        it('it fails to propose if empty proposal', async function () {
+            values = [];
+            calldatas = [];
+            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description)).to.be.revertedWith(
+                'Governor: empty proposal'
+            );
+        });
+
+    });
+
 });
