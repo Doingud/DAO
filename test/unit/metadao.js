@@ -1,26 +1,15 @@
 const { ethers } = require("hardhat");
 const { use, expect } = require("chai");
 const { solidity } = require("ethereum-waffle");
-const { MOCK_GUILD_NAMES,
-        MOCK_GUILD_SYMBOLS 
-      } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
 use(solidity);
 
 let AMOR_TOKEN;
-let AMOR_GUILD_TOKEN;
-let CLONE_FACTORY;
-let FX_AMOR_TOKEN;
-let DAMOR_GUILD_TOKEN;
-let GUILD_ONE_AMORXGUILD;
-let GUILD_ONE_DAMORXGUILD;
-let GUILD_ONE_FXAMORXGUILD;
 let METADAO;
 let user1;
 let user2;
 let root;
-let multisig;
 let pool;
 
 describe("unit - MetaDao", function () {
@@ -144,7 +133,7 @@ describe("unit - MetaDao", function () {
             await METADAO.setOperationsPool(pool.address);
             await METADAO.setBuildersPool(pool.address);
             await METADAO.addGuild(user1.address);
-            await METADAO.addGuild(user2.address);;
+            await METADAO.addGuild(user2.address);
             await expect(AMOR_TOKEN.balanceOf(root.address) > 0);
             await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
             await expect(AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
