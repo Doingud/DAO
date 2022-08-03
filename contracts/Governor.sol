@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.so
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "hardhat/console.sol";
+
 /// @title Governor contract
 /// @author Daoism Systems Team
 /// @dev    IGovernor IERC165 Pattern
@@ -275,8 +275,6 @@ contract GoinGudGovernor is
     /// @notice function allows guardian to vote for the proposal. 
     /// Proposal should achieve at least 20% approval of guardians, to be accepted
     function castVote(uint256 proposalId, uint8 support) public virtual override(Governor, IGovernor) onlyGuardian returns (uint256 balance){
-                console.log("proposalId is %s", proposalId);
-
         address voter = _msgSender();
         return _castVote(proposalId, voter, support, "");
 
@@ -367,8 +365,6 @@ contract GoinGudGovernor is
     }
 
     function proposalSnapshot(uint256 proposalId) public view virtual override(IGovernor, Governor) returns (uint256) {
-        console.log("proposalSnapshot proposalId is %s", proposalId);
-        console.log(" _proposals[proposalId].voteStart.getDeadline() is %s",  _proposals[proposalId].voteStart.getDeadline());
         return _proposals[proposalId].voteStart.getDeadline();
     }
 
@@ -401,7 +397,6 @@ contract GoinGudGovernor is
         if (deadline >= block.number) {
             return ProposalState.Active;
         }
-console.log("eeeeeeeeeeeee is %s");
 
         // TODO: Proposal should achieve at least 20% approval of guardians, to be accepted.
         // if (_quorumReached(proposalId) && _voteSucceeded(proposalId)) { //TODO: change this 'if'

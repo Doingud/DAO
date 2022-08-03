@@ -149,6 +149,8 @@ describe('unit - Contract: Governor', function () {
             await governor.connect(authorizer_adaptor).state(firstProposalId);
             expect((await governor.proposalVoting(firstProposalId)).toString()).to.equals("0");
             expect((await governor.proposalWeight(firstProposalId)).toString()).to.equals("0");
+
+            await governor.connect(authorizer_adaptor).propose(targets, values, calldatas, "descriprion2");
         });
 
         it('it fails to propose if proposal already exists', async function () {
@@ -172,10 +174,6 @@ describe('unit - Contract: Governor', function () {
     });
 
     context('» castVote testing', () => {
-
-        it('E', async function () {
-            await expect(governor.connect(authorizer_adaptor).execute(targets, values, calldatas, description));
-        });
 
         it('it fails to castVote if not the guardian', async function () {
             await expect(governor.connect(authorizer_adaptor).castVote(firstProposalId, 1)).to.be.revertedWith(
@@ -201,4 +199,20 @@ describe('unit - Contract: Governor', function () {
         });
     });
 
+    context('» execute testing', () => {
+
+        it('it executes proposal', async function () {
+            await expect(governor.connect(authorizer_adaptor).execute(targets, values, calldatas, description));
+        });
+
+        it('it fails to execute if proposal not successful', async function () {
+            let descriprionHash = ethers.utils.solidityKeccak256(
+                ["string"],
+                ["descriprion2"]
+            );
+            await expect(governor.connect(root).execute(targets, values, calldatas, descriprionHash)).to.be.revertedWith(
+                'Governor: proposal not successful'
+            );
+        });
+    });
 });
