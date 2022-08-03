@@ -125,6 +125,7 @@ contract GoinGudGovernor is
     _votingDelay = 1; // 1 block
     _votingPeriod = 45818; // 1 week
     _quorum = 11000e18; // 11k AMORxGuild
+    proposalCount = 0;
         // _proposalThreshold = proposalThreshold_;
 
 
@@ -227,9 +228,8 @@ contract GoinGudGovernor is
     ) public virtual override(Governor, IGovernor) onlyAvatar returns (uint256 proposalId) {
 
         uint256 proposalId = hashProposal(targets, values, calldatas, keccak256(bytes(description)));
-
-// AMORxGuild.balanceOf(msg.sender)
-// require(AMORxGuild.balanceOf(msg.sender) > proposalThreshold, "Governor::propose: proposer balance below proposal threshold");
+        // AMORxGuild.balanceOf(msg.sender)
+        // require(AMORxGuild.balanceOf(msg.sender) > proposalThreshold, "Governor::propose: proposer balance below proposal threshold");
 
         // require(comp.getPriorVotes(msg.sender, sub256(block.number, 1)) > proposalThreshold, "Governor::propose: proposer votes below proposal threshold");
         require(targets.length == values.length && targets.length == calldatas.length, "Governor::propose: proposal function information arity mismatch");
@@ -253,6 +253,8 @@ contract GoinGudGovernor is
         proposalVoting[proposalId] = 0;
         proposalWeight[proposalId] = 0;
 
+        _proposals[proposalId] = proposal;
+        proposalCount++;
         emit ProposalCreated(
             proposalId,
             _msgSender(), // proposer
@@ -264,6 +266,8 @@ contract GoinGudGovernor is
             deadline,
             description
         );
+
+        proposals.push(proposalId);
 
         return proposalId;
     }
@@ -288,13 +292,6 @@ contract GoinGudGovernor is
         // mapping(uint256 => address[]) public voters; // voters mapping(uint report => address [] voters)
         // int256[] public proposalVoting; // results of the vote for the proposal
         // int256[] public proposalWeight;
-    }
-
-    function sss(uint256 proposalId, uint8 support) public virtual onlyGuardian returns (uint256 balance){
-                console.log("proposalId is %s", proposalId);
-
-        address voter = _msgSender();
-        return _castVote(proposalId, voter, support, "");
     }
 
     function _castVote(
@@ -369,6 +366,16 @@ contract GoinGudGovernor is
         return proposalId;
     }
 
+    function proposalSnapshot(uint256 proposalId) public view virtual override(IGovernor, Governor) returns (uint256) {
+        console.log("proposalSnapshot proposalId is %s", proposalId);
+        console.log(" _proposals[proposalId].voteStart.getDeadline() is %s",  _proposals[proposalId].voteStart.getDeadline());
+        return _proposals[proposalId].voteStart.getDeadline();
+    }
+
+    function proposalDeadline(uint256 proposalId) public view virtual override(IGovernor, Governor) returns (uint256) {
+        return _proposals[proposalId].voteEnd.getDeadline();
+    }
+
     function state(uint256 proposalId) public view virtual override(Governor, GovernorTimelockControl) returns (ProposalState) {
         ProposalCore storage proposal = _proposals[proposalId];
 
@@ -379,7 +386,6 @@ contract GoinGudGovernor is
         if (proposal.canceled) {
             return ProposalState.Canceled;
         }
-
         uint256 snapshot = proposalSnapshot(proposalId);
 
         if (snapshot == 0) {
@@ -395,6 +401,7 @@ contract GoinGudGovernor is
         if (deadline >= block.number) {
             return ProposalState.Active;
         }
+console.log("eeeeeeeeeeeee is %s");
 
         // TODO: Proposal should achieve at least 20% approval of guardians, to be accepted.
         // if (_quorumReached(proposalId) && _voteSucceeded(proposalId)) { //TODO: change this 'if'

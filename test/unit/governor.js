@@ -1,4 +1,5 @@
 const { expect } = require('chai');
+const { BigNumber } = require('ethers');
 const { ethers } = require('hardhat');
 const init = require('../test-init.js');
 
@@ -131,7 +132,6 @@ describe('unit - Contract: Governor', function () {
                 ["address"],
                 [authorizer_adaptor.address]
             );
-
             // 32 bytes of data in Uint8Array
             let messageHashBinary = ethers.utils.arrayify(messageHash);
             calldatas = [messageHash];
@@ -143,9 +143,12 @@ describe('unit - Contract: Governor', function () {
         });
         
         it('it proposes', async function () {
-            firstProposalId = await governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description);
-            // expect(await governor.proposalVoting(firstProposalId)).to.equals(0);
-            // expect((await governor.proposalWeight(firstProposalId)).toString()).to.equals("0");
+            await governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description);
+            expect(await governor.proposalCount()).to.equals(1);
+            firstProposalId = await governor.proposals(0);
+            await governor.connect(authorizer_adaptor).state(firstProposalId);
+            expect((await governor.proposalVoting(firstProposalId)).toString()).to.equals("0");
+            expect((await governor.proposalWeight(firstProposalId)).toString()).to.equals("0");
         });
 
         it('it fails to propose if proposal already exists', async function () {
@@ -175,21 +178,27 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it fails to castVote if not the guardian', async function () {
-            await expect(governor.connect(user).sss(firstProposalId, 1)).to.be.revertedWith(
+            await expect(governor.connect(authorizer_adaptor).castVote(firstProposalId, 1)).to.be.revertedWith(
                 'Unauthorized()'
             );
         });
 
-        it('it fails to castVote if vote not currently active', async function () {
-            await expect(governor.connect(authorizer_adaptor).castVote(firstProposalId, 1)).to.be.revertedWith(
-                'Governor: vote not currently active'
+        // it('it fails to castVote if vote not currently active', async function () {
+        //     await expect(governor.connect(root).castVote(firstProposalId, 1)).to.be.revertedWith(
+        //         'Governor: vote not currently active'
+        //     );
+        // });
+
+        it('it fails to castVote if unknown proposal id', async function () {
+            let invalidId = 999;
+            await expect(governor.connect(root).castVote(invalidId, 1)).to.be.revertedWith(
+                'Governor: unknown proposal id'
             );
         });
 
         it('it casts Vote', async function () {
-            await governor.connect(authorizer_adaptor).castVote(firstProposalId, 1);
+            await governor.connect(root).castVote(firstProposalId, 1);
         });
-
     });
 
 });
