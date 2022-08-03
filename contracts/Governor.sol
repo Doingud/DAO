@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.so
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
+import "hardhat/console.sol";
 /// @title Governor contract
 /// @author Daoism Systems Team
 /// @dev    IGovernor IERC165 Pattern
@@ -32,13 +32,9 @@ contract GoinGudGovernor is
     using SafeERC20 for IERC20;
     using Timers for Timers.BlockNumber;
 
-    // struct ProposalCore {
-    //     Timers.BlockNumber voteStart;
-    //     Timers.BlockNumber voteEnd;
+    // struct ProposalVoting {
     //     int256 proposalVoting;
     //     uint256 proposalWeight;
-    //     bool executed;
-    //     bool canceled;
     // }
 
     uint256 public proposalMaxOperations = 10;
@@ -275,8 +271,12 @@ contract GoinGudGovernor is
     /// @notice function allows guardian to vote for the proposal. 
     /// Proposal should achieve at least 20% approval of guardians, to be accepted
     function castVote(uint256 proposalId, uint8 support) public virtual override(Governor, IGovernor) onlyGuardian returns (uint256 balance){
+                console.log("proposalId is %s", proposalId);
+
         address voter = _msgSender();
         return _castVote(proposalId, voter, support, "");
+
+        // emit VoteCast(msg.sender, proposalId, support, _castVote(proposalId, voter, support, "");
 
         // mapping(uint256 => ProposalCore) private _proposals;
 
@@ -290,13 +290,19 @@ contract GoinGudGovernor is
         // int256[] public proposalWeight;
     }
 
+    function sss(uint256 proposalId, uint8 support) public virtual onlyGuardian returns (uint256 balance){
+                console.log("proposalId is %s", proposalId);
+
+        address voter = _msgSender();
+        return _castVote(proposalId, voter, support, "");
+    }
 
     function _castVote(
         uint256 proposalId,
         address account,
         uint8 support,
-        string memory reason,
-        bytes memory params
+        string memory reason//,
+        // bytes memory params
     ) internal virtual override(Governor) returns (uint256)
     {
         ProposalCore storage proposal = _proposals[proposalId];
@@ -313,7 +319,7 @@ contract GoinGudGovernor is
         // 1 point for now
         uint256 voterBalance = AMORxGuild.balanceOf(account);
         if(voterBalance > 0){
-            AMORxGuild.safeTransferFrom(_msgSender(), address(this), voterBalance);
+            // AMORxGuild.safeTransferFrom(_msgSender(), address(this), voterBalance);
         }
 
         // proposal.proposalWeight += 1;//voterBalance;

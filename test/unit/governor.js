@@ -155,16 +155,13 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it fails to propose if information arity mismatch', async function () {
-            targets = [];
-            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description)).to.be.revertedWith(
+            await expect(governor.connect(authorizer_adaptor).propose([], values, calldatas, description)).to.be.revertedWith(
                 'Governor::propose: proposal function information arity mismatch'
             );
         });
 
         it('it fails to propose if empty proposal', async function () {
-            values = [];
-            calldatas = [];
-            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description)).to.be.revertedWith(
+            await expect(governor.connect(authorizer_adaptor).propose([], [], [], description)).to.be.revertedWith(
                 'Governor: empty proposal'
             );
         });
@@ -173,51 +170,24 @@ describe('unit - Contract: Governor', function () {
 
     context('» castVote testing', () => {
 
-        it('it fails to propose if not the avatar', async function () {
-            targets = [authorizer_adaptor.address];
-            values = [12];
-            // building hash has to come from system address
-            // 32 bytes of data
-            let messageHash = ethers.utils.solidityKeccak256(
-                ["address"],
-                [authorizer_adaptor.address]
-            );
+        it('E', async function () {
+            await expect(governor.connect(authorizer_adaptor).execute(targets, values, calldatas, description));
+        });
 
-            // 32 bytes of data in Uint8Array
-            let messageHashBinary = ethers.utils.arrayify(messageHash);
-            calldatas = [messageHash];
-            description = 'proposal';
-
-            await expect(governor.connect(user).propose(targets, values, calldatas, description)).to.be.revertedWith(
+        it('it fails to castVote if not the guardian', async function () {
+            await expect(governor.connect(user).sss(firstProposalId, 1)).to.be.revertedWith(
                 'Unauthorized()'
             );
         });
-        
-        it('it proposes', async function () {
-            firstProposalId = await governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description);
-            // expect(await governor.proposalVoting(firstProposalId)).to.equals(0);
-            // expect((await governor.proposalWeight(firstProposalId)).toString()).to.equals("0");
-        });
 
-        it('it fails to propose if proposal already exists', async function () {
-            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description)).to.be.revertedWith(
-                'Governor: proposal already exists'
+        it('it fails to castVote if vote not currently active', async function () {
+            await expect(governor.connect(authorizer_adaptor).castVote(firstProposalId, 1)).to.be.revertedWith(
+                'Governor: vote not currently active'
             );
         });
 
-        it('it fails to propose if information arity mismatch', async function () {
-            targets = [];
-            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description)).to.be.revertedWith(
-                'Governor::propose: proposal function information arity mismatch'
-            );
-        });
-
-        it('it fails to propose if empty proposal', async function () {
-            values = [];
-            calldatas = [];
-            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description)).to.be.revertedWith(
-                'Governor: empty proposal'
-            );
+        it('it casts Vote', async function () {
+            await governor.connect(authorizer_adaptor).castVote(firstProposalId, 1);
         });
 
     });
