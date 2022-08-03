@@ -131,7 +131,8 @@ const governor = async (setup) => {
     setup.tokens.AmorGuildToken.address, //AMORxGuild
     // setup.roles.root.address, // owner
     setup.roles.authorizer_adaptor.address, // Snapshot Address
-    setup.roles.authorizer_adaptor.address // Avatar Address
+    setup.roles.authorizer_adaptor.address, // Avatar Address
+    64000 // voting time
   );
 
   return governor;

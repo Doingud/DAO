@@ -20,7 +20,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// @dev    IGovernor IERC165 Pattern
 /// @notice Governor contract will allow to add and vote for the proposals
 
-// contract GoinGudGovernor is Governor, IGovernor, Ownable {
 contract GoinGudGovernor is 
     Governor,
     GovernorSettings,
@@ -46,7 +45,6 @@ contract GoinGudGovernor is
     // After proposal was voted for, an !executor provides a complete data about the proposal!, 
     // which gets hashed and if hashes correspond, then the proposal is executed.
 
-
     // mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
     mapping(uint256 => address[]) public voters; // voters mapping(uint proposal => address [] voters)
 
@@ -55,6 +53,8 @@ contract GoinGudGovernor is
     // int256[] public proposalWeight;
     mapping(uint256 => int256) public proposalVoting;
     mapping(uint256 => uint256) public proposalWeight;
+
+    uint256 public timeVoting; // deadlines for the votes for proposals
 
 
     uint256 public GUARDIANS_LIMIT; // amount of guardians for contract to function propperly, 
@@ -72,18 +72,12 @@ contract GoinGudGovernor is
     string public _name;
     bool private _initialized;
 
-  uint256 public _votingDelay;
-  uint256 public _votingPeriod;
-  uint256 public _quorum;
+    uint256 public _votingDelay;
+    uint256 public _votingPeriod;
+    uint256 public _quorum;
 
     /// @notice The total number of proposals
     uint public proposalCount;
-
-    /// @notice The address of the Compound Protocol Timelock
-    // TimelockInterface public timelock;
-
-    /// @notice The address of the Compound governance token
-    // CompInterface public comp;
 
     error NotEnoughGuardians();
     error Unauthorized();
@@ -109,7 +103,8 @@ contract GoinGudGovernor is
         address AMORxGuild_,
         // address initOwner, 
         address snapshotAddress_,
-        address avatarAddress_
+        address avatarAddress_,
+        uint256 timeVoting_
         // uint256 proposalThreshold_
     ) external returns (bool) {
         require(!_initialized, "Already initialized");
@@ -120,12 +115,14 @@ contract GoinGudGovernor is
         guardians.push(msg.sender);
         snapshotAddress = snapshotAddress_;
         avatarAddress = avatarAddress_;
+        timeVoting = timeVoting_;
 
         _initialized = true;
-    _votingDelay = 1; // 1 block
-    _votingPeriod = 45818; // 1 week
-    _quorum = 11000e18; // 11k AMORxGuild
-    proposalCount = 0;
+
+        _votingDelay = 1; // 1 block
+        _votingPeriod = 45818; // 1 week
+        _quorum = 11000e18; // 11k AMORxGuild
+        proposalCount = 0;
         // _proposalThreshold = proposalThreshold_;
 
 
@@ -277,19 +274,6 @@ contract GoinGudGovernor is
     function castVote(uint256 proposalId, uint8 support) public virtual override(Governor, IGovernor) onlyGuardian returns (uint256 balance){
         address voter = _msgSender();
         return _castVote(proposalId, voter, support, "");
-
-        // emit VoteCast(msg.sender, proposalId, support, _castVote(proposalId, voter, support, "");
-
-        // mapping(uint256 => ProposalCore) private _proposals;
-
-        // uint256[] public proposals; // Q: it’s an array of proposals hashes to execute. // ??? how this value are getted? 
-        // // After proposal was voted for, an executor provides a complete data about the proposal, 
-        // // which gets hashed and if hashes correspond, then the proposal is executed.
-
-        // mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
-        // mapping(uint256 => address[]) public voters; // voters mapping(uint report => address [] voters)
-        // int256[] public proposalVoting; // results of the vote for the proposal
-        // int256[] public proposalWeight;
     }
 
     function _castVote(
@@ -355,11 +339,26 @@ contract GoinGudGovernor is
         );
         _proposals[proposalId].executed = true;
 
+// TODO: add call of execTransactionFromModule(address to, uint256 value, bytes data, Enum.Operations operation) from AvatarxGuild 
+//              (allows to execute functions from the module(it will send the passed proposals from the snapshot to the Governor))
         emit ProposalExecuted(proposalId);
 
         _beforeExecute(proposalId, targets, values, calldatas, descriptionHash);
         _execute(proposalId, targets, values, calldatas, descriptionHash);
         _afterExecute(proposalId, targets, values, calldatas, descriptionHash);
+
+        // clear mappings
+        for (uint256 i = 0; i < proposals.length; i++) {
+            if (proposals[i] == proposalId) {
+                proposals[i] = proposals[proposals.length - 1];
+                proposals.pop();
+                break;
+            }
+        }
+        delete proposalWeight[proposalId];
+        delete proposalVoting[proposalId];
+        delete voters[proposalId];
+        delete _proposals[proposalId];
 
         return proposalId;
     }
@@ -398,8 +397,7 @@ contract GoinGudGovernor is
             return ProposalState.Active;
         }
 
-        // TODO: Proposal should achieve at least 20% approval of guardians, to be accepted.
-        // if (_quorumReached(proposalId) && _voteSucceeded(proposalId)) { //TODO: change this 'if'
+        // Proposal should achieve at least 20% approval of guardians, to be accepted
         // if (proposal.proposalVoting >= int256((20 * guardians.length) / 100)) {
         if (proposalVoting[proposalId] >= int256((20 * guardians.length) / 100)) {
             return ProposalState.Succeeded;
@@ -437,34 +435,34 @@ contract GoinGudGovernor is
       * @notice Cancels a proposal only if sender is the proposer, or proposer delegates dropped below proposal threshold
       * @param proposalId The id of the proposal to cancel
       */
-    function cancel(uint proposalId) external {
-        // require(state(proposalId) != ProposalState.Executed, "Governor::cancel: cannot cancel executed proposal");
+    // function cancel(uint proposalId) external {
+    //     // require(state(proposalId) != ProposalState.Executed, "Governor::cancel: cannot cancel executed proposal");
 
-        // ProposalCore storage proposal = _proposals[proposalId];
+    //     // ProposalCore storage proposal = _proposals[proposalId];
 
-        // uint256 canselledId = _cancel();
+    //     // uint256 canselledId = _cancel();
 
-        // require(msg.sender == proposal.proposer || comp.getPriorVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold(), "Governor::cancel: proposer above threshold");
+    //     // require(msg.sender == proposal.proposer || comp.getPriorVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold(), "Governor::cancel: proposer above threshold");
 
-        // proposal.canceled = true;
-        // for (uint i = 0; i < proposal.targets.length; i++) {
-        //     timelock.cancelTransaction(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
-        // }
+    //     // proposal.canceled = true;
+    //     // for (uint i = 0; i < proposal.targets.length; i++) {
+    //     //     timelock.cancelTransaction(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
+    //     // }
 
-        // emit ProposalCanceled(proposalId);
+    //     // emit ProposalCanceled(proposalId);
 
-        // uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
-        ProposalState status = state(proposalId);
+    //     // uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
+    //     ProposalState status = state(proposalId);
 
-        require(
-            status != ProposalState.Canceled && status != ProposalState.Expired && status != ProposalState.Executed,
-            "Governor: proposal not active"
-        );
-        _proposals[proposalId].canceled = true;
+    //     require(
+    //         status != ProposalState.Canceled && status != ProposalState.Expired && status != ProposalState.Executed,
+    //         "Governor: proposal not active"
+    //     );
+    //     _proposals[proposalId].canceled = true;
 
-        // delete voters[proposalId];
-        emit ProposalCanceled(proposalId);
-    }
+    //     // delete voters[proposalId];
+    //     emit ProposalCanceled(proposalId);
+    // }
 
     /**
      * @dev Internal cancel mechanism: locks up the proposal timer, preventing it from being re-submitted. Marks it as
@@ -522,7 +520,7 @@ contract GoinGudGovernor is
         override(IGovernor, GovernorSettings)
         returns (uint256)
     {
-        return super.votingPeriod();
+        return timeVoting;
     }
 
     function quorum(uint256 blockNumber)

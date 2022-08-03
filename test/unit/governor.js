@@ -54,7 +54,8 @@ describe('unit - Contract: Governor', function () {
             await expect(governor.init(
                 AMORxGuild.address, //AMORxGuild
                 authorizer_adaptor.address, // Snapshot Address
-                authorizer_adaptor.address // Avatar Address
+                authorizer_adaptor.address, // Avatar Address
+                64000 // voting time
             )).to.be.revertedWith("Already initialized");
         });
     });
