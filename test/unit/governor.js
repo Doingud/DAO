@@ -43,8 +43,8 @@ describe('unit - Contract: Governor', function () {
 
     context('» init testing', () => {
         it('initialized variables check', async function () {
-            expect(await governor.owner()).to.equals(root.address);
             expect(await governor.snapshotAddress()).to.equals(authorizer_adaptor.address);
+            expect(await governor.avatarAddress()).to.equals(authorizer_adaptor.address);
             expect(await governor.guardians(0)).to.equals(root.address);
         });
 

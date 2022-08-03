@@ -120,12 +120,18 @@ const controller = async (setup) => {
 };
 
 const governor = async (setup) => {
-  const governorFactory = await ethers.getContractFactory('Governor');
-  const governor = await governorFactory.deploy();
+  const governorFactory = await ethers.getContractFactory('GoinGudGovernor');
+  const governor = await governorFactory.deploy(
+    setup.tokens.AmorGuildToken.address,
+    setup.roles.authorizer_adaptor.address, // timelock address
+    "DoinGud Governor"
+  );
 
-  await governor.init(
-    setup.roles.root.address, // owner
-    setup.roles.authorizer_adaptor.address // Snapshot Address
+  await governor.init(    
+    setup.tokens.AmorGuildToken.address, //AMORxGuild
+    // setup.roles.root.address, // owner
+    setup.roles.authorizer_adaptor.address, // Snapshot Address
+    setup.roles.authorizer_adaptor.address // Avatar Address
   );
 
   return governor;

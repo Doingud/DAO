@@ -71,7 +71,7 @@ contract GoinGudGovernor is
     address public avatarAddress;
     IERC20 private AMORxGuild;
 
-    event Initialized(bool success, address owner, address snapshotAddress);
+    event Initialized(bool success, address avatarAddress, address snapshotAddress);
 
     string public _name;
     bool private _initialized;
@@ -87,7 +87,7 @@ contract GoinGudGovernor is
     // TimelockInterface public timelock;
 
     /// @notice The address of the Compound governance token
-    CompInterface public comp;
+    // CompInterface public comp;
 
     error NotEnoughGuardians();
     error Unauthorized();
@@ -97,27 +97,26 @@ contract GoinGudGovernor is
     error VotingTimeExpired();
     error AlreadyVoted();
 
-    constructor(IVotes _token, TimelockController _timelock)
-        Governor("MyGovernor")
+    constructor(IVotes _token, TimelockController _timelock, string memory name)
+        Governor(name)
         GovernorSettings(1 /* 1 block */, 45818 /* 1 week */, 0)
         GovernorVotes(_token)
         GovernorVotesQuorumFraction(4)
         GovernorTimelockControl(_timelock)
-    {}
+    {
+        _name = name;
+    }
 
     function init(
-        string memory name_,
         // IVotes  AMORxGuild_,
         // TimelockController _timelock,
         address AMORxGuild_,
-        address initOwner, 
+        // address initOwner, 
         address snapshotAddress_,
         address avatarAddress_
         // uint256 proposalThreshold_
     ) external returns (bool) {
         require(!_initialized, "Already initialized");
-
-        // _transferOwnership(initOwner);
 
         AMORxGuild = IERC20(AMORxGuild_);
 
@@ -126,7 +125,6 @@ contract GoinGudGovernor is
         snapshotAddress = snapshotAddress_;
         avatarAddress = avatarAddress_;
 
-        _name = name_;
         _initialized = true;
     _votingDelay = 1; // 1 block
     _votingPeriod = 45818; // 1 week
@@ -134,7 +132,7 @@ contract GoinGudGovernor is
         // _proposalThreshold = proposalThreshold_;
 
 
-        emit Initialized(_initialized, initOwner, snapshotAddress_);
+        emit Initialized(_initialized, avatarAddress_, snapshotAddress_);
         return true;
     }
 
