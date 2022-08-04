@@ -116,7 +116,7 @@ contract MetaDaoController is AccessControl {
         guildsTotalWeight = 0;
     }
 
-    /// @notice Allows a guuild to claim amor tokens from the metadao 
+    /// @notice Allows a guuild to claim amor tokens from the metadao
     /// @dev only a guild can call this funtion
     function claim() public onlyRole(GUILD_ROLE) {
         ///require(hasRole(GUILD_ROLE, msg.sender), "NOT_GUILD");
