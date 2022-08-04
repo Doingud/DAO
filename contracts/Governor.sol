@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.so
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "hardhat/console.sol";
+
 /// @title Governor contract
 /// @author Daoism Systems Team
 /// @dev    IGovernor IERC165 Pattern
@@ -29,6 +29,7 @@ contract GoinGudGovernor is
     GovernorTimelockControl
 {
     using SafeERC20 for IERC20;
+    using SafeCast for uint256;
     using Timers for Timers.BlockNumber;
 
     // struct ProposalVoting {
@@ -125,7 +126,7 @@ contract GoinGudGovernor is
         _initialized = true;
 
         _votingDelay = 1; // 1 block
-        _votingPeriod = 2; // 2 blocks
+        _votingPeriod = 64000; // 64000 blocks
         // _quorum = 11000e18; // for example 11k AMORxGuild
         proposalCount = 0;
         _proposalThreshold = proposalThreshold_;
@@ -238,9 +239,6 @@ contract GoinGudGovernor is
 
         uint64 snapshot = toUint64(block.number) + toUint64(votingDelay());
         uint64 deadline = snapshot + toUint64(votingPeriod());
-
-console.log("snapshot is %s", snapshot);
-console.log("deadline is %s", deadline);
 
         proposal.voteStart.setDeadline(snapshot);
         proposal.voteEnd.setDeadline(deadline);
@@ -405,13 +403,11 @@ console.log("deadline is %s", deadline);
         }
 
         uint256 deadline = proposalDeadline(proposalId);
-console.log("e2 is %s");
-console.log("deadline is %s", deadline);
-console.log("block.number is %s", block.number);
+
         if (deadline >= block.number) {
             return ProposalState.Active;
         }
-console.log("e3 is %s");
+
         // Proposal should achieve at least 20% approval of guardians, to be accepted
         if (proposalVoting[proposalId] >= int256((20 * guardians.length) / 100)) {
             return ProposalState.Succeeded;
@@ -427,13 +423,13 @@ console.log("e3 is %s");
         bytes[] memory calldatas,
         bytes32 /*descriptionHash*/
     ) internal virtual override(Governor, GovernorTimelockControl) {
-        string memory errorMessage = "Governor: call reverted without message";
+        // string memory errorMessage = "Governor: call reverted without message";
         for (uint256 i = 0; i < targets.length; ++i) {
             // add addresses from passed proposal as guardians
             guardians.push(targets[i]);
 
-            (bool success, bytes memory returndata) = targets[i].call{value: values[i]}(calldatas[i]);
-            Address.verifyCallResult(success, returndata, errorMessage);
+            // (bool success, bytes memory returndata) = targets[i].call{value: values[i]}(calldatas[i]);
+            // Address.verifyCallResult(success, returndata, errorMessage);
         }
     }
 
@@ -515,11 +511,11 @@ console.log("e3 is %s");
     }
 
     function votingDelay() public view override(IGovernor, GovernorSettings) returns (uint256) {
-        return super.votingDelay();
+        return _votingDelay;
     }
 
     function votingPeriod() public view override(IGovernor, GovernorSettings) returns (uint256) {
-        return timeVoting;
+        return _votingPeriod;
     }
 
     function quorum(uint256 blockNumber)
