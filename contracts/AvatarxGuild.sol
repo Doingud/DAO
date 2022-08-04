@@ -2,17 +2,39 @@
 pragma solidity 0.8.15;
 import "./utils/Enum.sol";
 import "./Executor.sol";
-contract AvatarxGuild is Executor {
+import "@openzeppelin/contracts/access/AccessControl.sol";
+
+contract AvatarxGuild is Executor,AccessControl {
     event EnabledModule(address module);
     event DisabledModule(address module);
     event ExecutionFromModuleSuccess(address indexed module);
     event ExecutionFromModuleFailure(address indexed module);
+    event ExecutionFromGuardianSuccess(address guardianAddress);
+    event ExecutionFromGuardianFailure(address guardianAddress);
+    event Initialized(bool success, address owner, address guardianAddress);
+    event GuardianAdded(address guardian);
+    event GuardianRemoved(address guardian);
+
+    /// Roles
+    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN");
 
     address internal constant SENTINEL_MODULES = address(0x1);
+    bool private _initialized;
 
     mapping(address => bool) public voters;
     mapping(address => address) internal modules;
-    
+
+    function init(address initOwner, address guardianAddress_) external returns (bool) {
+        require(!_initialized, "Already initialized");
+
+        _setupRole(DEFAULT_ADMIN_ROLE, initOwner);
+        _setupRole(GUARDIAN_ROLE, guardianAddress_);
+   
+        _initialized = true;
+        emit Initialized(_initialized, initOwner, guardianAddress_);
+        return true;
+    }
+
     /// @dev Allows to add a module to the whitelist.
     ///      This can only be done via a Safe transaction.
     /// @notice Enables the module `module` for the Safe.
@@ -88,6 +110,12 @@ contract AvatarxGuild is Executor {
         }
     }
 
+    function executeProposal(address target, uint256 value, bytes memory proposal, Enum.Operation operation) public onlyRole(GUARDIAN_ROLE) {
+       bool success = execute(target, value, proposal, operation, gasleft());
+        if (success) emit ExecutionFromGuardianSuccess(msg.sender);
+        else emit ExecutionFromGuardianFailure(msg.sender);
+    }
+
     /// @dev Returns if an module is enabled
     /// @return True if the module is enabled
     function isModuleEnabled(address module) public view returns (bool) {
@@ -117,6 +145,24 @@ contract AvatarxGuild is Executor {
         assembly {
             mstore(array, moduleCount)
         }
+    }
+
+    /// @notice adds guild based on the controller address provided
+    /// @dev give guardian role in access control to the guardian address
+    /// @param guardian the controller address of the guild
+    function addGuardian(address guardian) external {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
+        _setupRole(GUARDIAN_ROLE, guardian);
+        emit GuardianAdded(guardian);
+    }
+
+    /// @notice adds guild based on the controller address provided
+    /// @dev give guardian role in access control to the guardian address
+    /// @param guardian the controller address of the guild
+    function removeGuardian(address guardian) external {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
+        revokeRole(GUARDIAN_ROLE, guardian);
+        emit GuardianRemoved(guardian);
     }
 
 }
