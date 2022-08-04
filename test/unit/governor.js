@@ -1,6 +1,11 @@
+const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+const { getCurrentBlockTimestamp } = require('../helpers/helpers.js');
 const init = require('../test-init.js');
+
+const FOURTY_SECONDS = 40;
+const twoWeeks = time.duration.days(14);
 
 // let AMOR; // need for AMORxGuild
 let AMORxGuild; // need for testing propose() function
@@ -47,6 +52,7 @@ describe('unit - Contract: Governor', function () {
             expect(await governor.snapshotAddress()).to.equals(authorizer_adaptor.address);
             expect(await governor.avatarAddress()).to.equals(authorizer_adaptor.address);
             expect(await governor.guardians(0)).to.equals(root.address);
+            expect(await governor.proposalThreshold()).to.equals(0);
         });
 
         it("Should fail if called more than once", async function () {
@@ -54,7 +60,8 @@ describe('unit - Contract: Governor', function () {
                 AMORxGuild.address, //AMORxGuild
                 authorizer_adaptor.address, // Snapshot Address
                 authorizer_adaptor.address, // Avatar Address
-                64000 // voting time
+                64000, // voting time
+                0 // proposalThreshold
             )).to.be.revertedWith("Already initialized");
         });
     });
@@ -201,10 +208,6 @@ describe('unit - Contract: Governor', function () {
 
     context('» execute testing', () => {
 
-        it('it executes proposal', async function () {
-            await expect(governor.connect(authorizer_adaptor).execute(targets, values, calldatas, description));
-        });
-
         it('it fails to execute if proposal not successful', async function () {
             let descriprionHash = ethers.utils.solidityKeccak256(
                 ["string"],
@@ -213,6 +216,45 @@ describe('unit - Contract: Governor', function () {
             await expect(governor.connect(root).execute(targets, values, calldatas, descriprionHash)).to.be.revertedWith(
                 'Governor: proposal not successful'
             );
+        });
+
+        it('it executes proposal', async function () {
+            // now + 40 seconds(so that it doesnt throw an error because current tiemstamp > next timestamp)
+            const currentTimeInSeconds = await getCurrentBlockTimestamp();
+console.log("await getCurrentBlockTimestamp() is %s", await getCurrentBlockTimestamp());
+            const nextBlockTimestamp = currentTimeInSeconds + FOURTY_SECONDS;
+            await network.provider.send('evm_setNextBlockTimestamp', [nextBlockTimestamp]);
+
+            const sevenDays = 7 * 24 * 60 * 60;
+
+            // 10 seconds difference between blocks + 1 week
+            const blockPlusOneTimestamp = currentTimeInSeconds + sevenDays;
+            await network.provider.send('evm_setNextBlockTimestamp', [blockPlusOneTimestamp]);
+            console.log("await getCurrentBlockTimestamp() is %s", await getCurrentBlockTimestamp());
+            time.increase(twoWeeks);
+            // const instance = await governor.deployed();
+            // const deployBlock = await web3.eth.getBlock("latest");
+            // const deployBlockNumber = deployBlock.number;
+            // await instance.__test_setBlockNumber(deployBlockNumber + 604800);
+
+            // const sevenDays = 7 * 24 * 60 * 60;
+
+            // const blockNumBefore = await ethers.provider.getBlockNumber();
+            // const blockBefore = await ethers.provider.getBlock(blockNumBefore);
+            // const timestampBefore = blockBefore.timestamp;
+
+            // await ethers.provider.send('evm_increaseTime', [sevenDays]);
+            // await ethers.provider.send('evm_mine');
+            
+            // const blockNumAfter = await ethers.provider.getBlockNumber();
+            // const blockAfter = await ethers.provider.getBlock(blockNumAfter);
+            // const timestampAfter = blockAfter.timestamp;
+
+            let descriprionHash = ethers.utils.solidityKeccak256(
+                ["string"],
+                [description]
+            );
+            await governor.connect(authorizer_adaptor).execute(targets, values, calldatas, descriprionHash);
         });
     });
 });

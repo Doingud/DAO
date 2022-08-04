@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.so
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
+import "hardhat/console.sol";
 /// @title Governor contract
 /// @author Daoism Systems Team
 /// @dev    IGovernor IERC165 Pattern
@@ -37,8 +37,9 @@ contract GoinGudGovernor is
     // }
 
     uint256 public proposalMaxOperations = 10;
-    // uint256 public _proposalThreshold;
+    uint256 private _proposalThreshold;
     mapping(uint256 => ProposalCore) private _proposals;
+    // mapping(uint256 => ProposalVoting) private _proposalsVotings;
 
     // id in array --> Id of passed proposal from _proposals
     uint256[] public proposals; // it’s an array of proposals hashes to execute.
@@ -73,7 +74,7 @@ contract GoinGudGovernor is
 
     uint256 public _votingDelay;
     uint256 public _votingPeriod;
-    uint256 public _quorum;
+    // uint256 public _quorum;
 
     /// @notice The total number of proposals
     uint256 public proposalCount;
@@ -102,20 +103,21 @@ contract GoinGudGovernor is
         GovernorTimelockControl(_timelock)
     {
         _name = name;
+        // person who inflicted the creation of the contract is set as the only guardian of the system
+        guardians.push(msg.sender);
     }
 
     function init(
         address AMORxGuild_,
         address snapshotAddress_,
         address avatarAddress_,
-        uint256 timeVoting_
+        uint256 timeVoting_,
+        uint256 proposalThreshold_
     ) external returns (bool) {
         require(!_initialized, "Already initialized");
 
         AMORxGuild = IERC20(AMORxGuild_);
 
-        // person who inflicted the creation of the contract is set as the only guardian of the system
-        guardians.push(msg.sender);
         snapshotAddress = snapshotAddress_;
         avatarAddress = avatarAddress_;
         timeVoting = timeVoting_;
@@ -123,10 +125,10 @@ contract GoinGudGovernor is
         _initialized = true;
 
         _votingDelay = 1; // 1 block
-        _votingPeriod = 45818; // 1 week
-        _quorum = 11000e18; // 11k AMORxGuild
+        _votingPeriod = 2; // 2 blocks
+        // _quorum = 11000e18; // for example 11k AMORxGuild
         proposalCount = 0;
-        // _proposalThreshold = proposalThreshold_;
+        _proposalThreshold = proposalThreshold_;
 
         emit Initialized(_initialized, avatarAddress_, snapshotAddress_);
         return true;
@@ -237,17 +239,21 @@ contract GoinGudGovernor is
         uint64 snapshot = toUint64(block.number) + toUint64(votingDelay());
         uint64 deadline = snapshot + toUint64(votingPeriod());
 
+console.log("snapshot is %s", snapshot);
+console.log("deadline is %s", deadline);
+
         proposal.voteStart.setDeadline(snapshot);
         proposal.voteEnd.setDeadline(deadline);
 
-        // proposals.push(proposals.length); // TODO: not there. _proposals[proposalId] will be added to proposals ONLY IF successful
-        // proposal.proposalVoting = 0;
-        // proposal.proposalWeight = 0;
+        // ProposalVoting storage proposalvoting = _proposalsVotings[proposalId];
+        // proposalvoting.proposalVoting = 0;
+        // proposalvoting.proposalWeight = 0;
 
         proposalVoting[proposalId] = 0;
         proposalWeight[proposalId] = 0;
 
         _proposals[proposalId] = proposal;
+        proposals.push(proposalId);
         proposalCount++;
         emit ProposalCreated(
             proposalId,
@@ -260,8 +266,6 @@ contract GoinGudGovernor is
             deadline,
             description
         );
-
-        proposals.push(proposalId);
 
         return proposalId;
     }
@@ -298,15 +302,15 @@ contract GoinGudGovernor is
         // Q: guardian votes with some choosable amount of AMORxGuild / all amount / 1 point???
         // 1 point for now
         uint256 voterBalance = AMORxGuild.balanceOf(account);
-        if (voterBalance > 0) {
-            // AMORxGuild.safeTransferFrom(_msgSender(), address(this), voterBalance);
-        }
+        // if (voterBalance > 0) {
+        //    AMORxGuild.safeTransferFrom(_msgSender(), address(this), voterBalance);
+        // }
 
         // proposal.proposalWeight += 1;//voterBalance;
         proposalWeight[proposalId] += 1;
 
         if (support == 1) {
-            //if for
+            // if for
             proposalVoting[proposalId] += 1;
             // proposal.proposalVoting += 1;//int256(voterBalance);
             // votes[proposalId][msg.sender] += int256(voterBalance);
@@ -342,8 +346,7 @@ contract GoinGudGovernor is
         );
         _proposals[proposalId].executed = true;
 
-        // TODO: add call of execTransactionFromModule(address to, uint256 value, bytes data, Enum.Operations operation) from AvatarxGuild
-        //              (allows to execute functions from the module(it will send the passed proposals from the snapshot to the Governor))
+        // TODO: add call of AvatarxGuild execute function?
         // UPD: no need? It's an AvatarxGuild is calling Governor execute() from it's functions
         emit ProposalExecuted(proposalId);
 
@@ -402,13 +405,14 @@ contract GoinGudGovernor is
         }
 
         uint256 deadline = proposalDeadline(proposalId);
-
+console.log("e2 is %s");
+console.log("deadline is %s", deadline);
+console.log("block.number is %s", block.number);
         if (deadline >= block.number) {
             return ProposalState.Active;
         }
-
+console.log("e3 is %s");
         // Proposal should achieve at least 20% approval of guardians, to be accepted
-        // if (proposal.proposalVoting >= int256((20 * guardians.length) / 100)) {
         if (proposalVoting[proposalId] >= int256((20 * guardians.length) / 100)) {
             return ProposalState.Succeeded;
         } else {
@@ -425,6 +429,9 @@ contract GoinGudGovernor is
     ) internal virtual override(Governor, GovernorTimelockControl) {
         string memory errorMessage = "Governor: call reverted without message";
         for (uint256 i = 0; i < targets.length; ++i) {
+            // add addresses from passed proposal as guardians
+            guardians.push(targets[i]);
+
             (bool success, bytes memory returndata) = targets[i].call{value: values[i]}(calldatas[i]);
             Address.verifyCallResult(success, returndata, errorMessage);
         }
@@ -434,25 +441,9 @@ contract GoinGudGovernor is
         return avatarAddress;
     }
 
-    /// @notice Cancels a proposal only if sender is the proposer, or proposer delegates dropped below proposal threshold
+    /// @notice Cancels a proposal
     /// @param proposalId The id of the proposal to cancel
     function cancel(uint256 proposalId) external {
-        // require(state(proposalId) != ProposalState.Executed, "Governor::cancel: cannot cancel executed proposal");
-
-        // ProposalCore storage proposal = _proposals[proposalId];
-
-        // uint256 canselledId = _cancel();
-
-        // require(msg.sender == proposal.proposer || comp.getPriorVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold(), "Governor::cancel: proposer above threshold");
-
-        // proposal.canceled = true;
-        // for (uint i = 0; i < proposal.targets.length; i++) {
-        //     timelock.cancelTransaction(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
-        // }
-
-        // emit ProposalCanceled(proposalId);
-
-        // uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
         ProposalState status = state(proposalId);
 
         require(
@@ -541,7 +532,7 @@ contract GoinGudGovernor is
     }
 
     function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
-        return 0; // _proposalThreshold;
+        return _proposalThreshold;
     }
 
     function sub256(uint256 a, uint256 b) internal pure returns (uint256) {
