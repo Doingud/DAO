@@ -138,8 +138,6 @@ describe('unit - Contract: Governor', function () {
                 ["address"],
                 [authorizer_adaptor.address]
             );
-            // 32 bytes of data in Uint8Array
-            // let messageHashBinary = ethers.utils.arrayify(messageHash);
             calldatas = [messageHash];
             description = 'proposal';
 

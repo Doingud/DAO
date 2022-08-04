@@ -344,8 +344,8 @@ contract GoinGudGovernor is
         );
         _proposals[proposalId].executed = true;
 
-        // TODO: add call of AvatarxGuild execute function?
-        // UPD: no need? It's an AvatarxGuild is calling Governor execute() from it's functions
+        //      add call of AvatarxGuild execute function?
+        //      or no need? It's an AvatarxGuild is calling Governor execute() from it's functions
         emit ProposalExecuted(proposalId);
 
         _beforeExecute(proposalId, targets, values, calldatas, descriptionHash);
@@ -423,13 +423,9 @@ contract GoinGudGovernor is
         bytes[] memory calldatas,
         bytes32 /*descriptionHash*/
     ) internal virtual override(Governor, GovernorTimelockControl) {
-        // string memory errorMessage = "Governor: call reverted without message";
         for (uint256 i = 0; i < targets.length; ++i) {
             // add addresses from passed proposal as guardians
             guardians.push(targets[i]);
-
-            // (bool success, bytes memory returndata) = targets[i].call{value: values[i]}(calldatas[i]);
-            // Address.verifyCallResult(success, returndata, errorMessage);
         }
     }
 
