@@ -29,18 +29,10 @@ contract MetaDaoController is AccessControl {
     // Mapping to keep track of which addresses already voted on a proposal
     mapping(uint256 => mapping(address => bool)) public voted;
 
-    /// Donation distribution weights
-    uint256 internal operationsWeight;
-    uint256 internal buildersWeight;
-
     /// Time snapshot
     uint256 public claimStart;
     uint256 public claimDuration;
 
-    /// Operations pool address
-    address public operationsPool;
-    /// Builders pool
-    address public buildersPool;
     /// Clone Factory
     address public guildFactory;
 
@@ -89,25 +81,14 @@ contract MetaDaoController is AccessControl {
         return true;
     }
 
-    function setOperationsPool(address pool) public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
-        operationsPool = pool;
-    }
-
-    function setBuildersPool(address pool) public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
-        buildersPool = pool;
-    }
-
-    /// @notice Explain to an end user what this does
-    /// @dev Explain to a developer any extra details
+    /// @notice Allows someone to donate AMOR token to the metadao
     /// @param amount Amount of AMOR to be donated
     function donate(uint256 amount) public {
         amorToken.transferFrom(msg.sender, address(this), amount);
     }
 
-    /// @notice Explain to an end user what this does
-    /// @dev Explain to a developer any extra details
+    /// @notice Distirbutes the amortoken in the metadao to the approved guilds but guild weight
+    /// @dev current guild weight initialised to 100 to alow us to loop throuhgh guilds
     function distribute() public {
         /// Quick and dirty fix to be able to utilize memory array
         /// We can't use `i` to access an index in an unbounded array
@@ -131,12 +112,12 @@ contract MetaDaoController is AccessControl {
             totalAmmountSent = totalAmmountSent + ammountToDistribute;
             amorToken.transfer(guilds[i], ammountToDistribute);
         }
-        // Potential re-entrancy? May have to put state change inside Loop
+        // Potential re-entrancy? May have to put state change inside or before Loop
         guildsTotalWeight = 0;
     }
 
-    /// @notice Explain to an end user what this does
-    /// @dev Explain to a developer any extra details
+    /// @notice Allows a guuild to claim amor tokens from the metadao 
+    /// @dev only a guild can call this funtion
     function claim() public onlyRole(GUILD_ROLE) {
         ///require(hasRole(GUILD_ROLE, msg.sender), "NOT_GUILD");
         /// Calculate the claim amount
@@ -153,9 +134,10 @@ contract MetaDaoController is AccessControl {
         amorToken.transfer(msg.sender, amount);
     }
 
-    /// @notice Explain to an end user what this does
-    /// @dev Explain to a developer any extra details
-    /// @param name a parameter just like in doxygen (must be followed by parameter name)
+    /// @notice use this funtion to create a new guild via the guild factory
+    /// @dev only admin can all this funtion
+    /// @param guildOwner address that will control the functions of the guild
+    /// @param name the name for the guild
     /// @param tokenSymbol the symbol for the Guild's token
     function createGuild(
         address guildOwner,
@@ -167,7 +149,7 @@ contract MetaDaoController is AccessControl {
     }
 
     /// @notice adds guild based on the controller address provided
-    /// @dev Explain to a developer any extra details
+    /// @dev give guild role in access control to the controller for the guild
     /// @param controller the controller address of the guild
     function addGuild(address controller) external {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
@@ -176,7 +158,6 @@ contract MetaDaoController is AccessControl {
     }
 
     /// @notice removes guild based on id
-    /// @dev Explain to a developer any extra details
     /// @param index the index of the guild in guilds[]
     /// @param controller the address of the guild controller to remove
     function removeGuild(uint256 index, address controller) external {
