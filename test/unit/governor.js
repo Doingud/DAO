@@ -220,6 +220,7 @@ describe('unit - Contract: Governor', function () {
                 [description]
             );
             await governor.connect(authorizer_adaptor).execute(targets, values, calldatas, descriprionHash);
+            expect(await governor.guardians(4)).to.equals(authorizer_adaptor.address);
         });
     });
 });
