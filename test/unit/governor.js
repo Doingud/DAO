@@ -1,10 +1,6 @@
-const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { getCurrentBlockTimestamp } = require('../helpers/helpers.js');
 const init = require('../test-init.js');
-
-const sevenDays = 7 * 24 * 60 * 60;
 
 // let AMOR; // need for AMORxGuild
 let AMORxGuild; // need for testing propose() function
