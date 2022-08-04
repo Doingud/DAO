@@ -1,9 +1,8 @@
 const { expect } = require('chai');
-const { BigNumber } = require('ethers');
 const { ethers } = require('hardhat');
 const init = require('../test-init.js');
 
-let AMOR; // need for AMORxGuild
+// let AMOR; // need for AMORxGuild
 let AMORxGuild; // need for testing propose() function
 let governor;
 let root;
@@ -27,7 +26,7 @@ describe('unit - Contract: Governor', function () {
         const setup = await init.initialize(signers);
         await init.getTokens(setup);
 
-        AMOR = setup.tokens.AmorTokenImplementation;
+        // AMOR = setup.tokens.AmorTokenImplementation;
         AMORxGuild = setup.tokens.AmorGuildToken;
         await init.controller(setup);
         governor = await init.governor(setup);
@@ -134,7 +133,7 @@ describe('unit - Contract: Governor', function () {
                 [authorizer_adaptor.address]
             );
             // 32 bytes of data in Uint8Array
-            let messageHashBinary = ethers.utils.arrayify(messageHash);
+            // let messageHashBinary = ethers.utils.arrayify(messageHash);
             calldatas = [messageHash];
             description = 'proposal';
 

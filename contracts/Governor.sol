@@ -20,7 +20,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// @dev    IGovernor IERC165 Pattern
 /// @notice Governor contract will allow to add and vote for the proposals
 
-contract GoinGudGovernor is 
+contract GoinGudGovernor is
     Governor,
     GovernorSettings,
     GovernorCountingSimple,
@@ -41,14 +41,14 @@ contract GoinGudGovernor is
     mapping(uint256 => ProposalCore) private _proposals;
 
     // id in array --> Id of passed proposal from _proposals
-    uint256[] public proposals; // it’s an array of proposals hashes to execute. 
-    // After proposal was voted for, an !executor provides a complete data about the proposal!, 
+    uint256[] public proposals; // it’s an array of proposals hashes to execute.
+    // After proposal was voted for, an !executor provides a complete data about the proposal!,
     // which gets hashed and if hashes correspond, then the proposal is executed.
 
     // mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
     mapping(uint256 => address[]) public voters; // voters mapping(uint proposal => address [] voters)
 
-// was thinking about those two arrays below, but can't find better solution than just struct(exept mapping)
+    // was thinking about those two arrays below, but can't find better solution than just struct(exept mapping)
     // int256[] public proposalVoting; // results of the vote for the proposal
     // int256[] public proposalWeight;
     mapping(uint256 => int256) public proposalVoting;
@@ -56,8 +56,7 @@ contract GoinGudGovernor is
 
     uint256 public timeVoting; // deadlines for the votes for proposals
 
-
-    uint256 public GUARDIANS_LIMIT; // amount of guardians for contract to function propperly, 
+    uint256 public GUARDIANS_LIMIT; // amount of guardians for contract to function propperly,
     // until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.
 
     address[] public guardians; // this is an array guardians who are allowed to vote for the proposals.
@@ -77,7 +76,7 @@ contract GoinGudGovernor is
     uint256 public _quorum;
 
     /// @notice The total number of proposals
-    uint public proposalCount;
+    uint256 public proposalCount;
 
     error NotEnoughGuardians();
     error Unauthorized();
@@ -87,9 +86,17 @@ contract GoinGudGovernor is
     error VotingTimeExpired();
     error AlreadyVoted();
 
-    constructor(IVotes _token, TimelockController _timelock, string memory name)
+    constructor(
+        IVotes _token,
+        TimelockController _timelock,
+        string memory name
+    )
         Governor(name)
-        GovernorSettings(1 /* 1 block */, 45818 /* 1 week */, 0)
+        GovernorSettings(
+            1, /* 1 block */
+            45818, /* 1 week */
+            0
+        )
         GovernorVotes(_token)
         GovernorVotesQuorumFraction(4)
         GovernorTimelockControl(_timelock)
@@ -98,14 +105,10 @@ contract GoinGudGovernor is
     }
 
     function init(
-        // IVotes  AMORxGuild_,
-        // TimelockController _timelock,
         address AMORxGuild_,
-        // address initOwner, 
         address snapshotAddress_,
         address avatarAddress_,
         uint256 timeVoting_
-        // uint256 proposalThreshold_
     ) external returns (bool) {
         require(!_initialized, "Already initialized");
 
@@ -124,7 +127,6 @@ contract GoinGudGovernor is
         _quorum = 11000e18; // 11k AMORxGuild
         proposalCount = 0;
         // _proposalThreshold = proposalThreshold_;
-
 
         emit Initialized(_initialized, avatarAddress_, snapshotAddress_);
         return true;
@@ -203,36 +205,31 @@ contract GoinGudGovernor is
         guardians[current] = newGuardian;
     }
 
-
     /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote.
     /// Only Avatar(as a result of the Snapshot) contract can add a proposal for voting.
     /// Proposal execution will happen throught the Avatar contract
-    /// @param targets Targets of the proposal
-    /// @param values Values of the proposal
-    /// @param calldatas Calldatas of the proposal
-    /// @param description Description of the proposal
-
     /// @param targets Target addresses for proposal calls
-    /// @param values Eth values for proposal calls
+    /// @param values AMORxGuild values for proposal calls
     /// @param calldatas Calldatas for proposal calls
     /// @param description String description of the proposal
-    /// @return proposalId id of new proposal
+    /// @return proposalId id of the new proposal
     function propose(
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description
     ) public virtual override(Governor, IGovernor) onlyAvatar returns (uint256 proposalId) {
-
         uint256 proposalId = hashProposal(targets, values, calldatas, keccak256(bytes(description)));
         // AMORxGuild.balanceOf(msg.sender)
         // require(AMORxGuild.balanceOf(msg.sender) > proposalThreshold, "Governor::propose: proposer balance below proposal threshold");
 
         // require(comp.getPriorVotes(msg.sender, sub256(block.number, 1)) > proposalThreshold, "Governor::propose: proposer votes below proposal threshold");
-        require(targets.length == values.length && targets.length == calldatas.length, "Governor::propose: proposal function information arity mismatch");
+        require(
+            targets.length == values.length && targets.length == calldatas.length,
+            "Governor::propose: proposal function information arity mismatch"
+        );
         require(targets.length > 0, "Governor: empty proposal");
         require(targets.length <= proposalMaxOperations, "Governor::propose: too many actions");
-
 
         ProposalCore storage proposal = _proposals[proposalId];
         require(proposal.voteStart.isUnset(), "Governor: proposal already exists");
@@ -269,9 +266,15 @@ contract GoinGudGovernor is
         return proposalId;
     }
 
-    /// @notice function allows guardian to vote for the proposal. 
+    /// @notice function allows guardian to vote for the proposal
     /// Proposal should achieve at least 20% approval of guardians, to be accepted
-    function castVote(uint256 proposalId, uint8 support) public virtual override(Governor, IGovernor) onlyGuardian returns (uint256 balance){
+    function castVote(uint256 proposalId, uint8 support)
+        public
+        virtual
+        override(Governor, IGovernor)
+        onlyGuardian
+        returns (uint256 balance)
+    {
         address voter = _msgSender();
         return _castVote(proposalId, voter, support, "");
     }
@@ -280,10 +283,8 @@ contract GoinGudGovernor is
         uint256 proposalId,
         address account,
         uint8 support,
-        string memory reason//,
-        // bytes memory params
-    ) internal virtual override(Governor) returns (uint256)
-    {
+        string memory reason
+    ) internal virtual override(Governor) returns (uint256) {
         ProposalCore storage proposal = _proposals[proposalId];
         require(state(proposalId) == ProposalState.Active, "Governor: vote not currently active");
 
@@ -297,18 +298,20 @@ contract GoinGudGovernor is
         // Q: guardian votes with some choosable amount of AMORxGuild / all amount / 1 point???
         // 1 point for now
         uint256 voterBalance = AMORxGuild.balanceOf(account);
-        if(voterBalance > 0){
+        if (voterBalance > 0) {
             // AMORxGuild.safeTransferFrom(_msgSender(), address(this), voterBalance);
         }
 
         // proposal.proposalWeight += 1;//voterBalance;
         proposalWeight[proposalId] += 1;
 
-        if (support == 1) { //if for
+        if (support == 1) {
+            //if for
             proposalVoting[proposalId] += 1;
             // proposal.proposalVoting += 1;//int256(voterBalance);
             // votes[proposalId][msg.sender] += int256(voterBalance);
-        } else { // if against
+        } else {
+            // if against
             proposalVoting[proposalId] -= 1;
             // proposal.proposalVoting -= 1;//int256(voterBalance);
             // votes[proposalId][msg.sender] -= int256(voterBalance);
@@ -320,9 +323,9 @@ contract GoinGudGovernor is
     }
 
     /// @notice function allows anyone to execute specific proposal, based on the vote.
-    /// @param targets Targets of the proposal
-    /// @param values Values of the proposal
-    /// @param calldatas Calldatas of the proposal
+    /// @param targets Target addresses for proposal calls
+    /// @param values AMORxGuild values for proposal calls
+    /// @param calldatas Calldatas for proposal calls
     /// @param descriptionHash Description hash of the proposal
     function execute(
         address[] memory targets,
@@ -339,8 +342,9 @@ contract GoinGudGovernor is
         );
         _proposals[proposalId].executed = true;
 
-// TODO: add call of execTransactionFromModule(address to, uint256 value, bytes data, Enum.Operations operation) from AvatarxGuild 
-//              (allows to execute functions from the module(it will send the passed proposals from the snapshot to the Governor))
+        // TODO: add call of execTransactionFromModule(address to, uint256 value, bytes data, Enum.Operations operation) from AvatarxGuild
+        //              (allows to execute functions from the module(it will send the passed proposals from the snapshot to the Governor))
+        // UPD: no need? It's an AvatarxGuild is calling Governor execute() from it's functions
         emit ProposalExecuted(proposalId);
 
         _beforeExecute(proposalId, targets, values, calldatas, descriptionHash);
@@ -371,7 +375,13 @@ contract GoinGudGovernor is
         return _proposals[proposalId].voteEnd.getDeadline();
     }
 
-    function state(uint256 proposalId) public view virtual override(Governor, GovernorTimelockControl) returns (ProposalState) {
+    function state(uint256 proposalId)
+        public
+        view
+        virtual
+        override(Governor, GovernorTimelockControl)
+        returns (ProposalState)
+    {
         ProposalCore storage proposal = _proposals[proposalId];
 
         if (proposal.executed) {
@@ -420,49 +430,52 @@ contract GoinGudGovernor is
         }
     }
 
-
-    function _executor()
-        internal
-        view
-        override(Governor, GovernorTimelockControl)
-        returns (address)
-    {
+    function _executor() internal view override(Governor, GovernorTimelockControl) returns (address) {
         return avatarAddress;
     }
 
+    /// @notice Cancels a proposal only if sender is the proposer, or proposer delegates dropped below proposal threshold
+    /// @param proposalId The id of the proposal to cancel
+    function cancel(uint256 proposalId) external {
+        // require(state(proposalId) != ProposalState.Executed, "Governor::cancel: cannot cancel executed proposal");
 
-    /**
-      * @notice Cancels a proposal only if sender is the proposer, or proposer delegates dropped below proposal threshold
-      * @param proposalId The id of the proposal to cancel
-      */
-    // function cancel(uint proposalId) external {
-    //     // require(state(proposalId) != ProposalState.Executed, "Governor::cancel: cannot cancel executed proposal");
+        // ProposalCore storage proposal = _proposals[proposalId];
 
-    //     // ProposalCore storage proposal = _proposals[proposalId];
+        // uint256 canselledId = _cancel();
 
-    //     // uint256 canselledId = _cancel();
+        // require(msg.sender == proposal.proposer || comp.getPriorVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold(), "Governor::cancel: proposer above threshold");
 
-    //     // require(msg.sender == proposal.proposer || comp.getPriorVotes(proposal.proposer, sub256(block.number, 1)) < proposalThreshold(), "Governor::cancel: proposer above threshold");
+        // proposal.canceled = true;
+        // for (uint i = 0; i < proposal.targets.length; i++) {
+        //     timelock.cancelTransaction(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
+        // }
 
-    //     // proposal.canceled = true;
-    //     // for (uint i = 0; i < proposal.targets.length; i++) {
-    //     //     timelock.cancelTransaction(proposal.targets[i], proposal.values[i], proposal.signatures[i], proposal.calldatas[i], proposal.eta);
-    //     // }
+        // emit ProposalCanceled(proposalId);
 
-    //     // emit ProposalCanceled(proposalId);
+        // uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        ProposalState status = state(proposalId);
 
-    //     // uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
-    //     ProposalState status = state(proposalId);
+        require(
+            status != ProposalState.Canceled && status != ProposalState.Expired && status != ProposalState.Executed,
+            "Governor: proposal not active"
+        );
+        _proposals[proposalId].canceled = true;
 
-    //     require(
-    //         status != ProposalState.Canceled && status != ProposalState.Expired && status != ProposalState.Executed,
-    //         "Governor: proposal not active"
-    //     );
-    //     _proposals[proposalId].canceled = true;
+        // clear mappings
+        for (uint256 i = 0; i < proposals.length; i++) {
+            if (proposals[i] == proposalId) {
+                proposals[i] = proposals[proposals.length - 1];
+                proposals.pop();
+                break;
+            }
+        }
+        delete proposalWeight[proposalId];
+        delete proposalVoting[proposalId];
+        delete voters[proposalId];
+        delete _proposals[proposalId];
 
-    //     // delete voters[proposalId];
-    //     emit ProposalCanceled(proposalId);
-    // }
+        emit ProposalCanceled(proposalId);
+    }
 
     /**
      * @dev Internal cancel mechanism: locks up the proposal timer, preventing it from being re-submitted. Marks it as
@@ -490,7 +503,13 @@ contract GoinGudGovernor is
         return proposalId;
     }
 
-    function supportsInterface(bytes4 interfaceId) public view virtual override(Governor, GovernorTimelockControl) returns (bool) {
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(Governor, GovernorTimelockControl)
+        returns (bool)
+    {
         // In addition to the current interfaceId, also support previous version of the interfaceId that did not
         // include the castVoteWithReasonAndParams() function as standard
         return
@@ -504,22 +523,11 @@ contract GoinGudGovernor is
             super.supportsInterface(interfaceId);
     }
 
-
-    function votingDelay()
-        public
-        view
-        override(IGovernor, GovernorSettings)
-        returns (uint256)
-    {
+    function votingDelay() public view override(IGovernor, GovernorSettings) returns (uint256) {
         return super.votingDelay();
     }
 
-    function votingPeriod()
-        public
-        view
-        override(IGovernor, GovernorSettings)
-        returns (uint256)
-    {
+    function votingPeriod() public view override(IGovernor, GovernorSettings) returns (uint256) {
         return timeVoting;
     }
 
@@ -529,20 +537,14 @@ contract GoinGudGovernor is
         override(IGovernor, GovernorVotesQuorumFraction)
         returns (uint256)
     {
-        return 0;//(token.getPastTotalSupply(blockNumber) * quorumNumerator(blockNumber)) / quorumDenominator();
-    }
-     
-    function proposalThreshold()
-        public
-        view
-        override(Governor, GovernorSettings)
-        returns (uint256)
-    {
-        return 0;//_proposalThreshold;
+        return 0; //(token.getPastTotalSupply(blockNumber) * quorumNumerator(blockNumber)) / quorumDenominator();
     }
 
+    function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
+        return 0; // _proposalThreshold;
+    }
 
-    function sub256(uint256 a, uint256 b) internal pure returns (uint) {
+    function sub256(uint256 a, uint256 b) internal pure returns (uint256) {
         require(b <= a, "subtraction underflow");
         return a - b;
     }
@@ -561,20 +563,4 @@ contract GoinGudGovernor is
         require(value <= type(uint64).max, "SafeCast: value doesn't fit in 64 bits");
         return uint64(value);
     }
-}
-
-
-
-interface TimelockInterface {
-    function delay() external view returns (uint);
-    function GRACE_PERIOD() external view returns (uint);
-    function acceptAdmin() external;
-    function queuedTransactions(bytes32 hash) external view returns (bool);
-    function queueTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external returns (bytes32);
-    function cancelTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external;
-    function executeTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external payable returns (bytes memory);
-}
-
-interface CompInterface {
-    function getPriorVotes(address account, uint blockNumber) external view returns (uint96);
 }
