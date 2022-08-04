@@ -90,8 +90,6 @@ describe("unit - MetaDao", function () {
 
     context('Donate Amor tokens to metadao', () => {
         it('it succeeds if amor token is successfully donated to the metadao', async function () {
-            await METADAO.setOperationsPool(pool.address);
-            await METADAO.setBuildersPool(pool.address);
             await expect(AMOR_TOKEN.balanceOf(root.address) > 0);
             await expect(AMOR_TOKEN.balanceOf(METADAO.address) == 0);
             await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
@@ -112,8 +110,6 @@ describe("unit - MetaDao", function () {
         });
 
         it('it succeeds if a guild claims the token according to guildweight', async function () {
-            await METADAO.setOperationsPool(pool.address);
-            await METADAO.setBuildersPool(pool.address);
             /// So here you are adding user1.address as a guild controller
             await METADAO.addGuild(user1.address);
             expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
@@ -130,8 +126,6 @@ describe("unit - MetaDao", function () {
 
     context('Distribute Amor tokens from meta dao', () => {
         it('it succeeds if amor tokens are distributed to tbe guild according to guild weight', async function () {
-            await METADAO.setOperationsPool(pool.address);
-            await METADAO.setBuildersPool(pool.address);
             await METADAO.addGuild(user1.address);
             await METADAO.addGuild(user2.address);
             await expect(AMOR_TOKEN.balanceOf(root.address) > 0);
