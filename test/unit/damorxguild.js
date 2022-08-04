@@ -49,7 +49,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
         it('initialized variables check', async function () {
             expect(await dAMORxGuild.name()).to.equals("DoinGud MetaDAO");
-            expect(await dAMORxGuild.symbol()).to.equals("FXAMORxGuild");
+            expect(await dAMORxGuild.symbol()).to.equals("DAMORxGuild");
             expect(await dAMORxGuild.owner()).to.equals(operator.address);
         });
 
