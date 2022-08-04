@@ -425,7 +425,7 @@ contract GoinGudGovernor is
     ) internal virtual override(Governor, GovernorTimelockControl) {
         for (uint256 i = 0; i < targets.length; ++i) {
             // add addresses from passed proposal as guardians
-            guardians.push(targets[i]);
+            addGuardian(targets[i]);
         }
     }
 
