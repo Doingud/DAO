@@ -20,13 +20,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// @dev    IGovernor IERC165 Pattern
 /// @notice Governor contract will allow to add and vote for the proposals
 
-contract GoinGudGovernor is
-    Governor,
-    GovernorSettings,
-    GovernorCountingSimple,
-    GovernorVotes,
-    GovernorTimelockControl
-{
+contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorTimelockControl {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
     using Timers for Timers.BlockNumber;
@@ -35,6 +29,7 @@ contract GoinGudGovernor is
     //     int256 proposalVoting;
     //     uint256 proposalWeight;
     // }
+    // mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
 
     uint256 public proposalMaxOperations = 10;
     uint256 private _proposalThreshold;
@@ -46,12 +41,7 @@ contract GoinGudGovernor is
     // After proposal was voted for, an !executor provides a complete data about the proposal!,
     // which gets hashed and if hashes correspond, then the proposal is executed.
 
-    // mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
     mapping(uint256 => address[]) public voters; // voters mapping(uint proposal => address [] voters)
-
-    // was thinking about those two arrays below, but can't find better solution than just struct(exept mapping)
-    // int256[] public proposalVoting; // results of the vote for the proposal
-    // int256[] public proposalWeight;
     mapping(uint256 => int256) public proposalVoting;
     mapping(uint256 => uint256) public proposalWeight;
 
@@ -74,7 +64,6 @@ contract GoinGudGovernor is
 
     uint256 public _votingDelay;
     uint256 public _votingPeriod;
-    // uint256 public _quorum;
 
     /// @notice The total number of proposals
     uint256 public proposalCount;
@@ -126,7 +115,6 @@ contract GoinGudGovernor is
 
         _votingDelay = 1; // 1 block
         _votingPeriod = 64000; // 64000 blocks
-        // _quorum = 11000e18; // for example 11k AMORxGuild
         proposalCount = 0;
         _proposalThreshold = proposalThreshold_;
 
@@ -224,8 +212,6 @@ contract GoinGudGovernor is
         uint256 proposalId = hashProposal(targets, values, calldatas, keccak256(bytes(description)));
         // AMORxGuild.balanceOf(msg.sender)
         // require(AMORxGuild.balanceOf(msg.sender) > proposalThreshold, "Governor::propose: proposer balance below proposal threshold");
-
-        // require(comp.getPriorVotes(msg.sender, sub256(block.number, 1)) > proposalThreshold, "Governor::propose: proposer votes below proposal threshold");
         require(
             targets.length == values.length && targets.length == calldatas.length,
             "Governor::propose: proposal function information arity mismatch"
@@ -269,6 +255,8 @@ contract GoinGudGovernor is
 
     /// @notice function allows guardian to vote for the proposal
     /// Proposal should achieve at least 20% approval of guardians, to be accepted
+    /// @param proposalId id of the proposal
+    /// @param support For or against proposal
     function castVote(uint256 proposalId, uint8 support)
         public
         virtual
@@ -280,6 +268,11 @@ contract GoinGudGovernor is
         return _castVote(proposalId, voter, support, "");
     }
 
+    /// @notice vote for the proposal
+    /// @dev Internal vote casting mechanism: Check that the vote is pending, that it has not been cast yet
+    /// @param proposalId id of the proposal
+    /// @param account address of the voter
+    /// @param support For or against proposal
     function _castVote(
         uint256 proposalId,
         address account,
@@ -343,8 +336,6 @@ contract GoinGudGovernor is
         );
         _proposals[proposalId].executed = true;
 
-        //      add call of AvatarxGuild execute function?
-        //      or no need? It's an AvatarxGuild is calling Governor execute() from it's functions
         emit ProposalExecuted(proposalId);
 
         _beforeExecute(proposalId, targets, values, calldatas, descriptionHash);
@@ -375,6 +366,8 @@ contract GoinGudGovernor is
         return _proposals[proposalId].voteEnd.getDeadline();
     }
 
+    /// @notice function allows anyone to check state of the proposal
+    /// @param proposalId id of the proposal
     function state(uint256 proposalId)
         public
         view
@@ -513,12 +506,7 @@ contract GoinGudGovernor is
         return _votingPeriod;
     }
 
-    function quorum(uint256 blockNumber)
-        public
-        view
-        override(IGovernor)
-        returns (uint256)
-    {
+    function quorum(uint256 blockNumber) public view override(IGovernor) returns (uint256) {
         return 0; //(token.getPastTotalSupply(blockNumber) * quorumNumerator(blockNumber)) / quorumDenominator();
     }
 
