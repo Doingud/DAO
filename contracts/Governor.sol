@@ -25,7 +25,6 @@ contract GoinGudGovernor is
     GovernorSettings,
     GovernorCountingSimple,
     GovernorVotes,
-    GovernorVotesQuorumFraction,
     GovernorTimelockControl
 {
     using SafeERC20 for IERC20;
@@ -100,7 +99,7 @@ contract GoinGudGovernor is
             0
         )
         GovernorVotes(_token)
-        GovernorVotesQuorumFraction(4)
+        // GovernorVotesQuorumFraction(4)
         GovernorTimelockControl(_timelock)
     {
         _name = name;
@@ -517,7 +516,7 @@ contract GoinGudGovernor is
     function quorum(uint256 blockNumber)
         public
         view
-        override(IGovernor, GovernorVotesQuorumFraction)
+        override(IGovernor)
         returns (uint256)
     {
         return 0; //(token.getPastTotalSupply(blockNumber) * quorumNumerator(blockNumber)) / quorumDenominator();
