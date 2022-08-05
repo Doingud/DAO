@@ -4,7 +4,7 @@ pragma solidity 0.8.15;
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
 
-// import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/governance/Governor.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
@@ -509,15 +509,6 @@ contract GoinGudGovernor is
     function votingPeriod() public view override(IGovernor, GovernorSettings) returns (uint256) {
         return _votingPeriod;
     }
-
-    // function hashProposal(
-    //     address[] memory targets,
-    //     uint256[] memory values,
-    //     bytes[] memory calldatas,
-    //     bytes32 descriptionHash
-    // ) public pure virtual override(IGovernor, Governor) returns (uint256) {
-    //     return uint256(keccak256(abi.encode(targets, values, calldatas, descriptionHash)));
-    // }
 
     function quorum(uint256 blockNumber)
         public
