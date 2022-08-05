@@ -4,11 +4,11 @@ pragma solidity 0.8.15;
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
 
+import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/governance/Governor.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -30,11 +30,11 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
     //     uint256 proposalWeight;
     // }
     // mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
+    // mapping(uint256 => ProposalVoting) private _proposalsVotings;
 
     uint256 public proposalMaxOperations = 10;
     uint256 private _proposalThreshold;
     mapping(uint256 => ProposalCore) private _proposals;
-    // mapping(uint256 => ProposalVoting) private _proposalsVotings;
 
     // id in array --> Id of passed proposal from _proposals
     uint256[] public proposals; // it’s an array of proposals hashes to execute.
@@ -64,8 +64,6 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
 
     uint256 public _votingDelay;
     uint256 public _votingPeriod;
-
-    /// @notice The total number of proposals
     uint256 public proposalCount;
 
     error NotEnoughGuardians();
@@ -88,7 +86,6 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
             0
         )
         GovernorVotes(_token)
-        // GovernorVotesQuorumFraction(4)
         GovernorTimelockControl(_timelock)
     {
         _name = name;
@@ -289,7 +286,7 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
             }
         }
 
-        // Q: guardian votes with some choosable amount of AMORxGuild / all amount / 1 point???
+        // Q: guardian votes with some choosable amount of AMORxGuild / all amount / 1 point?
         // 1 point for now
         uint256 voterBalance = AMORxGuild.balanceOf(account);
         // if (voterBalance > 0) {
@@ -326,7 +323,7 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) public payable virtual override(Governor, IGovernor) returns (uint256 proposalId) {
+    ) public payable virtual override(Governor, IGovernor) returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
 
         ProposalState status = state(proposalId);
@@ -338,9 +335,7 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
 
         emit ProposalExecuted(proposalId);
 
-        _beforeExecute(proposalId, targets, values, calldatas, descriptionHash);
         _execute(proposalId, targets, values, calldatas, descriptionHash);
-        _afterExecute(proposalId, targets, values, calldatas, descriptionHash);
 
         // clear mappings
         for (uint256 i = 0; i < proposals.length; i++) {
