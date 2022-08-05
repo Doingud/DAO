@@ -482,15 +482,15 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
     {
         // In addition to the current interfaceId, also support previous version of the interfaceId that did not
         // include the castVoteWithReasonAndParams() function as standard
-        return true;//
-            // interfaceId ==
-            // (type(IGovernor).interfaceId ^
-            //     this.castVoteWithReasonAndParams.selector ^
-            //     this.castVoteWithReasonAndParamsBySig.selector ^
-            //     this.getVotesWithParams.selector) ||
-            // interfaceId == type(IGovernor).interfaceId ||
-            // interfaceId == type(IERC1155Receiver).interfaceId ||
-            // super.supportsInterface(interfaceId);
+        return true;
+        // interfaceId ==
+        // (type(IGovernor).interfaceId ^
+        //     this.castVoteWithReasonAndParams.selector ^
+        //     this.castVoteWithReasonAndParamsBySig.selector ^
+        //     this.getVotesWithParams.selector) ||
+        // interfaceId == type(IGovernor).interfaceId ||
+        // interfaceId == type(IERC1155Receiver).interfaceId ||
+        // super.supportsInterface(interfaceId);
     }
 
     function votingDelay() public view override(IGovernor, GovernorSettings) returns (uint256) {
