@@ -135,6 +135,7 @@ describe("unit - MetaDao", function () {
             await USDC.connect(root).approve(METADAO.address,100000);
             await expect(AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
             await METADAO.connect(root).donate(100)
+            await METADAO.connect(root).donateUSDC(100)
             await expect(METADAO.connect(user1).updateGuildWeight(2));
             await expect(METADAO.connect(user2).updateGuildWeight(3));
             await METADAO.distribute();
