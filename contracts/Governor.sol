@@ -18,7 +18,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// @dev    IGovernor IERC165 Pattern
 /// @notice Governor contract will allow to add and vote for the proposals
 
-contract GoinGudGovernor is GovernorCountingSimple {
+contract GoinGudGovernor {//} is GovernorCountingSimple {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
     using Timers for Timers.BlockNumber;
@@ -30,12 +30,41 @@ contract GoinGudGovernor is GovernorCountingSimple {
     // mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
     // mapping(uint256 => ProposalVoting) private _proposalsVotings;
 
-    // struct ProposalCore {
-    //     Timers.BlockNumber voteStart;
-    //     Timers.BlockNumber voteEnd;
-    //     bool executed;
-    //     bool canceled;
-    // }
+    struct ProposalCore {
+        Timers.BlockNumber voteStart;
+        Timers.BlockNumber voteEnd;
+        bool executed;
+        bool canceled;
+    }
+
+    enum ProposalState {
+        Pending,
+        Active,
+        Canceled,
+        Defeated,
+        Succeeded,
+        Queued,
+        Expired,
+        Executed
+    }
+
+    /**
+     * @dev Emitted when a proposal is created.
+     */
+    event ProposalCreated(
+        uint256 proposalId,
+        address proposer,
+        address[] targets,
+        uint256[] values,
+        string[] signatures,
+        bytes[] calldatas,
+        uint256 startBlock,
+        uint256 endBlock,
+        string description
+    );
+    event ProposalCanceled(uint256 proposalId);
+    event ProposalExecuted(uint256 proposalId);
+
 
     uint256 public proposalMaxOperations = 10;
     uint256 private _proposalThreshold;
@@ -80,7 +109,7 @@ contract GoinGudGovernor is GovernorCountingSimple {
     error VotingTimeExpired();
     error AlreadyVoted();
 
-    constructor(IVotes _token, string memory name) Governor(name) {
+    constructor(IVotes _token, string memory name) {//Governor(name) {
         token = _token;
         _name = name;
         // person who inflicted the creation of the contract is set as the only guardian of the system
@@ -199,7 +228,7 @@ contract GoinGudGovernor is GovernorCountingSimple {
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description
-    ) public virtual override onlyAvatar returns (uint256) {
+    ) public virtual onlyAvatar returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas, keccak256(bytes(description)));
         // AMORxGuild.balanceOf(msg.sender)
         // require(AMORxGuild.balanceOf(msg.sender) > proposalThreshold, "Governor::propose: proposer balance below proposal threshold");
@@ -231,7 +260,7 @@ contract GoinGudGovernor is GovernorCountingSimple {
         proposalCount++;
         emit ProposalCreated(
             proposalId,
-            _msgSender(), // proposer
+            msg.sender, // proposer
             targets,
             values,
             new string[](targets.length), // signatures
@@ -251,11 +280,10 @@ contract GoinGudGovernor is GovernorCountingSimple {
     function castVote(uint256 proposalId, uint8 support)
         public
         virtual
-        override
         onlyGuardian
         returns (uint256 balance)
     {
-        address voter = _msgSender();
+        address voter = msg.sender;
         return _castVote(proposalId, voter, support, "");
     }
 
@@ -269,7 +297,7 @@ contract GoinGudGovernor is GovernorCountingSimple {
         address account,
         uint8 support,
         string memory reason
-    ) internal virtual override returns (uint256) {
+    ) internal virtual returns (uint256) {
         ProposalCore storage proposal = _proposals[proposalId];
         require(state(proposalId) == ProposalState.Active, "Governor: vote not currently active");
 
@@ -317,7 +345,7 @@ contract GoinGudGovernor is GovernorCountingSimple {
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) public payable virtual override returns (uint256) {
+    ) public payable virtual returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
 
         ProposalState status = state(proposalId);
@@ -347,17 +375,17 @@ contract GoinGudGovernor is GovernorCountingSimple {
         return proposalId;
     }
 
-    function proposalSnapshot(uint256 proposalId) public view virtual override(Governor) returns (uint256) {
+    function proposalSnapshot(uint256 proposalId) public view virtual returns (uint256) {
         return _proposals[proposalId].voteStart.getDeadline();
     }
 
-    function proposalDeadline(uint256 proposalId) public view virtual override(Governor) returns (uint256) {
+    function proposalDeadline(uint256 proposalId) public view virtual returns (uint256) {
         return _proposals[proposalId].voteEnd.getDeadline();
     }
 
     /// @notice function allows anyone to check state of the proposal
     /// @param proposalId id of the proposal
-    function state(uint256 proposalId) public view virtual override(Governor) returns (ProposalState) {
+    function state(uint256 proposalId) public view virtual returns (ProposalState) {
         ProposalCore storage proposal = _proposals[proposalId];
 
         if (proposal.executed) {
@@ -397,14 +425,14 @@ contract GoinGudGovernor is GovernorCountingSimple {
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 /*descriptionHash*/
-    ) internal virtual override(Governor) {
+    ) internal virtual {
         for (uint256 i = 0; i < targets.length; ++i) {
             // add addresses from passed proposal as guardians
             addGuardian(targets[i]);
         }
     }
 
-    function _executor() internal view override(Governor) returns (address) {
+    function _executor() internal view returns (address) {
         return avatarAddress;
     }
 
@@ -446,7 +474,7 @@ contract GoinGudGovernor is GovernorCountingSimple {
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) internal virtual override returns (uint256) {
+    ) internal virtual returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
         ProposalState status = state(proposalId);
 
@@ -461,11 +489,11 @@ contract GoinGudGovernor is GovernorCountingSimple {
         return proposalId;
     }
 
-    function votingDelay() public view override(IGovernor) returns (uint256) {
+    function votingDelay() public view returns (uint256) {
         return _votingDelay;
     }
 
-    function votingPeriod() public view override(IGovernor) returns (uint256) {
+    function votingPeriod() public view returns (uint256) {
         return _votingPeriod;
     }
 
@@ -474,7 +502,7 @@ contract GoinGudGovernor is GovernorCountingSimple {
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) public pure virtual override returns (uint256) {
+    ) public pure virtual returns (uint256) {
         return uint256(keccak256(abi.encode(targets, values, calldatas, descriptionHash)));
     }
 
@@ -482,15 +510,15 @@ contract GoinGudGovernor is GovernorCountingSimple {
         address account,
         uint256 blockNumber,
         bytes memory /*params*/
-    ) internal view virtual override returns (uint256) {
+    ) internal view virtual returns (uint256) {
         return token.getPastVotes(account, blockNumber);
     }
 
-    function quorum(uint256 blockNumber) public view override returns (uint256) {
+    function quorum(uint256 blockNumber) public view returns (uint256) {
         return 0; //(token.getPastTotalSupply(blockNumber) * quorumNumerator(blockNumber)) / quorumDenominator();
     }
 
-    function proposalThreshold() public view override(Governor) returns (uint256) {
+    function proposalThreshold() public view returns (uint256) {
         return _proposalThreshold;
     }
 
