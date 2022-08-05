@@ -19,7 +19,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// @dev    IGovernor IERC165 Pattern
 /// @notice Governor contract will allow to add and vote for the proposals
 
-contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes {
+contract GoinGudGovernor is GovernorSettings, GovernorCountingSimple, GovernorVotes {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
     using Timers for Timers.BlockNumber;
@@ -467,6 +467,15 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
 
     function votingPeriod() public view override(IGovernor, GovernorSettings) returns (uint256) {
         return _votingPeriod;
+    }
+
+    function hashProposal(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        bytes32 descriptionHash
+    ) public pure virtual override returns (uint256) {
+        return uint256(keccak256(abi.encode(targets, values, calldatas, descriptionHash)));
     }
 
     function quorum(uint256 blockNumber) public view override(IGovernor) returns (uint256) {
