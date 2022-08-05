@@ -6,8 +6,11 @@ import "./utils/interfaces/IAmorGuildToken.sol";
 
 import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
+import "@openzeppelin/contracts/utils/Timers.sol";
+
 // import "@openzeppelin/contracts/governance/Governor.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
+// import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -18,7 +21,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// @dev    IGovernor IERC165 Pattern
 /// @notice Governor contract will allow to add and vote for the proposals
 
-contract GoinGudGovernor {//} is GovernorCountingSimple {
+contract GoinGudGovernor {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
     using Timers for Timers.BlockNumber;
@@ -48,9 +51,6 @@ contract GoinGudGovernor {//} is GovernorCountingSimple {
         Executed
     }
 
-    /**
-     * @dev Emitted when a proposal is created.
-     */
     event ProposalCreated(
         uint256 proposalId,
         address proposer,
@@ -64,7 +64,6 @@ contract GoinGudGovernor {//} is GovernorCountingSimple {
     );
     event ProposalCanceled(uint256 proposalId);
     event ProposalExecuted(uint256 proposalId);
-
 
     uint256 public proposalMaxOperations = 10;
     uint256 private _proposalThreshold;
@@ -109,7 +108,7 @@ contract GoinGudGovernor {//} is GovernorCountingSimple {
     error VotingTimeExpired();
     error AlreadyVoted();
 
-    constructor(IVotes _token, string memory name) {//Governor(name) {
+    constructor(IVotes _token, string memory name) {
         token = _token;
         _name = name;
         // person who inflicted the creation of the contract is set as the only guardian of the system
@@ -277,12 +276,7 @@ contract GoinGudGovernor {//} is GovernorCountingSimple {
     /// Proposal should achieve at least 20% approval of guardians, to be accepted
     /// @param proposalId id of the proposal
     /// @param support For or against proposal
-    function castVote(uint256 proposalId, uint8 support)
-        public
-        virtual
-        onlyGuardian
-        returns (uint256 balance)
-    {
+    function castVote(uint256 proposalId, uint8 support) public virtual onlyGuardian returns (uint256 balance) {
         address voter = msg.sender;
         return _castVote(proposalId, voter, support, "");
     }
