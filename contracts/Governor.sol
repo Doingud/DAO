@@ -208,7 +208,7 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description
-    ) public virtual override(Governor, IGovernor) onlyAvatar returns (uint256 proposalId) {
+    ) public virtual override(Governor, IGovernor) onlyAvatar returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas, keccak256(bytes(description)));
         // AMORxGuild.balanceOf(msg.sender)
         // require(AMORxGuild.balanceOf(msg.sender) > proposalThreshold, "Governor::propose: proposer balance below proposal threshold");
