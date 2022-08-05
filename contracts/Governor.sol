@@ -4,7 +4,6 @@ pragma solidity 0.8.15;
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
 
-import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/governance/Governor.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
@@ -93,8 +92,8 @@ contract GoinGudGovernor is
             45818, /* 1 week */
             0
         )
-        GovernorVotesQuorumFraction(4)
         GovernorVotes(_token)
+        GovernorVotesQuorumFraction(4)
         GovernorTimelockControl(_timelock)
     {
         _name = name;
@@ -214,7 +213,7 @@ contract GoinGudGovernor is
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description
-    ) public virtual override(Governor, IGovernor) onlyAvatar returns (uint256) {
+    ) public virtual override(Governor, IGovernor) onlyAvatar returns (uint256 proposalId) {
         uint256 proposalId = hashProposal(targets, values, calldatas, keccak256(bytes(description)));
         // AMORxGuild.balanceOf(msg.sender)
         // require(AMORxGuild.balanceOf(msg.sender) > proposalThreshold, "Governor::propose: proposer balance below proposal threshold");
@@ -332,7 +331,7 @@ contract GoinGudGovernor is
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) public payable virtual override(Governor, IGovernor) returns (uint256) {
+    ) public payable virtual override(Governor, IGovernor) returns (uint256 proposalId) {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
 
         ProposalState status = state(proposalId);
