@@ -36,8 +36,9 @@ contract MetaDaoController is AccessControl {
     /// Clone Factory
     address public guildFactory;
 
-    /// AMOR token
+    /// ERC20 tokens used by metada
     IERC20 public amorToken;
+    IERC20 public usdcToken;
 
     /// Roles
     bytes32 public constant GUILD_ROLE = keccak256("GUILD");
@@ -48,10 +49,12 @@ contract MetaDaoController is AccessControl {
 
     constructor(
         address _amor,
+        address _usdc,
         address _cloneFactory,
         address admin
     ) {
         _setupRole(DEFAULT_ADMIN_ROLE, admin);
+        usdcToken = IERC20(_usdc);
         amorToken = IERC20(_amor);
         guildFactory = _cloneFactory;
         claimDuration = 5 days;
@@ -87,6 +90,12 @@ contract MetaDaoController is AccessControl {
         amorToken.transferFrom(msg.sender, address(this), amount);
     }
 
+    /// @notice Allows someone to donate AMOR token to the metadao
+    /// @param amount Amount of AMOR to be donated
+    function donateUSDC(uint256 amount) public {
+        usdcToken.transferFrom(msg.sender, address(this), amount);
+    }
+
     /// @notice Distirbutes the amortoken in the metadao to the approved guilds but guild weight
     /// @dev current guild weight initialised to 100 to alow us to loop throuhgh guilds
     function distribute() public {
@@ -98,16 +107,20 @@ contract MetaDaoController is AccessControl {
     }
 
     function _distribute(uint256[] memory _currentGuildWeight) internal {
-        uint256 currentBalance = amorToken.balanceOf(address(this));
-        uint256 totalAmmountSent;
+        uint256 currentBalanceAMOR = amorToken.balanceOf(address(this));
+        uint256 currentBalanceUSDC = amorToken.balanceOf(address(this));
+        uint256 totalAmmountSentAmor;
+        uint256 totalAmmountSentUSDC;
         for (uint256 i = 0; i < guilds.length; i++) {
-            uint256 ammountToDistribute = _currentGuildWeight[i] * currentBalance;
-            if (ammountToDistribute == 0) {
+            uint256 ammountToDistributeAMOR = _currentGuildWeight[i] * currentBalanceAMOR;
+            uint256 ammountToDistributeUSDC = _currentGuildWeight[i] * currentBalanceUSDC;
+            if (ammountToDistributeAMOR == 0) {
                 continue;
             }
             guildWeight[msg.sender] = 0;
-            totalAmmountSent = totalAmmountSent + ammountToDistribute;
-            amorToken.transfer(guilds[i], ammountToDistribute);
+            totalAmmountSentAmor = totalAmmountSentAmor + ammountToDistributeAMOR;
+            totalAmmountSentUSDC = totalAmmountSentUSDC + ammountToDistributeUSDC;
+            amorToken.transfer(guilds[i], ammountToDistributeAMOR);
         }
         // Potential re-entrancy? May have to put state change inside or before Loop
         guildsTotalWeight = 0;
