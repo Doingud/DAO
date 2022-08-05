@@ -482,15 +482,15 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
     {
         // In addition to the current interfaceId, also support previous version of the interfaceId that did not
         // include the castVoteWithReasonAndParams() function as standard
-        return
-            interfaceId ==
-            (type(IGovernor).interfaceId ^
-                this.castVoteWithReasonAndParams.selector ^
-                this.castVoteWithReasonAndParamsBySig.selector ^
-                this.getVotesWithParams.selector) ||
-            interfaceId == type(IGovernor).interfaceId ||
-            interfaceId == type(IERC1155Receiver).interfaceId ||
-            super.supportsInterface(interfaceId);
+        return true;//
+            // interfaceId ==
+            // (type(IGovernor).interfaceId ^
+            //     this.castVoteWithReasonAndParams.selector ^
+            //     this.castVoteWithReasonAndParamsBySig.selector ^
+            //     this.getVotesWithParams.selector) ||
+            // interfaceId == type(IGovernor).interfaceId ||
+            // interfaceId == type(IERC1155Receiver).interfaceId ||
+            // super.supportsInterface(interfaceId);
     }
 
     function votingDelay() public view override(IGovernor, GovernorSettings) returns (uint256) {
@@ -499,6 +499,15 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
 
     function votingPeriod() public view override(IGovernor, GovernorSettings) returns (uint256) {
         return _votingPeriod;
+    }
+
+    function hashProposal(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        bytes32 descriptionHash
+    ) public pure virtual override(IGovernor, Governor) returns (uint256) {
+        return uint256(keccak256(abi.encode(targets, values, calldatas, descriptionHash)));
     }
 
     function quorum(uint256 blockNumber) public view override(IGovernor) returns (uint256) {
