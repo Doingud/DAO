@@ -80,9 +80,7 @@ contract GoinGudGovernor is GovernorCountingSimple {
     error VotingTimeExpired();
     error AlreadyVoted();
 
-    constructor(IVotes _token, string memory name)
-        Governor(name)
-    {
+    constructor(IVotes _token, string memory name) Governor(name) {
         token = _token;
         _name = name;
         // person who inflicted the creation of the contract is set as the only guardian of the system
