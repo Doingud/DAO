@@ -7,6 +7,7 @@ use(solidity);
 
 let AMOR_TOKEN;
 let METADAO;
+let USDC;
 let user1;
 let user2;
 let root;
@@ -20,6 +21,7 @@ describe("unit - MetaDao", function () {
       ///   Setup token contracts
       await init.getTokens(setup);
       AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
+      USDC = setup.tokens.ERC20Token;
       AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
       FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
       DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
@@ -130,6 +132,7 @@ describe("unit - MetaDao", function () {
             await METADAO.addGuild(user2.address);
             await expect(AMOR_TOKEN.balanceOf(root.address) > 0);
             await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
+            await USDC.connect(root).approve(METADAO.address,100000);
             await expect(AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
             await METADAO.connect(root).donate(100)
             await expect(METADAO.connect(user1).updateGuildWeight(2));
