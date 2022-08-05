@@ -123,7 +123,6 @@ const governor = async (setup) => {
   const governorFactory = await ethers.getContractFactory('GoinGudGovernor');
   const governor = await governorFactory.deploy(
     setup.tokens.AmorGuildToken.address,
-    setup.roles.authorizer_adaptor.address, // timelock address
     "DoinGud Governor"
   );
 

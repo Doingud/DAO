@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/governance/Governor.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -20,7 +19,12 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// @dev    IGovernor IERC165 Pattern
 /// @notice Governor contract will allow to add and vote for the proposals
 
-contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, GovernorVotes, GovernorTimelockControl {
+contract GoinGudGovernor is
+    Governor,
+    GovernorSettings,
+    GovernorCountingSimple,
+    GovernorVotes
+{
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
     using Timers for Timers.BlockNumber;
@@ -76,7 +80,6 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
 
     constructor(
         IVotes _token,
-        TimelockController _timelock,
         string memory name
     )
         Governor(name)
@@ -86,7 +89,6 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
             0
         )
         GovernorVotes(_token)
-        GovernorTimelockControl(_timelock)
     {
         _name = name;
         // person who inflicted the creation of the contract is set as the only guardian of the system
@@ -205,7 +207,7 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description
-    ) public virtual override(Governor, IGovernor) onlyAvatar returns (uint256) {
+    ) public virtual override(Governor) onlyAvatar returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas, keccak256(bytes(description)));
         // AMORxGuild.balanceOf(msg.sender)
         // require(AMORxGuild.balanceOf(msg.sender) > proposalThreshold, "Governor::propose: proposer balance below proposal threshold");
@@ -257,7 +259,7 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
     function castVote(uint256 proposalId, uint8 support)
         public
         virtual
-        override(Governor, IGovernor)
+        override(Governor)
         onlyGuardian
         returns (uint256 balance)
     {
@@ -323,7 +325,7 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) public payable virtual override(Governor, IGovernor) returns (uint256) {
+    ) public payable virtual override(Governor) returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
 
         ProposalState status = state(proposalId);
@@ -353,11 +355,11 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
         return proposalId;
     }
 
-    function proposalSnapshot(uint256 proposalId) public view virtual override(IGovernor, Governor) returns (uint256) {
+    function proposalSnapshot(uint256 proposalId) public view virtual override(Governor) returns (uint256) {
         return _proposals[proposalId].voteStart.getDeadline();
     }
 
-    function proposalDeadline(uint256 proposalId) public view virtual override(IGovernor, Governor) returns (uint256) {
+    function proposalDeadline(uint256 proposalId) public view virtual override(Governor) returns (uint256) {
         return _proposals[proposalId].voteEnd.getDeadline();
     }
 
@@ -367,7 +369,7 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
         public
         view
         virtual
-        override(Governor, GovernorTimelockControl)
+        override(Governor)
         returns (ProposalState)
     {
         ProposalCore storage proposal = _proposals[proposalId];
@@ -409,14 +411,14 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 /*descriptionHash*/
-    ) internal virtual override(Governor, GovernorTimelockControl) {
+    ) internal virtual override(Governor) {
         for (uint256 i = 0; i < targets.length; ++i) {
             // add addresses from passed proposal as guardians
             addGuardian(targets[i]);
         }
     }
 
-    function _executor() internal view override(Governor, GovernorTimelockControl) returns (address) {
+    function _executor() internal view override(Governor) returns (address) {
         return avatarAddress;
     }
 
@@ -458,7 +460,7 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) internal virtual override(Governor, GovernorTimelockControl) returns (uint256) {
+    ) internal virtual override(Governor) returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
         ProposalState status = state(proposalId);
 
@@ -473,26 +475,6 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
         return proposalId;
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(Governor, GovernorTimelockControl)
-        returns (bool)
-    {
-        // In addition to the current interfaceId, also support previous version of the interfaceId that did not
-        // include the castVoteWithReasonAndParams() function as standard
-        return
-            interfaceId ==
-            (type(IGovernor).interfaceId ^
-                this.castVoteWithReasonAndParams.selector ^
-                this.castVoteWithReasonAndParamsBySig.selector ^
-                this.getVotesWithParams.selector) ||
-            interfaceId == type(IGovernor).interfaceId ||
-            interfaceId == type(IERC1155Receiver).interfaceId ||
-            super.supportsInterface(interfaceId);
-    }
-
     function votingDelay() public view override(IGovernor, GovernorSettings) returns (uint256) {
         return _votingDelay;
     }
@@ -501,7 +483,12 @@ contract GoinGudGovernor is Governor, GovernorSettings, GovernorCountingSimple, 
         return _votingPeriod;
     }
 
-    function quorum(uint256 blockNumber) public view override(IGovernor) returns (uint256) {
+    function quorum(uint256 blockNumber)
+        public
+        view
+        override(IGovernor)
+        returns (uint256)
+    {
         return 0; //(token.getPastTotalSupply(blockNumber) * quorumNumerator(blockNumber)) / quorumDenominator();
     }
 
