@@ -4,11 +4,11 @@ pragma solidity 0.8.15;
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
 
+import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/governance/Governor.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -25,7 +25,6 @@ contract GoinGudGovernor is
     GovernorSettings,
     GovernorCountingSimple,
     GovernorVotes,
-    GovernorVotesQuorumFraction,
     GovernorTimelockControl
 {
     using SafeERC20 for IERC20;
@@ -93,7 +92,6 @@ contract GoinGudGovernor is
             0
         )
         GovernorVotes(_token)
-        GovernorVotesQuorumFraction(4)
         GovernorTimelockControl(_timelock)
     {
         _name = name;
@@ -213,7 +211,7 @@ contract GoinGudGovernor is
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description
-    ) public virtual override(Governor, IGovernor) onlyAvatar returns (uint256 proposalId) {
+    ) public virtual override(Governor, IGovernor) onlyAvatar returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas, keccak256(bytes(description)));
         // AMORxGuild.balanceOf(msg.sender)
         // require(AMORxGuild.balanceOf(msg.sender) > proposalThreshold, "Governor::propose: proposer balance below proposal threshold");
@@ -331,7 +329,7 @@ contract GoinGudGovernor is
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) public payable virtual override(Governor, IGovernor) returns (uint256 proposalId) {
+    ) public payable virtual override(Governor, IGovernor) returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
 
         ProposalState status = state(proposalId);
@@ -512,7 +510,7 @@ contract GoinGudGovernor is
     function quorum(uint256 blockNumber)
         public
         view
-        override(IGovernor, GovernorVotesQuorumFraction)
+        override(IGovernor)
         returns (uint256)
     {
         return 0; //(token.getPastTotalSupply(blockNumber) * quorumNumerator(blockNumber)) / quorumDenominator();
