@@ -106,7 +106,7 @@ const controller = async (setup) => {
 };
 
 const governor = async (setup) => {
-  const governorFactory = await ethers.getContractFactory('Governor');
+  const governorFactory = await ethers.getContractFactory('GoinGudGovernor');
   const governor = await governorFactory.deploy();
 
   await governor.init(
