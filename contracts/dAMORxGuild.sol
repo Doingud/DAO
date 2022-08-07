@@ -19,8 +19,13 @@ contract dAMORxGuild is ERC20Base, Ownable {
     mapping(address => uint256) public stakes;
     // those who delegated to a specific address
     mapping(address => address[]) public delegators;
-    // delegation of all balance from one address to one address
-    mapping(address => address) public delegation;
+    // staker => delegated to (many accounts) => amount
+    // list of delegations from one address
+    mapping(address => mapping(address => uint256)) public delegations;
+    // those to whom tokens were delegated
+    mapping(address => address[]) public delegation;
+    // amount of all delegated tokens from staker
+    mapping(address => uint256) public amountDelegated;
 
     event Initialized(bool success, address owner, address AMORxGuild, uint256 amount);
 
@@ -126,78 +131,188 @@ contract dAMORxGuild is ERC20Base, Ownable {
         return newAmount;
     }
 
+    // /// @notice Withdraws AMORxGuild tokens; burns dAMORxGuild
+    // /// @dev When this tokens are burned, staked AMORxGuild is being transfered
+    // ///      to the controller(contract that has a voting function)
+    // function withdraw() external returns (uint256) {
+    //     if (block.timestamp < stakesTimes[msg.sender]) {
+    //         revert TimeTooSmall();
+    //     }
+
+    //     uint256 amount = stakes[msg.sender];
+
+    //     //burn used dAMORxGuild tokens from staker
+    //     _burn(msg.sender, amount);
+    //     stakes[msg.sender] = 0;
+
+    //     // clear msg.sender delegation from delegators who delegated to msg.sender
+    //     address[] memory people = delegators[msg.sender];
+    //     for (uint256 i = 0; i < people.length; i++) {
+    //         delete delegation[people[i]];
+    //     }
+
+    //     address toWhom = delegation[msg.sender];
+    //     // clear msg.sender delegation from list of delegators to `toWhom` address
+    //     for (uint256 i = 0; i < delegators[toWhom].length; i++) {
+    //         if (delegators[toWhom][i] == msg.sender) {
+    //             delegators[toWhom][i] = delegators[toWhom][delegators[toWhom].length - 1];
+    //             delegators[toWhom].pop();
+    //             break;
+    //         }
+    //     }
+
+    //     // clear msg.sender delegation
+    //     delete delegation[msg.sender];
+    //     delete delegators[msg.sender];
+
+    //     AMORxGuild.safeTransfer(msg.sender, amount);
+
+    //     return amount;
+    // }
+
+
     /// @notice Withdraws AMORxGuild tokens; burns dAMORxGuild
     /// @dev When this tokens are burned, staked AMORxGuild is being transfered
     ///      to the controller(contract that has a voting function)
-    function withdraw() external returns (uint256) {
+    function withdraw() public returns (uint256) {
         if (block.timestamp < stakesTimes[msg.sender]) {
             revert TimeTooSmall();
         }
 
         uint256 amount = stakes[msg.sender];
+        if (amount <= 0) {
+            revert InvalidAmount();
+        }
 
         //burn used dAMORxGuild tokens from staker
         _burn(msg.sender, amount);
         stakes[msg.sender] = 0;
 
-        // clear msg.sender delegation from delegators who delegated to msg.sender
         address[] memory people = delegators[msg.sender];
         for (uint256 i = 0; i < people.length; i++) {
-            delete delegation[people[i]];
+            delete delegations[msg.sender][people[i]];
         }
-
-        address toWhom = delegation[msg.sender];
-        // clear msg.sender delegation from list of delegators to `toWhom` address
-        for (uint256 i = 0; i < delegators[toWhom].length; i++) {
-            if (delegators[toWhom][i] == msg.sender) {
-                delegators[toWhom][i] = delegators[toWhom][delegators[toWhom].length - 1];
-                delegators[toWhom].pop();
-                break;
-            }
-        }
-
-        // clear msg.sender delegation
-        delete delegation[msg.sender];
-        delete delegators[msg.sender];
+        amountDelegated[msg.sender] = 0;
 
         AMORxGuild.safeTransfer(msg.sender, amount);
 
+        undelegateAll();
         return amount;
     }
 
+    // /// @notice Delegate your dAMORxGuild to the address `account`
+    // /// @param  to address to which delegate users FXAMORxGuild
+    // function delegate(address to) external {
+    //     /// remove old delegation if already delagated to someone
+    //     if (delegation[msg.sender] != address(0)) {
+    //         undelegate();
+    //     }
+
+    //     if (to == msg.sender) {
+    //         revert InvalidSender();
+    //     }
+
+    //     delegators[to].push(msg.sender);
+    //     delegation[msg.sender] = to;
+    // }
+
     /// @notice Delegate your dAMORxGuild to the address `account`
     /// @param  to address to which delegate users FXAMORxGuild
-    function delegate(address to) external {
-        /// remove old delegation if already delagated to someone
-        if (delegation[msg.sender] != address(0)) {
-            undelegate();
-        }
-
+    /// @param  amount uint256 representing amount of delegating tokens
+    function delegate(address to, uint256 amount) public {
         if (to == msg.sender) {
             revert InvalidSender();
         }
 
-        delegators[to].push(msg.sender);
-        delegation[msg.sender] = to;
+        uint256 alreadyDelegated = amountDelegated[msg.sender];
+        uint256 availableAmount = stakes[msg.sender] - alreadyDelegated;
+        if (availableAmount < amount) {
+            revert InvalidAmount();
+        }
+
+        delegators[msg.sender].push(to);
+
+        delegations[msg.sender][to] += amount;
+        amountDelegated[msg.sender] += amount;
     }
 
-    /// @notice Undelegate your dAMORxGuild
-    function undelegate() public {
-        address account = delegation[msg.sender];
+    // /// @notice Undelegate your dAMORxGuild
+    // function undelegate() public {
+    //     address account = delegation[msg.sender];
+
+    //     //Nothing to undelegate
+    //     if (delegators[account].length == 0) {
+    //         revert NotDelegatedAny();
+    //     }
+
+    //     for (uint256 i = 0; i < delegators[account].length; i++) {
+    //         if (delegators[account][i] == msg.sender) {
+    //             delegators[account][i] = delegators[account][delegators[account].length - 1];
+    //             delegators[account].pop();
+    //             break;
+    //         }
+    //     }
+    //     delete delegation[msg.sender];
+    // }
+
+    /// @notice Undelegate your dAMORxGuild to the address `account`
+    /// @param  account address from which delegating will be taken away
+    /// @param  amount uint256 representing amount of undelegating tokens
+    function undelegate(address account, uint256 amount) public {
+        if (account == msg.sender) {
+            revert InvalidSender();
+        }
 
         //Nothing to undelegate
-        if (delegators[account].length == 0) {
+        if (delegations[msg.sender][account] == 0) {
+            delete delegations[msg.sender][account];
             revert NotDelegatedAny();
         }
 
-        for (uint256 i = 0; i < delegators[account].length; i++) {
-            if (delegators[account][i] == msg.sender) {
-                delegators[account][i] = delegators[account][delegators[account].length - 1];
-                delegators[account].pop();
+        if (delegations[msg.sender][account] >= amount) {
+            delegations[msg.sender][account] -= amount;
+            amountDelegated[msg.sender] -= amount;
+        } else {
+            amountDelegated[msg.sender] -= delegations[msg.sender][account];
+            delegations[msg.sender][account] = 0;
+        }
+        delete delegations[msg.sender][account];
+
+        for (uint256 i = 0; i < delegation[msg.sender].length; i++) {
+            if (delegators[msg.sender][i] == account) {
+                delegators[msg.sender][i] = delegators[msg.sender][delegators[msg.sender].length - 1];
+                delegators[msg.sender].pop();
                 break;
             }
         }
+    }
+
+    /// @notice Undelegate all your dAMORxGuild
+    function undelegateAll() public {
+        address[] memory accounts = delegation[msg.sender];
+
+        //Nothing to undelegate
+        if (accounts.length == 0) {
+            revert NotDelegatedAny();
+        }
+
+        address account;
+        for (uint256 i = 0; i < accounts.length; i++) {
+            account = accounts[i];
+            delete delegations[msg.sender][account];
+
+            // clear msg.sender delegation from list of delegators to `account` address
+            for (uint256 j = 0; j < delegators[account].length; j++) {
+                if (delegators[account][j] == msg.sender) {
+                    delegators[account][j] = delegators[account][delegators[account].length - 1];
+                    delegators[account].pop();
+                    break;
+                }
+            }
+        }
         delete delegation[msg.sender];
+        delete delegators[msg.sender];
+        delete amountDelegated[msg.sender];
     }
 
     /// @notice non-transferable
