@@ -52,7 +52,8 @@ contract Vesting is Ownable {
     address public constant SENTINAL = address(0x1);
     /// Address to keep track of the sentinal owner
     /// Initialized as `SENTINAL`, updated in `allocateVestedTokens`
-    address internal sentinalOwner = SENTINAL;
+    ///address internal sentinalOwner = SENTINAL;
+    mapping(address => address) internal sentinalOwners;
     mapping(address => address) public beneficiaries;
     mapping(address => Allocation) public allocations;
     IdAMORxGuild public dAMOR;
@@ -66,6 +67,7 @@ contract Vesting is Ownable {
     constructor(address metaDao, address dAmor) {
         transferOwnership(metaDao);
         dAMOR = IdAMORxGuild(dAmor);
+        sentinalOwners[address(this)] = SENTINAL;
     }
 
     /// @notice Delegates vested tokens to another address for voting
@@ -113,13 +115,13 @@ contract Vesting is Ownable {
         allocation.cliff = 0;
         allocation.tokensAllocated = amount;
         allocation.vestingDate = vestingDate;
-        allocation.delegatees[address(0x1)] = address(0x1);
+        allocation.delegatees[sentinalOwners[target]] = SENTINAL;
         /// Add the amount to the tokensAllocated;
         tokensAllocated += amount;
         /// Add the beneficiary to the beneficiaries linked list
-        beneficiaries[sentinalOwner] = target;
+        beneficiaries[sentinalOwners[address(this)]] = target;
         beneficiaries[target] = SENTINAL;
-        sentinalOwner = target;
+        sentinalOwners[address(this)] = target;
     }
 
     /// @notice Allocates dAMOR to a target beneficiary after contract initialization
@@ -134,7 +136,14 @@ contract Vesting is Ownable {
         uint256 cliff,
         uint256 vestingDate
     ) external {
-
+        if (allocations[target].tokensAllocated > 0) {
+            Allocation storage allocation = allocations[target];
+            allocation.tokensAllocated += amount;
+            allocation.cliff = cliff;
+            allocation.vestingDate = vestingDate;
+        } else {
+            
+        }
     }
 
     /// @notice Modifies a target beneficiary's vesting date
