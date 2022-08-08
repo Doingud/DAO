@@ -35,7 +35,9 @@ pragma solidity 0.8.15;
  *
  */
 
+/// Access controls
 import "@openzeppelin/contracts/access/Ownable.sol";
+/// Interfaces
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./utils/interfaces/IdAMORxGuild.sol";
 
