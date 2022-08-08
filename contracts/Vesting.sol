@@ -35,7 +35,36 @@ pragma solidity 0.8.15;
  *
  */
 
-contract Vesting {
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./utils/interfaces/IdAMORxGuild.sol";
+
+contract Vesting is Ownable {
+    /// Struct containing allocation details
+    struct Allocation {
+        uint256 tokensAllocated;
+        uint256 cliff;
+        uint256 vestingDate;
+        mapping(address => address) delegatees;
+    }
+
+    uint256 public tokensAllocated;
+    address public constant SENTINAL = address(0x1);
+    mapping(address => address) public beneficiaries;
+    mapping(address => Allocation) public allocations;
+    IdAMORxGuild public dAMOR;
+
+    /// Custom errors
+    /// The target has already been allocated an initial vesting amount
+    error AlreadyAllocated();
+    /// Not enough unallocated dAMOR to complete this allocation
+    error InsufficientFunds();
+
+    constructor(address metaDao, address dAmor) {
+        transferOwnership(metaDao);
+        dAMOR = IdAMORxGuild(dAmor);
+    }
+
     /// @notice Delegates vested tokens to another address for voting
     /// @dev    Calls `delegate` on the dAMOR contract
     /// @param  delegatee address to which voting rights are delegated
@@ -67,7 +96,28 @@ contract Vesting {
         address target,
         uint256 amount,
         uint256 vestingDate
-    ) external {}
+    ) external {
+        /// Check that this target has not been initialized yet
+        if (beneficiaries[target] != address(0)) {
+            revert AlreadyAllocated();
+        }
+        /// Check that there are enough unallocated tokens
+        if (IERC20(address(dAMOR)).balanceOf(address(this)) < tokensAllocated + amount) {
+            revert InsufficientFunds();
+        }
+        /// Create the new struct and add it to the mapping
+        Allocation storage allocation = allocations[target];
+        allocation.cliff = 0;
+        allocation.tokensAllocated = amount;
+        allocation.vestingDate = vestingDate;
+        allocation.delegatees[address(0x1)] = address(0x1);
+
+        /// Add the amount to the tokensAllocated;
+        tokensAllocated += amount;
+        /// Add the beneifiary to the beneficiaries mapping
+        beneficiaries[SENTINAL] = target;
+        beneficiaries[target] = SENTINAL;
+    }
 
     /// @notice Allocates dAMOR to a target beneficiary after contract initialization
     /// @dev    Receives AMOR which is staked to receive dAMOR
@@ -80,7 +130,9 @@ contract Vesting {
         uint256 amount,
         uint256 cliff,
         uint256 vestingDate
-    ) external {}
+    ) external {
+
+    }
 
     /// @notice Modifies a target beneficiary's vesting date
     /// @dev    This changes the rate at which tokens vest for the target
@@ -93,4 +145,10 @@ contract Vesting {
     /// @param  target the address of the beneficiary which must be modified
     /// @param  newTargetAllocation the amount of dAMOR allocated to the target
     function changeVestingAmount(address target, uint256 newTargetAllocation) external {}
+
+    /// @notice Calculates the number of dAMOR accrued to a given beneficiary
+    /// @dev    For a given beneficiary calculates the amount of dAMOR by using the vesting date
+    /// @param  beneficiary the address for which the calcuation is done
+    /// @return amount of tokens claimable by the beneficiary address
+    function _tokensAccrued(address beneficiary) internal returns(uint256) {}
 }
