@@ -99,7 +99,7 @@ contract MetaDaoController is AccessControl {
     /// @notice Distirbutes the amortoken in the metadao to the approved guilds but guild weight
     /// @dev current guild weight initialised to 100 to alow us to loop throuhgh guilds
     function distribute() public {
-        uint256[] memory currentGuildWeight = new uint256[] (guilds.length);
+        uint256[] memory currentGuildWeight = new uint256[](guilds.length);
         for (uint256 i = 0; i < guilds.length; i++) {
             currentGuildWeight[i] = guildWeight[guilds[i]];
         }

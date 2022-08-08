@@ -11,7 +11,6 @@ let USDC;
 let user1;
 let user2;
 let root;
-let pool;
 
 describe("unit - MetaDao", function () {
 
