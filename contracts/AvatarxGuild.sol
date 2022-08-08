@@ -4,7 +4,7 @@ import "./utils/Enum.sol";
 import "./Executor.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract AvatarxGuild is Executor,AccessControl {
+contract AvatarxGuild is Executor, AccessControl {
     event EnabledModule(address module);
     event DisabledModule(address module);
     event ExecutionFromModuleSuccess(address indexed module);
@@ -29,7 +29,6 @@ contract AvatarxGuild is Executor,AccessControl {
 
         _setupRole(DEFAULT_ADMIN_ROLE, initOwner);
         _setupRole(GUARDIAN_ROLE, guardianAddress_);
-   
         _initialized = true;
         emit Initialized(_initialized, initOwner, guardianAddress_);
         return true;
@@ -39,7 +38,7 @@ contract AvatarxGuild is Executor,AccessControl {
     ///      This can only be done via a Safe transaction.
     /// @notice Enables the module `module` for the Safe.
     /// @param module Module to be whitelisted.
-    function enableModule(address module) public  {
+    function enableModule(address module) public {
         // Module address cannot be null or sentinel.
         require(module != address(0) && module != SENTINEL_MODULES, "NOT_ENABLED");
         // Module cannot be added twice.
@@ -110,8 +109,13 @@ contract AvatarxGuild is Executor,AccessControl {
         }
     }
 
-    function executeProposal(address target, uint256 value, bytes memory proposal, Enum.Operation operation) public onlyRole(GUARDIAN_ROLE) {
-       bool success = execute(target, value, proposal, operation, gasleft());
+    function executeProposal(
+        address target,
+        uint256 value,
+        bytes memory proposal,
+        Enum.Operation operation
+    ) public onlyRole(GUARDIAN_ROLE) {
+        bool success = execute(target, value, proposal, operation, gasleft());
         if (success) emit ExecutionFromGuardianSuccess(msg.sender);
         else emit ExecutionFromGuardianFailure(msg.sender);
     }
@@ -127,7 +131,11 @@ contract AvatarxGuild is Executor,AccessControl {
     /// @param pageSize Maximum number of modules that should be returned.
     /// @return array Array of modules.
     /// @return next Start of the next page.
-    function getModulesPaginated(address start, uint256 pageSize) external view returns (address[] memory array, address next) {
+    function getModulesPaginated(address start, uint256 pageSize)
+        external
+        view
+        returns (address[] memory array, address next)
+    {
         // Init array with max page size
         array = new address[](pageSize);
 
@@ -164,5 +172,4 @@ contract AvatarxGuild is Executor,AccessControl {
         revokeRole(GUARDIAN_ROLE, guardian);
         emit GuardianRemoved(guardian);
     }
-
 }
