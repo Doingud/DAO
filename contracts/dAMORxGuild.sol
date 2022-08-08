@@ -22,7 +22,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     // staker => delegated to (many accounts) => amount
     // list of delegations from one address
     mapping(address => mapping(address => uint256)) public delegations;
-    // those to whom tokens were delegated
+    // those to whom tokens were delegated from a specific address
     mapping(address => address[]) public delegation;
     // amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
@@ -170,7 +170,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
     //     return amount;
     // }
 
-
     /// @notice Withdraws AMORxGuild tokens; burns dAMORxGuild
     /// @dev When this tokens are burned, staked AMORxGuild is being transfered
     ///      to the controller(contract that has a voting function)
@@ -196,7 +195,9 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
         AMORxGuild.safeTransfer(msg.sender, amount);
 
-        undelegateAll();
+        if (delegation[msg.sender].length != 0) {
+            undelegateAll();
+        }
         return amount;
     }
 
@@ -230,7 +231,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
             revert InvalidAmount();
         }
 
-        delegators[msg.sender].push(to);
+        delegation[msg.sender].push(to);
+        delegators[to].push(msg.sender);
 
         delegations[msg.sender][to] += amount;
         amountDelegated[msg.sender] += amount;
@@ -275,14 +277,14 @@ contract dAMORxGuild is ERC20Base, Ownable {
         } else {
             amountDelegated[msg.sender] -= delegations[msg.sender][account];
             delegations[msg.sender][account] = 0;
-        }
-        delete delegations[msg.sender][account];
+            delete delegations[msg.sender][account];
 
-        for (uint256 i = 0; i < delegation[msg.sender].length; i++) {
-            if (delegators[msg.sender][i] == account) {
-                delegators[msg.sender][i] = delegators[msg.sender][delegators[msg.sender].length - 1];
-                delegators[msg.sender].pop();
-                break;
+            for (uint256 i = 0; i < delegators[msg.sender].length; i++) {
+                if (delegators[msg.sender][i] == account) {
+                    delegators[msg.sender][i] = delegators[msg.sender][delegators[msg.sender].length - 1];
+                    delegators[msg.sender].pop();
+                    break;
+                }
             }
         }
     }
@@ -310,6 +312,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
                 }
             }
         }
+
         delete delegation[msg.sender];
         delete delegators[msg.sender];
         delete amountDelegated[msg.sender];
