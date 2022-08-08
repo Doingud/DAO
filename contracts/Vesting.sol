@@ -50,23 +50,29 @@ contract Vesting is Ownable {
 
     uint256 public tokensAllocated;
     address public constant SENTINAL = address(0x1);
-    /// Address to keep track of the sentinal owner
+    
+    /// Address mapping to keep track of the sentinal owner
     /// Initialized as `SENTINAL`, updated in `allocateVestedTokens`
-    ///address internal sentinalOwner = SENTINAL;
     mapping(address => address) internal sentinalOwners;
     mapping(address => address) public beneficiaries;
     mapping(address => Allocation) public allocations;
+    
+    /// Tokens
     IdAMORxGuild public dAMOR;
+    IERC20 public amorToken;
 
     /// Custom errors
     /// The target has already been allocated an initial vesting amount
     error AlreadyAllocated();
     /// Not enough unallocated dAMOR to complete this allocation
     error InsufficientFunds();
+    /// The transfer returned `false
+    error TransferUnsuccessful();
 
-    constructor(address metaDao, address dAmor) {
+    constructor(address metaDao, address amor, address dAmor) {
         transferOwnership(metaDao);
         dAMOR = IdAMORxGuild(dAmor);
+        amorToken = IERC20(amor);
         sentinalOwners[address(this)] = SENTINAL;
     }
 
@@ -126,6 +132,7 @@ contract Vesting is Ownable {
 
     /// @notice Allocates dAMOR to a target beneficiary after contract initialization
     /// @dev    Receives AMOR which is staked to receive dAMOR
+    /// @dev    The Vesting Contract address must be approved for `amount`
     /// @param  target the address of the beneficiary to which tokens must be allocated
     /// @param  amount the amount of AMOR to allocate to the target
     /// @param  cliff the date, in seconds, at which the target can start claiming their allocationa
@@ -136,14 +143,17 @@ contract Vesting is Ownable {
         uint256 cliff,
         uint256 vestingDate
     ) external {
-        if (allocations[target].tokensAllocated > 0) {
-            Allocation storage allocation = allocations[target];
-            allocation.tokensAllocated += amount;
-            allocation.cliff = cliff;
-            allocation.vestingDate = vestingDate;
-        } else {
-            
+        /// Transfer the AMOR tokens to the vesting contract
+        if (amorToken.transferFrom(msg.sender, address(this), amount) == false) {
+            revert TransferUnsuccessful();
         }
+        /// Stake the AMOR
+        /// This requires a rethinking of staking mechanics **TO DO**
+
+        Allocation storage allocation = allocations[target];
+        allocation.tokensAllocated += amount;
+        allocation.cliff = cliff;
+        allocation.vestingDate = vestingDate;
     }
 
     /// @notice Modifies a target beneficiary's vesting date
