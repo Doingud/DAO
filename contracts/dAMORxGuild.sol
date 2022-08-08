@@ -87,7 +87,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         address initOwner,
         address _AMORxGuild,
         uint256 amount
-    ) external onlyOwner returns (bool) {
+    ) external returns (bool) {
         require(!_initialized, "Already initialized");
 
         _transferOwnership(initOwner);

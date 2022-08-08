@@ -95,9 +95,9 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     /// @param  symbol the token symbol
     /// @param  controller the GuildController owning this token
     function init(
-        address amorAddress,
         string memory name,
         string memory symbol,
+        address amorAddress,
         address controller
     ) external override {
         if (_initialized) {
