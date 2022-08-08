@@ -50,6 +50,9 @@ contract Vesting is Ownable {
 
     uint256 public tokensAllocated;
     address public constant SENTINAL = address(0x1);
+    /// Address to keep track of the sentinal owner
+    /// Initialized as `SENTINAL`, updated in `allocateVestedTokens`
+    address internal sentinalOwner = SENTINAL;
     mapping(address => address) public beneficiaries;
     mapping(address => Allocation) public allocations;
     IdAMORxGuild public dAMOR;
@@ -111,12 +114,12 @@ contract Vesting is Ownable {
         allocation.tokensAllocated = amount;
         allocation.vestingDate = vestingDate;
         allocation.delegatees[address(0x1)] = address(0x1);
-
         /// Add the amount to the tokensAllocated;
         tokensAllocated += amount;
-        /// Add the beneifiary to the beneficiaries mapping
-        beneficiaries[SENTINAL] = target;
+        /// Add the beneficiary to the beneficiaries linked list
+        beneficiaries[sentinalOwner] = target;
         beneficiaries[target] = SENTINAL;
+        sentinalOwner = target;
     }
 
     /// @notice Allocates dAMOR to a target beneficiary after contract initialization
