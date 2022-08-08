@@ -131,45 +131,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
         return newAmount;
     }
 
-    // /// @notice Withdraws AMORxGuild tokens; burns dAMORxGuild
-    // /// @dev When this tokens are burned, staked AMORxGuild is being transfered
-    // ///      to the controller(contract that has a voting function)
-    // function withdraw() external returns (uint256) {
-    //     if (block.timestamp < stakesTimes[msg.sender]) {
-    //         revert TimeTooSmall();
-    //     }
-
-    //     uint256 amount = stakes[msg.sender];
-
-    //     //burn used dAMORxGuild tokens from staker
-    //     _burn(msg.sender, amount);
-    //     stakes[msg.sender] = 0;
-
-    //     // clear msg.sender delegation from delegators who delegated to msg.sender
-    //     address[] memory people = delegators[msg.sender];
-    //     for (uint256 i = 0; i < people.length; i++) {
-    //         delete delegation[people[i]];
-    //     }
-
-    //     address toWhom = delegation[msg.sender];
-    //     // clear msg.sender delegation from list of delegators to `toWhom` address
-    //     for (uint256 i = 0; i < delegators[toWhom].length; i++) {
-    //         if (delegators[toWhom][i] == msg.sender) {
-    //             delegators[toWhom][i] = delegators[toWhom][delegators[toWhom].length - 1];
-    //             delegators[toWhom].pop();
-    //             break;
-    //         }
-    //     }
-
-    //     // clear msg.sender delegation
-    //     delete delegation[msg.sender];
-    //     delete delegators[msg.sender];
-
-    //     AMORxGuild.safeTransfer(msg.sender, amount);
-
-    //     return amount;
-    // }
-
     /// @notice Withdraws AMORxGuild tokens; burns dAMORxGuild
     /// @dev When this tokens are burned, staked AMORxGuild is being transfered
     ///      to the controller(contract that has a voting function)
@@ -201,22 +162,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
         return amount;
     }
 
-    // /// @notice Delegate your dAMORxGuild to the address `account`
-    // /// @param  to address to which delegate users FXAMORxGuild
-    // function delegate(address to) external {
-    //     /// remove old delegation if already delagated to someone
-    //     if (delegation[msg.sender] != address(0)) {
-    //         undelegate();
-    //     }
-
-    //     if (to == msg.sender) {
-    //         revert InvalidSender();
-    //     }
-
-    //     delegators[to].push(msg.sender);
-    //     delegation[msg.sender] = to;
-    // }
-
     /// @notice Delegate your dAMORxGuild to the address `account`
     /// @param  to address to which delegate users FXAMORxGuild
     /// @param  amount uint256 representing amount of delegating tokens
@@ -237,25 +182,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
         delegations[msg.sender][to] += amount;
         amountDelegated[msg.sender] += amount;
     }
-
-    // /// @notice Undelegate your dAMORxGuild
-    // function undelegate() public {
-    //     address account = delegation[msg.sender];
-
-    //     //Nothing to undelegate
-    //     if (delegators[account].length == 0) {
-    //         revert NotDelegatedAny();
-    //     }
-
-    //     for (uint256 i = 0; i < delegators[account].length; i++) {
-    //         if (delegators[account][i] == msg.sender) {
-    //             delegators[account][i] = delegators[account][delegators[account].length - 1];
-    //             delegators[account].pop();
-    //             break;
-    //         }
-    //     }
-    //     delete delegation[msg.sender];
-    // }
 
     /// @notice Undelegate your dAMORxGuild to the address `account`
     /// @param  account address from which delegating will be taken away
