@@ -129,7 +129,6 @@ contract MetaDaoController is AccessControl {
     /// @notice Allows a guuild to claim amor tokens from the metadao
     /// @dev only a guild can call this funtion
     function claim() public onlyRole(GUILD_ROLE) {
-        ///require(hasRole(GUILD_ROLE, msg.sender), "NOT_GUILD");
         /// Calculate the claim amount
         uint256 amount = (amorToken.balanceOf(address(this)) * (guildWeight[msg.sender] / guildsTotalWeight));
         /// Revert if claimant has no claimable funds or no funds to distribute
