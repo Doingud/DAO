@@ -4,8 +4,7 @@
 const { ethers } = require('hardhat');
 const { TAX_RATE,
         AMOR_TOKEN_NAME, 
-        AMOR_TOKEN_SYMBOL,
-        ZERO_ADDRESS
+        AMOR_TOKEN_SYMBOL, 
       } = require('./helpers/constants.js');
 
 const initialize = async (accounts) => {
@@ -78,31 +77,14 @@ const getTokens = async (setup) => {
     return tokens;
 };
 
-const metadaoMock = async (setup) =>{
-  const MetaDaoFactory = await ethers.getContractFactory('MetaDaoControllerMock');
-  const metadao = await MetaDaoFactory.deploy(
-    setup.tokens.AmorTokenImplementation.address,
-    setup.tokens.ERC20Token.address,
-    setup.roles.root.address, //guildFactory.address,
-    setup.roles.root.address
-  );
-
-  setup.metadao = metadao;
-
-  return metadao;
-}
-
 const controller = async (setup) => {
   const controllerFactory = await ethers.getContractFactory('GuildController');
   const controller = await controllerFactory.deploy();
 
   await controller.init(
     setup.roles.root.address, // owner
-    setup.tokens.AmorTokenImplementation.address,
     setup.tokens.AmorGuildToken.address, // AMORxGuild
-    setup.tokens.FXAMORxGuild.address, // FXAMORxGuild
-    setup.metadao.address, // MetaDaoController
-    setup.roles.root.address // the multisig address of the MetaDAO, which owns the token
+    setup.tokens.FXAMORxGuild.address // FXAMORxGuild
   );
 
   await setup.tokens.AmorTokenImplementation.init(
@@ -110,7 +92,7 @@ const controller = async (setup) => {
     AMOR_TOKEN_SYMBOL, 
     setup.roles.authorizer_adaptor.address, //taxController
     TAX_RATE,
-    setup.roles.root.address // the multisig address of the MetaDAO, which owns the token
+    setup.roles.root.address // multisig
   );
 
   await setup.tokens.AmorGuildToken.init(
@@ -120,77 +102,29 @@ const controller = async (setup) => {
     controller.address //controller
   );
 
-  await setup.tokens.FXAMORxGuild.init(
+  /*await setup.tokens.FXAMORxGuild.init(
     "DoinGud MetaDAO", 
     "FXAMORxGuild", 
     controller.address, //controller
     setup.tokens.AmorGuildToken.address // AMORxGuild
-  );
-
-  setup.controller = controller;
+  );*/
 
   return controller;
 };
 
-const avatar = async (setup) => {
-  const avatarFactory = await ethers.getContractFactory('AvatarxGuild');
-  const avatar = await avatarFactory.deploy();
-
-  const moduleFactory = await ethers.getContractFactory('ModuleMock');
-  const module = await moduleFactory.deploy(avatar.address, avatar.address);
-
-  await avatar.init(
-    setup.roles.root.address, // owner
-    setup.roles.authorizer_adaptor.address // governor Address
-  );
-
-  const tx = {
-    to: avatar.address,
-
-    value: 0,
-    data: "0x",
-    operation: 0,
-    avatarTxGas: 0,
-    baseGas: 0,
-    gasPrice: 0,
-    gasToken: ZERO_ADDRESS,
-    refundReceiver: ZERO_ADDRESS,
-    signatures: "0x",
-  };
-
-  const avatars = {
-    avatar,
-    module, 
-    tx
-  }
-
-  setup.avatars = avatars;
-
-  return avatars;
-};
-
-const governor = async (setup) => {
-  const governorFactory = await ethers.getContractFactory('DoinGudGovernor');
-  /*const governor = await governorFactory.deploy(
-    setup.tokens.AmorGuildToken.address,
-    "DoinGud Governor"
-  );*/
-  const governor = await governorFactory.deploy();
-
-  await governor.init(
-    "DoinGud Governor",
-    setup.tokens.AmorGuildToken.address, //AMORxGuild
-    setup.roles.authorizer_adaptor.address, // Snapshot Address
-    setup.avatars.avatar.address // Avatar Address
-  );
-
-  setup.governor = governor;
-
-  return governor;
-};
-
 const getGuildFactory = async (setup) => {
   const cloneFactory = await ethers.getContractFactory("GuildFactory");
+
+  await setup.tokens.AmorTokenImplementation.init(
+    AMOR_TOKEN_NAME, 
+    AMOR_TOKEN_SYMBOL, 
+    setup.roles.authorizer_adaptor.address, //taxController
+    TAX_RATE,
+    setup.roles.root.address // multisig
+  );
+
+  const controllerFactory = await ethers.getContractFactory("GuildController");
+  const controller = await controllerFactory.deploy();
 
   const guildFactory = await cloneFactory.deploy(
     setup.tokens.AmorTokenImplementation.address,
@@ -198,15 +132,13 @@ const getGuildFactory = async (setup) => {
     setup.tokens.FXAMORxGuild.address,
     setup.tokens.dAMORxGuild.address,
     setup.tokens.AmorTokenProxy.address,
-    setup.controller.address,
-    setup.governor.address,
-    setup.avatars.avatar.address,
-    setup.metadao.address, // metaDaoController
-    setup.roles.root.address, // multisig
-    setup.roles.authorizer_adaptor.address // snapshot address
+    controller.address
   );
 
-  const factory = guildFactory;
+  const factory = {
+    controller,
+    guildFactory
+  }
 
   setup.factory = factory;
 
@@ -215,6 +147,7 @@ const getGuildFactory = async (setup) => {
 const metadao = async(setup) =>{
   const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController');
   const metadao = await MetaDaoFactory.deploy(
+    setup.tokens.AmorTokenImplementation.address,
     setup.tokens.AmorTokenImplementation.address,
     setup.factory.guildFactory.address,
     setup.roles.root.address
@@ -225,38 +158,10 @@ const metadao = async(setup) =>{
   return metadao;
 }
 
-const metadao = async(setup) =>{
-  const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController');
-  const metadao = await MetaDaoFactory.deploy(
-    setup.roles.root.address
-  );
-
-  setup.metadao = metadao;
-
-  return metadao;
-}
-
-const vestingContract = async (setup) => {
-  const vestingFactory = await ethers.getContractFactory("Vesting");
-
-  const vesting = await vestingFactory.deploy(
-    setup.roles.root.address, //  This will be the MetaDAO address
-    setup.tokens.AmorTokenImplementation.address
-  );
-
-  setup.vesting = vesting;
-
-  return vesting;
-}
-
 module.exports = {
-  initialize,
-  getTokens,
   controller,
-  avatar,
-  vestingContract,
   getGuildFactory,
-  governor,
-  metadao,
-  metadaoMock
+  getTokens,
+  initialize,
+  metadao
 }; 
