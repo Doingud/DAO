@@ -33,6 +33,9 @@ contract GoinGudGovernor is Ownable {
     error Unauthorized();
     error InvalidParameters();
 
+    /// @notice Initializes the Governor contract
+    /// @param  initOwner the address of the Governor owner
+    /// @param  snapshotAddress_ the address of the Snapshot
     function init(address initOwner, address snapshotAddress_) external returns (bool) {
         require(!_initialized, "Already initialized");
 
@@ -85,6 +88,18 @@ contract GoinGudGovernor is Ownable {
             }
         }
         guardians.push(guardian);
+    }
+
+    /// @notice this function removes choosed guardian from the system
+    /// @param guardian Guardian to be removed
+    function removeGuardian(address guardian) public onlySnapshot {
+        for (uint256 i = 0; i < guardians.length; i++) {
+            if (guardians[i] == guardian) {
+                guardians[i] = guardians[guardians.length - 1];
+                guardians.pop();
+                break;
+            }
+        }
     }
 
     /// @notice this function changes guardian as a result of the vote (propose function)

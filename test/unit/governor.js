@@ -112,4 +112,19 @@ describe('unit - Contract: Governor', function () {
             expect(await governor.guardians(1)).to.equals(root.address);
         });
     });
+
+    context('» removeGuardian testing', () => {
+
+        it('it fails to remove guardian if not the snapshot', async function () {
+            await expect(governor.connect(user).removeGuardian(root.address)).to.be.revertedWith(
+                'Unauthorized()'
+            );
+        });
+
+        it('it removes guardian', async function () {
+            await governor.connect(authorizer_adaptor).removeGuardian(root.address);
+            expect(await governor.guardians(1)).to.equals(user2.address);
+            await expect(governor.guardians(3)).to.be.reverted;
+        });
+    });
 });
