@@ -48,7 +48,7 @@ contract GuildFactory is ICloneFactory, Ownable {
     address[] public dAMORxGuildTokens;
     address[] public guildControllers;
 
-    uint256 public defaultGaurdianThreshold = 10;
+    uint256 public defaultGuardianThreshold = 10;
 
     constructor(
         address _amorToken,
@@ -159,7 +159,7 @@ contract GuildFactory is ICloneFactory, Ownable {
                 guildSymbol,
                 msg.sender,
                 amorxGuilds[amorxGuilds.length - 1],
-                defaultGaurdianThreshold
+                defaultGuardianThreshold
             );
         } else {
             /// FXAMOR uses the same `init` layout as IAMORxGuild
