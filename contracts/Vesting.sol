@@ -46,6 +46,7 @@ contract Vesting is Ownable {
         uint256 cliff;
         uint256 vestingDate;
         uint256 tokensClaimed;
+        uint256 tokensDelegated;
         mapping(address => address) delegatees;
     }
 
@@ -76,8 +77,10 @@ contract Vesting is Ownable {
     error TransferUnsuccessful();
     /// Invalid vesting date
     error InvalidDate();
-    /// Not a beneficiary
+    /// Beneficiary not found
     error NotFound();
+    /// Not enough undelegated dAMOR for this beneficiary
+    error InvalidDelegation();
 
     constructor(address metaDao, address amor, address dAmor) {
         transferOwnership(metaDao);
@@ -91,7 +94,19 @@ contract Vesting is Ownable {
     /// @dev    Calls `delegate` on the dAMOR contract
     /// @param  delegatee address to which voting rights are delegated
     /// @param  amount the amount of votes to allocate to the target address
-    function delegate(address delegatee, uint256 amount) external {}
+    function delegate(address delegatee, uint256 amount) external {
+        if (beneficiaries[msg.sender] == address(0)) {
+            revert NotFound();
+        }
+        Allocation storage allocation = allocations[msg.sender];
+        if (allocation.tokensDelegated + amount > allocation.tokensAllocated) {
+            revert InvalidDelegation();
+        }
+        allocation.tokensDelegated += amount;
+        allocation.delegatees[delegatee] = SENTINAL;
+        allocation.delegatees[sentinalOwners[msg.sender]] = delegatee;
+        dAMOR.delegate(delegatee);
+    }
 
     /// @notice Undelegates vested token allocations from a target address
     /// @dev    Calls `undelegate` on the dAMOR contract
@@ -172,7 +187,8 @@ contract Vesting is Ownable {
     /// @param  target the beneficiary address
     /// @param  newVestingDate the new date, in seconds, when the beneficiary's tokens must have been fully vested
     /// ** What is the impact of this function on contributors' perception of the protocol?
-    /// ** This might be perceived as a red-flag
+    /// ** This might be perceived as a red-flag.
+    /// ** What can we do to restore trust here?
     function changeTargetVestingDate(address target, uint256 newVestingDate) external {
         Allocation storage allocation = allocations[target];
         if (allocation.vestingDate > newVestingDate) {
@@ -185,6 +201,9 @@ contract Vesting is Ownable {
     /// @dev    Cannot be less than already claimed
     /// @param  target the address of the beneficiary which must be modified
     /// @param  newTargetAllocation the amount of dAMOR allocated to the target
+    /// ** What is the impact of this function on contributors' perception of the protocol?
+    /// ** This might be perceived as a red-flag
+    /// ** What can we do to restore trust here?
     function changeVestingAmount(address target, uint256 newTargetAllocation) external {
         Allocation storage allocation = allocations[target];
         allocation.tokensAllocated = newTargetAllocation;
