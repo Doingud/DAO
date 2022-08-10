@@ -105,6 +105,7 @@ contract Vesting is Ownable {
         allocation.tokensDelegated += amount;
         allocation.delegatees[delegatee] = SENTINAL;
         allocation.delegatees[sentinalOwners[msg.sender]] = delegatee;
+        /// What happens if the external call to delegate errors out?
         dAMOR.delegate(delegatee);
     }
 
@@ -112,7 +113,9 @@ contract Vesting is Ownable {
     /// @dev    Calls `undelegate` on the dAMOR contract
     /// @param  delegatee the address to which votes have been delegated
     /// @param  amount the amount of votes to undelegate
-    function undelegate(address delegatee, uint256 amount) external {}
+    function undelegate(address delegatee, uint256 amount) external {
+        
+    }
 
     /// @notice Allows a beneficiary to withdraw dAMOR that has accrued to it
     /// @dev    Removes dAMOR from the vesting contract and allocates it to the beneficiary
