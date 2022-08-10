@@ -46,12 +46,11 @@ contract Vesting is Ownable {
         uint256 cliff;
         uint256 vestingDate;
         uint256 tokensClaimed;
-        uint256 tokensDelegated;
-        mapping(address => address) delegatees;
     }
 
     uint256 public tokensAllocated;
     address public constant SENTINAL = address(0x1);
+    address public sentinalOwner;
     
     /// Address mapping to keep track of the sentinal owner
     /// Initialized as `SENTINAL`, updated in `allocateVestedTokens`
@@ -73,59 +72,51 @@ contract Vesting is Ownable {
     error AlreadyAllocated();
     /// Not enough unallocated dAMOR to complete this allocation
     error InsufficientFunds();
-    /// The transfer returned `false
+    /// The transfer returned `false`
     error TransferUnsuccessful();
     /// Invalid vesting date
     error InvalidDate();
     /// Beneficiary not found
     error NotFound();
-    /// Not enough undelegated dAMOR for this beneficiary
-    error InvalidDelegation();
+    /// The tokens haven't vested with the beneficiary yet (cliff not yet reached)
+    error NotVested();
 
     constructor(address metaDao, address amor, address dAmor) {
         transferOwnership(metaDao);
         dAMOR = IdAMORxGuild(dAmor);
         amorToken = IERC20(amor);
-        sentinalOwners[address(this)] = SENTINAL;
+        sentinalOwner = address(0);
+        beneficiaries[sentinalOwner] = SENTINAL;
         VESTING_START = block.timestamp;
     }
-
-    /// @notice Delegates vested tokens to another address for voting
-    /// @dev    Calls `delegate` on the dAMOR contract
-    /// @param  delegatee address to which voting rights are delegated
-    /// @param  amount the amount of votes to allocate to the target address
-    function delegate(address delegatee, uint256 amount) external {
-        if (beneficiaries[msg.sender] == address(0)) {
-            revert NotFound();
-        }
-        Allocation storage allocation = allocations[msg.sender];
-        if (allocation.tokensDelegated + amount > allocation.tokensAllocated) {
-            revert InvalidDelegation();
-        }
-        allocation.tokensDelegated += amount;
-        allocation.delegatees[delegatee] = SENTINAL;
-        allocation.delegatees[sentinalOwners[msg.sender]] = delegatee;
-        /// What happens if the external call to delegate errors out?
-        dAMOR.delegate(delegatee);
-    }
-
-    /// @notice Undelegates vested token allocations from a target address
-    /// @dev    Calls `undelegate` on the dAMOR contract
-    /// @param  delegatee the address to which votes have been delegated
-    /// @param  amount the amount of votes to undelegate
-    function undelegate(address delegatee, uint256 amount) external {
-        
-    }
-
-    /// @notice Allows a beneficiary to withdraw dAMOR that has accrued to it
-    /// @dev    Removes dAMOR from the vesting contract and allocates it to the beneficiary
-    /// @param  amount the amount of dAMOR to withdraw
-    function withdraw(uint256 amount) external {}
 
     /// @notice Allows a beneficiary to withdraw AMOR that has accrued to it
     /// @dev    Converts dAMOR to AMOR and transfers it to the beneficiary
     /// @param  amount the amount of dAMOR to convert to AMOR
-    function withdrawAmor(uint256 amount) external {}
+    function withdrawAmor(uint256 amount) external {
+        if (amount > _tokensAccrued(msg.sender)) {
+            InvalidAmount();
+        }
+        Allocation storage allocation = allocations[msg.sender];
+
+        if (allocation.cliff > block.timestamp) {
+            revert NotVested();
+        }
+        
+        /// Update internal balances
+        allocation.tokensClaimed -= amount;
+        /// Withdraw the AMOR from the staking contract
+        uint256 amountReturned = dAMOR.withdraw();
+        /// Transfer the AMOR to the caller
+        amorToken.transfer(msg.sender, amountReturned);
+    }
+
+    /// @notice Returns the amount of vested tokens allocated to the target
+    /// @param  target the address of the beneficiary
+    /// @return the amount of dAMOR allocated to the target address
+    function balanceOf(address target) external view returns(uint256) {
+        return allocations[target].tokensAllocated;
+    }
 
     /// @notice Allocates dAMOR to a target beneficiary
     /// @dev    Can only be called by the MetaDAO
@@ -150,13 +141,12 @@ contract Vesting is Ownable {
         allocation.cliff = 0;
         allocation.tokensAllocated = amount;
         allocation.vestingDate = vestingDate;
-        allocation.delegatees[sentinalOwners[target]] = SENTINAL;
         /// Add the amount to the tokensAllocated;
         tokensAllocated += amount;
         /// Add the beneficiary to the beneficiaries linked list
-        beneficiaries[sentinalOwners[address(this)]] = target;
+        beneficiaries[sentinalOwner] = target;
         beneficiaries[target] = SENTINAL;
-        sentinalOwners[address(this)] = target;
+        sentinalOwner = target;
     }
 
     /// @notice Allocates dAMOR to a target beneficiary after contract initialization
