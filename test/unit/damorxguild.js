@@ -14,6 +14,8 @@ let dAMORxGuild
 let root;
 let operator;
 let staker;
+let operator2;
+let staker2;
 let timeTooSmall;
 let timeTooBig;
 let normalTime;
@@ -32,6 +34,8 @@ describe('unit - Contract: dAMORxGuild Token', function () {
         root = setup.roles.root;
         operator = setup.roles.operator;
         staker = setup.roles.staker;
+        operator2 = setup.roles.user1;
+        staker2 = setup.roles.user2;
     });
 
     before('>>> setup', async function() {
@@ -116,7 +120,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
             koef = normalTime/MAX_LOCK_TIME;
             const newAmount = COEFFICIENT* (koef*koef) *ONE_HUNDRED_ETHER; // (koef)^2 *amount | NdAMOR = f(t)^2 *nAMOR
-            const expectedAmount =  ethers.BigNumber.from(realAmount).add(ethers.BigNumber.from(newAmount.toString()));
+            const expectedAmount = ethers.BigNumber.from(realAmount).add(ethers.BigNumber.from(newAmount.toString()));
 
             await dAMORxGuild.connect(staker).increaseStake(ONE_HUNDRED_ETHER);        
             const newRealAmount = await dAMORxGuild.balanceOf(staker.address);
@@ -130,31 +134,6 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
     });
 
-    // context('» delegate testing', () => {
-
-    //     it('it fails to undelegate dAMORxGuild tokens if nothing to undelegate', async function () {
-    //         await expect(dAMORxGuild.connect(staker).undelegateAll()).to.be.revertedWith(
-    //             'NotDelegatedAny()'
-    //         ); 
-    //     });
-
-    //     it('it fails to delegate dAMORxGuild tokens if delegation to itself', async function () {
-    //         await expect(dAMORxGuild.connect(staker).delegate(staker.address)).to.be.revertedWith(
-    //             'InvalidSender()'
-    //         ); 
-    //     });
-
-    //     it('delegate dAMORxGuild tokens', async function () {
-    //         await expect(dAMORxGuild.delegators(operator.address, 0)).to.be.reverted; 
-
-    //         await dAMORxGuild.connect(staker).delegate(operator.address);
-    //         let addressAfter = await dAMORxGuild.delegators(operator.address, 0);
-    //         let delagatedTo = await dAMORxGuild.delegation(staker.address);
-    //         expect(addressAfter).to.equal(staker.address);
-    //         expect(delagatedTo).to.equal(operator.address);
-    //     });
-    // });
-
     context('» delegate testing', () => {
 
         it('it fails to undelegate dAMORxGuild tokens if nothing to undelegate', async function () {
@@ -162,7 +141,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
                 'NotDelegatedAny()'
             ); 
         });
-        
+
         it('it fails to delegate dAMORxGuild tokens if not enough dAMORxGuild', async function () {
             await expect(dAMORxGuild.connect(staker).delegate(operator.address, TWO_HUNDRED_ETHER)).to.be.revertedWith(
                 'InvalidAmount()'
@@ -178,6 +157,17 @@ describe('unit - Contract: dAMORxGuild Token', function () {
         it('delegate dAMORxGuild tokens', async function () {
             await dAMORxGuild.connect(staker).delegate(operator.address, realAmount);
             expect((await dAMORxGuild.amountDelegated(staker.address)).toString()).to.equal(realAmount.toString());
+        });
+
+        it('delegate dAMORxGuild tokens to the same address', async function () {
+            await AMORxGuild.connect(root).mint(staker2.address, ONE_HUNDRED_ETHER);
+            await AMORxGuild.connect(staker2).approve(dAMORxGuild.address, ONE_HUNDRED_ETHER);
+            await dAMORxGuild.connect(staker2).stake(ONE_HUNDRED_ETHER, normalTime);        
+
+            await dAMORxGuild.connect(staker2).delegate(operator2.address, ethers.BigNumber.from(12));
+            expect((await dAMORxGuild.amountDelegated(staker2.address)).toString()).to.equal(ethers.BigNumber.from(12).toString());
+            await dAMORxGuild.connect(staker2).delegate(operator2.address, ethers.BigNumber.from(14));
+            expect((await dAMORxGuild.amountDelegated(staker2.address)).toString()).to.equal(ethers.BigNumber.from(26).toString());
         });
 
         it('it fails to delegate dAMORxGuild tokens if Unavailable amount of dAMORxGuild', async function () {

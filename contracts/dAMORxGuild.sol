@@ -134,7 +134,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     /// @notice Withdraws AMORxGuild tokens; burns dAMORxGuild
     /// @dev When this tokens are burned, staked AMORxGuild is being transfered
     ///      to the controller(contract that has a voting function)
-    function withdraw() public returns (uint256) {
+    function withdraw() external returns (uint256) {
         if (block.timestamp < stakesTimes[msg.sender]) {
             revert TimeTooSmall();
         }
@@ -176,8 +176,17 @@ contract dAMORxGuild is ERC20Base, Ownable {
             revert InvalidAmount();
         }
 
-        delegation[msg.sender].push(to);
-        delegators[to].push(msg.sender);
+        bool add = true;
+        for (uint256 i = 0; i < delegation[msg.sender].length; i++) {
+            if (delegation[msg.sender][i] == to || delegators[to][i] == msg.sender) {
+                add = false;
+            }
+        }
+
+        if (add) {
+            delegation[msg.sender].push(to);
+            delegators[to].push(msg.sender);
+        }
 
         delegations[msg.sender][to] += amount;
         amountDelegated[msg.sender] += amount;
