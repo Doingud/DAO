@@ -94,8 +94,8 @@ contract Vesting is Ownable {
     /// @dev    Converts dAMOR to AMOR and transfers it to the beneficiary
     /// @param  amount the amount of dAMOR to convert to AMOR
     function withdrawAmor(uint256 amount) external {
-        if (amount > _tokensAccrued(msg.sender)) {
-            InvalidAmount();
+        if (amount > tokensAvailable(msg.sender)) {
+            revert InsufficientFunds();
         }
         Allocation storage allocation = allocations[msg.sender];
 
@@ -106,9 +106,13 @@ contract Vesting is Ownable {
         /// Update internal balances
         allocation.tokensClaimed -= amount;
         /// Withdraw the AMOR from the staking contract
-        uint256 amountReturned = dAMOR.withdraw();
+        uint256 amountReturned = amorToken.balanceOf(address(this));
+        dAMOR.withdraw();
+        amountReturned = amorToken.balanceOf(address(this)) - amountReturned;
         /// Transfer the AMOR to the caller
-        amorToken.transfer(msg.sender, amountReturned);
+        if (!amorToken.transfer(msg.sender, amountReturned)) {
+            revert TransferUnsuccessful();
+        }
     }
 
     /// @notice Returns the amount of vested tokens allocated to the target
@@ -206,7 +210,7 @@ contract Vesting is Ownable {
     /// @dev    For a given beneficiary calculates the amount of dAMOR by using the vesting date
     /// @param  beneficiary the address for which the calcuation is done
     /// @return amount of tokens claimable by the beneficiary address
-    function _tokensAccrued(address beneficiary) internal returns(uint256) {
+    function tokensAvailable(address beneficiary) public returns(uint256) {
         if (beneficiaries[beneficiary] == address(0)) {
             revert NotFound();
         }
