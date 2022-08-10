@@ -11,6 +11,7 @@
     "coverage": "hardhat coverage",
     "deploy:contracts:kovan": "npx hardhat deploy --network kovan",
     "verify:contracts:kovan": "npx hardhat --network kovan etherscan-verify",
+    "deploy:contracts:goerli": "npx hardhat deploy --network goerli",
     "deploy:contracts:mainnet": "npx hardhat deploy --network mainnet",
     "dry-run:deployment": "npx hardhat node --tags deployment"
   },
