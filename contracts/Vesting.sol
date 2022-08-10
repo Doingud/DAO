@@ -45,6 +45,7 @@ contract Vesting is Ownable {
         uint256 tokensAllocated;
         uint256 cliff;
         uint256 vestingDate;
+        uint256 tokensClaimed;
         mapping(address => address) delegatees;
     }
 
@@ -54,12 +55,17 @@ contract Vesting is Ownable {
     /// Address mapping to keep track of the sentinal owner
     /// Initialized as `SENTINAL`, updated in `allocateVestedTokens`
     mapping(address => address) internal sentinalOwners;
+    /// Linked list of all the beneficiaries
     mapping(address => address) public beneficiaries;
+    /// Mapping of beneficiary address to Allocation
     mapping(address => Allocation) public allocations;
     
     /// Tokens
     IdAMORxGuild public dAMOR;
     IERC20 public amorToken;
+
+    /// Contract creation time (for vesting logic)
+    uint256 public immutable VESTING_START;
 
     /// Custom errors
     /// The target has already been allocated an initial vesting amount
@@ -70,12 +76,15 @@ contract Vesting is Ownable {
     error TransferUnsuccessful();
     /// Invalid vesting date
     error InvalidDate();
+    /// Not a beneficiary
+    error NotFound();
 
     constructor(address metaDao, address amor, address dAmor) {
         transferOwnership(metaDao);
         dAMOR = IdAMORxGuild(dAmor);
         amorToken = IERC20(amor);
         sentinalOwners[address(this)] = SENTINAL;
+        VESTING_START = block.timestamp;
     }
 
     /// @notice Delegates vested tokens to another address for voting
@@ -178,12 +187,19 @@ contract Vesting is Ownable {
     /// @param  newTargetAllocation the amount of dAMOR allocated to the target
     function changeVestingAmount(address target, uint256 newTargetAllocation) external {
         Allocation storage allocation = allocations[target];
-        allocation.tokensAllocated = newTargetAllocaiton;
+        allocation.tokensAllocated = newTargetAllocation;
     }
 
     /// @notice Calculates the number of dAMOR accrued to a given beneficiary
     /// @dev    For a given beneficiary calculates the amount of dAMOR by using the vesting date
     /// @param  beneficiary the address for which the calcuation is done
     /// @return amount of tokens claimable by the beneficiary address
-    function _tokensAccrued(address beneficiary) internal returns(uint256) {}
+    function _tokensAccrued(address beneficiary) internal returns(uint256) {
+        if (beneficiaries[beneficiary] == address(0)) {
+            revert NotFound();
+        }
+        Allocation storage allocation = allocations[beneficiary];
+        uint256 amount = allocation.tokensAllocated * ((block.timestamp - VESTING_START) / (allocation.vestingDate - VESTING_START));
+        return amount - allocation.tokensClaimed;
+    }
 }
