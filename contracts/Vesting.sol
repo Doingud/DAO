@@ -68,6 +68,8 @@ contract Vesting is Ownable {
     error InsufficientFunds();
     /// The transfer returned `false
     error TransferUnsuccessful();
+    /// Invalid vesting date
+    error InvalidDate();
 
     constructor(address metaDao, address amor, address dAmor) {
         transferOwnership(metaDao);
@@ -160,13 +162,24 @@ contract Vesting is Ownable {
     /// @dev    This changes the rate at which tokens vest for the target
     /// @param  target the beneficiary address
     /// @param  newVestingDate the new date, in seconds, when the beneficiary's tokens must have been fully vested
-    function changeTargetVestingDate(address target, uint256 newVestingDate) external {}
+    /// ** What is the impact of this function on contributors' perception of the protocol?
+    /// ** This might be perceived as a red-flag
+    function changeTargetVestingDate(address target, uint256 newVestingDate) external {
+        Allocation storage allocation = allocations[target];
+        if (allocation.vestingDate > newVestingDate) {
+            revert InvalidDate();
+        }
+        allocation.vestingDate = newVestingDate;
+    }
 
     /// @notice Modifies the amount of tokens that a beneficiary has been allocated
     /// @dev    Cannot be less than already claimed
     /// @param  target the address of the beneficiary which must be modified
     /// @param  newTargetAllocation the amount of dAMOR allocated to the target
-    function changeVestingAmount(address target, uint256 newTargetAllocation) external {}
+    function changeVestingAmount(address target, uint256 newTargetAllocation) external {
+        Allocation storage allocation = allocations[target];
+        allocation.tokensAllocated = newTargetAllocaiton;
+    }
 
     /// @notice Calculates the number of dAMOR accrued to a given beneficiary
     /// @dev    For a given beneficiary calculates the amount of dAMOR by using the vesting date
