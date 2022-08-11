@@ -92,6 +92,15 @@ contract Vesting is Ownable {
         VESTING_START = block.timestamp;
     }
 
+    /// @notice Receives AMOR and stakes it in the dAMOR contract
+    /// @dev    Requires approval of AMOR amount prior to calling
+    /// @param  amount of AMOR to be transferred to this contract
+    function lockAMOR(uint256 amount) external {
+        if (amorToken.transferFrom(msg.sender, address(this), amount) == false) {
+        revert TransferUnsuccessful();
+        }
+    }
+
     /// @notice Allows a beneficiary to withdraw AMOR that has accrued to it
     /// @dev    Converts dAMOR to AMOR and transfers it to the beneficiary
     /// @param  amount the amount of dAMOR to convert to AMOR
@@ -128,31 +137,32 @@ contract Vesting is Ownable {
     /// @dev    Can only be called by the MetaDAO
     /// @param  target the beneficiary to which tokens should vest
     /// @param  amount the amount of dAMOR to allocate to the tartget beneficiary
+    /// @param  cliff the date at which tokens become claimable. `0` for no cliff.
     /// @param  vestingDate the date at which all the tokens have vested in the beneficiary
     function allocateVestedTokens(
         address target,
         uint256 amount,
+        uint256 cliff,
         uint256 vestingDate
     ) external {
-        /// Check that this target has not been initialized yet
-        if (beneficiaries[target] != address(0)) {
-            revert AlreadyAllocated();
-        }
         /// Check that there are enough unallocated tokens
-        if (IERC20(address(dAMOR)).balanceOf(address(this)) < tokensAllocated + amount) {
+        if (amorToken.balanceOf(address(this)) < tokensAllocated + amount) {
             revert InsufficientFunds();
         }
         /// Create the new struct and add it to the mapping
         Allocation storage allocation = allocations[target];
-        allocation.cliff = 0;
-        allocation.tokensAllocated = amount;
+        allocation.cliff = cliff;
+        allocation.tokensAllocated += amount;
         allocation.vestingDate = vestingDate;
+        allocation.cliff = cliff;
         /// Add the amount to the tokensAllocated;
         tokensAllocated += amount;
         /// Add the beneficiary to the beneficiaries linked list
-        beneficiaries[sentinalOwner] = target;
-        beneficiaries[target] = SENTINAL;
-        sentinalOwner = target;
+        if (beneficiaries[target] == address(0)) {
+            beneficiaries[sentinalOwner] = target;
+            beneficiaries[target] = SENTINAL;
+            sentinalOwner = target;
+        }
     }
 
     /// @notice Allocates dAMOR to a target beneficiary after contract initialization
@@ -212,7 +222,7 @@ contract Vesting is Ownable {
     /// @dev    For a given beneficiary calculates the amount of dAMOR by using the vesting date
     /// @param  beneficiary the address for which the calcuation is done
     /// @return amount of tokens claimable by the beneficiary address
-    function tokensAvailable(address beneficiary) public returns(uint256) {
+    function tokensAvailable(address beneficiary) public view returns(uint256) {
         if (beneficiaries[beneficiary] == address(0)) {
             revert NotFound();
         }
