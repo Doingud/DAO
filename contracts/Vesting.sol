@@ -150,11 +150,7 @@ contract Vesting is Ownable {
             revert InsufficientFunds();
         }
         /// Create the new struct and add it to the mapping
-        Allocation storage allocation = allocations[target];
-        allocation.cliff = cliff;
-        allocation.tokensAllocated += amount;
-        allocation.vestingDate = vestingDate;
-        allocation.cliff = cliff;
+        _setAllocationDetail(target, amount, cliff, vestingDate);
         /// Add the amount to the tokensAllocated;
         tokensAllocated += amount;
         /// Add the beneficiary to the beneficiaries linked list if it doesn't exist yet
@@ -163,6 +159,26 @@ contract Vesting is Ownable {
             beneficiaries[target] = SENTINAL;
             sentinalOwner = target;
         }
+    }
+
+    /// @notice Modifies an existing allocation
+    /// @param  target the beneficiary to which tokens should vest
+    /// @param  amount the amount of AMOR to allocate to the tartget beneficiary
+    /// @param  cliff the date at which tokens become claimable. `0` for no cliff.
+    /// @param  vestingDate the date at which all the tokens have vested in the beneficiary
+    function modifyAllocation(
+        address target,
+        uint256 amount,
+        uint256 cliff,
+        uint256 vestingDate
+    ) external {
+        if (beneficiaries[target] == address(0)) {
+            revert NotFound();
+        }
+        if (allocations[target].cliff > cliff || allocations[target].vestingDate > vestingDate) {
+            revert InvalidDate();
+        }
+        _setAllocationDetail(target, amount, cliff, vestingDate);
     }
 
     /// @notice Calculates the number of dAMOR accrued to a given beneficiary
@@ -177,4 +193,17 @@ contract Vesting is Ownable {
         uint256 amount = allocation.tokensAllocated * ((block.timestamp - VESTING_START) / (allocation.vestingDate - VESTING_START));
         return amount - allocation.tokensClaimed;
     }
+
+    function _setAllocationDetail(
+        address target,
+        uint256 amount,
+        uint256 cliff,
+        uint256 vestingDate
+        ) internal {
+        Allocation storage allocation = allocations[target];
+        allocation.cliff = cliff;
+        allocation.tokensAllocated += amount;
+        allocation.vestingDate = vestingDate;
+        allocation.cliff = cliff;
+        }
 }
