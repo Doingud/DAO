@@ -158,8 +158,7 @@ contract AvatarxGuild is Executor, AccessControl {
     /// @notice adds guild based on the controller address provided
     /// @dev give guardian role in access control to the guardian address
     /// @param guardian the controller address of the guild
-    function addGuardian(address guardian) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
+    function addGuardian(address guardian) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setupRole(GUARDIAN_ROLE, guardian);
         emit GuardianAdded(guardian);
     }
@@ -167,8 +166,7 @@ contract AvatarxGuild is Executor, AccessControl {
     /// @notice adds guild based on the controller address provided
     /// @dev give guardian role in access control to the guardian address
     /// @param guardian the controller address of the guild
-    function removeGuardian(address guardian) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
+    function removeGuardian(address guardian) external onlyRole(DEFAULT_ADMIN_ROLE){
         revokeRole(GUARDIAN_ROLE, guardian);
         emit GuardianRemoved(guardian);
     }
