@@ -4,13 +4,13 @@ pragma solidity 0.8.15;
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
 
-import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
+// import "@openzeppelin/contracts/token/ERC1155/IERC1155Receiver.sol";
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
-import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/Timers.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+// import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 import "@gnosis.pm/zodiac/contracts/core/Module.sol";
 // import "./interfaces/RealitioV3.sol";
@@ -35,7 +35,6 @@ contract GoinGudGovernor is RealityETH_v3_0 {//Module {
 
 
     uint256 public proposalMaxOperations = 10;
-    uint256 private _proposalThreshold;
     // mapping(uint256 => ProposalCore) private _proposals;
 
     // id in array --> Id of passed proposal from _proposals
@@ -43,9 +42,9 @@ contract GoinGudGovernor is RealityETH_v3_0 {//Module {
     // After proposal was voted for, an !executor provides a complete data about the proposal!,
     // which gets hashed and if hashes correspond, then the proposal is executed.
 
-    mapping(uint256 => address[]) public voters; // voters mapping(uint proposal => address [] voters)
-    mapping(uint256 => int256) public proposalVoting;
-    mapping(uint256 => uint256) public proposalWeight;
+    // mapping(uint256 => address[]) public voters; // voters mapping(uint proposal => address [] voters)
+    // mapping(uint256 => int256) public proposalVoting;
+    // mapping(uint256 => uint256) public proposalWeight;
 
     uint256 public timeVoting; // deadlines for the votes for proposals
 
@@ -92,9 +91,7 @@ contract GoinGudGovernor is RealityETH_v3_0 {//Module {
     function init(
         address AMORxGuild_,
         address snapshotAddress_,
-        address avatarAddress_,
-        uint256 timeVoting_,
-        uint256 proposalThreshold_
+        address avatarAddress_
     ) external returns (bool) {
         require(!_initialized, "Already initialized");
 
@@ -102,14 +99,12 @@ contract GoinGudGovernor is RealityETH_v3_0 {//Module {
 
         snapshotAddress = snapshotAddress_;
         avatarAddress = avatarAddress_;
-        timeVoting = timeVoting_;
 
         _initialized = true;
 
         _votingDelay = 1; // 1 block
         _votingPeriod = 64000; // 64000 blocks
         proposalCount = 0;
-        _proposalThreshold = proposalThreshold_;
 
         emit Initialized(_initialized, avatarAddress_, snapshotAddress_);
         return true;
@@ -269,41 +264,41 @@ contract GoinGudGovernor is RealityETH_v3_0 {//Module {
         uint8 support,
         string memory reason
     ) internal virtual returns (uint256) {
-        // ProposalCore storage proposal = _proposals[proposalId];
-        // require(state(proposalId) == ProposalState.Active, "Governor: vote not currently active");
+        // // ProposalCore storage proposal = _proposals[proposalId];
+        // // require(state(proposalId) == ProposalState.Active, "Governor: vote not currently active");
 
-        for (uint256 i = 0; i < voters[proposalId].length; i++) {
-            if (voters[proposalId][i] == account) {
-                // this guardian already voted for this proposal
-                revert AlreadyVoted();
-            }
-        }
-
-        // Q: guardian votes with some choosable amount of AMORxGuild / all amount / 1 point?
-        // 1 point for now
-        uint256 voterBalance = AMORxGuild.balanceOf(account);
-        // if (voterBalance > 0) {
-        //    AMORxGuild.safeTransferFrom(_msgSender(), address(this), voterBalance);
+        // for (uint256 i = 0; i < voters[proposalId].length; i++) {
+        //     if (voters[proposalId][i] == account) {
+        //         // this guardian already voted for this proposal
+        //         revert AlreadyVoted();
+        //     }
         // }
 
-        // proposal.proposalWeight += 1;//voterBalance;
-        proposalWeight[proposalId] += 1;
+        // // Q: guardian votes with some choosable amount of AMORxGuild / all amount / 1 point?
+        // // 1 point for now
+        // uint256 voterBalance = AMORxGuild.balanceOf(account);
+        // // if (voterBalance > 0) {
+        // //    AMORxGuild.safeTransferFrom(_msgSender(), address(this), voterBalance);
+        // // }
 
-        if (support == 1) {
-            // if for
-            proposalVoting[proposalId] += 1;
-            // proposal.proposalVoting += 1;//int256(voterBalance);
-            // votes[proposalId][msg.sender] += int256(voterBalance);
-        } else {
-            // if against
-            proposalVoting[proposalId] -= 1;
-            // proposal.proposalVoting -= 1;//int256(voterBalance);
-            // votes[proposalId][msg.sender] -= int256(voterBalance);
-        }
+        // // proposal.proposalWeight += 1;//voterBalance;
+        // proposalWeight[proposalId] += 1;
 
-        voters[proposalId].push(account);
+        // if (support == 1) {
+        //     // if for
+        //     proposalVoting[proposalId] += 1;
+        //     // proposal.proposalVoting += 1;//int256(voterBalance);
+        //     // votes[proposalId][msg.sender] += int256(voterBalance);
+        // } else {
+        //     // if against
+        //     proposalVoting[proposalId] -= 1;
+        //     // proposal.proposalVoting -= 1;//int256(voterBalance);
+        //     // votes[proposalId][msg.sender] -= int256(voterBalance);
+        // }
 
-        return voterBalance; // weight = voterBalance
+        // voters[proposalId].push(account);
+
+        // return voterBalance; // weight = voterBalance
     }
 
     /// @notice function allows anyone to execute specific proposal, based on the vote.
@@ -410,23 +405,6 @@ contract GoinGudGovernor is RealityETH_v3_0 {//Module {
         bytes32 descriptionHash
     ) public pure virtual returns (uint256) {
         return uint256(keccak256(abi.encode(targets, values, calldatas, descriptionHash)));
-    }
-
-    function _getVotes(
-        address account,
-        uint256 blockNumber,
-        bytes memory /*params*/
-    ) internal view virtual returns (uint256) {
-        return token.getPastVotes(account, blockNumber);
-    }
-
-    function proposalThreshold() public view returns (uint256) {
-        return _proposalThreshold;
-    }
-
-    function sub256(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a, "subtraction underflow");
-        return a - b;
     }
 
     /**

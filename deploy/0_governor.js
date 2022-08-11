@@ -12,7 +12,7 @@ async function main() {
     const Governor = await GoinGudGovernor.deploy(TSTtoken, "DoinGud Governor");
 
     const snapshotGnosis = "0xaFdB15b694Df594787E895692C54F2175C095aB4";
-    const tx = await Governor.init(TSTtoken, snapshotGnosis, admin, 10, admin);
+    const tx = await Governor.init(TSTtoken, snapshotGnosis, admin);
     console.log("tx is %s", tx);
     console.log("Governor address:", Governor.address);
 }
