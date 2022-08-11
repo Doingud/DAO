@@ -87,7 +87,7 @@ jobs:
 
         # Runs a single command using the runners shell
       - name: Tests the project
-        run: npx hardhat coverage --testfiles test/unit
+        run: npm run coverage
 
 
       # Runs a single command using the runners shell
