@@ -12,12 +12,16 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import "@gnosis.pm/zodiac/contracts/core/Module.sol";
+// import "./interfaces/RealitioV3.sol";
+import "@reality.eth/contracts/development/contracts/RealityETH-3.0.sol";
+
 /// @title Governor contract
 /// @author Daoism Systems Team
 /// @dev    IGovernor IERC165 Pattern
 /// @notice Governor contract will allow to add and vote for the proposals
 
-contract GoinGudGovernor {
+contract GoinGudGovernor is RealityETH_v3_0 {//Module {
     using SafeERC20 for IERC20;
     using SafeCast for uint256;
     using Timers for Timers.BlockNumber;
@@ -224,6 +228,7 @@ contract GoinGudGovernor {
         bytes[] memory calldatas,
         string memory description
     ) public virtual onlyAvatar returns (uint256) {
+        // Submit proposals uniquely identified by a proposalId and an array of txHashes, to create a Reality.eth question that validates the execution of the connected transactions
         uint256 proposalId = hashProposal(targets, values, calldatas, keccak256(bytes(description)));
         // AMORxGuild.balanceOf(msg.sender)
         // require(AMORxGuild.balanceOf(msg.sender) > proposalThreshold, "Governor::propose: proposer balance below proposal threshold");
@@ -237,33 +242,44 @@ contract GoinGudGovernor {
         ProposalCore storage proposal = _proposals[proposalId];
         require(proposal.voteStart.isUnset(), "Governor: proposal already exists");
 
-        uint64 snapshot = toUint64(block.number) + toUint64(votingDelay());
-        uint64 deadline = snapshot + toUint64(votingPeriod());
+        // The nonce of a transaction makes it possible to have two transactions with the same to, 
+        // value and data but still generate a different transaction hash. 
+        // This is important as all hashes in the txHashes array should be unique. 
+        // To make sure that this is the case, the module will always use the 
+        // index of the transaction hash inside the txHashes array as a nonce
 
-        proposal.voteStart.setDeadline(snapshot);
-        proposal.voteEnd.setDeadline(deadline);
 
+        // uint64 snapshot = toUint64(block.number) + toUint64(votingDelay());
+        // uint64 deadline = snapshot + toUint64(votingPeriod());
+
+uint64 duration = toUint64(votingPeriod());
+        // proposal.voteStart.setDeadline(snapshot);
+        // proposal.voteEnd.setDeadline(deadline);
+
+
+// .addProposal(proposalId, )
+// .setAnswerExpiration(duration) // with a duration in seconds //https://github.com/gnosis/zodiac-module-reality/blob/main/README.md#answer-expiration
         // ProposalVoting storage proposalvoting = _proposalsVotings[proposalId];
         // proposalvoting.proposalVoting = 0;
         // proposalvoting.proposalWeight = 0;
 
-        proposalVoting[proposalId] = 0;
-        proposalWeight[proposalId] = 0;
+        // proposalVoting[proposalId] = 0;
+        // proposalWeight[proposalId] = 0;
 
-        _proposals[proposalId] = proposal;
-        proposals.push(proposalId);
-        proposalCount++;
-        emit ProposalCreated(
-            proposalId,
-            msg.sender, // proposer
-            targets,
-            values,
-            new string[](targets.length), // signatures
-            calldatas,
-            snapshot,
-            deadline,
-            description
-        );
+        // _proposals[proposalId] = proposal;
+        // proposals.push(proposalId);
+        // proposalCount++;
+        // emit ProposalCreated(
+        //     proposalId,
+        //     msg.sender, // proposer
+        //     targets,
+        //     values,
+        //     new string[](targets.length), // signatures
+        //     calldatas,
+        //     snapshot,
+        //     deadline,
+        //     description
+        // );
 
         return proposalId;
     }
