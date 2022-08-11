@@ -30,9 +30,9 @@ interface IAmorxGuild {
     /// @param  name the token name (e.g AMORxIMPACT)
     /// @param  symbol the token symbol
     function init(
-        address amorAddress,
         string memory name,
         string memory symbol,
+        address amorAddress,
         address controller
     ) external;
 

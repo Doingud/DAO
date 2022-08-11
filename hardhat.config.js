@@ -12,6 +12,7 @@ const {
     MNEMONIC,
     ETHERSCAN_API_KEY,
     ARBISCAN_API_KEY,
+    ALCHEMY_API_KEY,
     PK,
 } = process.env;
 const DEFAULT_MNEMONIC = "hello darkness my old friend";
@@ -76,7 +77,7 @@ module.exports = {
         },
         rinkeby: {
             ...sharedNetworkConfig,
-            url: `https://rinkeby.infura.io/v3/${INFURA_KEY}`,
+            url: `https://eth-rinkeby.alchemyapi.io/v2/${ALCHEMY_API_KEY}`, //`https://rinkeby.infura.io/v3/${INFURA_KEY}`,
             saveDeployments: true,
         },
         kovan: {
@@ -105,6 +106,7 @@ module.exports = {
             apiKey: {
                 mainnet: ETHERSCAN_API_KEY,
                 kovan: ETHERSCAN_API_KEY,
+                rinkeby: ETHERSCAN_API_KEY,
                 arbitrumOne: ARBISCAN_API_KEY,
             },
         },
@@ -126,6 +128,7 @@ module.exports = {
     etherscan: {
         apiKey: {
             mainnet: ETHERSCAN_API_KEY,
+            rinkeby: ETHERSCAN_API_KEY,
             arbitrumOne: ARBISCAN_API_KEY,
         },
     },

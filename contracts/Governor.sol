@@ -14,6 +14,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "@gnosis.pm/zodiac/contracts/core/Module.sol";
 // import "./interfaces/RealitioV3.sol";
+// RealityModuleERC20
 import "@reality.eth/contracts/development/contracts/RealityETH-3.0.sol";
 
 /// @title Governor contract
@@ -26,48 +27,16 @@ contract GoinGudGovernor is RealityETH_v3_0 {//Module {
     using SafeCast for uint256;
     using Timers for Timers.BlockNumber;
 
-    // struct ProposalVoting {
-    //     int256 proposalVoting;
-    //     uint256 proposalWeight;
-    // }
-    // mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
-    // mapping(uint256 => ProposalVoting) private _proposalsVotings;
+    // Same address on all chains
+    address public constant SNAPSHOT_REGISTRY = 0x469788fE6E9E9681C6ebF3bF78e7Fd26Fc015446;
+    bytes32 public constant BALANCER_SNAPSHOT_ID = 0x62616c616e6365722e6574680000000000000000000000000000000000000000;
+    
+    address public constant GNOSIS_REALITY_MODULE = 0xaFdB15b694Df594787E895692C54F2175C095aB4;
 
-    struct ProposalCore {
-        Timers.BlockNumber voteStart;
-        Timers.BlockNumber voteEnd;
-        bool executed;
-        bool canceled;
-    }
-
-    enum ProposalState {
-        Pending,
-        Active,
-        Canceled,
-        Defeated,
-        Succeeded,
-        Queued,
-        Expired,
-        Executed
-    }
-
-    event ProposalCreated(
-        uint256 proposalId,
-        address proposer,
-        address[] targets,
-        uint256[] values,
-        string[] signatures,
-        bytes[] calldatas,
-        uint256 startBlock,
-        uint256 endBlock,
-        string description
-    );
-    event ProposalCanceled(uint256 proposalId);
-    event ProposalExecuted(uint256 proposalId);
 
     uint256 public proposalMaxOperations = 10;
     uint256 private _proposalThreshold;
-    mapping(uint256 => ProposalCore) private _proposals;
+    // mapping(uint256 => ProposalCore) private _proposals;
 
     // id in array --> Id of passed proposal from _proposals
     uint256[] public proposals; // it’s an array of proposals hashes to execute.
@@ -92,6 +61,11 @@ contract GoinGudGovernor is RealityETH_v3_0 {//Module {
     IVotes public immutable token;
 
     event Initialized(bool success, address avatarAddress, address snapshotAddress);
+
+    event ProposalQuestionCreated(
+        bytes32 indexed questionId, // e.g. Realityeth question id
+        string indexed proposalId // e.g. Snapshot proposal id
+    );
 
     string public _name;
     bool private _initialized;
@@ -214,6 +188,21 @@ contract GoinGudGovernor is RealityETH_v3_0 {//Module {
         guardians[current] = newGuardian;
     }
 
+    // /// @notice Delegates voting power to EOA
+    // /// so that it can vote on behalf of DAO off chain (Snapshot)
+    // /// @param _delegateTo to whom we delegate voting power
+    // function delegateVotingPower(address _delegateTo) external onlyOperator {
+    //     ISnapshotDelegateRegistry(SNAPSHOT_REGISTRY).setDelegate(BALANCER_SNAPSHOT_ID, _delegateTo);
+    //     emit VotingPowerDelegated(_delegateTo);
+    // }
+
+    // /// @notice Clears delegation
+    // function clearDelegate() external onlyOperator {
+    //     ISnapshotDelegateRegistry(SNAPSHOT_REGISTRY).clearDelegate(BALANCER_SNAPSHOT_ID);
+    //     emit VotingPowerCleared();
+    // }
+
+
     /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote.
     /// Only Avatar(as a result of the Snapshot) contract can add a proposal for voting.
     /// Proposal execution will happen throught the Avatar contract
@@ -222,67 +211,43 @@ contract GoinGudGovernor is RealityETH_v3_0 {//Module {
     /// @param calldatas Calldatas for proposal calls
     /// @param description String description of the proposal
     /// @return proposalId id of the new proposal
-    function propose(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        string memory description
-    ) public virtual onlyAvatar returns (uint256) {
-        // Submit proposals uniquely identified by a proposalId and an array of txHashes, to create a Reality.eth question that validates the execution of the connected transactions
-        uint256 proposalId = hashProposal(targets, values, calldatas, keccak256(bytes(description)));
-        // AMORxGuild.balanceOf(msg.sender)
-        // require(AMORxGuild.balanceOf(msg.sender) > proposalThreshold, "Governor::propose: proposer balance below proposal threshold");
-        require(
-            targets.length == values.length && targets.length == calldatas.length,
-            "Governor::propose: proposal function information arity mismatch"
-        );
-        require(targets.length > 0, "Governor: empty proposal");
-        require(targets.length <= proposalMaxOperations, "Governor::propose: too many actions");
+    // function propose(
+    //     address[] memory targets,
+    //     uint256[] memory values,
+    //     bytes[] memory calldatas,
+    //     string memory description
+    // ) public virtual onlyAvatar returns (uint256) {
+    //     // Submit proposals uniquely identified by a proposalId and an array of txHashes, to create a Reality.eth question that validates the execution of the connected transactions
+    //     uint256 proposalId = hashProposal(targets, values, calldatas, keccak256(bytes(description)));
+    //     // AMORxGuild.balanceOf(msg.sender)
+    //     // require(AMORxGuild.balanceOf(msg.sender) > proposalThreshold, "Governor::propose: proposer balance below proposal threshold");
+    //     require(
+    //         targets.length == values.length && targets.length == calldatas.length,
+    //         "Governor::propose: proposal function information arity mismatch"
+    //     );
+    //     require(targets.length > 0, "Governor: empty proposal");
+    //     require(targets.length <= proposalMaxOperations, "Governor::propose: too many actions");
 
-        ProposalCore storage proposal = _proposals[proposalId];
-        require(proposal.voteStart.isUnset(), "Governor: proposal already exists");
+    //     ProposalCore storage proposal = _proposals[proposalId];
+    //     require(proposal.voteStart.isUnset(), "Governor: proposal already exists");
 
-        // The nonce of a transaction makes it possible to have two transactions with the same to, 
-        // value and data but still generate a different transaction hash. 
-        // This is important as all hashes in the txHashes array should be unique. 
-        // To make sure that this is the case, the module will always use the 
-        // index of the transaction hash inside the txHashes array as a nonce
-
-
-        // uint64 snapshot = toUint64(block.number) + toUint64(votingDelay());
-        // uint64 deadline = snapshot + toUint64(votingPeriod());
-
-uint64 duration = toUint64(votingPeriod());
-        // proposal.voteStart.setDeadline(snapshot);
-        // proposal.voteEnd.setDeadline(deadline);
+    //     // The nonce of a transaction makes it possible to have two transactions with the same to, 
+    //     // value and data but still generate a different transaction hash. 
+    //     // This is important as all hashes in the txHashes array should be unique. 
+    //     // To make sure that this is the case, the module will always use the 
+    //     // index of the transaction hash inside the txHashes array as a nonce
 
 
-// .addProposal(proposalId, )
-// .setAnswerExpiration(duration) // with a duration in seconds //https://github.com/gnosis/zodiac-module-reality/blob/main/README.md#answer-expiration
-        // ProposalVoting storage proposalvoting = _proposalsVotings[proposalId];
-        // proposalvoting.proposalVoting = 0;
-        // proposalvoting.proposalWeight = 0;
+    //     // uint64 snapshot = toUint64(block.number) + toUint64(votingDelay());
+    //     // uint64 deadline = snapshot + toUint64(votingPeriod());
 
-        // proposalVoting[proposalId] = 0;
-        // proposalWeight[proposalId] = 0;
+    //     uint64 duration = toUint64(votingPeriod());
+    //     // proposal.voteStart.setDeadline(snapshot);
+    //     // proposal.voteEnd.setDeadline(deadline);
 
-        // _proposals[proposalId] = proposal;
-        // proposals.push(proposalId);
-        // proposalCount++;
-        // emit ProposalCreated(
-        //     proposalId,
-        //     msg.sender, // proposer
-        //     targets,
-        //     values,
-        //     new string[](targets.length), // signatures
-        //     calldatas,
-        //     snapshot,
-        //     deadline,
-        //     description
-        // );
 
-        return proposalId;
-    }
+    //     return proposalId;
+    // }
 
     /// @notice function allows guardian to vote for the proposal
     /// Proposal should achieve at least 20% approval of guardians, to be accepted
@@ -304,8 +269,8 @@ uint64 duration = toUint64(votingPeriod());
         uint8 support,
         string memory reason
     ) internal virtual returns (uint256) {
-        ProposalCore storage proposal = _proposals[proposalId];
-        require(state(proposalId) == ProposalState.Active, "Governor: vote not currently active");
+        // ProposalCore storage proposal = _proposals[proposalId];
+        // require(state(proposalId) == ProposalState.Active, "Governor: vote not currently active");
 
         for (uint256 i = 0; i < voters[proposalId].length; i++) {
             if (voters[proposalId][i] == account) {
@@ -354,75 +319,75 @@ uint64 duration = toUint64(votingPeriod());
     ) public payable virtual returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
 
-        ProposalState status = state(proposalId);
-        require(
-            status == ProposalState.Succeeded || status == ProposalState.Queued,
-            "Governor: proposal not successful"
-        );
-        _proposals[proposalId].executed = true;
+        // ProposalState status = state(proposalId);
+        // require(
+        //     status == ProposalState.Succeeded || status == ProposalState.Queued,
+        //     "Governor: proposal not successful"
+        // );
+        // _proposals[proposalId].executed = true;
 
-        emit ProposalExecuted(proposalId);
+        // emit ProposalExecuted(proposalId);
 
-        _execute(proposalId, targets, values, calldatas, descriptionHash);
+        // _execute(proposalId, targets, values, calldatas, descriptionHash);
 
-        // clear mappings
-        for (uint256 i = 0; i < proposals.length; i++) {
-            if (proposals[i] == proposalId) {
-                proposals[i] = proposals[proposals.length - 1];
-                proposals.pop();
-                break;
-            }
-        }
-        delete proposalWeight[proposalId];
-        delete proposalVoting[proposalId];
-        delete voters[proposalId];
-        delete _proposals[proposalId];
+        // // clear mappings
+        // for (uint256 i = 0; i < proposals.length; i++) {
+        //     if (proposals[i] == proposalId) {
+        //         proposals[i] = proposals[proposals.length - 1];
+        //         proposals.pop();
+        //         break;
+        //     }
+        // }
+        // delete proposalWeight[proposalId];
+        // delete proposalVoting[proposalId];
+        // delete voters[proposalId];
+        // delete _proposals[proposalId];
 
         return proposalId;
     }
 
-    function proposalSnapshot(uint256 proposalId) public view virtual returns (uint256) {
-        return _proposals[proposalId].voteStart.getDeadline();
-    }
+    // function proposalSnapshot(uint256 proposalId) public view virtual returns (uint256) {
+    //     return _proposals[proposalId].voteStart.getDeadline();
+    // }
 
-    function proposalDeadline(uint256 proposalId) public view virtual returns (uint256) {
-        return _proposals[proposalId].voteEnd.getDeadline();
-    }
+    // function proposalDeadline(uint256 proposalId) public view virtual returns (uint256) {
+    //     return _proposals[proposalId].voteEnd.getDeadline();
+    // }
 
     /// @notice function allows anyone to check state of the proposal
     /// @param proposalId id of the proposal
-    function state(uint256 proposalId) public view virtual returns (ProposalState) {
-        ProposalCore storage proposal = _proposals[proposalId];
+    function state(uint256 proposalId) public view virtual {//returns (ProposalState) {
+        // ProposalCore storage proposal = _proposals[proposalId];
 
-        if (proposal.executed) {
-            return ProposalState.Executed;
-        }
+        // if (proposal.executed) {
+        //     return ProposalState.Executed;
+        // }
 
-        if (proposal.canceled) {
-            return ProposalState.Canceled;
-        }
-        uint256 snapshot = proposalSnapshot(proposalId);
+        // if (proposal.canceled) {
+        //     return ProposalState.Canceled;
+        // }
+        // uint256 snapshot = proposalSnapshot(proposalId);
 
-        if (snapshot == 0) {
-            revert("Governor: unknown proposal id");
-        }
+        // if (snapshot == 0) {
+        //     revert("Governor: unknown proposal id");
+        // }
 
-        if (snapshot >= block.number) {
-            return ProposalState.Pending;
-        }
+        // if (snapshot >= block.number) {
+        //     return ProposalState.Pending;
+        // }
 
-        uint256 deadline = proposalDeadline(proposalId);
+        // uint256 deadline = proposalDeadline(proposalId);
 
-        if (deadline >= block.number) {
-            return ProposalState.Active;
-        }
+        // if (deadline >= block.number) {
+        //     return ProposalState.Active;
+        // }
 
-        // Proposal should achieve at least 20% approval of guardians, to be accepted
-        if (proposalVoting[proposalId] >= int256((20 * guardians.length) / 100)) {
-            return ProposalState.Succeeded;
-        } else {
-            return ProposalState.Defeated;
-        }
+        // // Proposal should achieve at least 20% approval of guardians, to be accepted
+        // if (proposalVoting[proposalId] >= int256((20 * guardians.length) / 100)) {
+        //     return ProposalState.Succeeded;
+        // } else {
+        //     return ProposalState.Defeated;
+        // }
     }
 
     function _execute(
@@ -436,71 +401,6 @@ uint64 duration = toUint64(votingPeriod());
             // add addresses from passed proposal as guardians
             addGuardian(targets[i]);
         }
-    }
-
-    function _executor() internal view returns (address) {
-        return avatarAddress;
-    }
-
-    /// @notice Cancels a proposal
-    /// @param proposalId The id of the proposal to cancel
-    function cancel(uint256 proposalId) external {
-        ProposalState status = state(proposalId);
-
-        require(
-            status != ProposalState.Canceled && status != ProposalState.Expired && status != ProposalState.Executed,
-            "Governor: proposal not active"
-        );
-        _proposals[proposalId].canceled = true;
-
-        // clear mappings
-        for (uint256 i = 0; i < proposals.length; i++) {
-            if (proposals[i] == proposalId) {
-                proposals[i] = proposals[proposals.length - 1];
-                proposals.pop();
-                break;
-            }
-        }
-        delete proposalWeight[proposalId];
-        delete proposalVoting[proposalId];
-        delete voters[proposalId];
-        delete _proposals[proposalId];
-
-        emit ProposalCanceled(proposalId);
-    }
-
-    /**
-     * @dev Internal cancel mechanism: locks up the proposal timer, preventing it from being re-submitted. Marks it as
-     * canceled to allow distinguishing it from executed proposals.
-     *
-     * Emits a {IGovernor-ProposalCanceled} event.
-     */
-    function _cancel(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        bytes32 descriptionHash
-    ) internal virtual returns (uint256) {
-        uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
-        ProposalState status = state(proposalId);
-
-        require(
-            status != ProposalState.Canceled && status != ProposalState.Expired && status != ProposalState.Executed,
-            "Governor: proposal not active"
-        );
-        _proposals[proposalId].canceled = true;
-
-        emit ProposalCanceled(proposalId);
-
-        return proposalId;
-    }
-
-    function votingDelay() public view returns (uint256) {
-        return _votingDelay;
-    }
-
-    function votingPeriod() public view returns (uint256) {
-        return _votingPeriod;
     }
 
     function hashProposal(
@@ -518,10 +418,6 @@ uint64 duration = toUint64(votingPeriod());
         bytes memory /*params*/
     ) internal view virtual returns (uint256) {
         return token.getPastVotes(account, blockNumber);
-    }
-
-    function quorum(uint256 blockNumber) public view returns (uint256) {
-        return 0; //(token.getPastTotalSupply(blockNumber) * quorumNumerator(blockNumber)) / quorumDenominator();
     }
 
     function proposalThreshold() public view returns (uint256) {
