@@ -157,65 +157,12 @@ contract Vesting is Ownable {
         allocation.cliff = cliff;
         /// Add the amount to the tokensAllocated;
         tokensAllocated += amount;
-        /// Add the beneficiary to the beneficiaries linked list
+        /// Add the beneficiary to the beneficiaries linked list if it doesn't exist yet
         if (beneficiaries[target] == address(0)) {
             beneficiaries[sentinalOwner] = target;
             beneficiaries[target] = SENTINAL;
             sentinalOwner = target;
         }
-    }
-
-    /// @notice Allocates dAMOR to a target beneficiary after contract initialization
-    /// @dev    Receives AMOR which is staked to receive dAMOR
-    /// @dev    The Vesting Contract address must be approved for `amount`
-    /// @param  target the address of the beneficiary to which tokens must be allocated
-    /// @param  amount the amount of AMOR to allocate to the target
-    /// @param  cliff the date, in seconds, at which the target can start claiming their allocationa
-    /// @param  vestingDate the date, in seconds, at which the target's tokens have fully vested
-    function vestAdditionalTokens(
-        address target,
-        uint256 amount,
-        uint256 cliff,
-        uint256 vestingDate
-    ) external {
-        /// Transfer the AMOR tokens to the vesting contract
-        if (amorToken.transferFrom(msg.sender, address(this), amount) == false) {
-            revert TransferUnsuccessful();
-        }
-        /// Stake the AMOR
-        /// This requires a rethinking of staking mechanics **TO DO**
-
-        Allocation storage allocation = allocations[target];
-        allocation.tokensAllocated += amount;
-        allocation.cliff = cliff;
-        allocation.vestingDate = vestingDate;
-    }
-
-    /// @notice Modifies a target beneficiary's vesting date
-    /// @dev    This changes the rate at which tokens vest for the target
-    /// @param  target the beneficiary address
-    /// @param  newVestingDate the new date, in seconds, when the beneficiary's tokens must have been fully vested
-    /// ** What is the impact of this function on contributors' perception of the protocol?
-    /// ** This might be perceived as a red-flag.
-    /// ** What can we do to restore trust here?
-    function changeTargetVestingDate(address target, uint256 newVestingDate) external {
-        Allocation storage allocation = allocations[target];
-        if (allocation.vestingDate > newVestingDate) {
-            revert InvalidDate();
-        }
-        allocation.vestingDate = newVestingDate;
-    }
-
-    /// @notice Modifies the amount of tokens that a beneficiary has been allocated
-    /// @dev    Cannot be less than already claimed
-    /// @param  target the address of the beneficiary which must be modified
-    /// @param  newTargetAllocation the amount of dAMOR allocated to the target
-    /// ** What is the impact of this function on contributors' perception of the protocol?
-    /// ** This might be perceived as a red-flag
-    /// ** What can we do to restore trust here?
-    function changeVestingAmount(address target, uint256 newTargetAllocation) external {
-        Allocation storage allocation = allocations[target];
-        allocation.tokensAllocated = newTargetAllocation;
     }
 
     /// @notice Calculates the number of dAMOR accrued to a given beneficiary
