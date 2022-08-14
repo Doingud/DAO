@@ -16,7 +16,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @dev    IGovernor IERC165 Pattern
 /// @notice Governor contract will allow to add and vote for the proposals
 
-contract GoinGudGovernor { //is RealityETH_v3_0 {//Module {
+contract GoinGudGovernor {
     using SafeCast for uint256;
     using Timers for Timers.BlockNumber;
 
@@ -44,7 +44,7 @@ contract GoinGudGovernor { //is RealityETH_v3_0 {//Module {
 
     uint256 public proposalMaxOperations = 10;
     mapping(uint256 => ProposalCore) private _proposals;
-    mapping(bytes => uint256) public proposalIds;
+    // mapping(bytes => uint256) public proposalIds;
 
     // id in array --> Id of passed proposal from _proposals
     uint256[] public proposals; // it’s an array of proposals hashes to execute.
@@ -67,13 +67,7 @@ contract GoinGudGovernor { //is RealityETH_v3_0 {//Module {
     IVotes public immutable token;
 
     event Initialized(bool success, address avatarAddress, address snapshotAddress);
-
-    event ProposalCreated(
-        uint256 proposalId,
-        address proposer,
-        uint256 snapshot,
-        uint256 deadline
-    );
+    event ProposalCreated(uint256 proposalId, address proposer, uint256 snapshot, uint256 deadline);
 
     string public _name;
     bool private _initialized;
@@ -197,11 +191,7 @@ contract GoinGudGovernor { //is RealityETH_v3_0 {//Module {
     /// Proposal execution will happen throught the Avatar contract
     /// @param targets Target addresses for proposal calls
     /// @param data Data for proposal call
-    function propose(
-        address[] memory targets,
-        bytes memory data
-    ) public virtual onlyAvatar returns (uint256) {
-
+    function propose(address[] memory targets, bytes memory data) public virtual onlyAvatar returns (uint256) {
         /* from  RealityModule  :
         /// @param _target Address of the contract that will call exec function
             
@@ -233,12 +223,7 @@ contract GoinGudGovernor { //is RealityETH_v3_0 {//Module {
         require(data.length > 0, "Governor: empty proposal");
         uint256 proposalId = hashProposal(targets, data);
 
-        require(
-            proposalIds[data] == 0,
-            "Proposal has already been submitted"
-        );
-
-        proposalIds[data] = proposalId;
+        // proposalIds[data] = proposalId;
 
         ProposalCore storage proposal = _proposals[proposalId];
         require(proposal.voteStart.isUnset(), "Governor: proposal already exists");
@@ -270,10 +255,7 @@ contract GoinGudGovernor { //is RealityETH_v3_0 {//Module {
     /// @dev Internal vote casting mechanism: Check that the vote is pending, that it has not been cast yet
     /// @param proposalId ID of the proposal
     /// @param support Boolean value: true (for) or false (against) user is voting
-    function castVote(
-        uint256 proposalId,
-        bool support
-    ) external {
+    function castVote(uint256 proposalId, bool support) external onlyGuardian {
         ProposalCore storage proposal = _proposals[proposalId];
         require(state(proposalId) == ProposalState.Active, "Governor: vote not currently active");
 
@@ -300,17 +282,11 @@ contract GoinGudGovernor { //is RealityETH_v3_0 {//Module {
     /// @notice function allows anyone to execute specific proposal, based on the vote.
     /// @param targets addreses from the proposal
     /// @param data Data about the proposal
-    function execute(
-        address[] memory targets,
-        bytes memory data
-    ) external returns (uint256) {
+    function execute(address[] memory targets, bytes memory data) external returns (uint256) {
         uint256 proposalId = hashProposal(targets, data);
 
         ProposalState status = state(proposalId);
-        require(
-            status == ProposalState.Succeeded,
-            "Governor: proposal not successful"
-        );
+        require(status == ProposalState.Succeeded, "Governor: proposal not successful");
 
         // If proposal has positive voting weight then proposal is accepted
         int256 needTwentyPercent = (proposalVoting[proposalId] * 100) / proposalWeight[proposalId];
@@ -376,9 +352,7 @@ contract GoinGudGovernor { //is RealityETH_v3_0 {//Module {
         }
     }
 
-    function _execute(
-        address[] memory targets
-    ) internal virtual {
+    function _execute(address[] memory targets) internal virtual {
         for (uint256 i = 0; i < targets.length; ++i) {
             // add addresses from passed proposal as guardians
             addGuardian(targets[i]);
@@ -418,10 +392,7 @@ contract GoinGudGovernor { //is RealityETH_v3_0 {//Module {
      *
      * Emits a {IGovernor-ProposalCanceled} event.
      */
-    function _cancel(
-        address[] memory targets,
-        bytes memory data
-    ) internal virtual returns (uint256) {
+    function _cancel(address[] memory targets, bytes memory data) internal virtual returns (uint256) {
         uint256 proposalId = hashProposal(targets, data);
         ProposalState status = state(proposalId);
 
@@ -444,10 +415,7 @@ contract GoinGudGovernor { //is RealityETH_v3_0 {//Module {
         return _votingPeriod;
     }
 
-    function hashProposal(
-        address[] memory targets,
-        bytes memory data
-    ) public pure virtual returns (uint256) {
+    function hashProposal(address[] memory targets, bytes memory data) public pure virtual returns (uint256) {
         return uint256(keccak256(abi.encode(targets, data)));
     }
 

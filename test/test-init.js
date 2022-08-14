@@ -114,11 +114,8 @@ const governor = async (setup) => {
 
   await governor.init(    
     setup.tokens.AmorGuildToken.address, //AMORxGuild
-    // setup.roles.root.address, // owner
     setup.roles.authorizer_adaptor.address, // Snapshot Address
-    setup.roles.authorizer_adaptor.address, // Avatar Address
-    64000, // voting time
-    0 // proposalThreshold
+    setup.roles.authorizer_adaptor.address // Avatar Address
   );
 
   return governor;

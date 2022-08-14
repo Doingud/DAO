@@ -1,8 +1,7 @@
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    const admin = "0xdd634602038eBf699581D34d6142a4FB5aa66Ff5"; //addresses[multisig]; // 0xdd634602038eBf699581D34d6142a4FB5aa66Ff5
-    const defaulTaxRate = 0;
+    const admin = "0xdd634602038eBf699581D34d6142a4FB5aa66Ff5"; //addresses[multisig];
 
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
