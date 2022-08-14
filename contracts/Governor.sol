@@ -91,6 +91,10 @@ contract GoinGudGovernor {
         guardians.push(msg.sender);
     }
 
+    /// @notice Initializes the Governor contract
+    /// @param  AMORxGuild_ the address of the AMORxGuild token
+    /// @param  snapshotAddress_ the address of the Snapshot
+    /// @param  avatarAddress_ the address of the Avatar
     function init(
         address AMORxGuild_,
         address snapshotAddress_,
@@ -171,6 +175,18 @@ contract GoinGudGovernor {
             }
         }
         guardians.push(guardian);
+    }
+
+    /// @notice this function removes choosed guardian from the system
+    /// @param guardian Guardian to be removed
+    function removeGuardian(address guardian) public onlySnapshot {
+        for (uint256 i = 0; i < guardians.length; i++) {
+            if (guardians[i] == guardian) {
+                guardians[i] = guardians[guardians.length - 1];
+                guardians.pop();
+                break;
+            }
+        }
     }
 
     /// @notice this function changes guardian as a result of the vote (propose function)

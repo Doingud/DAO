@@ -85,6 +85,11 @@ module.exports = {
             url: `https://kovan.infura.io/v3/${INFURA_KEY}`,
             saveDeployments: true,
         },
+        goerli: {
+            ...sharedNetworkConfig,
+            url: `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
+            saveDeployments: true,
+        },
         ganache: {
             ...sharedNetworkConfig,
             url: "http://127.0.0.1:7545",
@@ -107,6 +112,7 @@ module.exports = {
                 mainnet: ETHERSCAN_API_KEY,
                 kovan: ETHERSCAN_API_KEY,
                 rinkeby: ETHERSCAN_API_KEY,
+                goerli: ETHERSCAN_API_KEY,
                 arbitrumOne: ARBISCAN_API_KEY,
             },
         },
@@ -129,6 +135,7 @@ module.exports = {
         apiKey: {
             mainnet: ETHERSCAN_API_KEY,
             rinkeby: ETHERSCAN_API_KEY,
+            goerli: ETHERSCAN_API_KEY,
             arbitrumOne: ARBISCAN_API_KEY,
         },
     },
