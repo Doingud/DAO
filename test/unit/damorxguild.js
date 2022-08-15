@@ -194,8 +194,17 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             await dAMORxGuild.connect(staker).delegate(operator.address, realAmount);
             expect((await dAMORxGuild.amountDelegated(staker.address)).toString()).to.equal(realAmount.toString());
 
+            let delagatedToBefore = await dAMORxGuild.delegation(staker.address, 0);
+            let addressBefore = await dAMORxGuild.delegators(operator.address, 0);
+
+            expect(delagatedToBefore).to.equal(operator.address);
+            expect(addressBefore).to.equal(staker.address);
+
             await dAMORxGuild.connect(staker).undelegate(operator.address, TWO_HUNDRED_ETHER);
             expect((await dAMORxGuild.amountDelegated(staker.address)).toString()).to.equal("0");
+
+            await expect(dAMORxGuild.delegators(operator.address, 0)).to.be.reverted; 
+            await expect(dAMORxGuild.delegation(staker.address, 0)).to.be.reverted; 
         });        
     });
 

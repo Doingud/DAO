@@ -165,7 +165,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     /// @notice Delegate your dAMORxGuild to the address `account`
     /// @param  to address to which delegate users FXAMORxGuild
     /// @param  amount uint256 representing amount of delegating tokens
-    function delegate(address to, uint256 amount) public {
+    function delegate(address to, uint256 amount) external {
         if (to == msg.sender) {
             revert InvalidSender();
         }
@@ -177,10 +177,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
 
         bool add = true;
-        for (uint256 i = 0; i < delegation[msg.sender].length; i++) {
-            if (delegation[msg.sender][i] == to || delegators[to][i] == msg.sender) {
-                add = false;
-            }
+        if (delegations[msg.sender][to] > 0) {
+            add = false;
         }
 
         if (add) {
@@ -202,7 +200,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
         //Nothing to undelegate
         if (delegations[msg.sender][account] == 0) {
-            delete delegations[msg.sender][account];
             revert NotDelegatedAny();
         }
 
@@ -214,10 +211,18 @@ contract dAMORxGuild is ERC20Base, Ownable {
             delegations[msg.sender][account] = 0;
             delete delegations[msg.sender][account];
 
-            for (uint256 i = 0; i < delegators[msg.sender].length; i++) {
-                if (delegators[msg.sender][i] == account) {
-                    delegators[msg.sender][i] = delegators[msg.sender][delegators[msg.sender].length - 1];
-                    delegators[msg.sender].pop();
+            for (uint256 j = 0; j < delegation[msg.sender].length; j++) {
+                if (delegation[msg.sender][j] == account) {
+                    delegation[msg.sender][j] = delegation[msg.sender][delegation[msg.sender].length - 1];
+                    delegation[msg.sender].pop();
+                    break;
+                }
+            }
+
+            for (uint256 i = 0; i < delegators[account].length; i++) {
+                if (delegators[account][i] == msg.sender) {
+                    delegators[account][i] = delegators[account][delegators[account].length - 1];
+                    delegators[account].pop();
                     break;
                 }
             }
