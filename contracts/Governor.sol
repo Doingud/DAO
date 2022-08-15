@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
 
+import "./utils/Enum.sol";
+
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/utils/Timers.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-// import "@gnosis.pm/zodiac/contracts/core/Module.sol";
-// import "./interfaces/RealitioV3.sol";
-// RealityModuleERC20
-// import "@reality.eth/contracts/development/contracts/RealityETH-3.0.sol";
 
 /// @title Governor contract
 /// @author Daoism Systems Team
@@ -44,7 +41,6 @@ contract GoinGudGovernor {
 
     uint256 public proposalMaxOperations = 10;
     mapping(uint256 => ProposalCore) private _proposals;
-    // mapping(bytes => uint256) public proposalIds;
 
     // id in array --> Id of passed proposal from _proposals
     uint256[] public proposals; // it’s an array of proposals hashes to execute.
@@ -67,7 +63,15 @@ contract GoinGudGovernor {
     IVotes public immutable token;
 
     event Initialized(bool success, address avatarAddress, address snapshotAddress);
-    event ProposalCreated(uint256 proposalId, address proposer, uint256 snapshot, uint256 deadline);
+    event ProposalCreated(
+        uint256 proposalId,
+        address proposer,
+        address targets,
+        uint256 values,
+        bytes calldatas,
+        uint256 snapshot,
+        uint256 deadline
+    );
 
     string public _name;
     bool private _initialized;
@@ -109,7 +113,7 @@ contract GoinGudGovernor {
 
         _initialized = true;
 
-        _votingDelay = 1; // 1 block
+        _votingDelay = 1; // 1 block ~= 10 sec
         _votingPeriod = 64000; // 64000 blocks
         proposalCount = 0;
 
@@ -206,40 +210,20 @@ contract GoinGudGovernor {
     /// Only Avatar(as a result of the Snapshot) contract can add a proposal for voting.
     /// Proposal execution will happen throught the Avatar contract
     /// @param targets Target addresses for proposal calls
-    /// @param data Data for proposal call
-    function propose(address[] memory targets, bytes memory data) public virtual onlyAvatar returns (uint256) {
-        /* from  RealityModule  :
-        /// @param _target Address of the contract that will call exec function
-            
-            executeProposalWithIndex():
-        // Execute the transaction via the target.
-        require(exec(to, value, data, operation), "Module transaction failed");
+    /// @param values AMORxGuild values for proposal calls
+    /// @param calldatas Calldatas for proposal calls
+    /// @param description String description of the proposal
+    /// @return proposalId id of the new proposal
+    function propose(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas
+    ) public virtual onlySnapshot returns (uint256) {
+        require(targets.length > 0, "Governor: empty proposal");
+        require(targets.length <= proposalMaxOperations, "Governor: too many actions");
 
-            exec() :
-        https://rinkeby.etherscan.io/address/0xaFdB15b694Df594787E895692C54F2175C095aB4#code#F4#L43
-        
-
-        /// @dev Passes a transaction to be executed by the avatar.
-        /// @notice Can only be called by this contract.
-        /// @param address to Destination address of module transaction.
-        /// @param uint256 value Ether value of module transaction.
-        /// @param bytes data Data payload of module transaction.
-        /// @param Enum.Operation operation Operation type of module transaction: 0 == call, 1 == delegate call.
-        function exec(
-            ...
-            success = IAvatar(target).execTransactionFromModule(
-                to,
-                value,
-                data,
-                operation
-            );
-        );
-        */
-
-        require(data.length > 0, "Governor: empty proposal");
-        uint256 proposalId = hashProposal(targets, data);
-
-        // proposalIds[data] = proposalId;
+        // Submit proposals uniquely identified by a proposalId and an array of txHashes, to create a Reality.eth question that validates the execution of the connected transactions
+        uint256 proposalId = hashProposal(targets, values, calldatas);
 
         ProposalCore storage proposal = _proposals[proposalId];
         require(proposal.voteStart.isUnset(), "Governor: proposal already exists");
@@ -260,9 +244,13 @@ contract GoinGudGovernor {
         emit ProposalCreated(
             proposalId,
             msg.sender, // proposer
+            targets,
+            values,
+            calldatas,
             snapshot,
             deadline
         );
+
         return proposalId;
     }
 
@@ -298,28 +286,17 @@ contract GoinGudGovernor {
     /// @notice function allows anyone to execute specific proposal, based on the vote.
     /// @param targets addreses from the proposal
     /// @param data Data about the proposal
-    function execute(address[] memory targets, bytes memory data) external returns (uint256) {
-        uint256 proposalId = hashProposal(targets, data);
+    function execute(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory data,
+        bytes32 descriptionHash,
+        Enum.Operation operation
+    ) external returns (uint256) {
+        uint256 proposalId = hashProposal(targets, values, data);
+        require(proposalId == descriptionHash, "Governor: invalid parametres");
 
-        ProposalState status = state(proposalId);
-        require(status == ProposalState.Succeeded, "Governor: proposal not successful");
-
-        // If proposal has positive voting weight then proposal is accepted
-        int256 needTwentyPercent = (proposalVoting[proposalId] * 100) / proposalWeight[proposalId];
-        address[] memory people = voters[proposalId];
-
-        if (needTwentyPercent >= 20) {
-            // _execute(proposalId);
-            _execute(targets); // TODO: ??? HOW to extract from data?
-        }
-
-        _proposals[proposalId].executed = true;
-        emit ProposalExecuted(proposalId);
-
-        delete voters[proposalId];
-        delete proposalWeight[proposalId];
-        delete proposalVoting[proposalId];
-        delete _proposals[proposalId];
+        IAvatar(avatarAddress).executeProposal(targets, values, data, operation);
 
         return proposalId;
     }
@@ -375,54 +352,6 @@ contract GoinGudGovernor {
         }
     }
 
-    /// @notice Cancels a proposal
-    /// @param proposalId The id of the proposal to cancel
-    function cancel(uint256 proposalId) external {
-        ProposalState status = state(proposalId);
-
-        require(
-            status != ProposalState.Canceled && status != ProposalState.Expired && status != ProposalState.Executed,
-            "Governor: proposal not active"
-        );
-        _proposals[proposalId].canceled = true;
-
-        // clear mappings
-        for (uint256 i = 0; i < proposals.length; i++) {
-            if (proposals[i] == proposalId) {
-                proposals[i] = proposals[proposals.length - 1];
-                proposals.pop();
-                break;
-            }
-        }
-        delete proposalWeight[proposalId];
-        delete proposalVoting[proposalId];
-        delete voters[proposalId];
-        delete _proposals[proposalId];
-
-        emit ProposalCanceled(proposalId);
-    }
-
-    /**
-     * @dev Internal cancel mechanism: locks up the proposal timer, preventing it from being re-submitted. Marks it as
-     * canceled to allow distinguishing it from executed proposals.
-     *
-     * Emits a {IGovernor-ProposalCanceled} event.
-     */
-    function _cancel(address[] memory targets, bytes memory data) internal virtual returns (uint256) {
-        uint256 proposalId = hashProposal(targets, data);
-        ProposalState status = state(proposalId);
-
-        require(
-            status != ProposalState.Canceled && status != ProposalState.Expired && status != ProposalState.Executed,
-            "Governor: proposal not active"
-        );
-        _proposals[proposalId].canceled = true;
-
-        emit ProposalCanceled(proposalId);
-
-        return proposalId;
-    }
-
     function votingDelay() public view returns (uint256) {
         return _votingDelay;
     }
@@ -431,8 +360,12 @@ contract GoinGudGovernor {
         return _votingPeriod;
     }
 
-    function hashProposal(address[] memory targets, bytes memory data) public pure virtual returns (uint256) {
-        return uint256(keccak256(abi.encode(targets, data)));
+    function hashProposal(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas
+    ) public pure virtual returns (uint256) {
+        return uint256(keccak256(abi.encode(targets, values, calldatas)));
     }
 
     function sub256(uint256 a, uint256 b) internal pure returns (uint256) {
