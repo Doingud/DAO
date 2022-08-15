@@ -208,7 +208,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
             amountDelegated[msg.sender] -= amount;
         } else {
             amountDelegated[msg.sender] -= delegations[msg.sender][account];
-            delegations[msg.sender][account] = 0;
             delete delegations[msg.sender][account];
 
             for (uint256 j = 0; j < delegation[msg.sender].length; j++) {

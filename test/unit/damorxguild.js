@@ -205,6 +205,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
             await expect(dAMORxGuild.delegators(operator.address, 0)).to.be.reverted; 
             await expect(dAMORxGuild.delegation(staker.address, 0)).to.be.reverted; 
+            expect((await dAMORxGuild.delegations(staker.address, operator.address)).toString()).to.equal("0");
         });        
     });
 
