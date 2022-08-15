@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
-import "./utils/Enum.sol";
+
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract AvatarxGuild is Executor, AccessControl {
+contract AvatarxGuild is AccessControl {
     event EnabledModule(address module);
     event DisabledModule(address module);
     event ExecutionFromModuleSuccess(address indexed module);
@@ -34,10 +34,9 @@ contract AvatarxGuild is Executor, AccessControl {
     }
 
     function executeProposal(
-        address[] target,
-        uint256[] value,
-        bytes[] memory proposal,
-        Enum.Operation operation
+        address[] memory target,
+        uint256[] memory value,
+        bytes[] memory proposal
     ) public onlyRole(GUARDIAN_ROLE) {
         emit ExecutionFromGuardianFailure(msg.sender);
     }

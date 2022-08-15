@@ -14,7 +14,9 @@ let staker;
 let guardians;
 
 let targets;
+let values;
 let calldatas;
+let descriptionHash;
 let firstProposalId;
 
 describe('unit - Contract: Governor', function () {
@@ -122,42 +124,47 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to propose if not the avatar', async function () {
             targets = [authorizer_adaptor.address];
+            values = [20, 34, 923];
             // building hash has to come from system address
             // 32 bytes of data
             let messageHash = ethers.utils.solidityKeccak256(
                 ["address"],
                 [authorizer_adaptor.address]
             );
-            calldatas = messageHash;
+            calldatas = [messageHash];
+            descriptionHash = ethers.utils.solidityKeccak256(
+                ["address[]", "uint256[]", "bytes[]"],
+                [targets, values, calldatas]
+            );
 
-            await expect(governor.connect(user).propose(targets, calldatas)).to.be.revertedWith(
+            await expect(governor.connect(user).propose(targets, values, calldatas)).to.be.revertedWith(
                 'Unauthorized()'
             );
         });
         
         it('it proposes', async function () {
-            await governor.connect(authorizer_adaptor).propose(targets, calldatas);
+            await governor.connect(authorizer_adaptor).propose(targets, values, calldatas);
             expect(await governor.proposalCount()).to.equals(1);
             firstProposalId = await governor.proposals(0);
             await governor.connect(authorizer_adaptor).state(firstProposalId);
             expect((await governor.proposalVoting(firstProposalId)).toString()).to.equals("0");
             expect((await governor.proposalWeight(firstProposalId)).toString()).to.equals("0");
 
-            let newcalldatas = ethers.utils.solidityKeccak256(
+            let newcalldatas = [ethers.utils.solidityKeccak256(
                 ["address"],
                 [staker.address]
-            );
-            await governor.connect(authorizer_adaptor).propose(targets, newcalldatas);
+            )];
+            await governor.connect(authorizer_adaptor).propose(targets, values, newcalldatas);
         });
 
         it('it fails to propose if proposal already exists', async function () {
-            await expect(governor.connect(authorizer_adaptor).propose(targets, calldatas)).to.be.revertedWith(
+            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas)).to.be.revertedWith(
                 'Governor: proposal already exists'
             );
         });
 
         it('it fails to propose if empty proposal', async function () {
-            await expect(governor.connect(authorizer_adaptor).propose([], [])).to.be.revertedWith(
+            await expect(governor.connect(authorizer_adaptor).propose([], [], [])).to.be.revertedWith(
                 'Governor: empty proposal'
             );
         });
@@ -192,9 +199,9 @@ describe('unit - Contract: Governor', function () {
 
     context('» execute testing', () => {
 
-        it('it fails to execute if proposal not successful', async function () {
-            await expect(governor.connect(root).execute(targets, calldatas)).to.be.revertedWith(
-                'Governor: proposal not successful'
+        it('it fails to execute if invalid parametres', async function () {
+            await expect(governor.connect(root).execute(targets, values, calldatas, descriptionHash)).to.be.revertedWith(
+                'Governor: invalid parametres'
             );
         });
 
@@ -202,7 +209,8 @@ describe('unit - Contract: Governor', function () {
             // mine 64000 blocks
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
 
-            await governor.connect(authorizer_adaptor).execute(targets, calldatas);
+            console.log("descriptionHash is %s", descriptionHash);
+            await governor.connect(authorizer_adaptor).execute(targets, values, calldatas, descriptionHash);
             expect(await governor.guardians(4)).to.equals(authorizer_adaptor.address);
         });
     });

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
-
-import "./utils/Enum.sol";
+import "hardhat/console.sol";
+import "./utils/interfaces/IAvatar.sol";
 
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
@@ -66,9 +66,9 @@ contract GoinGudGovernor {
     event ProposalCreated(
         uint256 proposalId,
         address proposer,
-        address targets,
-        uint256 values,
-        bytes calldatas,
+        address[] targets,
+        uint256[] values,
+        bytes[] calldatas,
         uint256 snapshot,
         uint256 deadline
     );
@@ -212,8 +212,6 @@ contract GoinGudGovernor {
     /// @param targets Target addresses for proposal calls
     /// @param values AMORxGuild values for proposal calls
     /// @param calldatas Calldatas for proposal calls
-    /// @param description String description of the proposal
-    /// @return proposalId id of the new proposal
     function propose(
         address[] memory targets,
         uint256[] memory values,
@@ -285,18 +283,26 @@ contract GoinGudGovernor {
 
     /// @notice function allows anyone to execute specific proposal, based on the vote.
     /// @param targets addreses from the proposal
-    /// @param data Data about the proposal
+    /// @param calldatas Data about the proposal
     function execute(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory data,
-        bytes32 descriptionHash,
-        Enum.Operation operation
+        bytes[] memory calldatas,
+        bytes32 memory descriptionHash
     ) external returns (uint256) {
-        uint256 proposalId = hashProposal(targets, values, data);
-        require(proposalId == descriptionHash, "Governor: invalid parametres");
+        // bytes32 descriptionHash = keccak256(bytes(description));
+        uint256 enc = uint256(keccak256(descriptionHash));
+        // console.log("description is %s", description);
+        uint256 proposalId = hashProposal(targets, values, calldatas);
 
-        IAvatar(avatarAddress).executeProposal(targets, values, data, operation);
+        console.log("enc is %s", enc);
+        console.log("proposalId is %s", proposalId);
+        // console.log("proposalId is %s", proposalId);
+
+        // console.log("uint256(descriptionHash) is %s", uint256(descriptionHash));
+        require(proposalId == enc, "Governor: invalid parametres");
+
+        IAvatar(avatarAddress).executeProposal(targets, values, calldatas);
 
         return proposalId;
     }

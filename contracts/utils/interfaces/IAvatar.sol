@@ -8,8 +8,8 @@ pragma solidity 0.8.15;
 
 interface IAvatar {
     function executeProposal(
-        address target,
-        uint256 value,
-        bytes proposal
+        address[] memory target,
+        uint256[] memory value,
+        bytes[] memory proposal
     ) external virtual returns (bool success);
 }
