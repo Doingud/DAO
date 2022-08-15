@@ -63,7 +63,7 @@ contract Vesting is Ownable {
     mapping(address => Allocation) public allocations;
     
     /// Tokens
-    IdAMORxGuild public dAMOR;
+    address public dAMOR;
     IERC20 public amorToken;
 
     /// Contract creation time (for vesting logic)
@@ -85,7 +85,7 @@ contract Vesting is Ownable {
 
     constructor(address metaDao, address amor, address dAmor) {
         transferOwnership(metaDao);
-        dAMOR = IdAMORxGuild(dAmor);
+        dAMOR = dAmor;
         amorToken = IERC20(amor);
         sentinalOwner = address(0);
         beneficiaries[sentinalOwner] = SENTINAL;
@@ -162,6 +162,7 @@ contract Vesting is Ownable {
     }
 
     /// @notice Modifies an existing allocation
+    /// @dev    Cannot modify `amount`, `vestingDate` or `cliff` lower
     /// @param  target the beneficiary to which tokens should vest
     /// @param  amount the amount of AMOR to allocate to the tartget beneficiary
     /// @param  cliff the date at which tokens become claimable. `0` for no cliff.
