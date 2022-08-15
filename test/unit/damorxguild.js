@@ -199,7 +199,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
             expect(delagatedToBefore).to.equal(operator.address);
             expect(addressBefore).to.equal(staker.address);
-
+            
             await dAMORxGuild.connect(staker).undelegate(operator.address, TWO_HUNDRED_ETHER);
             expect((await dAMORxGuild.amountDelegated(staker.address)).toString()).to.equal("0");
 
