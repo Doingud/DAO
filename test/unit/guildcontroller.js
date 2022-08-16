@@ -10,7 +10,6 @@ const init = require('../test-init.js');
 
 const FEE_DENOMINATOR = 1000;
 const percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
-const averageLockTime = time.duration.days(7);
 const twoWeeks = time.duration.days(14);
 
 const TEST_TRANSFER_SMALLER = 80;
@@ -364,7 +363,7 @@ describe('unit - Contract: GuildController', function () {
             const amount = 2;
             const sign = true;
             await controller.connect(operator).voteForReport(id, amount, sign);
-            time.increase(averageLockTime);
+            time.increase(twoWeeks);
 
             await expect(controller.connect(operator).voteForReport(id, amount, sign)).to.be.revertedWith(
                 'VotingTimeExpired()'
