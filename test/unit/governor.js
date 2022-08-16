@@ -175,6 +175,17 @@ describe('unit - Contract: Governor', function () {
             );
         });
 
+        it('it fails to propose if too many actions', async function () {
+            let tooManyTargets = [
+                root.address, root.address, root.address, 
+                root.address, root.address, root.address,
+                root.address, root.address, root.address,
+                root.address, root.address
+            ];
+            await expect(governor.connect(authorizer_adaptor).propose(tooManyTargets, values, calldatas, description)).to.be.revertedWith(
+                'Governor: too many actions'
+            );
+        });
     });
 
     context('» castVote testing', () => {
@@ -185,21 +196,23 @@ describe('unit - Contract: Governor', function () {
             );
         });
 
-        // it('it fails to castVote if vote not currently active', async function () {
-        //     await expect(governor.connect(root).castVote(firstProposalId, 1)).to.be.revertedWith(
-        //         'Governor: vote not currently active'
-        //     );
-        // });
-
         it('it fails to castVote if unknown proposal id', async function () {
             let invalidId = 999;
-            await expect(governor.connect(root).castVote(invalidId, 1)).to.be.revertedWith(
+            await expect(governor.connect(root).castVote(invalidId, true)).to.be.revertedWith(
                 'Governor: unknown proposal id'
             );
         });
 
         it('it casts Vote', async function () {
-            await governor.connect(root).castVote(firstProposalId, 1);
+            await governor.connect(root).castVote(firstProposalId, true);
+            await governor.connect(user).castVote(firstProposalId, true);
+            await governor.connect(user2).castVote(firstProposalId, false);
+        });
+
+        it('it fails to castVote if already voted', async function () {
+            await expect(governor.connect(root).castVote(firstProposalId, false)).to.be.revertedWith(
+                'AlreadyVoted()'
+            );
         });
     });
 
@@ -218,6 +231,15 @@ describe('unit - Contract: Governor', function () {
             expect(await avatar.check()).to.equals(0);
             await governor.connect(authorizer_adaptor).execute(firstProposalId, targets, values, calldatas, descriptionHash);
             expect(await avatar.check()).to.equals(1);
+        });
+
+        it('it fails to castVote if vote not currently active', async function () {
+            // mine 64000 blocks
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+
+            await expect(governor.connect(root).castVote(firstProposalId, 1)).to.be.revertedWith(
+                'Governor: vote not currently active'
+            );
         });
     });
 
