@@ -5,7 +5,6 @@ import "./utils/interfaces/IAvatar.sol";
 
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import "@openzeppelin/contracts/utils/Timers.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// @title Governor contract
@@ -15,7 +14,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract GoinGudGovernor {
     using SafeCast for uint256;
-    using Timers for Timers.BlockNumber;
 
     enum ProposalState {
         Pending,
@@ -28,8 +26,8 @@ contract GoinGudGovernor {
     }
 
     struct ProposalCore {
-        Timers.BlockNumber voteStart;
-        Timers.BlockNumber voteEnd;
+        uint256 voteStart;
+        uint256 voteEnd;
         bool executed;
         bool canceled;
     }
@@ -227,13 +225,13 @@ contract GoinGudGovernor {
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
 
         ProposalCore storage proposal = _proposals[proposalId];
-        require(proposal.voteStart.isUnset(), "Governor: proposal already exists");
+        require(proposal.voteStart == 0, "Governor: proposal already exists");
 
-        uint64 snapshot = toUint64(block.number) + toUint64(votingDelay());
-        uint64 deadline = snapshot + toUint64(votingPeriod());
+        uint256 snapshot = block.timestamp + votingDelay();
+        uint256 deadline = snapshot + votingPeriod();
 
-        proposal.voteStart.setDeadline(snapshot);
-        proposal.voteEnd.setDeadline(deadline);
+        proposal.voteStart = snapshot;
+        proposal.voteEnd = deadline;
 
         proposalVoting[proposalId] = 0;
         proposalWeight[proposalId] = 0;
@@ -305,11 +303,11 @@ contract GoinGudGovernor {
     }
 
     function proposalSnapshot(uint256 proposalId) public view virtual returns (uint256) {
-        return _proposals[proposalId].voteStart.getDeadline();
+        return _proposals[proposalId].voteStart;
     }
 
     function proposalDeadline(uint256 proposalId) public view virtual returns (uint256) {
-        return _proposals[proposalId].voteEnd.getDeadline();
+        return _proposals[proposalId].voteEnd;
     }
 
     /// @notice function allows anyone to check state of the proposal
@@ -330,13 +328,13 @@ contract GoinGudGovernor {
             revert("Governor: unknown proposal id");
         }
 
-        if (snapshot >= block.number) {
+        if (snapshot >= block.timestamp) {
             return ProposalState.Pending;
         }
 
         uint256 deadline = proposalDeadline(proposalId);
 
-        if (deadline >= block.number) {
+        if (deadline >= block.timestamp) {
             return ProposalState.Active;
         }
 
@@ -375,20 +373,5 @@ contract GoinGudGovernor {
     function sub256(uint256 a, uint256 b) internal pure returns (uint256) {
         require(b <= a, "subtraction underflow");
         return a - b;
-    }
-
-    /**
-     * @dev Returns the downcasted uint64 from uint256, reverting on
-     * overflow (when the input is greater than largest uint64).
-     *
-     * Counterpart to Solidity's `uint64` operator.
-     *
-     * Requirements:
-     *
-     * - input must fit into 64 bits
-     */
-    function toUint64(uint256 value) internal pure returns (uint64) {
-        require(value <= type(uint64).max, "SafeCast: value doesn't fit in 64 bits");
-        return uint64(value);
     }
 }
