@@ -252,7 +252,6 @@ contract GuildController is Ownable {
                     }
                     delete votes[id][people[i]];
                 }
-                // reportsWeight[id] = -reportsWeight[id]; // make the value negative for not-pass check below //wrong
                 // and 50% gets redistributed between the passed reports based on their weights
                 for (uint256 i = 0; i < reportsWeight.length; i++) {
                     // passed reports
