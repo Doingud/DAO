@@ -43,7 +43,7 @@ contract GuildFactory is ICloneFactory, Ownable {
     address public controllerxGuild;
     /// The DoinGud generic proxy contract (the target)
     address public cloneTarget;
-    address[] public amorxGuilds;
+    address[] public amorxGuildTokens;
     address[] public fxAMORxGuildTokens;
     address[] public dAMORxGuildTokens;
     address[] public guildControllers;
@@ -86,7 +86,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         tokenName = string.concat("AMORx", _name);
         tokenSymbol = string.concat("Ax", _symbol);
         clonedContract = _deployGuildToken(tokenName, tokenSymbol, amorxGuildToken);
-        amorxGuilds.push(clonedContract);
+        amorxGuildTokens.push(clonedContract);
 
         /// Deploy FXAMORxGuild contract
         tokenName = string.concat("FXAMORx", _name);
@@ -106,9 +106,9 @@ contract GuildFactory is ICloneFactory, Ownable {
 
         /// Check that all contracts were added to the respective arrays
         if (
-            amorxGuilds.length != dAMORxGuildTokens.length ||
-            amorxGuilds.length != fxAMORxGuildTokens.length ||
-            amorxGuilds.length != guildControllers.length
+            amorxGuildTokens.length != dAMORxGuildTokens.length ||
+            amorxGuildTokens.length != fxAMORxGuildTokens.length ||
+            amorxGuildTokens.length != guildControllers.length
         ) {
             revert ArrayMismatch();
         }
@@ -153,12 +153,12 @@ contract GuildFactory is ICloneFactory, Ownable {
             revert CreationFailed();
         }
         /// Check which token contract should be deployed
-        if (amorxGuilds.length == fxAMORxGuildTokens.length) {
+        if (amorxGuildTokens.length == fxAMORxGuildTokens.length) {
             IdAMORxGuild(address(proxyContract)).init(
                 guildName,
                 guildSymbol,
                 msg.sender,
-                amorxGuilds[amorxGuilds.length - 1],
+                amorxGuildTokens[amorxGuildTokens.length - 1],
                 defaultGuardianThreshold
             );
         } else {
@@ -167,7 +167,7 @@ contract GuildFactory is ICloneFactory, Ownable {
                 guildName,
                 guildSymbol,
                 msg.sender,
-                amorxGuilds[amorxGuilds.length - 1]
+                amorxGuildTokens[amorxGuildTokens.length - 1]
             );
         }
 
