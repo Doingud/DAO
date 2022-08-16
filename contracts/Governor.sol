@@ -39,6 +39,8 @@ contract GoinGudGovernor {
 
     uint256 public proposalMaxOperations = 10;
     mapping(uint256 => ProposalCore) private _proposals;
+    mapping(uint256 => int256) public proposalCancelApproval;
+    mapping(uint256 => address[]) public cancellers; // cancellers mapping(uint proposal => address [] voters)
 
     // id in array --> Id of passed proposal from _proposals
     uint256[] public proposals; // it’s an array of proposals hashes to execute.
@@ -111,8 +113,8 @@ contract GoinGudGovernor {
 
         _initialized = true;
 
-        _votingDelay = 1; // 1 block ~= 10 sec
-        _votingPeriod = 64000; // 64000 blocks
+        _votingDelay = 1;
+        _votingPeriod = 2 weeks;
         proposalCount = 0;
 
         emit Initialized(_initialized, avatarAddress_, snapshotAddress_);
@@ -318,7 +320,6 @@ contract GoinGudGovernor {
         if (proposal.executed) {
             return ProposalState.Executed;
         }
-
         if (proposal.canceled) {
             return ProposalState.Canceled;
         }
@@ -351,6 +352,71 @@ contract GoinGudGovernor {
             // add addresses from passed proposal as guardians
             addGuardian(targets[i]);
         }
+    }
+
+    /// @notice function allows guardian to vote for cancelling the proposal
+    /// Proposal should achieve at least 20% approval of guardians, to be cancelled
+    /// @dev Internal vote casting mechanism: Check that the vote is pending, that it has not been cast yet
+    /// @param proposalId ID of the proposal
+    function castVoteForCancelling(uint256 proposalId) external onlyGuardian {
+        ProposalCore storage proposal = _proposals[proposalId];
+        ProposalState status = state(proposalId);
+
+        require(
+            status == ProposalState.Succeeded || status == ProposalState.Defeated,
+            "Governor: vote is still active"
+        );
+
+        if (AMORxGuild.balanceOf(msg.sender) > 0) {
+            revert InvalidAmount();
+        }
+
+        for (uint256 i = 0; i < cancellers[proposalId].length; i++) {
+            if (cancellers[proposalId][i] == msg.sender) {
+                // this guardian already voted for this proposal
+                revert AlreadyVoted();
+            }
+        }
+
+        proposalCancelApproval[proposalId] += 1;
+
+        cancellers[proposalId].push(msg.sender);
+    }
+
+    /// @notice Cancels a proposal
+    /// @param proposalId The id of the proposal to cancel
+    function cancel(uint256 proposalId) external {
+        ProposalState status = state(proposalId);
+
+        require(
+            status == ProposalState.Succeeded || status == ProposalState.Defeated,
+            "Governor: proposal not finished yet"
+        );
+
+        // Proposal should achieve at least 20% approval for cancel from guardians, to be cancelled
+        require(
+            proposalCancelApproval[proposalId] >= int256((20 * guardians.length) / 100),
+            "Governor: cancel for this proposal is not approven"
+        );
+
+        _proposals[proposalId].canceled = true;
+
+        // clear mappings
+        for (uint256 i = 0; i < proposals.length; i++) {
+            if (proposals[i] == proposalId) {
+                proposals[i] = proposals[proposals.length - 1];
+                proposals.pop();
+                break;
+            }
+        }
+        delete proposalWeight[proposalId];
+        delete proposalVoting[proposalId];
+        delete voters[proposalId];
+        delete cancellers[proposalId];
+        delete proposalCancelApproval[proposalId];
+        delete _proposals[proposalId];
+
+        emit ProposalCanceled(proposalId);
     }
 
     function votingDelay() public view returns (uint256) {

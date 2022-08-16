@@ -1,6 +1,9 @@
+const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const init = require('../test-init.js');
+
+const twoWeeks = time.duration.days(14);
 
 // let AMOR; // need for AMORxGuild
 let AMORxGuild; // need for testing propose() function
@@ -20,6 +23,7 @@ let calldatas;
 let description;
 let descriptionHash;
 let firstProposalId;
+let secondProposalId;
 
 describe('unit - Contract: Governor', function () {
 
@@ -207,6 +211,8 @@ describe('unit - Contract: Governor', function () {
             await governor.connect(root).castVote(firstProposalId, true);
             await governor.connect(user).castVote(firstProposalId, true);
             await governor.connect(user2).castVote(firstProposalId, false);
+            expect(await governor.proposalVoting(firstProposalId)).to.equals(2);
+            expect(await governor.proposalWeight(firstProposalId)).to.equals(3);
         });
 
         it('it fails to castVote if already voted', async function () {
@@ -236,6 +242,7 @@ describe('unit - Contract: Governor', function () {
         it('it fails to castVote if vote not currently active', async function () {
             // mine 64000 blocks
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(twoWeeks);
 
             await expect(governor.connect(root).castVote(firstProposalId, 1)).to.be.revertedWith(
                 'Governor: vote not currently active'
@@ -257,5 +264,76 @@ describe('unit - Contract: Governor', function () {
             expect(await governor.guardians(1)).to.equals(user2.address);
             await expect(governor.guardians(3)).to.be.reverted;
         });
+    });
+
+    context('» castVoteForCancelling testing', () => {
+
+        it('it fails to castVoteForCancelling if not the guardian', async function () {
+            targets = [staker.address];
+            await governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description);
+            secondProposalId = await governor.proposals(2);
+
+            await expect(governor.connect(authorizer_adaptor).castVoteForCancelling(secondProposalId)).to.be.revertedWith(
+                'Unauthorized()'
+            );
+        });
+
+        it('it fails to castVoteForCancelling if unknown proposal id', async function () {
+            let invalidId = 999;
+            await expect(governor.connect(user).castVoteForCancelling(invalidId)).to.be.revertedWith(
+                'Governor: unknown proposal id'
+            );
+        });
+
+        it('it fails to cast vote for cancelling if vote is still active', async function () {
+            time.increase(time.duration.days(1));
+
+            await expect(governor.connect(user).castVoteForCancelling(secondProposalId)).to.be.revertedWith(
+                'Governor: vote is still active'
+            );
+        });
+
+        it('it fails to cast cancel if vote is currently active', async function () {
+            // mine 64000 blocks
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+
+            await expect(governor.connect(root).cancel(secondProposalId)).to.be.revertedWith(
+                'Governor: proposal not finished yet'
+            );
+        });
+
+        it('it casts vote for cancelling', async function () {
+            time.increase(twoWeeks);
+
+            await governor.connect(user).castVoteForCancelling(secondProposalId);
+            await governor.connect(user2).castVoteForCancelling(secondProposalId);
+            expect(await governor.proposalCancelApproval(secondProposalId)).to.equals(2);
+        });
+
+        it('it fails to cast vote for cancelling if already voted', async function () {
+            await expect(governor.connect(user).castVoteForCancelling(secondProposalId)).to.be.revertedWith(
+                'AlreadyVoted()'
+            );
+        });
+    });
+
+    context('» cancel testing', () => {
+
+        it('it fails to cancel if unknown proposal id', async function () {
+            await expect(governor.connect(root).cancel(11)).to.be.revertedWith(
+                'Governor: unknown proposal id'
+            );
+        });
+
+        it('it cancels proposal', async function () {
+            await governor.connect(authorizer_adaptor).cancel(secondProposalId);
+
+            expect(await governor.proposalVoting(secondProposalId)).to.equals(0);
+            expect(await governor.proposalWeight(secondProposalId)).to.equals(0);
+            expect(await governor.proposalCancelApproval(secondProposalId)).to.equals(0);
+            await expect(governor.voters(secondProposalId)).to.be.reverted;
+            await expect(governor.cancellers(secondProposalId)).to.be.reverted;
+        });
+
     });
 });
