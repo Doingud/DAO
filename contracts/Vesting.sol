@@ -56,7 +56,6 @@ contract Vesting is Ownable {
     
     /// Address mapping to keep track of the sentinal owner
     /// Initialized as `SENTINAL`, updated in `allocateVestedTokens`
-    ///mapping(address => address) internal sentinalOwners;
     /// Linked list of all the beneficiaries
     mapping(address => address) public beneficiaries;
     /// Mapping of beneficiary address to Allocation
@@ -138,11 +137,7 @@ contract Vesting is Ownable {
         uint256 amount,
         uint256 cliff,
         uint256 vestingDate
-    ) external {
-        /// Check that there are enough unallocated tokens
-        if (amorToken.balanceOf(address(this)) < tokensAllocated + amount) {
-            revert InsufficientFunds();
-        }
+    ) external onlyOwner {
         /// Create the new struct and add it to the mapping
         _setAllocationDetail(target, amount, cliff, vestingDate);
         /// Add the amount to the tokensAllocated;
@@ -170,9 +165,6 @@ contract Vesting is Ownable {
         if (beneficiaries[target] == address(0)) {
             revert NotFound();
         }
-        if (allocations[target].cliff > cliff || allocations[target].vestingDate > vestingDate) {
-            revert InvalidDate();
-        }
         _setAllocationDetail(target, amount, cliff, vestingDate);
     }
 
@@ -199,7 +191,14 @@ contract Vesting is Ownable {
         uint256 amount,
         uint256 cliff,
         uint256 vestingDate
-        ) internal {
+    ) internal {
+        if (unallocatedAMOR() < amount) {
+            revert InsufficientFunds();
+        }
+        if (allocations[target].cliff > cliff || allocations[target].vestingDate > vestingDate) {
+            revert InvalidDate();
+        }
+        /// Create the storage pointer and set details
         Allocation storage allocation = allocations[target];
         allocation.cliff = cliff;
         allocation.tokensAllocated += amount;

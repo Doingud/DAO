@@ -21,6 +21,8 @@ use(solidity);
   let GUILD_ONE_FXAMORXGUILD;
   let VESTING;
 
+  let AMORDeducted;
+
 describe("unit - Vesting", function () {
 
   const setupTests = deployments.createFixture(async () => {
@@ -36,6 +38,7 @@ describe("unit - Vesting", function () {
 
     root = setup.roles.root;
     multisig = setup.roles.doingud_multisig;
+    user1 = setup.roles.user1;
 
     VESTING = await init.vestingContract(setup);
 
@@ -43,6 +46,7 @@ describe("unit - Vesting", function () {
 
   before('Setup', async function() {
     await setupTests();
+    AMORDeducted = ethers.BigNumber.from((ONE_HUNDRED_ETHER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
 
   });
 
@@ -55,13 +59,28 @@ describe("unit - Vesting", function () {
   });
 
   context("function: vestAMOR()", () => {
-    it("Should receive AMOR", async function () {
+    it("Should lock AMOR in the contract", async function () {
       await AMOR_TOKEN.approve(VESTING.address, ONE_HUNDRED_ETHER);
       await VESTING.vestAMOR(ONE_HUNDRED_ETHER);
 
-      let AMORDeducted = ethers.BigNumber.from((ONE_HUNDRED_ETHER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
       expect(await VESTING.unallocatedAMOR()).to.equal(AMORDeducted);
     });
   });
+
+  context("function: allocateVestedTokens()", () => {
+    it("Should allocate vested tokens to a beneficiary", async function () {
+      await VESTING.allocateVestedTokens(user1.address, AMORDeducted, 0, 1661165490);
+      expect(await VESTING.balanceOf(user1.address)).to.equal(AMORDeducted);
+      expect(await VESTING.unallocatedAMOR()).to.equal(0);
+    })
+  })
+
+  context("function: allocateVestedTokens()", () => {
+    it("Should allocate vested tokens to a beneficiary", async function () {
+      await VESTING.allocateVestedTokens(user1.address, AMORDeducted, 0, 1661165490);
+      expect(await VESTING.balanceOf(user1.address)).to.equal(AMORDeducted);
+      expect(await VESTING.unallocatedAMOR()).to.equal(0);
+    })
+  })
 
 });
