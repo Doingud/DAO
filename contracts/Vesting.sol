@@ -56,14 +56,13 @@ contract Vesting is Ownable {
     
     /// Address mapping to keep track of the sentinal owner
     /// Initialized as `SENTINAL`, updated in `allocateVestedTokens`
-    mapping(address => address) internal sentinalOwners;
+    ///mapping(address => address) internal sentinalOwners;
     /// Linked list of all the beneficiaries
     mapping(address => address) public beneficiaries;
     /// Mapping of beneficiary address to Allocation
     mapping(address => Allocation) public allocations;
     
     /// Tokens
-    address public dAMOR;
     IERC20 public amorToken;
 
     /// Contract creation time (for vesting logic)
@@ -85,7 +84,6 @@ contract Vesting is Ownable {
 
     constructor(address metaDao, address amor, address dAmor) {
         transferOwnership(metaDao);
-        dAMOR = dAmor;
         amorToken = IERC20(amor);
         sentinalOwner = address(0);
         beneficiaries[sentinalOwner] = SENTINAL;
@@ -95,7 +93,7 @@ contract Vesting is Ownable {
     /// @notice Receives AMOR and stakes it in the dAMOR contract
     /// @dev    Requires approval of AMOR amount prior to calling
     /// @param  amount of AMOR to be transferred to this contract
-    function lockAMOR(uint256 amount) external {
+    function vestAMOR(uint256 amount) external {
         if (amorToken.transferFrom(msg.sender, address(this), amount) == false) {
         revert TransferUnsuccessful();
         }
@@ -116,12 +114,8 @@ contract Vesting is Ownable {
         
         /// Update internal balances
         allocation.tokensClaimed -= amount;
-        /// Withdraw the AMOR from the staking contract
-        uint256 amountReturned = amorToken.balanceOf(address(this));
-        dAMOR.withdraw();
-        amountReturned = amorToken.balanceOf(address(this)) - amountReturned;
         /// Transfer the AMOR to the caller
-        if (!amorToken.transfer(msg.sender, amountReturned)) {
+        if (!amorToken.transfer(msg.sender, tokensAvailable(msg.sender))) {
             revert TransferUnsuccessful();
         }
     }
@@ -162,7 +156,7 @@ contract Vesting is Ownable {
     }
 
     /// @notice Modifies an existing allocation
-    /// @dev    Cannot modify `amount`, `vestingDate` or `cliff` lower
+    /// @dev    Cannot modify `amount`, `vestingDate` or `cliff` lower (trust concerns)
     /// @param  target the beneficiary to which tokens should vest
     /// @param  amount the amount of AMOR to allocate to the tartget beneficiary
     /// @param  cliff the date at which tokens become claimable. `0` for no cliff.
@@ -182,8 +176,8 @@ contract Vesting is Ownable {
         _setAllocationDetail(target, amount, cliff, vestingDate);
     }
 
-    /// @notice Calculates the number of dAMOR accrued to a given beneficiary
-    /// @dev    For a given beneficiary calculates the amount of dAMOR by using the vesting date
+    /// @notice Calculates the number of AMOR accrued to a given beneficiary
+    /// @dev    For a given beneficiary calculates the amount of AMOR by using the vesting date
     /// @param  beneficiary the address for which the calcuation is done
     /// @return amount of tokens claimable by the beneficiary address
     function tokensAvailable(address beneficiary) public view returns(uint256) {
@@ -195,6 +189,11 @@ contract Vesting is Ownable {
         return amount - allocation.tokensClaimed;
     }
 
+    /// @notice Allows the MetaDAO to set allocations
+    /// @param  target address of the target on whose behalf tokens are vested
+    /// @param  amount the amount of AMOR tokens vested on the target's behalf
+    /// @param  cliff the unix date upon which the target can claim their accumalated tokens
+    /// @param  vestingDate the unix date upon which all the tokens should have been claimable
     function _setAllocationDetail(
         address target,
         uint256 amount,
@@ -206,5 +205,11 @@ contract Vesting is Ownable {
         allocation.tokensAllocated += amount;
         allocation.vestingDate = vestingDate;
         allocation.cliff = cliff;
-        }
+    }
+
+    /// @notice Calculated the amount of AMOR that hasn't been allocated yet
+    /// @return unallocatedAmor the amount of AMOR that has been vested but not allocated yet
+    function unallocatedAMOR() public view returns (uint256) {
+        return amorToken.balanceOf(address(this)) - tokensAllocated;
+    }
 }
