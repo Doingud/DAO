@@ -2,7 +2,9 @@ const { ethers } = require("hardhat");
 const { use, expect } = require("chai");
 const { solidity } = require("ethereum-waffle");
 const { MOCK_GUILD_NAMES,
-        MOCK_GUILD_SYMBOLS 
+        MOCK_GUILD_SYMBOLS, 
+        TWO_ADDRESS,
+        ZERO_ADDRESS
       } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
@@ -49,9 +51,9 @@ describe("unit - Clone Factory", function () {
       await CLONE_FACTORY.deployGuildContracts(user1.address, MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0]);
 
       this.guildOneAmorXGuild = await CLONE_FACTORY.amorxGuildTokens(0);
-      this.guildOneDAmorXGuild = await CLONE_FACTORY.dAMORxGuildTokens(0);
-      this.guildOneFXAmorXGuild = await CLONE_FACTORY.fxAMORxGuildTokens(0);
-      this.guildOneControllerxGuild = await CLONE_FACTORY.guildControllers(0);
+      this.guildOneDAmorXGuild = await CLONE_FACTORY.dAMORxGuildTokens(this.guildOneAmorXGuild);
+      this.guildOneFXAmorXGuild = await CLONE_FACTORY.fxAMORxGuildTokens(this.guildOneAmorXGuild);
+      this.guildOneControllerxGuild = await CLONE_FACTORY.guildControllers(this.guildOneAmorXGuild);
       
       GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildOneAmorXGuild);
       GUILD_ONE_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(this.guildOneDAmorXGuild);
@@ -91,31 +93,31 @@ describe("unit - Clone Factory", function () {
 
   context("function: fxAMORxGuildTokens()", () => {
     it("Should return the FX Token address", async function () {
-      expect(await CLONE_FACTORY.fxAMORxGuildTokens(0)).to.equal(GUILD_ONE_FXAMORXGUILD.address);
+      expect(await CLONE_FACTORY.fxAMORxGuildTokens(GUILD_ONE_AMORXGUILD.address)).to.equal(GUILD_ONE_FXAMORXGUILD.address);
     });
 
     it("Should not return an address outside the array range", async function () {
-      await expect(CLONE_FACTORY.fxAMORxGuildTokens(2)).to.be.revertedWith(null);
+      expect(await CLONE_FACTORY.fxAMORxGuildTokens(TWO_ADDRESS)).to.equal(ZERO_ADDRESS);
     });
   })
 
   context("function: dAMORxGuildTokens()", () => {
     it("Should return the dAMORxGuild Token address", async function () {
-      expect(await CLONE_FACTORY.dAMORxGuildTokens(0)).to.equal(GUILD_ONE_DAMORXGUILD.address);
+      expect(await CLONE_FACTORY.dAMORxGuildTokens(GUILD_ONE_AMORXGUILD.address)).to.equal(GUILD_ONE_DAMORXGUILD.address);
     });
 
     it("Should not return an address outside the array range", async function () {
-      await expect(CLONE_FACTORY.dAMORxGuildTokens(2)).to.be.revertedWith(null);
+      expect(await CLONE_FACTORY.dAMORxGuildTokens(TWO_ADDRESS)).to.equal(ZERO_ADDRESS);
     });
   })
 
   context("function: guildControllers()", () => {
     it("Should return the ControllerxGuild address", async function () {
-      expect(await CLONE_FACTORY.guildControllers(0)).to.equal(GUILD_ONE_CONTROLLERXGUILD.address);
+      expect(await CLONE_FACTORY.guildControllers(GUILD_ONE_AMORXGUILD.address)).to.equal(GUILD_ONE_CONTROLLERXGUILD.address);
     });
 
     it("Should not return an address outside the array range", async function () {
-      await expect(CLONE_FACTORY.guildControllers(2)).to.be.revertedWith(null);
+      expect(await CLONE_FACTORY.guildControllers(TWO_ADDRESS)).to.equal(ZERO_ADDRESS);
     });
   })
 
