@@ -356,7 +356,6 @@ contract GoinGudGovernor {
 
     /// @notice function allows guardian to vote for cancelling the proposal
     /// Proposal should achieve at least 20% approval of guardians, to be cancelled
-    /// @dev Internal vote casting mechanism: Check that the vote is pending, that it has not been cast yet
     /// @param proposalId ID of the proposal
     function castVoteForCancelling(uint256 proposalId) external onlyGuardian {
         ProposalCore storage proposal = _proposals[proposalId];
