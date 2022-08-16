@@ -72,15 +72,21 @@ describe("unit - Vesting", function () {
       await VESTING.allocateVestedTokens(user1.address, AMORDeducted, 0, 1661165490);
       expect(await VESTING.balanceOf(user1.address)).to.equal(AMORDeducted);
       expect(await VESTING.unallocatedAMOR()).to.equal(0);
-    })
-  })
+    });
 
-  context("function: allocateVestedTokens()", () => {
-    it("Should allocate vested tokens to a beneficiary", async function () {
-      await VESTING.allocateVestedTokens(user1.address, AMORDeducted, 0, 1661165490);
-      expect(await VESTING.balanceOf(user1.address)).to.equal(AMORDeducted);
-      expect(await VESTING.unallocatedAMOR()).to.equal(0);
-    })
-  })
+    it("Should fail if unsufficient unallocated AMOR", async function () {
+      await expect(VESTING.allocateVestedTokens(user1.address, AMORDeducted, 0, 1661165490)).
+        to.be.revertedWith("InsufficientFunds()");
+    });
+  });
+
+  context("function: modifyAllocation()", () => {
+    it("Should allow the MetaDAO to change allocation details", async function () {
+      await AMOR_TOKEN.approve(VESTING.address, ONE_HUNDRED_ETHER);
+      await VESTING.vestAMOR(ONE_HUNDRED_ETHER);
+      await VESTING.modifyAllocation(user1.address, AMORDeducted, 0, 1661165490);
+      expect(await VESTING.balanceOf(user1.address)).to.equal(ethers.BigNumber.from((AMORDeducted*2).toString()));
+    });
+  });
 
 });
