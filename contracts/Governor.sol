@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
-import "hardhat/console.sol";
+
 import "./utils/interfaces/IAvatar.sol";
 
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
@@ -212,16 +212,19 @@ contract GoinGudGovernor {
     /// @param targets Target addresses for proposal calls
     /// @param values AMORxGuild values for proposal calls
     /// @param calldatas Calldatas for proposal calls
+    /// @param description String description of the proposal
     function propose(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas
+        bytes[] memory calldatas,
+        string memory description
     ) public virtual onlySnapshot returns (uint256) {
         require(targets.length > 0, "Governor: empty proposal");
         require(targets.length <= proposalMaxOperations, "Governor: too many actions");
 
         // Submit proposals uniquely identified by a proposalId and an array of txHashes, to create a Reality.eth question that validates the execution of the connected transactions
-        uint256 proposalId = hashProposal(targets, values, calldatas);
+        bytes32 descriptionHash = keccak256(bytes(description));
+        uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
 
         ProposalCore storage proposal = _proposals[proposalId];
         require(proposal.voteStart.isUnset(), "Governor: proposal already exists");
@@ -282,25 +285,19 @@ contract GoinGudGovernor {
     }
 
     /// @notice function allows anyone to execute specific proposal, based on the vote.
-    /// @param targets addreses from the proposal
-    /// @param calldatas Data about the proposal
+    /// @param targets Target addresses for proposal calls
+    /// @param values AMORxGuild values for proposal calls
+    /// @param calldatas Calldatas for proposal calls
+    /// @param descriptionHash Description hash of the proposal
     function execute(
+        uint256 proposalId,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas,
-        bytes32 memory descriptionHash
+        bytes32 descriptionHash
     ) external returns (uint256) {
-        // bytes32 descriptionHash = keccak256(bytes(description));
-        uint256 enc = uint256(keccak256(descriptionHash));
-        // console.log("description is %s", description);
-        uint256 proposalId = hashProposal(targets, values, calldatas);
-
-        console.log("enc is %s", enc);
-        console.log("proposalId is %s", proposalId);
-        // console.log("proposalId is %s", proposalId);
-
-        // console.log("uint256(descriptionHash) is %s", uint256(descriptionHash));
-        require(proposalId == enc, "Governor: invalid parametres");
+        uint256 checkProposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        require(proposalId == checkProposalId, "Governor: invalid parametres");
 
         IAvatar(avatarAddress).executeProposal(targets, values, calldatas);
 
@@ -369,9 +366,10 @@ contract GoinGudGovernor {
     function hashProposal(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas
+        bytes[] memory calldatas,
+        bytes32 descriptionHash
     ) public pure virtual returns (uint256) {
-        return uint256(keccak256(abi.encode(targets, values, calldatas)));
+        return uint256(keccak256(abi.encode(targets, values, calldatas, descriptionHash)));
     }
 
     function sub256(uint256 a, uint256 b) internal pure returns (uint256) {

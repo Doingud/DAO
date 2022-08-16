@@ -56,6 +56,9 @@ const getTokens = async (setup) => {
     //  AmorGuild Tokens
     const AmorGuildToken = await AmorGuildTokenFactory.deploy();
 
+    const AvatarxGuildFactory = await ethers.getContractFactory('AvatarxGuild');
+    const AvatarxGuild = await AvatarxGuildFactory.deploy();
+
     const tokens = {
       ERC20Token,
       FXAMORxGuild,
@@ -63,7 +66,8 @@ const getTokens = async (setup) => {
       AmorTokenImplementation,
       AmorTokenProxy,
       AmorTokenMockUpgrade,
-      AmorGuildToken
+      AmorGuildToken,
+      AvatarxGuild
     };
 
     setup.tokens = tokens;
@@ -112,10 +116,15 @@ const governor = async (setup) => {
     "DoinGud Governor"
   );
 
+  await setup.tokens.AvatarxGuild.init(    
+    setup.roles.authorizer_adaptor.address, // owner Address
+    governor.address // GUARDIAN_ROLE
+  );
+
   await governor.init(    
     setup.tokens.AmorGuildToken.address, //AMORxGuild
     setup.roles.authorizer_adaptor.address, // Snapshot Address
-    setup.roles.authorizer_adaptor.address // Avatar Address
+    setup.tokens.AvatarxGuild.address // Avatar Address
   );
 
   return governor;

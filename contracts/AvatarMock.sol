@@ -20,6 +20,8 @@ contract AvatarxGuild is AccessControl {
     address internal constant SENTINEL_MODULES = address(0x1);
     bool private _initialized;
 
+    uint256 public check = 0;
+
     mapping(address => bool) public voters;
     mapping(address => address) internal modules;
 
@@ -37,7 +39,8 @@ contract AvatarxGuild is AccessControl {
         address[] memory target,
         uint256[] memory value,
         bytes[] memory proposal
-    ) public onlyRole(GUARDIAN_ROLE) {
-        emit ExecutionFromGuardianFailure(msg.sender);
+    ) public returns (bool) {
+        check = 1;
+        return true;
     }
 }
