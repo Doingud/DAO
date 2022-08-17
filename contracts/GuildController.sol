@@ -99,16 +99,17 @@ contract GuildController is Ownable {
     // which are going to be owned by the user.
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     // Requires the msg.sender to `approve` amount prior to calling this function
-    function donate(uint256 amount) external returns (uint256) {
+    function donate(address token, uint256 amount) external returns (uint256) {
+        require(IMetadao(metadao).isWhitelistedToken(token), "NOTLISTED");
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
-        if (AMORxGuild.balanceOf(msg.sender) < amount || amount < 10) {
+        if (IERC20(token).balanceOf(msg.sender) < amount || amount < 10) {
             revert InvalidAmount();
         }
 
         // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
         // which are going to be owned by the user.
         uint256 FxGAmount = (amount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
-        AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
+        IERC20(token).safeTransferFrom(msg.sender, address(this), FxGAmount);
         AMORxGuild.approve(FXAMORxGuild, FxGAmount);
         FXGFXAMORxGuild.stake(msg.sender, FxGAmount);
 
@@ -117,7 +118,7 @@ contract GuildController is Ownable {
         // based on the weights distribution, tokens will be automatically redirected to the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
-            AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amountToSendVoter);
             claimableTokens[impactMakers[i]] += amountToSendVoter;
         }
 
