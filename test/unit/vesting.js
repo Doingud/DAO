@@ -1,13 +1,16 @@
 const { ethers } = require("hardhat");
+const { time } = require("@openzeppelin/test-helpers");
 const { use, expect } = require("chai");
 const { solidity } = require("ethereum-waffle");
 const { ONE_ADDRESS,
         ZERO_ADDRESS,
         ONE_HUNDRED_ETHER,
         BASIS_POINTS,
-        TAX_RATE
+        TAX_RATE,
+        SECONDS_IN_DAY
       } = require('../helpers/constants.js');
 const init = require('../test-init.js');
+const { duration } = require("@openzeppelin/test-helpers/src/time.js");
 
 use(solidity);
 
@@ -20,6 +23,7 @@ use(solidity);
   let GUILD_ONE_DAMORXGUILD;
   let GUILD_ONE_FXAMORXGUILD;
   let VESTING;
+  let VESTING_TIME;
 
   let AMORDeducted;
 
@@ -69,7 +73,8 @@ describe("unit - Vesting", function () {
 
   context("function: allocateVestedTokens()", () => {
     it("Should allocate vested tokens to a beneficiary", async function () {
-      await VESTING.allocateVestedTokens(user1.address, AMORDeducted, 0, 1661165490);
+      VESTING_TIME = await time.latest() + time.duration.years(1);
+      await VESTING.allocateVestedTokens(user1.address, AMORDeducted, 0, VESTING_TIME);
       expect(await VESTING.balanceOf(user1.address)).to.equal(AMORDeducted);
       expect(await VESTING.unallocatedAMOR()).to.equal(0);
     });
@@ -84,8 +89,23 @@ describe("unit - Vesting", function () {
     it("Should allow the MetaDAO to change allocation details", async function () {
       await AMOR_TOKEN.approve(VESTING.address, ONE_HUNDRED_ETHER);
       await VESTING.vestAMOR(ONE_HUNDRED_ETHER);
-      await VESTING.modifyAllocation(user1.address, AMORDeducted, 0, 1661165490);
+      await VESTING.modifyAllocation(user1.address, AMORDeducted, 0, VESTING_TIME);
       expect(await VESTING.balanceOf(user1.address)).to.equal(ethers.BigNumber.from((AMORDeducted*2).toString()));
+    });
+  });
+
+  context("function: tokensAvailable()", () => {
+    it("Should calculate the correct amount of tokens", async function () {
+      time.increase(duration.weeks(10));
+      let userInfo = await VESTING.allocations(user1.address);
+      let tokensAccumalated = await VESTING.tokensAvailable(user1.address);
+      console.log(tokensAccumalated.toString());
+      let currentTime = await time.latest();
+      let timeElapsed = currentTime - userInfo.vestingStart;
+      console.log(timeElapsed.toString());
+      let x = userInfo.tokensAllocated * timeElapsed / (userInfo.vestingDate - userInfo.vestingStart);
+      x = Math.trunc(x);
+      expect(await VESTING.tokensAvailable(user1.address)).to.equal(x.toString());
     });
   });
 

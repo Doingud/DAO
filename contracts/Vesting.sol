@@ -45,6 +45,7 @@ contract Vesting is Ownable {
     /// Struct containing allocation details
     struct Allocation {
         uint256 tokensAllocated;
+        uint256 vestingStart;
         uint256 cliff;
         uint256 vestingDate;
         uint256 tokensClaimed;
@@ -63,9 +64,6 @@ contract Vesting is Ownable {
     
     /// Tokens
     IERC20 public amorToken;
-
-    /// Contract creation time (for vesting logic)
-    uint256 public immutable VESTING_START;
 
     /// Custom errors
     /// The target has already been allocated an initial vesting amount
@@ -86,7 +84,6 @@ contract Vesting is Ownable {
         amorToken = IERC20(amor);
         sentinalOwner = address(0);
         beneficiaries[sentinalOwner] = SENTINAL;
-        VESTING_START = block.timestamp;
     }
 
     /// @notice Receives AMOR and stakes it in the dAMOR contract
@@ -172,12 +169,12 @@ contract Vesting is Ownable {
     /// @dev    For a given beneficiary calculates the amount of AMOR by using the vesting date
     /// @param  beneficiary the address for which the calcuation is done
     /// @return amount of tokens claimable by the beneficiary address
-    function tokensAvailable(address beneficiary) public view returns(uint256) {
+    function tokensAvailable(address beneficiary) public view returns (uint256) {
         if (beneficiaries[beneficiary] == address(0)) {
             revert NotFound();
         }
         Allocation storage allocation = allocations[beneficiary];
-        uint256 amount = allocation.tokensAllocated * ((block.timestamp - VESTING_START) / (allocation.vestingDate - VESTING_START));
+        uint256 amount = allocation.tokensAllocated * (block.timestamp - allocation.vestingStart) / (allocation.vestingDate - allocation.vestingStart);
         return amount - allocation.tokensClaimed;
     }
 
@@ -201,6 +198,7 @@ contract Vesting is Ownable {
         /// Create the storage pointer and set details
         Allocation storage allocation = allocations[target];
         allocation.cliff = cliff;
+        allocation.vestingStart = block.timestamp;
         allocation.tokensAllocated += amount;
         allocation.vestingDate = vestingDate;
         allocation.cliff = cliff;
