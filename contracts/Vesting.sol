@@ -173,7 +173,13 @@ contract Vesting is Ownable {
         if (beneficiaries[beneficiary] == address(0)) {
             revert NotFound();
         }
+        /// Point to the Allocation
         Allocation storage allocation = allocations[beneficiary];
+        /// Have all the tokens vested? If so, return the tokens allocated
+        if (allocation.vestingDate <= block.timestamp) {
+            return allocation.tokensAllocated;
+        }
+
         uint256 amount = allocation.tokensAllocated * (block.timestamp - allocation.vestingStart) / (allocation.vestingDate - allocation.vestingStart);
         return amount - allocation.tokensClaimed;
     }

@@ -95,17 +95,23 @@ describe("unit - Vesting", function () {
   });
 
   context("function: tokensAvailable()", () => {
-    it("Should calculate the correct amount of tokens", async function () {
-      time.increase(duration.weeks(10));
+    it("Should calculate the correct amount of tokens for time passed", async function () {
+      /// Let time pass so tokens can accumulate
+      time.increase(duration.years(1)/2);
       let userInfo = await VESTING.allocations(user1.address);
-      let tokensAccumalated = await VESTING.tokensAvailable(user1.address);
-      console.log(tokensAccumalated.toString());
+      console.log(userInfo.vestingDate.toString());
       let currentTime = await time.latest();
       let timeElapsed = currentTime - userInfo.vestingStart;
-      console.log(timeElapsed.toString());
-      let x = userInfo.tokensAllocated * timeElapsed / (userInfo.vestingDate - userInfo.vestingStart);
-      x = Math.trunc(x);
-      expect(await VESTING.tokensAvailable(user1.address)).to.equal(x.toString());
+      let tokensClaimable = userInfo.tokensAllocated * timeElapsed / (userInfo.vestingDate - userInfo.vestingStart);
+      tokensClaimable = Math.trunc(tokensClaimable);
+      expect(await VESTING.tokensAvailable(user1.address)).to.equal(tokensClaimable.toString());
+      /// Let the vesting date pass
+      time.increase(duration.years(1)/2);
+      currentTime = await time.latest();
+      timeElapsed = currentTime - userInfo.vestingStart;
+      tokensClaimable = userInfo.tokensAllocated * timeElapsed / (userInfo.vestingDate - userInfo.vestingStart);
+      tokensClaimable = Math.trunc(tokensClaimable);
+      expect(await VESTING.tokensAvailable(user1.address)).to.equal(tokensClaimable.toString());
     });
   });
 
