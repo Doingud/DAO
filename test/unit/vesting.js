@@ -97,16 +97,15 @@ describe("unit - Vesting", function () {
   context("function: tokensAvailable()", () => {
     it("Should calculate the correct amount of tokens for time passed", async function () {
       /// Let time pass so tokens can accumulate
-      time.increase(duration.years(1)/2);
+      await time.increase(duration.years(1)/2);
       let userInfo = await VESTING.allocations(user1.address);
-      console.log(userInfo.vestingDate.toString());
       let currentTime = await time.latest();
       let timeElapsed = currentTime - userInfo.vestingStart;
       let tokensClaimable = userInfo.tokensAllocated * timeElapsed / (userInfo.vestingDate - userInfo.vestingStart);
       tokensClaimable = Math.trunc(tokensClaimable);
       expect(await VESTING.tokensAvailable(user1.address)).to.equal(tokensClaimable.toString());
       /// Let the vesting date pass
-      time.increase(duration.years(1)/2);
+      await time.increase(duration.years(1)/2);
       currentTime = await time.latest();
       timeElapsed = currentTime - userInfo.vestingStart;
       tokensClaimable = userInfo.tokensAllocated * timeElapsed / (userInfo.vestingDate - userInfo.vestingStart);
