@@ -23,11 +23,12 @@ contract MetaDaoController is AccessControl {
     address[] public guilds;
     //  Array of addresses of Guilds
     mapping(address => uint256) public guildWeight;
+
+    mapping(address => bool) public whitelist;
     //  The total weight of the guilds
     uint256 public guildsTotalWeight;
 
-    // Mapping to keep track of which addresses already voted on a proposal
-    mapping(uint256 => mapping(address => bool)) public voted;
+
 
     /// Time snapshot
     uint256 public claimStart;
@@ -43,8 +44,6 @@ contract MetaDaoController is AccessControl {
     /// Roles
     bytes32 public constant GUILD_ROLE = keccak256("GUILD");
 
-    /// Errors
-    error AlreadyDistributing();
     error InvalidClaim();
 
     constructor(
@@ -63,8 +62,7 @@ contract MetaDaoController is AccessControl {
     /// @notice Updates a guild's weight
     /// @param  newWeight the amount of staked AMORxGuild in this guild
     /// @return bool the guild's balance was updated successfully
-    function updateGuildWeight(uint256 newWeight) external returns (bool) {
-        require(hasRole(GUILD_ROLE, msg.sender), "NOT_GUILD");
+    function updateGuildWeight(uint256 newWeight) external returns onlyRole(GUILD_ROLE) (bool) {
         /// If `distribute` is still in cooldown, or if the guild weight does not change
         if (guildWeight[msg.sender] == newWeight) {
             return false;
@@ -152,25 +150,29 @@ contract MetaDaoController is AccessControl {
         address guildOwner,
         string memory name,
         string memory tokenSymbol
-    ) public {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
+    ) public onlyRole(DEFAULT_ADMIN_ROLE){
         ICloneFactory(guildFactory).deployGuildContracts(guildOwner, name, tokenSymbol);
     }
 
     /// @notice adds guild based on the controller address provided
     /// @dev give guild role in access control to the controller for the guild
     /// @param controller the controller address of the guild
-    function addGuild(address controller) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
+    function addGuild(address controller) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _setupRole(GUILD_ROLE, controller);
         guilds.push(controller);
+    }
+
+    /// @notice adds guild based on the controller address provided
+    /// @dev give guild role in access control to the controller for the guild
+    /// @param controller the controller address of the guild
+    function addWhitelist(address _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        whitelist[_token] = true;
     }
 
     /// @notice removes guild based on id
     /// @param index the index of the guild in guilds[]
     /// @param controller the address of the guild controller to remove
-    function removeGuild(uint256 index, address controller) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "NOT_ADMIN");
+    function removeGuild(uint256 index, address controller) external onlyRole(DEFAULT_ADMIN_ROLE){
         if (guilds[index] == controller) {
             guilds[index] = guilds[guilds.length - 1];
             guilds.pop();
@@ -183,4 +185,11 @@ contract MetaDaoController is AccessControl {
     function getGuild(uint256 index) public view returns (address) {
         return guilds[index];
     }
+
+
+    function isWhiteliseted(address token) public view returns (bool){
+        require(token = address(0), "NOTLISTED);
+        return whitelist[token];
+    }
+
 }
