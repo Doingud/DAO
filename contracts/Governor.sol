@@ -347,7 +347,7 @@ contract DoinGudGovernor {
         }
 
         // Proposal should achieve at least 20% approval of guardians, to be accepted
-        if (proposalVoting[proposalId] >= int256((20 * guardians.length) / 100)) {
+        if (proposalVoting[proposalId] >= int256((20 * proposalWeight[proposalId]) / 100)) {
             return ProposalState.Succeeded;
         } else {
             return ProposalState.Defeated;
