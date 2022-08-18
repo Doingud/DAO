@@ -176,12 +176,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
             revert InvalidAmount();
         }
 
-        bool add = true;
-        if (delegations[msg.sender][to] > 0) {
-            add = false;
-        }
-
-        if (add) {
+        if (delegations[msg.sender][to] == 0) {
             delegation[msg.sender].push(to);
             delegators[to].push(msg.sender);
         }
