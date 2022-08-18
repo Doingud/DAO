@@ -52,16 +52,17 @@ contract Vesting is Ownable {
     }
 
     uint256 public tokensAllocated;
+    uint256 public tokensWithdrawn;
     address public constant SENTINAL = address(0x1);
     address public sentinalOwner;
-    
+
     /// Address mapping to keep track of the sentinal owner
     /// Initialized as `SENTINAL`, updated in `allocateVestedTokens`
     /// Linked list of all the beneficiaries
     mapping(address => address) public beneficiaries;
     /// Mapping of beneficiary address to Allocation
     mapping(address => Allocation) public allocations;
-    
+
     /// Tokens
     IERC20 public amorToken;
 
@@ -79,7 +80,7 @@ contract Vesting is Ownable {
     /// The tokens haven't vested with the beneficiary yet (cliff not yet reached)
     error NotVested();
 
-    constructor(address metaDao, address amor, address dAmor) {
+    constructor(address metaDao, address amor) {
         transferOwnership(metaDao);
         amorToken = IERC20(amor);
         sentinalOwner = address(0);
@@ -91,7 +92,7 @@ contract Vesting is Ownable {
     /// @param  amount of AMOR to be transferred to this contract
     function vestAmor(uint256 amount) external {
         if (amorToken.transferFrom(msg.sender, address(this), amount) == false) {
-        revert TransferUnsuccessful();
+            revert TransferUnsuccessful();
         }
     }
 
@@ -107,9 +108,10 @@ contract Vesting is Ownable {
         if (allocation.cliff > block.timestamp) {
             revert NotVested();
         }
-        
+
         /// Update internal balances
         allocation.tokensClaimed += amount;
+        tokensWithdrawn += amount;
         /// Transfer the AMOR to the caller
         if (!amorToken.transfer(msg.sender, amount)) {
             revert TransferUnsuccessful();
@@ -119,7 +121,8 @@ contract Vesting is Ownable {
     /// @notice Returns the amount of vested tokens allocated to the target
     /// @param  target the address of the beneficiary
     /// @return the amount of dAMOR allocated to the target address
-    function balanceOf(address target) external view returns(uint256) {
+    function balanceOf(address target) external view returns (uint256) {
+        /// The voting weight of the beneficiaries can be set here
         return allocations[target].tokensAllocated;
     }
 
@@ -180,7 +183,8 @@ contract Vesting is Ownable {
             return allocation.tokensAllocated - allocation.tokensClaimed;
         }
 
-        uint256 amount = allocation.tokensAllocated * (block.timestamp - allocation.vestingStart) / (allocation.vestingDate - allocation.vestingStart);
+        uint256 amount = (allocation.tokensAllocated * (block.timestamp - allocation.vestingStart)) /
+            (allocation.vestingDate - allocation.vestingStart);
         return amount - allocation.tokensClaimed;
     }
 
@@ -213,6 +217,6 @@ contract Vesting is Ownable {
     /// @notice Calculated the amount of AMOR that hasn't been allocated yet
     /// @return unallocatedAmor the amount of AMOR that has been vested but not allocated yet
     function unallocatedAMOR() public view returns (uint256) {
-        return amorToken.balanceOf(address(this)) - tokensAllocated;
+        return amorToken.balanceOf(address(this)) + tokensWithdrawn - tokensAllocated;
     }
 }

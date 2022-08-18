@@ -34,6 +34,7 @@ describe("unit - Vesting", function () {
     root = setup.roles.root;
     multisig = setup.roles.doingud_multisig;
     user1 = setup.roles.user1;
+    user2 = setup.roles.user2;
 
     VESTING = await init.vestingContract(setup);
 
@@ -65,9 +66,7 @@ describe("unit - Vesting", function () {
   context("function: allocateVestedTokens()", () => {
     it("Should allocate vested tokens to a beneficiary", async function () {
       VESTING_TIME = await time.latest();
-      console.log("Time before adding 2 years: "+ VESTING_TIME);
       VESTING_TIME = parseInt(time.duration.years(2)) + parseInt(VESTING_TIME);
-      console.log("Vesting date: " + VESTING_TIME);
       await VESTING.allocateVestedTokens(user1.address, AMORDeducted, 0, VESTING_TIME);
       expect(await VESTING.balanceOf(user1.address)).to.equal(AMORDeducted);
       expect(await VESTING.unallocatedAMOR()).to.equal(0);
@@ -115,6 +114,28 @@ describe("unit - Vesting", function () {
       await VESTING.connect(user1).withdrawAmor(ONE_HUNDRED_ETHER);
       expect(await VESTING.tokensAvailable(user1.address)).to.equal((userBalance-ONE_HUNDRED_ETHER).toString())
     });
+
+    it("Should revert if tokensAvailable exceeded", async function () {
+      await expect(VESTING.connect(user1).withdrawAmor(ONE_HUNDRED_ETHER)).
+        to.be.revertedWith("InsufficientFunds()")
+    });
+
+    it("Should revert if no token allocation", async function () {
+      await expect(VESTING.withdrawAmor(ONE_HUNDRED_ETHER)).
+        to.be.revertedWith("NotFound()");
+    });
   });
+
+  context("function: balanceOf()", () => {
+    it("Should return the correct balance", async function () {
+      let currentTime = await time.latest();
+      let cliff = parseInt(currentTime) + parseInt(time.duration.weeks(10));
+      let vestingEnd = parseInt(time.duration.weeks(11));
+      await AMOR_TOKEN.approve(VESTING.address, ONE_HUNDRED_ETHER);
+      await VESTING.vestAmor(ONE_HUNDRED_ETHER);
+      await VESTING.allocateVestedTokens(user2.address, FIFTY_ETHER, cliff, vestingEnd);
+      expect(await VESTING.balanceOf(user2.address)).to.be.equal((FIFTY_ETHER).toString());
+    })
+  })
 
 });
