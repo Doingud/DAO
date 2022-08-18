@@ -106,57 +106,8 @@ const controller = async (setup) => {
   return controller;
 };
 
-const getGuildFactory = async (setup) => {
-  const cloneFactory = await ethers.getContractFactory("GuildFactory");
-
-  await setup.tokens.AmorTokenImplementation.init(
-    AMOR_TOKEN_NAME, 
-    AMOR_TOKEN_SYMBOL, 
-    setup.roles.authorizer_adaptor.address, //taxController
-    TAX_RATE,
-    setup.roles.root.address // multisig
-  );
-
-  const controllerFactory = await ethers.getContractFactory("GuildController");
-  const controller = await controllerFactory.deploy();
-
-  const guildFactory = await cloneFactory.deploy(
-    setup.tokens.AmorTokenImplementation.address,
-    setup.tokens.AmorGuildToken.address,
-    setup.tokens.FXAMORxGuild.address,
-    setup.tokens.dAMORxGuild.address,
-    setup.tokens.AmorTokenProxy.address,
-    controller.address
-  );
-
-  const factory = {
-    controller,
-    guildFactory
-  }
-
-  setup.factory = factory;
-
-  return factory;
-}
-
-const metadao = async(setup) =>{
-  const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController');
-  const metadao = await MetaDaoFactory.deploy(
-    setup.tokens.AmorTokenImplementation.address,
-    setup.tokens.ERC20Token.address,
-    setup.factory.guildFactory.address,
-    setup.roles.root.address
-  );
-
-  setup.metadao = metadao;
-
-  return metadao;
-}
-
 module.exports = {
-  controller,
-  getGuildFactory,
-  getTokens,
   initialize,
-  metadao
+  getTokens,
+  controller,
 }; 
