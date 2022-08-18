@@ -155,7 +155,13 @@ describe('unit - Contract: dAMORxGuild Token', function () {
         });
 
         it('delegate dAMORxGuild tokens', async function () {
+            expect((await dAMORxGuild.delegations(staker.address, operator.address)).toString()).to.equal("0");
+            expect((await dAMORxGuild.amountDelegated(staker.address)).toString()).to.equal("0");
+            await expect(dAMORxGuild.delegators(operator.address, 0)).to.be.reverted; 
+            await expect(dAMORxGuild.delegation(staker.address, 0)).to.be.reverted; 
+
             await dAMORxGuild.connect(staker).delegate(operator.address, realAmount);
+            
             expect((await dAMORxGuild.amountDelegated(staker.address)).toString()).to.equal(realAmount.toString());
             expect(await dAMORxGuild.delegation(staker.address, 0)).to.equal(operator.address);
             expect(await dAMORxGuild.delegators(operator.address, 0)).to.equal(staker.address);
