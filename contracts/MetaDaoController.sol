@@ -186,7 +186,6 @@ contract MetaDaoController is AccessControl {
         return guilds[index];
     }
 
-
     function isWhiteliseted(address token) public view returns (bool){
         require(token = address(0), "NOTLISTED);
         return whitelist[token];
