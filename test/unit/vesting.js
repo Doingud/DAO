@@ -10,21 +10,12 @@ const { ONE_ADDRESS,
         TAX_RATE
       } = require('../helpers/constants.js');
 const init = require('../test-init.js');
-const { duration } = require("@openzeppelin/test-helpers/src/time.js");
 
 use(solidity);
 
   let AMOR_TOKEN;
-  let AMOR_GUILD_TOKEN;
-  let CLONE_FACTORY;
-  let FX_AMOR_TOKEN;
-  let DAMOR_GUILD_TOKEN;
-  let GUILD_ONE_AMORXGUILD;
-  let GUILD_ONE_DAMORXGUILD;
-  let GUILD_ONE_FXAMORXGUILD;
   let VESTING;
   let VESTING_TIME;
-
   let AMORDeducted;
 
 describe("unit - Vesting", function () {
