@@ -1,26 +1,47 @@
 // SPDX-License-Identifier: MIT
 
-/// @title  DoinGud MetaDAO Token Logic
-/// @author Daoism Systems
-/// @notice ERC20 implementation for DoinGudDAO
-/// @custom security-contact contact@daoism.systems
+pragma solidity 0.8.15;
 
 /**
- *  @dev Implementation of the AMOR token Logic for DoinGud MetaDAO
+ * @title  DoinGud: AMORToken.sol
+ * @author Daoism Systems
+ * @notice ERC20 implementation for DoinGudDAO
+ * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
+ * @dev Implementation of the AMOR Token Logic for DoinGud MetaDAO
  *
- *  The Token Logic contract is referenced by the proxy (storage) implementation.
+ * This token implementation contract is referenced by a proxy contract.
  *
- *  This contract must not store data!
+ * It is crucial that control over proxy features which upgrade or change the
+ * implementation contract is transparent and secure.
  *
- *  The contract extends the ERC20Taxable contract and exposes the setTaxCollector() and
- *  setTaxRate() functions from the ERC20Taxable contract and allows for custom
- *  require() statements within these functions.
+ * The contract is an extension of ERC20Base, which is an initializable
+ * ERC20 Token contract, itself derived from the IERC20.sol implementation
+ * from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol).
+ * Please see ERC20Base.sol for licensing and copyright info.
  *
- *  The setTaxCollector() and setTaxRate() functions should be set on deploy and are
- *  not immutable.
+ * MIT License
+ * ===========
+ *
+ * Copyright (c) 2022 DoinGud
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *
  */
-
-pragma solidity 0.8.15;
 
 import "./utils/ERC20Base.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
@@ -44,9 +65,13 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
 
     bool private _initialized;
 
-    /*  @dev    The init() function takes the place of the constructor.
-     *          It can only be run once.
-     */
+    /// @notice Initializes the token
+    /// @dev    Must call `_setTokenDetail` to set `name` and `symol`
+    /// @param  _name the token name
+    /// @param  _symbol the token symbol
+    /// @param  _initCollector the tax/fee collector (DoinGud MetaDAO)
+    /// @param  _multisig the multisig address of the MetaDAO, which owns the token
+    /// @return bool value, true if successful
     function init(
         string memory _name,
         string memory _symbol,
@@ -60,8 +85,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         //  Set the owner to the Multisig
         _transferOwnership(_multisig);
         //  Set the name and symbol
-        name = _name;
-        symbol = _symbol;
+        _setTokenDetail(_name, _symbol);
         decimals = 18;
         //  Pre-mint to the multisig address
         _mint(_multisig, 10000000 * 10**decimals);
@@ -149,6 +173,8 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
 
     /// @notice Pause functionality for AMOR
     /// @dev    For security purposes, should there be an exploit.
+    ///         The owner should be a multisig and have strong security practices
+    //          Actions invoking `pause` and `unpause` must be transparent to the community
     function pause() external onlyOwner {
         _pause();
     }
