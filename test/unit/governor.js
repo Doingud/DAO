@@ -54,6 +54,9 @@ describe('unit - Contract: Governor', function () {
             expect(await governor.snapshotAddress()).to.equals(authorizer_adaptor.address);
             expect(await governor.avatarAddress()).to.equals(avatar.address);
             expect(await governor.guardians(0)).to.equals(root.address);
+            expect((await governor.votingDelay())).to.equals(1);
+            let weeks = 60 * 60 * 24 * 7 * 2;
+            expect(await governor.votingPeriod()).to.equals(weeks);
         });
 
         it("Should fail if called more than once", async function () {
@@ -61,7 +64,7 @@ describe('unit - Contract: Governor', function () {
                 AMORxGuild.address, //AMORxGuild
                 authorizer_adaptor.address, // Snapshot Address
                 authorizer_adaptor.address // Avatar Address
-            )).to.be.revertedWith("Already initialized");
+            )).to.be.revertedWith("AlreadyInitialized()");
         });
     });
 
@@ -250,12 +253,6 @@ describe('unit - Contract: Governor', function () {
             );
         });
 
-        it('it fails to execute if proposal not successful', async function () {
-            await expect(governor.connect(root).execute(secondProposalId, targets, values, newcalldatas, descriptionHash)).to.be.revertedWith(
-                'InvalidState()'
-            );
-        });
-
         it('it executes proposal', async function () {
             // mine 64000 blocks
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
@@ -264,6 +261,12 @@ describe('unit - Contract: Governor', function () {
             expect(await avatar.check()).to.equals(0);
             await governor.connect(authorizer_adaptor).execute(firstProposalId, targets, values, calldatas, descriptionHash);
             expect(await avatar.check()).to.equals(1);
+        });
+
+        it('it fails to execute if proposal not successful', async function () {
+            await expect(governor.connect(root).execute(secondProposalId, targets, values, newcalldatas, descriptionHash)).to.be.revertedWith(
+                'InvalidState()'
+            );
         });
 
         it('it fails to castVote if vote not currently active', async function () {

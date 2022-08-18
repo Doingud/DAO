@@ -76,6 +76,7 @@ contract DoinGudGovernor {
     uint256 private _votingDelay;
     uint256 private _votingPeriod;
 
+    error AlreadyInitialized();
     error NotEnoughGuardians();
     error Unauthorized();
     error InvalidParameters();
@@ -101,7 +102,9 @@ contract DoinGudGovernor {
         address snapshotAddress_,
         address avatarAddress_
     ) external returns (bool) {
-        require(!_initialized, "Already initialized");
+        if (_initialized) {
+            revert AlreadyInitialized();
+        }
 
         AMORxGuild = IERC20(AMORxGuild_);
 
@@ -231,8 +234,8 @@ contract DoinGudGovernor {
             revert InvalidState();
         }
 
-        uint256 snapshot = block.timestamp + votingDelay();
-        uint256 deadline = snapshot + votingPeriod();
+        uint256 snapshot = block.timestamp + _votingDelay;
+        uint256 deadline = snapshot + _votingPeriod;
 
         proposal.voteStart = snapshot;
         proposal.voteEnd = deadline;
@@ -347,18 +350,18 @@ contract DoinGudGovernor {
         }
 
         // Proposal should achieve at least 20% approval of guardians, to be accepted
-        if (proposalVoting[proposalId] >= int256((20 * proposalWeight[proposalId]) / 100)) {
+        if (int256(proposalVoting[proposalId] * 100) / proposalWeight[proposalId] >= 20) {
             return ProposalState.Succeeded;
         } else {
             return ProposalState.Defeated;
         }
     }
 
-    function votingDelay() public view returns (uint256) {
+    function votingDelay() external view returns (uint256) {
         return _votingDelay;
     }
 
-    function votingPeriod() public view returns (uint256) {
+    function votingPeriod() external view returns (uint256) {
         return _votingPeriod;
     }
 
