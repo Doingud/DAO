@@ -4,10 +4,10 @@ const { use, expect } = require("chai");
 const { solidity } = require("ethereum-waffle");
 const { ONE_ADDRESS,
         ZERO_ADDRESS,
+        FIFTY_ETHER,
         ONE_HUNDRED_ETHER,
         BASIS_POINTS,
-        TAX_RATE,
-        SECONDS_IN_DAY
+        TAX_RATE
       } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 const { duration } = require("@openzeppelin/test-helpers/src/time.js");
@@ -65,7 +65,7 @@ describe("unit - Vesting", function () {
   context("function: vestAMOR()", () => {
     it("Should lock AMOR in the contract", async function () {
       await AMOR_TOKEN.approve(VESTING.address, ONE_HUNDRED_ETHER);
-      await VESTING.vestAMOR(ONE_HUNDRED_ETHER);
+      await VESTING.vestAmor(ONE_HUNDRED_ETHER);
 
       expect(await VESTING.unallocatedAMOR()).to.equal(AMORDeducted);
     });
@@ -73,7 +73,10 @@ describe("unit - Vesting", function () {
 
   context("function: allocateVestedTokens()", () => {
     it("Should allocate vested tokens to a beneficiary", async function () {
-      VESTING_TIME = await time.latest() + time.duration.years(1);
+      VESTING_TIME = await time.latest();
+      console.log("Time before adding 2 years: "+ VESTING_TIME);
+      VESTING_TIME = parseInt(time.duration.years(2)) + parseInt(VESTING_TIME);
+      console.log("Vesting date: " + VESTING_TIME);
       await VESTING.allocateVestedTokens(user1.address, AMORDeducted, 0, VESTING_TIME);
       expect(await VESTING.balanceOf(user1.address)).to.equal(AMORDeducted);
       expect(await VESTING.unallocatedAMOR()).to.equal(0);
@@ -88,29 +91,38 @@ describe("unit - Vesting", function () {
   context("function: modifyAllocation()", () => {
     it("Should allow the MetaDAO to change allocation details", async function () {
       await AMOR_TOKEN.approve(VESTING.address, ONE_HUNDRED_ETHER);
-      await VESTING.vestAMOR(ONE_HUNDRED_ETHER);
+      await VESTING.vestAmor(ONE_HUNDRED_ETHER);
       await VESTING.modifyAllocation(user1.address, AMORDeducted, 0, VESTING_TIME);
       expect(await VESTING.balanceOf(user1.address)).to.equal(ethers.BigNumber.from((AMORDeducted*2).toString()));
+      let userBalance = await VESTING.allocations(user1.address);
+      expect(userBalance.tokensAllocated).to.equal((AMORDeducted*2).toString());
     });
   });
 
   context("function: tokensAvailable()", () => {
     it("Should calculate the correct amount of tokens for time passed", async function () {
-      /// Let time pass so tokens can accumulate
-      await time.increase(duration.years(1)/2);
       let userInfo = await VESTING.allocations(user1.address);
       let currentTime = await time.latest();
-      let timeElapsed = currentTime - userInfo.vestingStart;
-      let tokensClaimable = userInfo.tokensAllocated * timeElapsed / (userInfo.vestingDate - userInfo.vestingStart);
-      tokensClaimable = Math.trunc(tokensClaimable);
-      expect(await VESTING.tokensAvailable(user1.address)).to.equal(tokensClaimable.toString());
-      /// Let the vesting date pass
-      await time.increase(duration.years(1)/2);
+      let timeElapsed;
+      let tokensClaimable;
+      await time.increaseTo(VESTING_TIME);
       currentTime = await time.latest();
-      timeElapsed = currentTime - userInfo.vestingStart;
+      timeElapsed = VESTING_TIME - userInfo.vestingStart;
       tokensClaimable = userInfo.tokensAllocated * timeElapsed / (userInfo.vestingDate - userInfo.vestingStart);
       tokensClaimable = Math.trunc(tokensClaimable);
       expect(await VESTING.tokensAvailable(user1.address)).to.equal(tokensClaimable.toString());
+    });
+  });
+
+  context("function: withdrawAMOR()", () => {
+    it("Should allow a user to withdraw an amount of AMOR", async function () {
+      let userBalance = await VESTING.tokensAvailable(user1.address);
+      await VESTING.connect(user1).withdrawAmor(FIFTY_ETHER);
+      expect(await VESTING.tokensAvailable(user1.address)).to.equal((userBalance-FIFTY_ETHER).toString());
+      
+      userBalance = await VESTING.tokensAvailable(user1.address);
+      await VESTING.connect(user1).withdrawAmor(ONE_HUNDRED_ETHER);
+      expect(await VESTING.tokensAvailable(user1.address)).to.equal((userBalance-ONE_HUNDRED_ETHER).toString())
     });
   });
 

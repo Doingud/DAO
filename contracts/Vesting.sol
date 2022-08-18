@@ -89,7 +89,7 @@ contract Vesting is Ownable {
     /// @notice Receives AMOR and stakes it in the dAMOR contract
     /// @dev    Requires approval of AMOR amount prior to calling
     /// @param  amount of AMOR to be transferred to this contract
-    function vestAMOR(uint256 amount) external {
+    function vestAmor(uint256 amount) external {
         if (amorToken.transferFrom(msg.sender, address(this), amount) == false) {
         revert TransferUnsuccessful();
         }
@@ -109,9 +109,9 @@ contract Vesting is Ownable {
         }
         
         /// Update internal balances
-        allocation.tokensClaimed -= amount;
+        allocation.tokensClaimed += amount;
         /// Transfer the AMOR to the caller
-        if (!amorToken.transfer(msg.sender, tokensAvailable(msg.sender))) {
+        if (!amorToken.transfer(msg.sender, amount)) {
             revert TransferUnsuccessful();
         }
     }
@@ -177,7 +177,7 @@ contract Vesting is Ownable {
         Allocation storage allocation = allocations[beneficiary];
         /// Have all the tokens vested? If so, return the tokens allocated
         if (allocation.vestingDate <= block.timestamp) {
-            return allocation.tokensAllocated;
+            return allocation.tokensAllocated - allocation.tokensClaimed;
         }
 
         uint256 amount = allocation.tokensAllocated * (block.timestamp - allocation.vestingStart) / (allocation.vestingDate - allocation.vestingStart);
