@@ -65,8 +65,9 @@ contract DoinGudGovernor {
         address[] targets,
         uint256[] values,
         bytes[] calldatas,
-        uint256 snapshot,
-        uint256 deadline
+        uint256 startBlock,
+        uint256 endBlock,
+        string description
     );
 
     string public _name;
@@ -249,7 +250,8 @@ contract DoinGudGovernor {
             values,
             calldatas,
             snapshot,
-            deadline
+            deadline,
+            description
         );
 
         return proposalId;
