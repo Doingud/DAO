@@ -1,6 +1,9 @@
+const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const init = require('../test-init.js');
+
+const twoWeeks = time.duration.days(14);
 
 // let AMOR; // need for AMORxGuild
 let AMORxGuild; // need for testing propose() function
@@ -20,6 +23,7 @@ let calldatas;
 let description;
 let descriptionHash;
 let firstProposalId;
+let secondProposalId;
 
 describe('unit - Contract: Governor', function () {
 
@@ -148,13 +152,9 @@ describe('unit - Contract: Governor', function () {
         
         it('it proposes', async function () {
             await expect(governor.proposals(0)).to.be.reverted;
-
             await governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description);
             
             await expect(governor.proposals(1)).to.be.reverted;
-            // let size = await governor.proposals();
-            // expect(size.size()).to.equals(1);
-
             firstProposalId = await governor.proposals(0);
             await governor.connect(authorizer_adaptor).state(firstProposalId);
             expect((await governor.proposalVoting(firstProposalId)).toString()).to.equals("0");
@@ -167,23 +167,24 @@ describe('unit - Contract: Governor', function () {
             newcalldatas = [newMessageHash];
 
             await governor.connect(authorizer_adaptor).propose(targets, values, newcalldatas, description);
+            secondProposalId = await governor.proposals(1);
         });
 
         it('it fails to propose if proposal already exists', async function () {
             await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description)).to.be.revertedWith(
-                'Governor: proposal already exists'
+                'InvalidState()'
             );
         });
 
         it('it fails to propose if proposal function information arity mismatch', async function () {
             await expect(governor.connect(authorizer_adaptor).propose(targets, [1, 2, 3], calldatas, description)).to.be.revertedWith(
-                'Governor: proposal function information arity mismatch'
+                'InvalidParameters()'
             );
         });
 
         it('it fails to propose if empty proposal', async function () {
             await expect(governor.connect(authorizer_adaptor).propose([], [], [], "")).to.be.revertedWith(
-                'Governor: empty proposal'
+                'InvalidParameters()'
             );
         });
 
@@ -206,7 +207,7 @@ describe('unit - Contract: Governor', function () {
                 messageHash, messageHash
             ];
             await expect(governor.connect(authorizer_adaptor).propose(tooManyTargets, tooManyValues, tooManyCalldatas, description)).to.be.revertedWith(
-                'Governor: too many actions'
+                'InvalidParameters()'
             );
         });
     });
@@ -230,6 +231,8 @@ describe('unit - Contract: Governor', function () {
             await governor.connect(root).castVote(firstProposalId, true);
             await governor.connect(user).castVote(firstProposalId, true);
             await governor.connect(user2).castVote(firstProposalId, false);
+
+            await governor.connect(user2).castVote(secondProposalId, false);
         });
 
         it('it fails to castVote if already voted', async function () {
@@ -243,13 +246,20 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to execute if invalid parametres', async function () {
             await expect(governor.connect(root).execute(11, targets, values, calldatas, descriptionHash)).to.be.revertedWith(
-                'Governor: invalid parametres'
+                'InvalidParameters()'
+            );
+        });
+
+        it('it fails to execute if proposal not successful', async function () {
+            await expect(governor.connect(root).execute(secondProposalId, targets, values, newcalldatas, descriptionHash)).to.be.revertedWith(
+                'InvalidState()'
             );
         });
 
         it('it executes proposal', async function () {
             // mine 64000 blocks
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(twoWeeks);
 
             expect(await avatar.check()).to.equals(0);
             await governor.connect(authorizer_adaptor).execute(firstProposalId, targets, values, calldatas, descriptionHash);
@@ -257,11 +267,8 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it fails to castVote if vote not currently active', async function () {
-            // mine 64000 blocks
-            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
-
             await expect(governor.connect(root).castVote(firstProposalId, 1)).to.be.revertedWith(
-                'Governor: vote not currently active'
+                'InvalidState()'
             );
         });
     });

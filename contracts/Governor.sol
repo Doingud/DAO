@@ -79,6 +79,7 @@ contract DoinGudGovernor {
     error Unauthorized();
     error InvalidParameters();
     error InvalidAmount();
+    error InvalidState();
     error ProposalNotExists();
     error VotingTimeExpired();
     error AlreadyVoted();
@@ -108,8 +109,8 @@ contract DoinGudGovernor {
 
         _initialized = true;
 
-        _votingDelay = 1; // 1 block ~= 10 sec
-        _votingPeriod = 64000; // 64000 blocks
+        _votingDelay = 1;
+        _votingPeriod = 2 weeks;
 
         emit Initialized(_initialized, avatarAddress_, snapshotAddress_);
         return true;
@@ -209,19 +210,25 @@ contract DoinGudGovernor {
         bytes[] memory calldatas,
         string memory description
     ) external onlySnapshot returns (uint256) {
-        require(
-            targets.length == values.length && targets.length == calldatas.length,
-            "Governor: proposal function information arity mismatch"
-        );
-        require(targets.length > 0, "Governor: empty proposal");
-        require(targets.length <= proposalMaxOperations, "Governor: too many actions");
+        if (!(targets.length == values.length && targets.length == calldatas.length)) {
+            revert InvalidParameters();
+        }
 
+        if (targets.length == 0) {
+            revert InvalidParameters();
+        }
+
+        if (targets.length > proposalMaxOperations) {
+            revert InvalidParameters();
+        }
         // Submit proposals uniquely identified by a proposalId and an array of txHashes, to create a Reality.eth question that validates the execution of the connected transactions
         bytes32 descriptionHash = keccak256(bytes(description));
         uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
 
         ProposalCore storage proposal = _proposals[proposalId];
-        require(proposal.voteStart == 0, "Governor: proposal already exists");
+        if (proposal.voteStart != 0) {
+            revert InvalidState();
+        }
 
         uint256 snapshot = block.timestamp + votingDelay();
         uint256 deadline = snapshot + votingPeriod();
@@ -255,7 +262,9 @@ contract DoinGudGovernor {
     /// @param support Boolean value: true (for) or false (against) user is voting
     function castVote(uint256 proposalId, bool support) external onlyGuardian {
         ProposalCore storage proposal = _proposals[proposalId];
-        require(state(proposalId) == ProposalState.Active, "Governor: vote not currently active");
+        if (state(proposalId) != ProposalState.Active) {
+            revert InvalidState();
+        }
 
         if (AMORxGuild.balanceOf(msg.sender) > 0) {
             revert InvalidAmount();
@@ -290,10 +299,14 @@ contract DoinGudGovernor {
         bytes32 descriptionHash
     ) external returns (uint256) {
         uint256 checkProposalId = hashProposal(targets, values, calldatas, descriptionHash);
-        require(proposalId == checkProposalId, "Governor: invalid parametres");
+        if (proposalId != checkProposalId) {
+            revert InvalidParameters();
+        }
 
         ProposalState status = state(proposalId);
-        require(status == ProposalState.Succeeded, "Governor: proposal not successful");
+        if (status != ProposalState.Succeeded) {
+            revert InvalidState();
+        }
 
         IAvatar(avatarAddress).executeProposal(targets, values, calldatas);
 
@@ -301,14 +314,6 @@ contract DoinGudGovernor {
         emit ProposalExecuted(proposalId);
 
         return proposalId;
-    }
-
-    function proposalSnapshot(uint256 proposalId) public view returns (uint256) {
-        return _proposals[proposalId].voteStart;
-    }
-
-    function proposalDeadline(uint256 proposalId) public view returns (uint256) {
-        return _proposals[proposalId].voteEnd;
     }
 
     /// @notice function allows anyone to check state of the proposal
