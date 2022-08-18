@@ -127,7 +127,7 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to propose if not the avatar', async function () {
             targets = [authorizer_adaptor.address];
-            values = [20, 34, 923];
+            values = [20];
             // building hash has to come from system address
             // 32 bytes of data
             let messageHash = ethers.utils.solidityKeccak256(
@@ -147,8 +147,14 @@ describe('unit - Contract: Governor', function () {
         });
         
         it('it proposes', async function () {
+            await expect(governor.proposals(0)).to.be.reverted;
+
             await governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description);
-            expect(await governor.proposalCount()).to.equals(1);
+            
+            await expect(governor.proposals(1)).to.be.reverted;
+            // let size = await governor.proposals();
+            // expect(size.size()).to.equals(1);
+
             firstProposalId = await governor.proposals(0);
             await governor.connect(authorizer_adaptor).state(firstProposalId);
             expect((await governor.proposalVoting(firstProposalId)).toString()).to.equals("0");
@@ -169,6 +175,12 @@ describe('unit - Contract: Governor', function () {
             );
         });
 
+        it('it fails to propose if proposal function information arity mismatch', async function () {
+            await expect(governor.connect(authorizer_adaptor).propose(targets, [1, 2, 3], calldatas, description)).to.be.revertedWith(
+                'Governor: proposal function information arity mismatch'
+            );
+        });
+
         it('it fails to propose if empty proposal', async function () {
             await expect(governor.connect(authorizer_adaptor).propose([], [], [], "")).to.be.revertedWith(
                 'Governor: empty proposal'
@@ -182,7 +194,18 @@ describe('unit - Contract: Governor', function () {
                 root.address, root.address, root.address,
                 root.address, root.address
             ];
-            await expect(governor.connect(authorizer_adaptor).propose(tooManyTargets, values, calldatas, description)).to.be.revertedWith(
+            let tooManyValues = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+            let messageHash = ethers.utils.solidityKeccak256(
+                ["address"],
+                [authorizer_adaptor.address]
+            );
+            let tooManyCalldatas = [
+                messageHash, messageHash, messageHash,
+                messageHash, messageHash, messageHash,
+                messageHash, messageHash, messageHash,
+                messageHash, messageHash
+            ];
+            await expect(governor.connect(authorizer_adaptor).propose(tooManyTargets, tooManyValues, tooManyCalldatas, description)).to.be.revertedWith(
                 'Governor: too many actions'
             );
         });

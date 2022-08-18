@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @dev    IGovernor IERC165 Pattern
 /// @notice Governor contract will allow to add and vote for the proposals
 
-contract GoinGudGovernor {
+contract DoinGudGovernor {
     using SafeCast for uint256;
 
     enum ProposalState {
@@ -31,11 +31,9 @@ contract GoinGudGovernor {
         bool executed;
         bool canceled;
     }
+
     event ProposalCanceled(uint256 proposalId);
     event ProposalExecuted(uint256 proposalId);
-
-    // address on Rinkeby
-    address public constant GNOSIS_REALITY_MODULE = 0xaFdB15b694Df594787E895692C54F2175C095aB4;
 
     uint256 public proposalMaxOperations = 10;
     mapping(uint256 => ProposalCore) private _proposals;
@@ -76,7 +74,6 @@ contract GoinGudGovernor {
 
     uint256 private _votingDelay;
     uint256 private _votingPeriod;
-    uint256 public proposalCount;
 
     error NotEnoughGuardians();
     error Unauthorized();
@@ -113,7 +110,6 @@ contract GoinGudGovernor {
 
         _votingDelay = 1; // 1 block ~= 10 sec
         _votingPeriod = 64000; // 64000 blocks
-        proposalCount = 0;
 
         emit Initialized(_initialized, avatarAddress_, snapshotAddress_);
         return true;
@@ -169,7 +165,7 @@ contract GoinGudGovernor {
 
     /// @notice this function adds new guardian to the system
     /// @param guardian New guardian to be added
-    function addGuardian(address guardian) public onlySnapshot {
+    function addGuardian(address guardian) external onlySnapshot {
         // check that guardian won't be added twice
         for (uint256 i = 0; i < guardians.length; i++) {
             if (guardian == guardians[i]) {
@@ -181,7 +177,7 @@ contract GoinGudGovernor {
 
     /// @notice this function removes choosed guardian from the system
     /// @param guardian Guardian to be removed
-    function removeGuardian(address guardian) public onlySnapshot {
+    function removeGuardian(address guardian) external onlySnapshot {
         for (uint256 i = 0; i < guardians.length; i++) {
             if (guardians[i] == guardian) {
                 guardians[i] = guardians[guardians.length - 1];
@@ -207,16 +203,16 @@ contract GoinGudGovernor {
     /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote.
     /// Only Avatar(as a result of the Snapshot) contract can add a proposal for voting.
     /// Proposal execution will happen throught the Avatar contract
-    /// @param targets Target addresses for proposal calls
-    /// @param values AMORxGuild values for proposal calls
-    /// @param calldatas Calldatas for proposal calls
-    /// @param description String description of the proposal
     function propose(
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory description
-    ) public virtual onlySnapshot returns (uint256) {
+    ) external onlySnapshot returns (uint256) {
+        require(
+            targets.length == values.length && targets.length == calldatas.length,
+            "Governor: proposal function information arity mismatch"
+        );
         require(targets.length > 0, "Governor: empty proposal");
         require(targets.length <= proposalMaxOperations, "Governor: too many actions");
 
@@ -238,7 +234,6 @@ contract GoinGudGovernor {
 
         _proposals[proposalId] = proposal;
         proposals.push(proposalId);
-        proposalCount++;
 
         emit ProposalCreated(
             proposalId,
@@ -297,22 +292,28 @@ contract GoinGudGovernor {
         uint256 checkProposalId = hashProposal(targets, values, calldatas, descriptionHash);
         require(proposalId == checkProposalId, "Governor: invalid parametres");
 
+        ProposalState status = state(proposalId);
+        require(status == ProposalState.Succeeded, "Governor: proposal not successful");
+
         IAvatar(avatarAddress).executeProposal(targets, values, calldatas);
+
+        _proposals[proposalId].executed = true;
+        emit ProposalExecuted(proposalId);
 
         return proposalId;
     }
 
-    function proposalSnapshot(uint256 proposalId) public view virtual returns (uint256) {
+    function proposalSnapshot(uint256 proposalId) public view returns (uint256) {
         return _proposals[proposalId].voteStart;
     }
 
-    function proposalDeadline(uint256 proposalId) public view virtual returns (uint256) {
+    function proposalDeadline(uint256 proposalId) public view returns (uint256) {
         return _proposals[proposalId].voteEnd;
     }
 
     /// @notice function allows anyone to check state of the proposal
     /// @param proposalId id of the proposal
-    function state(uint256 proposalId) public view virtual returns (ProposalState) {
+    function state(uint256 proposalId) public view returns (ProposalState) {
         ProposalCore storage proposal = _proposals[proposalId];
 
         if (proposal.executed) {
@@ -322,7 +323,7 @@ contract GoinGudGovernor {
         if (proposal.canceled) {
             return ProposalState.Canceled;
         }
-        uint256 snapshot = proposalSnapshot(proposalId);
+        uint256 snapshot = _proposals[proposalId].voteStart;
 
         if (snapshot == 0) {
             revert("Governor: unknown proposal id");
@@ -332,7 +333,7 @@ contract GoinGudGovernor {
             return ProposalState.Pending;
         }
 
-        uint256 deadline = proposalDeadline(proposalId);
+        uint256 deadline = _proposals[proposalId].voteEnd;
 
         if (deadline >= block.timestamp) {
             return ProposalState.Active;
@@ -343,13 +344,6 @@ contract GoinGudGovernor {
             return ProposalState.Succeeded;
         } else {
             return ProposalState.Defeated;
-        }
-    }
-
-    function _execute(address[] memory targets) internal virtual {
-        for (uint256 i = 0; i < targets.length; ++i) {
-            // add addresses from passed proposal as guardians
-            addGuardian(targets[i]);
         }
     }
 
@@ -366,12 +360,7 @@ contract GoinGudGovernor {
         uint256[] memory values,
         bytes[] memory calldatas,
         bytes32 descriptionHash
-    ) public pure virtual returns (uint256) {
+    ) public pure returns (uint256) {
         return uint256(keccak256(abi.encode(targets, values, calldatas, descriptionHash)));
-    }
-
-    function sub256(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a, "subtraction underflow");
-        return a - b;
     }
 }
