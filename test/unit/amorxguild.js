@@ -53,9 +53,9 @@ describe("unit - AMORxGuild", function () {
     describe("initialization of token details", function () {
       it("Should emit an Initialized event", async function () {
         await expect(AMOR_GUILD_TOKEN.init(
-          MOCK_GUILD_NAMES[0], 
+          MOCK_GUILD_NAMES[0],
           MOCK_GUILD_SYMBOLS[0],
-          AMOR_TOKEN.address, 
+          AMOR_TOKEN.address,
           user2.address
         )).
           to.emit(AMOR_GUILD_TOKEN, "Initialized").
