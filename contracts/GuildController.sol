@@ -154,9 +154,7 @@ contract GuildController is IGuildController, Ownable {
         // than the vote for the next report set instantly starts.
         // The vote starts for all of the untouched reports in the queue.
         // timeVoting == 0 --> for the first queue when there was no voting yet
-        if (trigger == true || timeVoting == 0) {
-            reportsQueue.push(newReportId);
-        }
+        reportsQueue.push(newReportId);
     }
 
     /// @notice burns the amount of FXTokens, and changes a report weight, based on a sign provided.

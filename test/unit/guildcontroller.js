@@ -390,6 +390,25 @@ describe('unit - Contract: GuildController', function () {
             expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
         });
 
+        it('adds report when voting is not active', async function () {
+            const timestamp = Date.now();
+
+            let messageHash = ethers.utils.solidityKeccak256(
+                ["address", "uint", "string"],
+                [user.address, timestamp, "next report info"]
+            );
+            let messageHashBinary = ethers.utils.arrayify(messageHash);
+            let signature = await user.signMessage(messageHashBinary);
+            let r = signature.slice(0, 66);
+            let s = "0x" + signature.slice(66, 130);
+            let v = parseInt(signature.slice(130, 132), 16);
+            let report = messageHash;
+
+            await controller.connect(user).addReport(report, v, r, s);
+            expect((await controller.queueReportsAuthors(0))).to.equal(user.address);
+            expect((await controller.reportsQueue(0))).to.equal(0);
+        });
+
         it('it fails to vote for report if VotingNotStarted', async function () {
             const id = 0;
             const amount = TEST_TRANSFER;
@@ -432,8 +451,12 @@ describe('unit - Contract: GuildController', function () {
             await controller.connect(user2).addReport(report, v, r, s); // 7
             await controller.connect(user2).addReport(report, v, r, s); // 8
             await controller.connect(user2).addReport(report, v, r, s); // 9
-            // await expect(controller.reportsQueue(0)).to.be.reverted;
             expect((await controller.queueReportsAuthors(9))).to.equal(user2.address);
+
+            // 0 2 3 4 5 6 days in a week
+            // test another else-path in SUNDAY-CHECK
+            time.increase(time.duration.days(2));
+
             await controller.connect(authorizer_adaptor).startVoting();
             expect(await controller.trigger()).to.equal(true);
 
@@ -461,6 +484,8 @@ describe('unit - Contract: GuildController', function () {
             await controller.connect(user).addReport(report, v, r, s); // 8
             await controller.connect(user).addReport(report, v, r, s); // 9
 
+            // test another else-path in SUNDAY-CHECK
+            time.increase(time.duration.days(5));
             await controller.connect(authorizer_adaptor).startVoting();
             expect((await controller.reportsAuthors(9))).to.equal(user.address);
         });
