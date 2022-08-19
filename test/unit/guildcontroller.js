@@ -342,6 +342,15 @@ describe('unit - Contract: GuildController', function () {
             await controller.connect(user).voteForReport(id, 1, true);
         });
 
+        it('it fails to vote for report if InvalidAmount', async function () {
+            const id = 0;
+            const amount = 0;
+            const sign = true;
+            await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
+                'InvalidAmount()'
+            );
+        });
+
         it('it fails to vote for report if try to vote more than user have', async function () {
             const id = 0;
             const amount = TEST_TRANSFER;
@@ -379,6 +388,102 @@ describe('unit - Contract: GuildController', function () {
             await controller.connect(operator).finalizeVoting();
             const balanceAfter = balanceBefore.add(2);
             expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
+        });
+
+        it('it fails to vote for report if VotingNotStarted', async function () {
+            const id = 0;
+            const amount = TEST_TRANSFER;
+            const sign = true;
+            await expect(controller.connect(authorizer_adaptor).voteForReport(id, amount, sign)).to.be.revertedWith(
+                'VotingNotStarted()'
+            );
+        });
+
+        it('it starts reports voting if finalizeVoting wasn not called', async function () {
+            const timestamp = Date.now();
+
+            // building hash has to come from system address
+            // 32 bytes of data
+            let messageHash = ethers.utils.solidityKeccak256(
+                ["address", "uint", "string"],
+                [user2.address, timestamp, "next report info"]
+            );
+
+            // 32 bytes of data in Uint8Array
+            let messageHashBinary = ethers.utils.arrayify(messageHash);
+            
+            // To sign the 32 bytes of data, make sure you pass in the data
+            let signature = await user2.signMessage(messageHashBinary);
+
+            // split signature
+            r = signature.slice(0, 66);
+            s = "0x" + signature.slice(66, 130);
+            v = parseInt(signature.slice(130, 132), 16);
+            report = messageHash;
+
+            await AMORxGuild.connect(user2).approve(controller.address, TEST_TRANSFER);
+            await controller.connect(user2).addReport(report, v, r, s); // 0
+            await controller.connect(user2).addReport(report, v, r, s); // 1
+            await controller.connect(user2).addReport(report, v, r, s); // 2
+            await controller.connect(user2).addReport(report, v, r, s); // 3
+            await controller.connect(user2).addReport(report, v, r, s); // 4
+            await controller.connect(user2).addReport(report, v, r, s); // 5
+            await controller.connect(user2).addReport(report, v, r, s); // 6
+            await controller.connect(user2).addReport(report, v, r, s); // 7
+            await controller.connect(user2).addReport(report, v, r, s); // 8
+            await controller.connect(user2).addReport(report, v, r, s); // 9
+            // await expect(controller.reportsQueue(0)).to.be.reverted;
+            expect((await controller.queueReportsAuthors(9))).to.equal(user2.address);
+            await controller.connect(authorizer_adaptor).startVoting();
+            expect(await controller.trigger()).to.equal(true);
+
+            time.increase(twoWeeks);
+
+            messageHash = ethers.utils.solidityKeccak256(
+                ["address", "uint", "string"],
+                [user.address, timestamp, "next report info"]
+            );
+            messageHashBinary = ethers.utils.arrayify(messageHash);
+            signature = await user.signMessage(messageHashBinary);
+            r = signature.slice(0, 66);
+            s = "0x" + signature.slice(66, 130);
+            v = parseInt(signature.slice(130, 132), 16);
+            report = messageHash;
+
+            await controller.connect(user).addReport(report, v, r, s); // 0
+            await controller.connect(user).addReport(report, v, r, s); // 1
+            await controller.connect(user).addReport(report, v, r, s); // 2
+            await controller.connect(user).addReport(report, v, r, s); // 3
+            await controller.connect(user).addReport(report, v, r, s); // 4
+            await controller.connect(user).addReport(report, v, r, s); // 5
+            await controller.connect(user).addReport(report, v, r, s); // 6
+            await controller.connect(user).addReport(report, v, r, s); // 7
+            await controller.connect(user).addReport(report, v, r, s); // 8
+            await controller.connect(user).addReport(report, v, r, s); // 9
+
+            await controller.connect(authorizer_adaptor).startVoting();
+            expect((await controller.reportsAuthors(9))).to.equal(user.address);
+        });
+    });
+
+    context('» setVotingPeriod testing', () => {
+
+        it('it fails to set new voting period if not the owner', async function () {
+            await expect(controller.connect(user).setVotingPeriod(12)).to.be.revertedWith(
+                'Ownable: caller is not the owner'
+            );
+        });
+
+        it('it fails to set new voting period if newTime < 2 days', async function () {
+            await expect(controller.connect(root).setVotingPeriod(12)).to.be.revertedWith(
+                'InvalidAmount()'
+            );
+        });
+
+        it('it sets new voting period', async function () {
+            let newTime = 60 * 60 *24 * 2;
+            await controller.connect(root).setVotingPeriod(newTime);
+            expect((await controller.ADDITIONAL_VOTING_TIME())).to.equal(newTime);
         });
     });
 });

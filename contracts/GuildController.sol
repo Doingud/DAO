@@ -274,6 +274,7 @@ contract GuildController is IGuildController, Ownable {
         delete reportsWeight;
         delete reportsVoting;
         totalReportsWeight = 0;
+        timeVoting = 0;
         trigger = false;
     }
 
@@ -281,7 +282,7 @@ contract GuildController is IGuildController, Ownable {
     function startVoting() external {
         // nothing to finalize
         // startVoting will not start voting if there is another voting in progress
-        if (trigger == true || block.timestamp < (timeVoting + ADDITIONAL_VOTING_TIME)) {
+        if (block.timestamp < (timeVoting + ADDITIONAL_VOTING_TIME)) {
             revert VotingTimeNotFinished();
         }
 
@@ -292,7 +293,7 @@ contract GuildController is IGuildController, Ownable {
 
         // if the voting time is over, then startVoting will first call finalizeVoting and then start it's own functional
         // if timeVoting == 0 then skip call finalizeVoting for the first start
-        if (block.timestamp > (timeVoting + ADDITIONAL_VOTING_TIME) && timeVoting != 0) {
+        if (block.timestamp >= (timeVoting + ADDITIONAL_VOTING_TIME) && timeVoting != 0) {
             finalizeVoting();
         }
 
