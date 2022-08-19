@@ -28,8 +28,6 @@ contract MetaDaoController is AccessControl {
     //  The total weight of the guilds
     uint256 public guildsTotalWeight;
 
-
-
     /// Time snapshot
     uint256 public claimStart;
     uint256 public claimDuration;
@@ -62,7 +60,7 @@ contract MetaDaoController is AccessControl {
     /// @notice Updates a guild's weight
     /// @param  newWeight the amount of staked AMORxGuild in this guild
     /// @return bool the guild's balance was updated successfully
-    function updateGuildWeight(uint256 newWeight) external returns onlyRole(GUILD_ROLE) (bool) {
+    function updateGuildWeight(uint256 newWeight) external onlyRole(GUILD_ROLE) returns (bool) {
         /// If `distribute` is still in cooldown, or if the guild weight does not change
         if (guildWeight[msg.sender] == newWeight) {
             return false;
@@ -150,7 +148,7 @@ contract MetaDaoController is AccessControl {
         address guildOwner,
         string memory name,
         string memory tokenSymbol
-    ) public onlyRole(DEFAULT_ADMIN_ROLE){
+    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
         ICloneFactory(guildFactory).deployGuildContracts(guildOwner, name, tokenSymbol);
     }
 
@@ -164,7 +162,7 @@ contract MetaDaoController is AccessControl {
 
     /// @notice adds guild based on the controller address provided
     /// @dev give guild role in access control to the controller for the guild
-    /// @param controller the controller address of the guild
+    /// @param _token the controller address of the guild
     function addWhitelist(address _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
         whitelist[_token] = true;
     }
@@ -172,7 +170,7 @@ contract MetaDaoController is AccessControl {
     /// @notice removes guild based on id
     /// @param index the index of the guild in guilds[]
     /// @param controller the address of the guild controller to remove
-    function removeGuild(uint256 index, address controller) external onlyRole(DEFAULT_ADMIN_ROLE){
+    function removeGuild(uint256 index, address controller) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (guilds[index] == controller) {
             guilds[index] = guilds[guilds.length - 1];
             guilds.pop();
@@ -186,9 +184,8 @@ contract MetaDaoController is AccessControl {
         return guilds[index];
     }
 
-    function isWhiteliseted(address token) public view returns (bool){
-        require(token = address(0), "NOTLISTED);
+    function isWhitelisted(address token) public view returns (bool) {
+        require(token = address(0), "NOT LISTED");
         return whitelist[token];
     }
-
 }
