@@ -29,7 +29,7 @@ describe("unit - Vesting", function () {
     AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
     FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
     DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
-    CLONE_FACTORY = await init.guildFactory(setup);
+    CLONE_FACTORY = await init.getGuildFactory(setup);
 
     root = setup.roles.root;
     multisig = setup.roles.doingud_multisig;

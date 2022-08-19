@@ -168,7 +168,7 @@ module.exports = {
   initialize,
   getTokens,
   controller,
-  vestingContract
+  vestingContract,
   getGuildFactory,
   governor
 }; 
