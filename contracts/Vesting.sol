@@ -188,6 +188,12 @@ contract Vesting is Ownable {
         return amount - allocation.tokensClaimed;
     }
 
+    /// @notice Calculated the amount of AMOR that hasn't been allocated yet
+    /// @return unallocatedAmor the amount of AMOR that has been vested but not allocated yet
+    function unallocatedAMOR() public view returns (uint256) {
+        return amorToken.balanceOf(address(this)) + tokensWithdrawn - tokensAllocated;
+    }
+
     /// @notice Allows the MetaDAO to set allocations
     /// @param  target address of the target on whose behalf tokens are vested
     /// @param  amount the amount of AMOR tokens vested on the target's behalf
@@ -212,11 +218,5 @@ contract Vesting is Ownable {
         allocation.tokensAllocated += amount;
         allocation.vestingDate = vestingDate;
         allocation.cliff = cliff;
-    }
-
-    /// @notice Calculated the amount of AMOR that hasn't been allocated yet
-    /// @return unallocatedAmor the amount of AMOR that has been vested but not allocated yet
-    function unallocatedAMOR() public view returns (uint256) {
-        return amorToken.balanceOf(address(this)) + tokensWithdrawn - tokensAllocated;
     }
 }
