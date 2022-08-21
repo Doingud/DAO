@@ -292,13 +292,24 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             ); 
         });  
 
-        it('withdraw dAMORxGuild tokens', async function () {
+        it('withdraw dAMORxGuild tokens if not delegated any', async function () {
             time.increase(maxLockTime);
             const currentAmount = (await dAMORxGuild.balanceOf(staker.address)).toString();
             await dAMORxGuild.connect(staker).withdraw();        
             const withdrawedTokens = (await AMORxGuild.balanceOf(staker.address)).toString();
             
             expect(withdrawedTokens).to.equal(currentAmount);
-        });        
+        });
+
+        it('withdraw dAMORxGuild tokens if delegated', async function () {
+            time.increase(maxLockTime);
+            const currentAmount = (await dAMORxGuild.balanceOf(staker2.address)).toString();
+            await dAMORxGuild.connect(staker2).delegate(operator.address, ethers.BigNumber.from(12));
+            await dAMORxGuild.connect(staker2).delegate(operator2.address, ethers.BigNumber.from(12));
+            await dAMORxGuild.connect(staker2).withdraw();        
+            const withdrawedTokens = (await AMORxGuild.balanceOf(staker2.address)).toString();
+            
+            expect(withdrawedTokens).to.equal(currentAmount);
+        });         
     });
 });
