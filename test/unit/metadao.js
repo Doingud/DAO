@@ -136,10 +136,10 @@ describe("unit - MetaDao", function () {
             console.log("Balance: "+ amorBalance);
             expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
             await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
-            ///await USDC.connect(root).approve(METADAO.address, ONE_HUNDRED_ETHER);
+            await USDC.connect(root).approve(METADAO.address, ONE_HUNDRED_ETHER);
             expect(await AMOR_TOKEN.allowance(root.address, METADAO.address) == ONE_HUNDRED_ETHER);
             await METADAO.donate(ONE_HUNDRED_ETHER)
-            ///await METADAO.connect(root).donateUSDC(ONE_HUNDRED_ETHER)
+            await METADAO.connect(root).donateUSDC(ONE_HUNDRED_ETHER)
             expect(await METADAO.connect(user1).updateGuildWeight(2));
             expect(await METADAO.connect(user2).updateGuildWeight(3));
             await METADAO.distribute();

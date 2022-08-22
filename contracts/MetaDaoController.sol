@@ -23,6 +23,8 @@ contract MetaDaoController is AccessControl {
     address[] public guilds;
     //  Array of addresses of Guilds
     mapping(address => uint256) public guildWeight;
+    /// Mapping of guild --> token --> amount
+    mapping(address => mapping(address => uint256)) public guildFunds;
 
     mapping(address => bool) public whitelist;
     //  The total weight of the guilds
@@ -107,21 +109,28 @@ contract MetaDaoController is AccessControl {
     function _distribute(uint256[] memory _currentGuildWeight) internal {
         uint256 currentBalanceAMOR = amorToken.balanceOf(address(this));
         uint256 currentBalanceUSDC = amorToken.balanceOf(address(this));
-        uint256 totalAmmountSentAmor;
-        uint256 totalAmmountSentUSDC;
+        uint256 totalAmountSentAmor;
+        uint256 totalAmountSentUSDC;
         for (uint256 i = 0; i < guilds.length; i++) {
-            uint256 ammountToDistributeAMOR = _currentGuildWeight[i] * currentBalanceAMOR;
-            uint256 ammountToDistributeUSDC = _currentGuildWeight[i] * currentBalanceUSDC;
-            if (ammountToDistributeAMOR == 0) {
+            uint256 amountToDistributeAMOR = currentBalanceAMOR * _currentGuildWeight[i] / guildsTotalWeight;
+            uint256 amountToDistributeUSDC = currentBalanceUSDC * _currentGuildWeight[i] / guildsTotalWeight;
+            if (amountToDistributeAMOR == 0 && amountToDistributeUSDC == 0) {
                 continue;
             }
+            /* Old code 
+            /// Why does guildWeight become 0 here?
             guildWeight[msg.sender] = 0;
-            totalAmmountSentAmor = totalAmmountSentAmor + ammountToDistributeAMOR;
-            totalAmmountSentUSDC = totalAmmountSentUSDC + ammountToDistributeUSDC;
-            amorToken.transfer(guilds[i], ammountToDistributeAMOR);
+            /// We aren't doing anything with totalAmountSent here?
+            totalAmountSentAmor = totalAmountSentAmor + amountToDistributeAMOR;
+            totalAmountSentUSDC = totalAmountSentUSDC + amountToDistributeUSDC;
+            /// Distribute doesn't need to transfer tokens, only allocate these to the guilds
+            amorToken.transfer(guilds[i], amountToDistributeAMOR);
+            */
+            guildFunds[address(amorToken)][guilds[i]] += amountToDistributeAMOR;
+            guildFunds[address(usdcToken)][guilds[i]] += amountToDistributeUSDC;
         }
         // Potential re-entrancy? May have to put state change inside or before Loop
-        guildsTotalWeight = 0;
+        //guildsTotalWeight = 0;
     }
 
     /// @notice Allows a guuild to claim amor tokens from the metadao

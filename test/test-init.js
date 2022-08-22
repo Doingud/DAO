@@ -155,7 +155,7 @@ const metadao = async(setup) =>{
   const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController');
   const metadao = await MetaDaoFactory.deploy(
     setup.tokens.AmorTokenImplementation.address,
-    setup.tokens.AmorTokenImplementation.address,
+    setup.tokens.ERC20Token.address,
     setup.factory.guildFactory.address,
     setup.roles.root.address
   );
