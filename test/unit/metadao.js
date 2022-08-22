@@ -2,6 +2,9 @@ const { ethers } = require("hardhat");
 const { use, expect } = require("chai");
 const { solidity } = require("ethereum-waffle");
 const init = require('../test-init.js');
+const { 
+    ONE_HUNDRED_ETHER 
+  } = require('../helpers/constants.js');
 
 use(solidity);
 
@@ -114,11 +117,11 @@ describe("unit - MetaDao", function () {
             /// So here you are adding user1.address as a guild controller
             await METADAO.addGuild(user1.address);
             expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
-            await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
-            expect(await AMOR_TOKEN.allowance(root.address, METADAO.address) == 1000);
+            await AMOR_TOKEN.connect(root).approve(METADAO.address, ONE_HUNDRED_ETHER);
+            expect(await AMOR_TOKEN.allowance(root.address, METADAO.address) == ONE_HUNDRED_ETHER);
             /// Here you donate 100 wei
             /// The issue here is that in `donate()` we don't transfer AMOR to `address(this)`
-            await METADAO.connect(root).donate(100);
+            await METADAO.connect(root).donate(ONE_HUNDRED_ETHER);
             expect(await METADAO.connect(user1).updateGuildWeight(20));
             await METADAO.connect(user1).claim();
         });
@@ -129,14 +132,14 @@ describe("unit - MetaDao", function () {
         it('it succeeds if amor tokens are distributed to tbe guild according to guild weight', async function () {
             await METADAO.addGuild(user1.address);
             await METADAO.addGuild(user2.address);
-            await expect(AMOR_TOKEN.balanceOf(root.address) > 0);
-            await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
-            await USDC.connect(root).approve(METADAO.address,100000);
-            await expect(AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
-            await METADAO.connect(root).donate(100)
-            await METADAO.connect(root).donateUSDC(100)
-            await expect(METADAO.connect(user1).updateGuildWeight(2));
-            await expect(METADAO.connect(user2).updateGuildWeight(3));
+            expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
+            await AMOR_TOKEN.connect(root).approve(METADAO.address, ONE_HUNDRED_ETHER);
+            await USDC.connect(root).approve(METADAO.address, ONE_HUNDRED_ETHER);
+            expect(await AMOR_TOKEN.allowance(root.address,METADAO.address) == ONE_HUNDRED_ETHER);
+            await METADAO.connect(root).donate(ONE_HUNDRED_ETHER)
+            await METADAO.connect(root).donateUSDC(ONE_HUNDRED_ETHER)
+            expect(await METADAO.connect(user1).updateGuildWeight(2));
+            expect(await METADAO.connect(user2).updateGuildWeight(3));
             await METADAO.distribute();
         });
 
