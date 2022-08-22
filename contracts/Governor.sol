@@ -333,19 +333,18 @@ contract DoinGudGovernor {
         if (proposal.canceled) {
             return ProposalState.Canceled;
         }
-        uint256 snapshot = _proposals[proposalId].voteStart;
 
-        if (snapshot == 0) {
+        if (proposal.voteStart == 0) {
             revert("Governor: unknown proposal id");
         }
 
-        if (snapshot >= block.timestamp) {
+        if (proposal.voteStart >= block.timestamp) {
             return ProposalState.Pending;
         }
 
         uint256 deadline = _proposals[proposalId].voteEnd;
 
-        if (deadline >= block.timestamp) {
+        if (proposal.voteEnd >= block.timestamp) {
             return ProposalState.Active;
         }
 
