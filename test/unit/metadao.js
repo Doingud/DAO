@@ -129,15 +129,17 @@ describe("unit - MetaDao", function () {
     });
 
     context('Distribute Amor tokens from meta dao', () => {
-        it('it succeeds if amor tokens are distributed to tbe guild according to guild weight', async function () {
+        it('it succeeds if amor tokens are distributed to the guild according to guild weight', async function () {
             await METADAO.addGuild(user1.address);
             await METADAO.addGuild(user2.address);
+            amorBalance = await AMOR_TOKEN.balanceOf(root.address);
+            console.log("Balance: "+ amorBalance);
             expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
-            await AMOR_TOKEN.connect(root).approve(METADAO.address, ONE_HUNDRED_ETHER);
-            await USDC.connect(root).approve(METADAO.address, ONE_HUNDRED_ETHER);
-            expect(await AMOR_TOKEN.allowance(root.address,METADAO.address) == ONE_HUNDRED_ETHER);
-            await METADAO.connect(root).donate(ONE_HUNDRED_ETHER)
-            await METADAO.connect(root).donateUSDC(ONE_HUNDRED_ETHER)
+            await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
+            ///await USDC.connect(root).approve(METADAO.address, ONE_HUNDRED_ETHER);
+            expect(await AMOR_TOKEN.allowance(root.address, METADAO.address) == ONE_HUNDRED_ETHER);
+            await METADAO.donate(ONE_HUNDRED_ETHER)
+            ///await METADAO.connect(root).donateUSDC(ONE_HUNDRED_ETHER)
             expect(await METADAO.connect(user1).updateGuildWeight(2));
             expect(await METADAO.connect(user2).updateGuildWeight(3));
             await METADAO.distribute();
