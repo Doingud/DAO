@@ -112,8 +112,8 @@ contract MetaDaoController is AccessControl {
         uint256 totalAmountSentAmor;
         uint256 totalAmountSentUSDC;
         for (uint256 i = 0; i < guilds.length; i++) {
-            uint256 amountToDistributeAMOR = currentBalanceAMOR * _currentGuildWeight[i] / guildsTotalWeight;
-            uint256 amountToDistributeUSDC = currentBalanceUSDC * _currentGuildWeight[i] / guildsTotalWeight;
+            uint256 amountToDistributeAMOR = (currentBalanceAMOR * _currentGuildWeight[i]) / guildsTotalWeight;
+            uint256 amountToDistributeUSDC = (currentBalanceUSDC * _currentGuildWeight[i]) / guildsTotalWeight;
             if (amountToDistributeAMOR == 0 && amountToDistributeUSDC == 0) {
                 continue;
             }
