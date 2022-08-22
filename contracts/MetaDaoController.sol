@@ -43,6 +43,7 @@ contract MetaDaoController is AccessControl {
     bytes32 public constant GUILD_ROLE = keccak256("GUILD");
 
     error InvalidClaim();
+    error NotListed();
 
     constructor(
         address _amor,
@@ -185,7 +186,9 @@ contract MetaDaoController is AccessControl {
     }
 
     function isWhitelisted(address token) public view returns (bool) {
-        require(token = address(0), "NOT LISTED");
+        if (!whitelist[token]) {
+            revert NotListed();
+        }
         return whitelist[token];
     }
 }
