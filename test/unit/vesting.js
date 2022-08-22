@@ -70,6 +70,8 @@ describe("unit - Vesting", function () {
       await VESTING.allocateVestedTokens(user1.address, AMORDeducted, 0, VESTING_TIME);
       expect(await VESTING.balanceOf(user1.address)).to.equal(AMORDeducted);
       expect(await VESTING.unallocatedAMOR()).to.equal(0);
+      expect(await VESTING.beneficiaries(user1.address)).equal(ONE_ADDRESS);
+      expect(await VESTING.sentinalOwner()).to.equal(user1.address);
     });
 
     it("Should fail if unsufficient unallocated AMOR", async function () {
@@ -83,9 +85,16 @@ describe("unit - Vesting", function () {
       await AMOR_TOKEN.approve(VESTING.address, ONE_HUNDRED_ETHER);
       await VESTING.vestAmor(ONE_HUNDRED_ETHER);
       await VESTING.modifyAllocation(user1.address, AMORDeducted, 0, VESTING_TIME);
-      expect(await VESTING.balanceOf(user1.address)).to.equal(ethers.BigNumber.from((AMORDeducted*2).toString()));
+      expect(await VESTING.balanceOf(user1.address)).
+        to.equal(ethers.BigNumber.from((AMORDeducted*2).toString()));
+
       let userBalance = await VESTING.allocations(user1.address);
       expect(userBalance.tokensAllocated).to.equal((AMORDeducted*2).toString());
+    });
+
+    it("Should fail if benenficiary is not found", async function () {
+      await expect(VESTING.modifyAllocation(user2.address, AMORDeducted, 0, VESTING_TIME)).
+        to.be.revertedWith("NotFound()");
     });
   });
 
@@ -95,7 +104,6 @@ describe("unit - Vesting", function () {
       await time.increaseTo(VESTING_TIME);
       let timeElapsed = VESTING_TIME - userInfo.vestingStart;
       let tokensClaimable = userInfo.tokensAllocated * timeElapsed / (userInfo.vestingDate - userInfo.vestingStart);
-      ///tokensClaimable = Math.trunc(tokensClaimable);
       expect(await VESTING.tokensAvailable(user1.address)).to.equal(tokensClaimable.toString());
     });
   });
@@ -104,11 +112,13 @@ describe("unit - Vesting", function () {
     it("Should allow a user to withdraw an amount of AMOR", async function () {
       let userBalance = await VESTING.tokensAvailable(user1.address);
       await VESTING.connect(user1).withdrawAmor(FIFTY_ETHER);
-      expect(await VESTING.tokensAvailable(user1.address)).to.equal((userBalance-FIFTY_ETHER).toString());
+      expect(await VESTING.tokensAvailable(user1.address)).
+        to.equal((userBalance-FIFTY_ETHER).toString());
       
       userBalance = await VESTING.tokensAvailable(user1.address);
       await VESTING.connect(user1).withdrawAmor(ONE_HUNDRED_ETHER);
-      expect(await VESTING.tokensAvailable(user1.address)).to.equal((userBalance-ONE_HUNDRED_ETHER).toString())
+      expect(await VESTING.tokensAvailable(user1.address)).
+        to.equal((userBalance-ONE_HUNDRED_ETHER).toString())
     });
 
     it("Should revert if tokensAvailable exceeded", async function () {
