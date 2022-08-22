@@ -31,7 +31,9 @@ contract GuildController is IGuildController, Ownable {
 
     IERC20 private AMORxGuild;
     IFXAMORxGuild private FXGFXAMORxGuild;
+    address public AMOR;
     address public FXAMORxGuild;
+    address public MetaDaoController;
 
     // uint256 public triggerCounter;
     bool public trigger; // set true for a week if previous week were added >= 10 reports; users can vote only if trigger == true
@@ -67,7 +69,9 @@ contract GuildController is IGuildController, Ownable {
     function init(
         address initOwner,
         address AMORxGuild_,
-        address FXAMORxGuild_
+        address FXAMORxGuild_,
+        address MetaDaoController_,
+        address AMOR_
     ) external returns (bool) {
         require(!_initialized, "Already initialized");
 
@@ -76,6 +80,8 @@ contract GuildController is IGuildController, Ownable {
         AMORxGuild = IERC20(AMORxGuild_);
         FXGFXAMORxGuild = IFXAMORxGuild(FXAMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
+        MetaDaoController = MetaDaoController_;
+        AMOR = AMOR_;
         ADDITIONAL_VOTING_TIME = 0;
 
         trigger = false;
@@ -93,27 +99,35 @@ contract GuildController is IGuildController, Ownable {
         ADDITIONAL_VOTING_TIME = newTime;
     }
 
-    /// @notice allows to donate AMORxGuild tokens to the Guild
-    /// @param amount The amount to donate
-    // It automatically distributes tokens between Impact makers.
-    // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
-    // which are going to be owned by the user.
-    // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
-    // Requires the msg.sender to `approve` amount prior to calling this function
-    function donate(uint256 amount) external returns (uint256) {
-        // if amount is below 10, most of the calculations will round down to zero, only wasting gas
-        if (AMORxGuild.balanceOf(msg.sender) < amount || amount < 10) {
-            revert InvalidAmount();
+    /// @notice called by donate and gatherDonation, distributes amount of tokens between 
+    /// all of the impact makers based on their weight.
+    /// Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers
+    function distribute(uint256 amount, address token) internal {
+        uint256 dAMOR = amount;
+        // 10% of the tokens in the impact pool are getting:
+        if (token != AMORxGuild && token != AMOR) {
+            // 1.Exchanged in the pool to AMOR(if it’s not AMOR or AMORxGuild)
+
+            // convert to AMOR
+            uint256 amorAmount = ;
+            // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
+            dAMOR = ;
+
+        } else if (token == AMOR) { // convert AMOR to AMORxGuild
+            // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
+  
+            dAMOR = ;
         }
 
-        // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
+        // 3.Staked in the FXAMORxGuild tokens,
         // which are going to be owned by the user.
-        uint256 FxGAmount = (amount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
+        uint256 FxGAmount = (dAMORamount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
         AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
         AMORxGuild.approve(FXAMORxGuild, FxGAmount);
         FXGFXAMORxGuild.stake(msg.sender, FxGAmount);
 
-        uint256 decAmount = amount - FxGAmount; //decreased amount: other 90%
+
+        uint256 decAmount = dAMORamount - FxGAmount; //decreased amount: other 90%
 
         // based on the weights distribution, tokens will be automatically redirected to the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
@@ -121,6 +135,57 @@ contract GuildController is IGuildController, Ownable {
             AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
             claimableTokens[impactMakers[i]] += amountToSendVoter;
         }
+    }
+
+    /// @notice gathers donation from MetadaoController in specific token 
+    /// and calles distribute function for the whole amount of gathered tokens
+    function gatherDonation(address token) public {
+        uint256 amount = IERC20(token).balanceOf(MetadaoController);
+
+        // check balance of MetadaoController
+        if (amount == 0){
+            revert InvalidAmount();
+        }
+
+        // get all tokens
+        IERC20(token).safeTransferFrom(MetadaoController, address(this), amount);
+
+        // distribute those tokens
+
+    }
+
+    /// @notice allows to donate AMORxGuild tokens to the Guild
+    /// @param amount The amount to donate
+    /// @param token Token in which to donate
+    // It automatically distributes tokens between Impact makers.
+    // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
+    // which are going to be owned by the user.
+    // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
+    // Requires the msg.sender to `approve` amount prior to calling this function
+    function donate(uint256 amount, address token) external returns (uint256) {
+
+        // if amount is below 10, most of the calculations will round down to zero, only wasting gas
+        if (token.balanceOf(msg.sender) < amount || amount < 10) {
+            revert InvalidAmount();
+        }
+
+        distribute(amount, token);
+
+        // // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
+        // // which are going to be owned by the user.
+        // uint256 FxGAmount = (amount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
+        // AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
+        // AMORxGuild.approve(FXAMORxGuild, FxGAmount);
+        // FXGFXAMORxGuild.stake(msg.sender, FxGAmount);
+
+        // uint256 decAmount = amount - FxGAmount; //decreased amount: other 90%
+
+        // // based on the weights distribution, tokens will be automatically redirected to the impact makers
+        // for (uint256 i = 0; i < impactMakers.length; i++) {
+        //     uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
+        //     AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
+        //     claimableTokens[impactMakers[i]] += amountToSendVoter;
+        // }
 
         return amount;
     }
