@@ -51,7 +51,8 @@ contract MetaDaoController is AccessControl {
         address _cloneFactory,
         address admin
     ) {
-        _setupRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _setupRole(GUILD_ROLE, admin);
         usdcToken = IERC20(_usdc);
         amorToken = IERC20(_amor);
         guildFactory = _cloneFactory;
@@ -157,7 +158,7 @@ contract MetaDaoController is AccessControl {
     /// @dev give guild role in access control to the controller for the guild
     /// @param controller the controller address of the guild
     function addGuild(address controller) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setupRole(GUILD_ROLE, controller);
+        grantRole(GUILD_ROLE, controller);
         guilds.push(controller);
     }
 

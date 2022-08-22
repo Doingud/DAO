@@ -45,7 +45,7 @@ describe("unit - MetaDao", function () {
         it('it fails add guilds if not an admin address', async function () {
         
             await expect(METADAO.connect(user1).addGuild(user2.address)).to.be.revertedWith(
-                'NOT_ADMIN'
+                'AccessControl'
             );
         });
 
@@ -61,7 +61,7 @@ describe("unit - MetaDao", function () {
         it('it fails to remove guilds if not an admin address', async function () {
             await METADAO.addGuild(user2.address);
             await expect(METADAO.connect(user1).removeGuild(0,user2.address)).to.be.revertedWith(
-                'NOT_ADMIN'
+                'AccessControl'
             );
         });
 
