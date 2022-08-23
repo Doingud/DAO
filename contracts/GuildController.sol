@@ -107,9 +107,12 @@ contract GuildController is IGuildController, Ownable {
         // 10% of the tokens in the impact pool are getting:
         if (token != AMORxGuild && token != AMOR) {
             // 1.Exchanged in the pool to AMOR(if it’s not AMOR or AMORxGuild)
+            // recieve tokens
 
             // convert to AMOR
             uint256 amorAmount = ;
+            // give AMOR
+            AMOR.transfer(msg.sender, amorAmount);
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
             dAMOR = ;
 
