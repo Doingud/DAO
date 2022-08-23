@@ -110,7 +110,8 @@ contract GuildController is IGuildController, Ownable {
         uint256 amorxguildAmount = amount;
         // 10% of the tokens in the impact pool are getting:
         if (token != AMORxGuild && token != AMOR) {
-            //// check whitelist in MetaDaoController
+            // TODO: check if in whitelist in MetaDaoController
+
             // 1.Exchanged in the pool to AMOR(if it’s not AMOR or AMORxGuild)
             // recieve tokens
             IERC20(token).transfer(address(this), amount);

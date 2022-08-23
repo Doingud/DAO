@@ -199,6 +199,51 @@ describe('unit - Contract: GuildController', function () {
         });
     });
 
+    context('» gatherDonation and distribute testing', () => {
+
+        it('it fails to gatherDonation if not enough tokens', async function () {
+            await expect(controller.connect(operator).gatherDonation(AMORxGuild.address)).to.be.revertedWith(
+                'InvalidAmount()'
+            );
+        });
+
+        it('it fails to distribute if token not in the whitelist', async function () {
+            // gatherDonation --> distribute
+            await expect(controller.connect(operator).gatherDonation(AMORxGuild.address)).to.be.revertedWith(
+                'InvalidParameters()'
+            );
+        });
+
+        it('gathers donation in AMOR', async function () {
+            // TODO: add some donations to MetaDaoController
+            await controller.connect(operator).gatherDonation(AMOR.address);
+            // TODO: add check changes
+        });
+
+        it('gathers donation in USDC', async function () {
+
+        });
+
+        it('gathers donation', async function () {
+            await AMOR.connect(root).transfer(controller.address, TEST_TRANSFER);
+            await AMOR.connect(root).transfer(user.address, TEST_TRANSFER);
+
+            await AMOR.connect(user).approve(AMORxGuild.address, TEST_TRANSFER);
+
+            let AMORDeducted = ethers.BigNumber.from((TEST_TRANSFER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
+            let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
+
+            await AMORxGuild.connect(user).stakeAmor(user.address, nextAMORDeducted);
+            await AMORxGuild.connect(user).approve(controller.address, nextAMORDeducted);
+
+
+            await controller.connect(user).gatherDonation(AMORxGuild.address);        
+
+
+            expect((await AMORxGuild.balanceOf(controller.address)).toString()).to.equal(sum.toString());            
+        });
+    });
+
     context('» claim testing', () => {
 
         it('it fails to claim if not the owner', async function () {
