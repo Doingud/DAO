@@ -66,8 +66,10 @@ describe('unit - Contract: GuildController', function () {
         it("Should fail if called more than once", async function () {
             await expect(controller.init(
                 root.address, // owner
+                AMOR.address,
                 AMORxGuild.address,
-                FXAMORxGuild.address
+                FXAMORxGuild.address,
+                root.address
             )).to.be.revertedWith("Already initialized");
         });
     });
@@ -152,7 +154,7 @@ describe('unit - Contract: GuildController', function () {
     context('» donate testing', () => {
 
         it('it fails to donate AMORxGuild tokens if not enough AMORxGuild', async function () {
-            await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER)).to.be.revertedWith(
+            await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER, AMORxGuild.address)).to.be.revertedWith(
                 'InvalidAmount()'
             );
         });
@@ -169,7 +171,7 @@ describe('unit - Contract: GuildController', function () {
             await AMORxGuild.connect(user).stakeAmor(user.address, nextAMORDeducted);
             await AMORxGuild.connect(user).approve(controller.address, nextAMORDeducted);
 
-            await controller.connect(user).donate(TEST_TRANSFER_SMALLER);        
+            await controller.connect(user).donate(TEST_TRANSFER_SMALLER, AMORxGuild.address);        
 
             const totalWeight = await controller.totalWeight();
             const FxGAmount = (TEST_TRANSFER_SMALLER * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of amount to Impact poll
@@ -317,7 +319,7 @@ describe('unit - Contract: GuildController', function () {
             let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
             await AMORxGuild.connect(operator).stakeAmor(operator.address, nextAMORDeducted);
             await AMORxGuild.connect(operator).approve(controller.address, nextAMORDeducted);
-            await controller.connect(operator).donate(TEST_TRANSFER_SMALLER);        
+            await controller.connect(operator).donate(TEST_TRANSFER_SMALLER, AMORxGuild.address);        
 
             const id = 0;
             const amount = 2;

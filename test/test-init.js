@@ -76,8 +76,10 @@ const controller = async (setup) => {
 
   await controller.init(
     setup.roles.root.address, // owner
+    setup.tokens.AmorTokenImplementation.address,
     setup.tokens.AmorGuildToken.address, // AMORxGuild
-    setup.tokens.FXAMORxGuild.address // FXAMORxGuild
+    setup.tokens.FXAMORxGuild.address, // FXAMORxGuild
+    setup.roles.root.address // MetaDaoController
   );
 
   await setup.tokens.AmorTokenImplementation.init(
@@ -137,7 +139,8 @@ const getGuildFactory = async (setup) => {
     setup.tokens.FXAMORxGuild.address,
     setup.tokens.dAMORxGuild.address,
     setup.tokens.AmorTokenProxy.address,
-    controller.address
+    controller.address,
+    setup.roles.authorizer_adaptor.address // metaDaoController
   );
 
   const factory = {

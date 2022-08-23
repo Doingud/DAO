@@ -119,7 +119,14 @@ contract GuildFactory is ICloneFactory, Ownable {
         dAMORxGuildTokens[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
 
         /// Deploy the ControllerxGuild
-        clonedContract = _deployGuildController(controllerxGuild, guildOwner, amorToken, amorxGuildToken, fxAMORxGuildToken, MetaDaoController);
+        clonedContract = _deployGuildController(
+            controllerxGuild,
+            guildOwner,
+            amorToken,
+            amorxGuildToken,
+            fxAMORxGuildToken,
+            MetaDaoController
+        );
         guildControllers[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
     }
 

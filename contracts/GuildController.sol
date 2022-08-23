@@ -103,13 +103,14 @@ contract GuildController is IGuildController, Ownable {
         ADDITIONAL_VOTING_TIME = newTime;
     }
 
-    /// @notice called by donate and gatherDonation, distributes amount of tokens between 
+    /// @notice called by donate and gatherDonation, distributes amount of tokens between
     /// all of the impact makers based on their weight.
     /// Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers
     function distribute(uint256 amount, address token) internal returns (uint256) {
         uint256 amorxguildAmount = amount;
         // 10% of the tokens in the impact pool are getting:
         if (token != AMORxGuild && token != AMOR) {
+            //// check whitelist in MetaDaoController
             // 1.Exchanged in the pool to AMOR(if it’s not AMOR or AMORxGuild)
             // recieve tokens
             IERC20(token).transfer(address(this), amount);
@@ -124,8 +125,8 @@ contract GuildController is IGuildController, Ownable {
 
             // uint256 time = 10 days; //change to necessary time
             // dAMOR = dAMOR.stake(amorxguildAmount, time);
-
-        } else if (token == AMOR) { // convert AMOR to AMORxGuild
+        } else if (token == AMOR) {
+            // convert AMOR to AMORxGuild
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
             amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(msg.sender, amount);
         }
@@ -149,13 +150,13 @@ contract GuildController is IGuildController, Ownable {
         return amorxguildAmount;
     }
 
-    /// @notice gathers donation from MetaDaoController in specific token 
+    /// @notice gathers donation from MetaDaoController in specific token
     /// and calles distribute function for the whole amount of gathered tokens
     function gatherDonation(address token) public {
         uint256 amount = IERC20(token).balanceOf(MetaDaoController);
 
         // check balance of MetaDaoController
-        if (amount == 0){
+        if (amount == 0) {
             revert InvalidAmount();
         }
 
@@ -175,7 +176,6 @@ contract GuildController is IGuildController, Ownable {
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     // Requires the msg.sender to `approve` amount prior to calling this function
     function donate(uint256 amount, address token) external returns (uint256) {
-
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
         if (IERC20(token).balanceOf(msg.sender) < amount || amount < 10) {
             revert InvalidAmount();
