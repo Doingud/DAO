@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
 
+import "./utils/interfaces/IAmorxGuild.sol";
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
 import "./utils/interfaces/IGuildController.sol";
@@ -29,9 +30,11 @@ contract GuildController is IGuildController, Ownable {
     uint256 public totalWeight; // total Weight of all of the impact makers
     uint256 public timeVoting; // deadlines for the votes for reports
 
-    IERC20 private AMORxGuild;
+    IERC20 private ER20AMORxGuild;
     IFXAMORxGuild private FXGFXAMORxGuild;
-    address public AMOR;
+    IERC20 private AMOR;
+    address public AMORxGuild;
+    address public dAMORxGuild;
     address public FXAMORxGuild;
     address public MetaDaoController;
 
@@ -77,11 +80,12 @@ contract GuildController is IGuildController, Ownable {
 
         _transferOwnership(initOwner);
 
-        AMORxGuild = IERC20(AMORxGuild_);
+        AMOR = IERC20(AMOR_);
+        AMORxGuild = AMORxGuild_;
+        ERC20AMORxGuild = IERC20(AMORxGuild_);
         FXGFXAMORxGuild = IFXAMORxGuild(FXAMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
         MetaDaoController = MetaDaoController_;
-        AMOR = AMOR_;
         ADDITIONAL_VOTING_TIME = 0;
 
         trigger = false;
@@ -102,42 +106,47 @@ contract GuildController is IGuildController, Ownable {
     /// @notice called by donate and gatherDonation, distributes amount of tokens between 
     /// all of the impact makers based on their weight.
     /// Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers
-    function distribute(uint256 amount, address token) internal {
-        uint256 dAMOR = amount;
+    function distribute(uint256 amount, address token) internal returns (uint256) {
+        uint256 amorxguildAmount = amount;
         // 10% of the tokens in the impact pool are getting:
         if (token != AMORxGuild && token != AMOR) {
             // 1.Exchanged in the pool to AMOR(if it’s not AMOR or AMORxGuild)
             // recieve tokens
+            IERC20(token).transfer(address(this), amount);
 
-            // convert to AMOR
+            // TODO: formula for: convert to AMOR
             uint256 amorAmount = ;
             // give AMOR
-            AMOR.transfer(msg.sender, amorAmount);
+            AMOR.transfer(address(this), amorAmount);
+
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
-            dAMOR = ;
+            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(msg.sender, amorAmount);
+
+            // uint256 time = 10 days; //change to necessary time
+            // dAMOR = dAMOR.stake(amorxguildAmount, time);
 
         } else if (token == AMOR) { // convert AMOR to AMORxGuild
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
-  
-            dAMOR = ;
+            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(msg.sender, amorAmount);
         }
 
         // 3.Staked in the FXAMORxGuild tokens,
         // which are going to be owned by the user.
-        uint256 FxGAmount = (dAMORamount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
-        AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
-        AMORxGuild.approve(FXAMORxGuild, FxGAmount);
+        uint256 FxGAmount = (amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
+        ER20AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
+        ER20AMORxGuild.approve(FXAMORxGuild, FxGAmount);
         FXGFXAMORxGuild.stake(msg.sender, FxGAmount);
 
-
-        uint256 decAmount = dAMORamount - FxGAmount; //decreased amount: other 90%
+        uint256 decAmount = amorxguildAmount - FxGAmount; //decreased amount: other 90%
 
         // based on the weights distribution, tokens will be automatically redirected to the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
-            AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
+            ER20AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
             claimableTokens[impactMakers[i]] += amountToSendVoter;
         }
+
+        return amorxguildAmount;
     }
 
     /// @notice gathers donation from MetadaoController in specific token 
@@ -172,7 +181,7 @@ contract GuildController is IGuildController, Ownable {
             revert InvalidAmount();
         }
 
-        distribute(amount, token);
+        amount = distribute(amount, token);
 
         // // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
         // // which are going to be owned by the user.
@@ -296,7 +305,7 @@ contract GuildController is IGuildController, Ownable {
             if (reportsVoting[id] > 0) {
                 // If report has positive voting weight, then funds go 50-50%,
                 // 50% go to the report creater,
-                AMORxGuild.safeTransfer(reportsAuthors[id], uint256(fiftyPercent));
+                ER20AMORxGuild.safeTransfer(reportsAuthors[id], uint256(fiftyPercent));
 
                 // and 50% goes to the people who voted positively
                 for (uint256 i = 0; i < voters[id].length; i++) {
@@ -304,7 +313,7 @@ contract GuildController is IGuildController, Ownable {
                     if (votes[id][people[i]] > 0) {
                         // 50% * user weigth / all 100%
                         int256 amountToSendVoter = (int256(fiftyPercent) * votes[id][people[i]]) / reportsWeight[id];
-                        AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
+                        ER20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
                     }
                     delete votes[id][people[i]];
                 }
@@ -317,7 +326,7 @@ contract GuildController is IGuildController, Ownable {
                         // allAmountToDistribute(50%) * user weigth in % / all 100%
                         int256 absVotes = abs(votes[id][people[i]]);
                         int256 amountToSendVoter = (fiftyPercent * absVotes) / reportsWeight[id];
-                        AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
+                        ER20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
                     }
                     delete votes[id][people[i]];
                 }
@@ -327,7 +336,7 @@ contract GuildController is IGuildController, Ownable {
                     if (reportsVoting[i] > 0) {
                         // allAmountToDistribute(50%) * report weigth in % / all 100%
                         int256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / int256(totalReportsWeight);
-                        AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
+                        ER20AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
                     }
                 }
             }
@@ -450,7 +459,7 @@ contract GuildController is IGuildController, Ownable {
         if (impact != msg.sender) {
             revert Unauthorized();
         }
-        AMORxGuild.safeTransfer(impact, claimableTokens[impact]);
+        ER20AMORxGuild.safeTransfer(impact, claimableTokens[impact]);
         claimableTokens[impact] = 0;
     }
 
