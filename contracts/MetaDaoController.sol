@@ -125,44 +125,54 @@ contract MetaDaoController is AccessControl {
         IERC20(token).transferFrom(msg.sender, address(this), amount);
     }
 
-    /// @notice Distirbutes the amortoken in the metadao to the approved guilds but guild weight
-    /// @dev current guild weight initialised to 100 to alow us to loop throuhgh guilds
+    /// @notice Distributes the amortoken in the metadao to the approved guilds but guild weight
+    /// @dev    Creates an array of the current guild weights to pass to `_distribute`
     function distribute() public {
         uint256[] memory currentGuildWeight = new uint256[](guilds.length);
         for (uint256 i = 0; i < guilds.length; i++) {
             currentGuildWeight[i] = guildWeight[guilds[i]];
         }
-        _distribute(currentGuildWeight);
+        /// Apportion the AMOR received from fees
+        distributeFees(currentGuildWeights);
+        /// Apportion the token donations
+        distributeTokens(currentGuildWeight);
+
     }
 
-    function _distribute(uint256[] memory _currentGuildWeight) internal {
-        uint256 currentBalanceAMOR = amorToken.balanceOf(address(this));
-        uint256 currentBalanceUSDC = amorToken.balanceOf(address(this));
-        uint256 totalAmountSentAmor;
-        uint256 totalAmountSentUSDC;
+    /// @notice Apportions approved token donations according to guild weights
+    /// @param  _currentGuildWeight an array of the current weights of all the guilds
+    function distributeTokens(uint256[] memory currentGuildWeights) internal {
+        address endOfList = SENTINAL;
+        /// Loop through linked list
+        while (whitelist[endOfList] != SENTINAL) {
+            /// Loop through guilds
+            for (uint256 i = 0; i < guilds.length; i++) {
+                uint256 amountToDistribute = (donations[whitelist[endOfList]] * currentGuildWeights[i]) / guildsTotalWeight;
+                if (amountToDistribute == 0) {
+                    continue;
+                }
+                guildFunds[whitelist[endOfList]][guilds[i]] += amountToDistribute;
+            }
+            endOfList = whitelist[endOfList];
+        }
+    }
+
+    /// @notice Approtions collected AMOR fees
+    /// @dev    Bear in mind tax rates
+    /// @param  _currentGuildWeight an array of the current weights of the guilds
+    function distributeFees(uint256[] memory currentGuildWeights) internal {
+        /// Determine amount of AMOR that has been collected from fees
+        uint256 feesToBeDistributed = amorToken.balanceOf(address(this)) - donations[address(amorToken)];
         for (uint256 i = 0; i < guilds.length; i++) {
-            uint256 amountToDistributeAMOR = (currentBalanceAMOR * _currentGuildWeight[i]) / guildsTotalWeight;
-            uint256 amountToDistributeUSDC = (currentBalanceUSDC * _currentGuildWeight[i]) / guildsTotalWeight;
-            if (amountToDistributeAMOR == 0 && amountToDistributeUSDC == 0) {
+            uint256 amountToDistribute = (feesToBeDistributed * currentGuildWeights[i]) / guildsTotalWeight;
+            if (amountToDistribute == 0) {
                 continue;
             }
-            /* Old code 
-            /// Why does guildWeight become 0 here?
-            guildWeight[msg.sender] = 0;
-            /// We aren't doing anything with totalAmountSent here?
-            totalAmountSentAmor = totalAmountSentAmor + amountToDistributeAMOR;
-            totalAmountSentUSDC = totalAmountSentUSDC + amountToDistributeUSDC;
-            /// Distribute doesn't need to transfer tokens, only allocate these to the guilds
-            amorToken.transfer(guilds[i], amountToDistributeAMOR);
-            */
-            guildFunds[address(amorToken)][guilds[i]] += amountToDistributeAMOR;
-            guildFunds[address(usdcToken)][guilds[i]] += amountToDistributeUSDC;
-        }
-        // Potential re-entrancy? May have to put state change inside or before Loop
-        //guildsTotalWeight = 0;
+            guildFunds[address(amorToken)][guilds[i]] += amountToDistribute;
+            }
     }
 
-    /// @notice Allows a guuild to claim amor tokens from the metadao
+    /// @notice Allows a guild to claim amor tokens from the metadao
     /// @dev only a guild can call this funtion
     function claim() public onlyRole(GUILD_ROLE) {
         /// Calculate the claim amount
