@@ -71,7 +71,7 @@ contract MetaDaoController is AccessControl {
         amorToken = IERC20(_amor);
         guildFactory = _cloneFactory;
         claimDuration = 5 days;
-        sentinalOwner = _amor;
+        sentinalWhitelist = _amor;
         whitelist[sentinalWhitelist] = SENTINAL;
         whitelist[SENTINAL] = _amor;
     }
@@ -130,25 +130,24 @@ contract MetaDaoController is AccessControl {
             donations[token] += amount;
             IERC20(token).transferFrom(msg.sender, address(this), amount);
         }
-        
     }
 
     /// @notice Distributes the amortoken in the metadao to the approved guilds but guild weight
     /// @dev    Creates an array of the current guild weights to pass to `_distribute`
     function distribute() public {
-        uint256[] memory currentGuildWeight = new uint256[](guilds.length);
+        uint256[] memory currentGuildWeights = new uint256[](guilds.length);
         for (uint256 i = 0; i < guilds.length; i++) {
-            currentGuildWeight[i] = guildWeight[guilds[i]];
+            currentGuildWeights[i] = guildWeight[guilds[i]];
         }
         /// Apportion the AMOR received from fees
         distributeFees(currentGuildWeights);
         /// Apportion the token donations
-        distributeTokens(currentGuildWeight);
+        distributeTokens(currentGuildWeights);
 
     }
 
     /// @notice Apportions approved token donations according to guild weights
-    /// @param  _currentGuildWeight an array of the current weights of all the guilds
+    /// @param  currentGuildWeights an array of the current weights of all the guilds
     function distributeTokens(uint256[] memory currentGuildWeights) internal {
         address endOfList = SENTINAL;
         /// Loop through linked list
@@ -167,7 +166,7 @@ contract MetaDaoController is AccessControl {
 
     /// @notice Apportions collected AMOR fees
     /// @dev    Bear in mind tax rates
-    /// @param  _currentGuildWeight an array of the current weights of the guilds
+    /// @param  currentGuildWeights an array of the current weights of the guilds
     function distributeFees(uint256[] memory currentGuildWeights) internal {
         /// Determine amount of AMOR that has been collected from fees
         uint256 feesToBeDistributed = amorToken.balanceOf(address(this)) - donations[address(amorToken)];
@@ -180,21 +179,21 @@ contract MetaDaoController is AccessControl {
             }
     }
 
-    /// @notice Allows a guild to claim amor tokens from the metadao
+    /// @notice Transfers apportioned tokens from the metadao to the guild
     /// @dev only a guild can call this funtion
     function claim() public onlyRole(GUILD_ROLE) {
-        /// Calculate the claim amount
-        uint256 amount = (amorToken.balanceOf(address(this)) * (guildWeight[msg.sender] / guildsTotalWeight));
-        /// Revert if claimant has no claimable funds or no funds to distribute
-        if (amount == 0) {
-            revert InvalidClaim();
+        /// Loop through the token linked list
+        address helper = SENTINAL;
+        while (whitelist[helper] != SENTINAL) {
+            /// Update the donation total for this token
+            donations[whitelist[helper]] -= guildFunds[msg.sender][whitelist[helper]];
+            /// Transfer the token
+            IERC20(whitelist[helper]).transfer(msg.sender, guildFunds[msg.sender][whitelist[helper]]);
+            /// Clear this guild's token balance
+            delete guildFunds[msg.sender][whitelist[helper]];
+            /// Advance the helper to the next link in the list
+            helper = whitelist[helper];
         }
-        /// Update guildWeight and guildsTotalWeight
-        guildWeight[msg.sender] = 0;
-        ///guildsTotalWeight -= amount;
-
-        /// Transfer the AMOR to the claimant
-        amorToken.transfer(msg.sender, amount);
     }
 
     /// @notice use this funtion to create a new guild via the guild factory
@@ -223,7 +222,7 @@ contract MetaDaoController is AccessControl {
     /// @param _token the controller address of the guild
     function addWhitelist(address _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
         whitelist[sentinalWhitelist] = _token;
-        sentinalOwner = _token;
+        sentinalWhitelist = _token;
         whitelist[sentinalWhitelist] = SENTINAL;
     }
 
