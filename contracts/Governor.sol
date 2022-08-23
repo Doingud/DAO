@@ -7,11 +7,6 @@ import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/// @title Governor contract
-/// @author Daoism Systems Team
-/// @dev    IGovernor IERC165 Pattern
-/// @notice Governor contract will allow to add and vote for the proposals
-
 contract DoinGudGovernor {
     using SafeCast for uint256;
 
@@ -348,8 +343,9 @@ contract DoinGudGovernor {
             return ProposalState.Active;
         }
 
-        // Proposal should achieve at least 20% approval of guardians, to be accepted
-        if (int256(proposalVoting[proposalId] * 100) / proposalWeight[proposalId] >= 20) {
+        // Proposal should achieve at least 20% approval of all guardians, to be accepted.
+        // Proposal should achieve at least 51% approval of voted guardians, to be accepted.
+        if ((int256(proposalVoting[proposalId] * 100) / int256(guardians.length) >= 20) && (int256(proposalVoting[proposalId] * 100) / proposalWeight[proposalId] >= 51)) {
             return ProposalState.Succeeded;
         } else {
             return ProposalState.Defeated;
