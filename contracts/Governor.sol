@@ -7,6 +7,11 @@ import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/// @title Governor contract
+/// @author Daoism Systems Team
+/// @dev    IGovernor IERC165 Pattern
+/// @notice Governor contract will allow to add and vote for the proposals
+
 contract DoinGudGovernor {
     using SafeCast for uint256;
 
@@ -16,8 +21,7 @@ contract DoinGudGovernor {
         Canceled,
         Defeated,
         Succeeded,
-        Expired,
-        Executed
+        Expired
     }
 
     struct ProposalCore {
@@ -61,8 +65,7 @@ contract DoinGudGovernor {
         uint256[] values,
         bytes[] calldatas,
         uint256 startBlock,
-        uint256 endBlock,
-        string description
+        uint256 endBlock
     );
 
     string public _name;
@@ -206,8 +209,7 @@ contract DoinGudGovernor {
     function propose(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas,
-        string memory description
+        bytes[] memory calldatas
     ) external onlySnapshot returns (uint256) {
         if (!(targets.length == values.length && targets.length == calldatas.length)) {
             revert InvalidParameters();
@@ -221,8 +223,7 @@ contract DoinGudGovernor {
             revert InvalidParameters();
         }
         // Submit proposals uniquely identified by a proposalId and an array of txHashes, to create a Reality.eth question that validates the execution of the connected transactions
-        bytes32 descriptionHash = keccak256(bytes(description));
-        uint256 proposalId = hashProposal(targets, values, calldatas, descriptionHash);
+        uint256 proposalId = hashProposal(targets, values, calldatas);
 
         ProposalCore storage proposal = _proposals[proposalId];
         if (proposal.voteStart != 0) {
@@ -248,8 +249,7 @@ contract DoinGudGovernor {
             values,
             calldatas,
             snapshot,
-            deadline,
-            description
+            deadline
         );
 
         return proposalId;
@@ -290,16 +290,15 @@ contract DoinGudGovernor {
     /// @param targets Target addresses for proposal calls
     /// @param values AMORxGuild values for proposal calls
     /// @param calldatas Calldatas for proposal calls
-    /// @param descriptionHash Description hash of the proposal
     function execute(
         uint256 proposalId,
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas,
-        bytes32 descriptionHash
+        bytes[] memory calldatas
     ) external returns (uint256) {
-        uint256 checkProposalId = hashProposal(targets, values, calldatas, descriptionHash);
-        if (proposalId != checkProposalId) {
+        uint256 checkProposalId = hashProposal(targets, values, calldatas);
+
+        if (checkProposalId != proposalId) {
             revert InvalidParameters();
         }
 
@@ -310,8 +309,12 @@ contract DoinGudGovernor {
 
         IAvatar(avatarAddress).executeProposal(targets, values, calldatas);
 
-        _proposals[proposalId].executed = true;
         emit ProposalExecuted(proposalId);
+
+        delete _proposals[proposalId];
+        delete voters[proposalId];
+        delete proposalVoting[proposalId];
+        delete proposalWeight[proposalId];
 
         return proposalId;
     }
@@ -321,16 +324,12 @@ contract DoinGudGovernor {
     function state(uint256 proposalId) public view returns (ProposalState) {
         ProposalCore storage proposal = _proposals[proposalId];
 
-        if (proposal.executed) {
-            return ProposalState.Executed;
+        if (proposal.voteStart == 0) {
+            revert("Governor: unknown proposal id");
         }
 
         if (proposal.canceled) {
             return ProposalState.Canceled;
-        }
-
-        if (proposal.voteStart == 0) {
-            revert("Governor: unknown proposal id");
         }
 
         if (proposal.voteStart >= block.timestamp) {
@@ -366,9 +365,8 @@ contract DoinGudGovernor {
     function hashProposal(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas,
-        bytes32 descriptionHash
+        bytes[] memory calldatas
     ) public pure returns (uint256) {
-        return uint256(keccak256(abi.encode(targets, values, calldatas, descriptionHash)));
+        return uint256(keccak256(abi.encode(targets, values, calldatas)));
     }
 }
