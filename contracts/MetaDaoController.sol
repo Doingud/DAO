@@ -26,7 +26,14 @@ contract MetaDaoController is AccessControl {
     /// Mapping of guild --> token --> amount
     mapping(address => mapping(address => uint256)) public guildFunds;
 
+    /*  Changing this to a linked list
+        This allows for testing `isWhitelisted` and iteration in one mapping
     mapping(address => bool) public whitelist;
+    */
+    mapping(address => address) public whitelist;
+    address public constant SENTINAL = address(0x01);
+    address public sentinalOwner;
+
     //  The total weight of the guilds
     uint256 public guildsTotalWeight;
 
@@ -59,6 +66,9 @@ contract MetaDaoController is AccessControl {
         amorToken = IERC20(_amor);
         guildFactory = _cloneFactory;
         claimDuration = 5 days;
+        sentinalOwner = _amor;
+        whitelist[sentinalOwner] = SENTINAL;
+        whitelist[SENTINAL] = _amor;
     }
 
     /// @notice Updates a guild's weight
@@ -175,7 +185,9 @@ contract MetaDaoController is AccessControl {
     /// @dev give guild role in access control to the controller for the guild
     /// @param _token the controller address of the guild
     function addWhitelist(address _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        whitelist[_token] = true;
+        whitelist[sentinalOwner] = _token;
+        sentinalOwner = _token;
+        whitelist[sentinalOwner] = SENTINAL;
     }
 
     /// @notice removes guild based on id
