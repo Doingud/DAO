@@ -208,9 +208,9 @@ contract MetaDaoController is AccessControl {
     }
 
     function isWhitelisted(address token) public view returns (bool) {
-        if (!whitelist[token]) {
+        if (whitelist[token] == address(0)) {
             revert NotListed();
         }
-        return whitelist[token];
+        return true;
     }
 }
