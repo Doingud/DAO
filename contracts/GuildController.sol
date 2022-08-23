@@ -163,7 +163,7 @@ contract GuildController is IGuildController, Ownable {
         IERC20(token).safeTransferFrom(MetadaoController, address(this), amount);
 
         // distribute those tokens
-
+        distribute(amount, token);
     }
 
     /// @notice allows to donate AMORxGuild tokens to the Guild
