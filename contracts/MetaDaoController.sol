@@ -121,8 +121,16 @@ contract MetaDaoController is AccessControl {
         if (whitelist[token] == address(0)) {
             revert NotListed();
         }
-        donations[token] += amount;
-        IERC20(token).transferFrom(msg.sender, address(this), amount);
+        if (token == address(amorToken)) {
+            uint256 amorBalance = amorToken.balanceOf(address(this));
+            IERC20(token).transferFrom(msg.sender, address(this), amount);
+            amorBalance = amorToken.balanceOf(address(this)) - amorBalance;
+            donations[token] += amorBalance;
+        } else {
+            donations[token] += amount;
+            IERC20(token).transferFrom(msg.sender, address(this), amount);
+        }
+        
     }
 
     /// @notice Distributes the amortoken in the metadao to the approved guilds but guild weight
@@ -157,7 +165,7 @@ contract MetaDaoController is AccessControl {
         }
     }
 
-    /// @notice Approtions collected AMOR fees
+    /// @notice Apportions collected AMOR fees
     /// @dev    Bear in mind tax rates
     /// @param  _currentGuildWeight an array of the current weights of the guilds
     function distributeFees(uint256[] memory currentGuildWeights) internal {
