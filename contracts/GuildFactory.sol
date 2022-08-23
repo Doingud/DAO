@@ -41,6 +41,8 @@ contract GuildFactory is ICloneFactory, Ownable {
     address public dAMORxGuildToken;
     /// The ControllerxGuild implementation
     address public controllerxGuild;
+
+    address public MetaDaoController;
     /// The DoinGud generic proxy contract (the target)
     address public cloneTarget;
     address[] public amorxGuildTokens;
@@ -60,7 +62,8 @@ contract GuildFactory is ICloneFactory, Ownable {
         address _fxAMORxGuildToken,
         address _dAMORxGuildToken,
         address _doinGudProxy,
-        address _controllerxGuild
+        address _controllerxGuild,
+        address _metaDaoController
     ) {
         amorToken = _amorToken;
         /// Set the implementation addresses
@@ -70,6 +73,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         /// `_cloneTarget` refers to the DoinGud Proxy
         cloneTarget = _doinGudProxy;
         controllerxGuild = _controllerxGuild;
+        MetaDaoController = _metaDaoController;
     }
 
     /// @notice This deploys a new guild with it's associated tokens
@@ -115,7 +119,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         dAMORxGuildTokens[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
 
         /// Deploy the ControllerxGuild
-        clonedContract = _deployGuildController(controllerxGuild, guildOwner, amorxGuildToken, fxAMORxGuildToken);
+        clonedContract = _deployGuildController(controllerxGuild, guildOwner, amorToken, amorxGuildToken, fxAMORxGuildToken, MetaDaoController);
         guildControllers[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
     }
 
@@ -184,14 +188,16 @@ contract GuildFactory is ICloneFactory, Ownable {
     function _deployGuildController(
         address _implementation,
         address guildOwner,
+        address amor,
         address amorxGuild,
-        address fxAMORxGuild
+        address fxAMORxGuild,
+        address MetaDaoController
     ) internal returns (address) {
         IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
         proxyContract.initProxy(_implementation);
 
         /// Init the Guild Controller
-        IGuildController(address(proxyContract)).init(guildOwner, amorxGuild, fxAMORxGuild);
+        IGuildController(address(proxyContract)).init(guildOwner, amor, amorxGuild, fxAMORxGuild, MetaDaoController);
 
         return address(proxyContract);
     }

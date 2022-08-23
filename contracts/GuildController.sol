@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
 
-import "./utils/interfaces/IAmorxGuild.sol";
+import "./utils/interfaces/IAmorToken.sol";
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
 import "./utils/interfaces/IGuildController.sol";
@@ -30,9 +30,9 @@ contract GuildController is IGuildController, Ownable {
     uint256 public totalWeight; // total Weight of all of the impact makers
     uint256 public timeVoting; // deadlines for the votes for reports
 
-    IERC20 private ER20AMORxGuild;
+    IERC20 private ERC20AMORxGuild;
     IFXAMORxGuild private FXGFXAMORxGuild;
-    IERC20 private AMOR;
+    address public AMOR;
     address public AMORxGuild;
     address public dAMORxGuild;
     address public FXAMORxGuild;
@@ -71,16 +71,16 @@ contract GuildController is IGuildController, Ownable {
 
     function init(
         address initOwner,
+        address AMOR_,
         address AMORxGuild_,
         address FXAMORxGuild_,
-        address MetaDaoController_,
-        address AMOR_
+        address MetaDaoController_
     ) external returns (bool) {
         require(!_initialized, "Already initialized");
 
         _transferOwnership(initOwner);
 
-        AMOR = IERC20(AMOR_);
+        AMOR = AMOR_;
         AMORxGuild = AMORxGuild_;
         ERC20AMORxGuild = IERC20(AMORxGuild_);
         FXGFXAMORxGuild = IFXAMORxGuild(FXAMORxGuild_);
@@ -115,9 +115,9 @@ contract GuildController is IGuildController, Ownable {
             IERC20(token).transfer(address(this), amount);
 
             // TODO: formula for: convert to AMOR
-            uint256 amorAmount = ;
+            uint256 amorAmount = amount; // TEMPORARY CHOICE
             // give AMOR
-            AMOR.transfer(address(this), amorAmount);
+            IAmorToken(AMOR).transfer(address(this), amorAmount);
 
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
             amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(msg.sender, amorAmount);
@@ -127,14 +127,14 @@ contract GuildController is IGuildController, Ownable {
 
         } else if (token == AMOR) { // convert AMOR to AMORxGuild
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
-            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(msg.sender, amorAmount);
+            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(msg.sender, amount);
         }
 
         // 3.Staked in the FXAMORxGuild tokens,
         // which are going to be owned by the user.
         uint256 FxGAmount = (amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
-        ER20AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
-        ER20AMORxGuild.approve(FXAMORxGuild, FxGAmount);
+        ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
+        ERC20AMORxGuild.approve(FXAMORxGuild, FxGAmount);
         FXGFXAMORxGuild.stake(msg.sender, FxGAmount);
 
         uint256 decAmount = amorxguildAmount - FxGAmount; //decreased amount: other 90%
@@ -142,25 +142,25 @@ contract GuildController is IGuildController, Ownable {
         // based on the weights distribution, tokens will be automatically redirected to the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
-            ER20AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
+            ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
             claimableTokens[impactMakers[i]] += amountToSendVoter;
         }
 
         return amorxguildAmount;
     }
 
-    /// @notice gathers donation from MetadaoController in specific token 
+    /// @notice gathers donation from MetaDaoController in specific token 
     /// and calles distribute function for the whole amount of gathered tokens
     function gatherDonation(address token) public {
-        uint256 amount = IERC20(token).balanceOf(MetadaoController);
+        uint256 amount = IERC20(token).balanceOf(MetaDaoController);
 
-        // check balance of MetadaoController
+        // check balance of MetaDaoController
         if (amount == 0){
             revert InvalidAmount();
         }
 
         // get all tokens
-        IERC20(token).safeTransferFrom(MetadaoController, address(this), amount);
+        IERC20(token).safeTransferFrom(MetaDaoController, address(this), amount);
 
         // distribute those tokens
         distribute(amount, token);
@@ -177,7 +177,7 @@ contract GuildController is IGuildController, Ownable {
     function donate(uint256 amount, address token) external returns (uint256) {
 
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
-        if (token.balanceOf(msg.sender) < amount || amount < 10) {
+        if (IERC20(token).balanceOf(msg.sender) < amount || amount < 10) {
             revert InvalidAmount();
         }
 
@@ -305,7 +305,7 @@ contract GuildController is IGuildController, Ownable {
             if (reportsVoting[id] > 0) {
                 // If report has positive voting weight, then funds go 50-50%,
                 // 50% go to the report creater,
-                ER20AMORxGuild.safeTransfer(reportsAuthors[id], uint256(fiftyPercent));
+                ERC20AMORxGuild.safeTransfer(reportsAuthors[id], uint256(fiftyPercent));
 
                 // and 50% goes to the people who voted positively
                 for (uint256 i = 0; i < voters[id].length; i++) {
@@ -313,7 +313,7 @@ contract GuildController is IGuildController, Ownable {
                     if (votes[id][people[i]] > 0) {
                         // 50% * user weigth / all 100%
                         int256 amountToSendVoter = (int256(fiftyPercent) * votes[id][people[i]]) / reportsWeight[id];
-                        ER20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
+                        ERC20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
                     }
                     delete votes[id][people[i]];
                 }
@@ -326,7 +326,7 @@ contract GuildController is IGuildController, Ownable {
                         // allAmountToDistribute(50%) * user weigth in % / all 100%
                         int256 absVotes = abs(votes[id][people[i]]);
                         int256 amountToSendVoter = (fiftyPercent * absVotes) / reportsWeight[id];
-                        ER20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
+                        ERC20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
                     }
                     delete votes[id][people[i]];
                 }
@@ -336,7 +336,7 @@ contract GuildController is IGuildController, Ownable {
                     if (reportsVoting[i] > 0) {
                         // allAmountToDistribute(50%) * report weigth in % / all 100%
                         int256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / int256(totalReportsWeight);
-                        ER20AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
+                        ERC20AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
                     }
                 }
             }
@@ -459,7 +459,7 @@ contract GuildController is IGuildController, Ownable {
         if (impact != msg.sender) {
             revert Unauthorized();
         }
-        ER20AMORxGuild.safeTransfer(impact, claimableTokens[impact]);
+        ERC20AMORxGuild.safeTransfer(impact, claimableTokens[impact]);
         claimableTokens[impact] = 0;
     }
 
