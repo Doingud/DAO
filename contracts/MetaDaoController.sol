@@ -20,22 +20,27 @@ import "./utils/interfaces/ICloneFactory.sol";
 contract MetaDaoController is AccessControl {
     error InvalidGuild();
 
+    /// Guild-related variables
     address[] public guilds;
     //  Array of addresses of Guilds
     mapping(address => uint256) public guildWeight;
     /// Mapping of guild --> token --> amount
     mapping(address => mapping(address => uint256)) public guildFunds;
+    /// The total weight of the guilds
+    uint256 public guildsTotalWeight;
+
+    /// Donations variables
+    mapping(address => uint256) public donations;
 
     /*  Changing this to a linked list
         This allows for testing `isWhitelisted` and iteration in one mapping
     mapping(address => bool) public whitelist;
     */
+    /// Token related variables
     mapping(address => address) public whitelist;
     address public constant SENTINAL = address(0x01);
-    address public sentinalOwner;
+    address public sentinalWhitelist;
 
-    //  The total weight of the guilds
-    uint256 public guildsTotalWeight;
 
     /// Time snapshot
     uint256 public claimStart;
@@ -67,7 +72,7 @@ contract MetaDaoController is AccessControl {
         guildFactory = _cloneFactory;
         claimDuration = 5 days;
         sentinalOwner = _amor;
-        whitelist[sentinalOwner] = SENTINAL;
+        whitelist[sentinalWhitelist] = SENTINAL;
         whitelist[SENTINAL] = _amor;
     }
 
@@ -94,6 +99,8 @@ contract MetaDaoController is AccessControl {
         return true;
     }
 
+
+    /* Old code
     /// @notice Allows someone to donate AMOR token to the metadao
     /// @param amount Amount of AMOR to be donated
     function donate(uint256 amount) public {
@@ -104,6 +111,18 @@ contract MetaDaoController is AccessControl {
     /// @param amount Amount of AMOR to be donated
     function donateUSDC(uint256 amount) public {
         usdcToken.transferFrom(msg.sender, address(this), amount);
+    }
+    */
+    /// @notice Allows a user to donate a whitelisted asset
+    /// @dev    `approve` must have been called on the `token` contract
+    /// @param  token the address of the token to be donated
+    /// @param  amount the amount of tokens to donate
+    function donate(address token, uint256 amount) external {
+        if (whitelist[token] == address(0)) {
+            revert NotListed();
+        }
+        donations[token] += amount;
+        IERC20(token).transferFrom(msg.sender, address(this), amount);
     }
 
     /// @notice Distirbutes the amortoken in the metadao to the approved guilds but guild weight
@@ -185,9 +204,9 @@ contract MetaDaoController is AccessControl {
     /// @dev give guild role in access control to the controller for the guild
     /// @param _token the controller address of the guild
     function addWhitelist(address _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        whitelist[sentinalOwner] = _token;
+        whitelist[sentinalWhitelist] = _token;
         sentinalOwner = _token;
-        whitelist[sentinalOwner] = SENTINAL;
+        whitelist[sentinalWhitelist] = SENTINAL;
     }
 
     /// @notice removes guild based on id
