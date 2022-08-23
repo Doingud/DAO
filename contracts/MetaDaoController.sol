@@ -243,7 +243,7 @@ contract MetaDaoController is AccessControl {
         return guilds[index];
     }
 
-    function isWhitelisted(address token) public view returns (bool) {
+    function isWhitelisted(address token) external view returns (bool) {
         if (whitelist[token] == address(0)) {
             revert NotListed();
         }
