@@ -41,7 +41,6 @@ contract MetaDaoController is AccessControl {
     address public constant SENTINAL = address(0x01);
     address public sentinalWhitelist;
 
-
     /// Time snapshot
     uint256 public claimStart;
     uint256 public claimDuration;
@@ -99,7 +98,6 @@ contract MetaDaoController is AccessControl {
         return true;
     }
 
-
     /* Old code
     /// @notice Allows someone to donate AMOR token to the metadao
     /// @param amount Amount of AMOR to be donated
@@ -143,7 +141,6 @@ contract MetaDaoController is AccessControl {
         distributeFees(currentGuildWeights);
         /// Apportion the token donations
         distributeTokens(currentGuildWeights);
-
     }
 
     /// @notice Apportions approved token donations according to guild weights
@@ -154,7 +151,8 @@ contract MetaDaoController is AccessControl {
         while (whitelist[endOfList] != SENTINAL) {
             /// Loop through guilds
             for (uint256 i = 0; i < guilds.length; i++) {
-                uint256 amountToDistribute = (donations[whitelist[endOfList]] * currentGuildWeights[i]) / guildsTotalWeight;
+                uint256 amountToDistribute = (donations[whitelist[endOfList]] * currentGuildWeights[i]) /
+                    guildsTotalWeight;
                 if (amountToDistribute == 0) {
                     continue;
                 }
@@ -176,7 +174,7 @@ contract MetaDaoController is AccessControl {
                 continue;
             }
             guildFunds[address(amorToken)][guilds[i]] += amountToDistribute;
-            }
+        }
     }
 
     /// @notice Transfers apportioned tokens from the metadao to the guild
