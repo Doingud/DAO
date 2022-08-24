@@ -157,9 +157,7 @@ describe('unit - Contract: GuildController', function () {
     context('» donate testing', () => {
 
         it('it fails to donate AMORxGuild tokens if not enough AMORxGuild', async function () {
-console.log("1 is %s", 1);
             await metadao.connect(root).addWhitelist(AMORxGuild.address);
-console.log("2 is %s", 2);
             await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER, AMORxGuild.address)).to.be.revertedWith(
                 'InvalidAmount()'
             );
@@ -167,7 +165,7 @@ console.log("2 is %s", 2);
 
         it('it fails to donate if token not in the whitelist', async function () {
             await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER, root.address)).to.be.revertedWith(
-                'NotWhitelistedToken()'
+                'NotListed()'
             );
         });
 
@@ -222,12 +220,15 @@ console.log("2 is %s", 2);
         it('it fails to gatherDonation if token not in the whitelist', async function () {
             // gatherDonation --> distribute
             await expect(controller.connect(operator).gatherDonation(root.address)).to.be.revertedWith(
-                'NotWhitelistedToken()'
+                'NotListed()'
             );
         });
 
         it('gathers donation in AMOR', async function () {
-            // TODO: add some donations to MetaDaoController
+            // add some funds to MetaDaoController
+            await AMOR.connect(root).transfer(metadao.address, TEST_TRANSFER);
+            await metadao.connect(root).distribute(AMOR.address, controller.address);
+
             await controller.connect(operator).gatherDonation(AMOR.address);
             // TODO: add check changes
         });

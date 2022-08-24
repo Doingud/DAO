@@ -164,11 +164,12 @@ contract GuildController is IGuildController, Ownable {
 
         // check balance of MetaDaoController
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
+        console.log("amount is %s", amount);
         if (amount < 10) {
             revert InvalidAmount();
         }
 
-        // get all tokens
+        // get all tokens // TODO: fix. breaks here
         IERC20(token).safeTransferFrom(MetaDaoController, address(this), amount);
 
         // distribute those tokens
@@ -188,15 +189,13 @@ contract GuildController is IGuildController, Ownable {
         if (!IMetadao(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
         }
-        console.log("e is %s");
 
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
         if (IERC20(token).balanceOf(msg.sender) < amount || amount < 10) {
             revert InvalidAmount();
         }
-console.log("e is %s");
-        amount = distribute(amount, token);
 
+        amount = distribute(amount, token);
         return amount;
     }
 

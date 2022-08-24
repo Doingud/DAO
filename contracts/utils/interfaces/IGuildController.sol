@@ -50,4 +50,6 @@ interface IGuildController {
     /// @notice allows to claim tokens for specific ImpactMaker address
     /// @param impact Impact maker to to claim tokens from
     function claim(address impact) external;
+
+    function gatherDonation(address token) external;
 }

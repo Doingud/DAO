@@ -17,6 +17,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./utils/interfaces/ICloneFactory.sol";
 import "./utils/interfaces/IMetadao.sol";
+import "./utils/interfaces/IGuildController.sol";
 
 contract MetaDaoControllerMock is IMetadao, AccessControl {
     error InvalidGuild();
@@ -33,14 +34,8 @@ contract MetaDaoControllerMock is IMetadao, AccessControl {
     /// Donations variables
     mapping(address => uint256) public donations;
 
-    /*  Changing this to a linked list
-        This allows for testing `isWhitelisted` and iteration in one mapping
-    mapping(address => bool) public whitelist;
-    */
     /// Token related variables
     mapping(address => uint256) public whitelist;
-    // address public constant SENTINAL = address(0x01);
-    // address[] public sentinalWhitelist;
 
     /// Clone Factory
     address public guildFactory;
@@ -67,34 +62,38 @@ contract MetaDaoControllerMock is IMetadao, AccessControl {
         usdcToken = IERC20(_usdc);
         amorToken = IERC20(_amor);
         guildFactory = _cloneFactory;
-        // sentinalWhitelist.push(_amor);
-        whitelist[_amor] = 1;//_amor;
+        whitelist[_amor] = 1;
     }
 
     /// @notice adds guild based on the controller address provided
     /// @dev give guild role in access control to the controller for the guild
-    /// @param _token the controller address of the guild
-    function addWhitelist(address _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    /// @param token the controller address of the guild
+    function addWhitelist(address token) external onlyRole(DEFAULT_ADMIN_ROLE) {
         // check that token won't be added twice
-        if (whitelist[_token] != 0) {
+        if (whitelist[token] != 0) {
             revert AlreadyAdded();
         }
 
-        // sentinalWhitelist.push(_token);
-        whitelist[_token] == 1;//_token;
-        console.log("_token is %s", _token);
-        console.log("whitelist[_token] is %s", whitelist[_token]);
+        whitelist[token] = 1;
     }
 
     /// @notice Checks that a token is whitelisted
     /// @param  token address of the ERC20 token being checked
     /// @return bool true if token whitelisted, false if not whitelisted
-    function isWhitelisted(address token) external view returns (bool) {
-        console.log("token is %s", token);
-        console.log("whitelist[token] is %s", whitelist[token]);
+    function isWhitelisted(address token) external returns (bool) {
         if (whitelist[token] == 0) {
             revert NotListed();
         }
         return true;
+    }
+
+    // no result
+    function distribute(address token, address controller) external {
+        IGuildController(controller).gatherDonation(token);
+    }
+
+    // no result
+    function approveToController(address token, address controller) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        IERC20(token).approve(msg.sender, IERC20(token).balanceOf(address(this)));
     }
 }
