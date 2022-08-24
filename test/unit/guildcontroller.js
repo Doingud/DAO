@@ -226,8 +226,14 @@ describe('unit - Contract: GuildController', function () {
 
         it('gathers donation in AMOR', async function () {
             // add some funds to MetaDaoController
+            await AMOR.connect(root).approve(AMORxGuild.address, TEST_TRANSFER);
             await AMOR.connect(root).transfer(metadao.address, TEST_TRANSFER);
+
             await metadao.connect(root).approveToController(AMOR.address, controller.address);
+            await metadao.connect(root).approveToController(AMOR.address, AMORxGuild.address);
+
+            let AMORDeducted = ethers.BigNumber.from((TEST_TRANSFER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
+            let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
 
             await controller.connect(operator).gatherDonation(AMOR.address);
             // TODO: add check changes

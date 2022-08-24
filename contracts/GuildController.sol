@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
+import "hardhat/console.sol";
 
 import "./utils/interfaces/IAmorToken.sol";
 import "./utils/interfaces/IFXAMORxGuild.sol";
@@ -122,15 +123,32 @@ contract GuildController is IGuildController, Ownable {
             // give AMOR
             IAmorToken(AMOR).transfer(address(this), amorAmount);
 
+            // uint256 AMORDeducted = amount*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS);
+
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
             amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(msg.sender, amorAmount);
 
-            // uint256 time = 10 days; //change to necessary time
-            // dAMOR = dAMOR.stake(amorxguildAmount, time);
         } else if (token == AMOR) {
             // convert AMOR to AMORxGuild
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
-            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(msg.sender, amount);
+            console.log("amount is %s", amount);
+            // uint256 AMORDeducted = amount*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS);
+            // uint256 nextAMORDeducted =  AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS);
+        // tokenAmor.safeTransferFrom(msg.sender, address(this), amount);
+
+        //  Calculate mint amount and mint this to the address `to`
+        //  Take AMOR tax into account
+        // uint256 taxCorrectedAmount = tokenAmor.balanceOf(address(this)) - stakedAmor;
+        // //  Note there is a tax on staking into AMORxGuild
+        // uint256 mintAmount = COEFFICIENT * ((taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
+
+        // mintAmount = (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS
+
+
+            IERC20(token).approve(AMORxGuild, amount);
+
+            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(address(this), 12);//AMORDeducted);
+            console.log("amorxguildAmount is %s", amorxguildAmount);
         }
 
         // 3.Staked in the FXAMORxGuild tokens,
@@ -142,7 +160,7 @@ contract GuildController is IGuildController, Ownable {
 
         uint256 decAmount = amorxguildAmount - FxGAmount; //decreased amount: other 90%
 
-        // based on the weights distribution, tokens will be automatically redirected to the impact makers
+        // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
             ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
@@ -167,9 +185,10 @@ contract GuildController is IGuildController, Ownable {
             revert InvalidAmount();
         }
 
-        // get all tokens // TODO: fix. breaks here
+        // get all tokens 
         IERC20(token).safeTransferFrom(MetaDaoController, address(this), amount);
 
+        // TODO: fix distribute(). breaks here
         // distribute those tokens
         distribute(amount, token);
     }
