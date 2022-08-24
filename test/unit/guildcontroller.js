@@ -227,7 +227,7 @@ describe('unit - Contract: GuildController', function () {
         it('gathers donation in AMOR', async function () {
             // add some funds to MetaDaoController
             await AMOR.connect(root).transfer(metadao.address, TEST_TRANSFER);
-            await metadao.connect(root).distribute(AMOR.address, controller.address);
+            await metadao.connect(root).approveToController(AMOR.address, controller.address);
 
             await controller.connect(operator).gatherDonation(AMOR.address);
             // TODO: add check changes

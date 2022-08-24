@@ -94,6 +94,6 @@ contract MetaDaoControllerMock is IMetadao, AccessControl {
 
     // no result
     function approveToController(address token, address controller) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        IERC20(token).approve(msg.sender, IERC20(token).balanceOf(address(this)));
+        IERC20(token).approve(controller, IERC20(token).balanceOf(address(this)));
     }
 }
