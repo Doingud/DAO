@@ -12,7 +12,7 @@
  */
 
 pragma solidity 0.8.15;
-import "hardhat/console.sol";
+
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./utils/interfaces/ICloneFactory.sol";
