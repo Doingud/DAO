@@ -18,6 +18,7 @@ let AMOR;
 let AMORxGuild;
 let FXAMORxGuild
 let controller;
+let metadao;
 let root;
 let authorizer_adaptor;
 let impactMaker;
@@ -40,9 +41,11 @@ describe('unit - Contract: GuildController', function () {
         await init.getTokens(setup);
 
         AMOR = setup.tokens.AmorTokenImplementation;
-        AMORxGuild = setup.tokens.AmorGuildToken;//AmorTokenImplementation;
+        AMORxGuild = setup.tokens.AmorGuildToken;
         FXAMORxGuild = setup.tokens.FXAMORxGuild;
         controller = await init.controller(setup);
+        // await init.getGuildFactory(setup);
+        metadao = await init.metadao(setup);
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;
@@ -154,8 +157,17 @@ describe('unit - Contract: GuildController', function () {
     context('» donate testing', () => {
 
         it('it fails to donate AMORxGuild tokens if not enough AMORxGuild', async function () {
+            
+            await metadao.connect(root).addWhitelist(AMORxGuild.address);
+
             await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER, AMORxGuild.address)).to.be.revertedWith(
                 'InvalidAmount()'
+            );
+        });
+
+        it('it fails to donate if token not in the whitelist', async function () {
+            await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER, root.address)).to.be.revertedWith(
+                'NotWhitelistedToken()'
             );
         });
 
@@ -207,10 +219,10 @@ describe('unit - Contract: GuildController', function () {
             );
         });
 
-        it('it fails to distribute if token not in the whitelist', async function () {
+        it('it fails to gatherDonation if token not in the whitelist', async function () {
             // gatherDonation --> distribute
-            await expect(controller.connect(operator).gatherDonation(AMORxGuild.address)).to.be.revertedWith(
-                'InvalidParameters()'
+            await expect(controller.connect(operator).gatherDonation(root.address)).to.be.revertedWith(
+                'NotWhitelistedToken()'
             );
         });
 

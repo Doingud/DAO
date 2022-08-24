@@ -5,6 +5,7 @@ import "./utils/interfaces/IAmorToken.sol";
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
 import "./utils/interfaces/IGuildController.sol";
+import "./utils/interfaces/IMetadao.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -62,6 +63,7 @@ contract GuildController is IGuildController, Ownable {
     error ReportNotExists();
     error InvalidAmount();
     error VotingNotStarted();
+    error NotWhitelistedToken();
 
     /// Invalid address. Needed address != address(0)
     error AddressZero();
@@ -110,14 +112,13 @@ contract GuildController is IGuildController, Ownable {
         uint256 amorxguildAmount = amount;
         // 10% of the tokens in the impact pool are getting:
         if (token != AMORxGuild && token != AMOR) {
-            // TODO: check if in whitelist in MetaDaoController
-
             // 1.Exchanged in the pool to AMOR(if it’s not AMOR or AMORxGuild)
             // recieve tokens
             IERC20(token).transfer(address(this), amount);
 
             // TODO: formula for: convert to AMOR
-            uint256 amorAmount = amount; // TEMPORARY CHOICE
+            uint256 amorAmount = amount; // TEMPORARY COEFFICIENT CHOICE
+
             // give AMOR
             IAmorToken(AMOR).transfer(address(this), amorAmount);
 
@@ -154,10 +155,15 @@ contract GuildController is IGuildController, Ownable {
     /// @notice gathers donation from MetaDaoController in specific token
     /// and calles distribute function for the whole amount of gathered tokens
     function gatherDonation(address token) public {
+        // check if token in the whitelist of the MetaDaoController
+        if (!IMetadao(MetaDaoController).isWhitelistedToken(token)) {
+            revert NotWhitelistedToken();
+        }
         uint256 amount = IERC20(token).balanceOf(MetaDaoController);
 
         // check balance of MetaDaoController
-        if (amount == 0) {
+        // if amount is below 10, most of the calculations will round down to zero, only wasting gas
+        if (amount < 10) {
             revert InvalidAmount();
         }
 
@@ -177,28 +183,16 @@ contract GuildController is IGuildController, Ownable {
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     // Requires the msg.sender to `approve` amount prior to calling this function
     function donate(uint256 amount, address token) external returns (uint256) {
+        // check if token in the whitelist of the MetaDaoController
+        if (!IMetadao(MetaDaoController).isWhitelistedToken(token)) {
+            revert NotWhitelistedToken();
+        }
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
         if (IERC20(token).balanceOf(msg.sender) < amount || amount < 10) {
             revert InvalidAmount();
         }
 
         amount = distribute(amount, token);
-
-        // // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
-        // // which are going to be owned by the user.
-        // uint256 FxGAmount = (amount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
-        // AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
-        // AMORxGuild.approve(FXAMORxGuild, FxGAmount);
-        // FXGFXAMORxGuild.stake(msg.sender, FxGAmount);
-
-        // uint256 decAmount = amount - FxGAmount; //decreased amount: other 90%
-
-        // // based on the weights distribution, tokens will be automatically redirected to the impact makers
-        // for (uint256 i = 0; i < impactMakers.length; i++) {
-        //     uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
-        //     AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
-        //     claimableTokens[impactMakers[i]] += amountToSendVoter;
-        // }
 
         return amount;
     }
