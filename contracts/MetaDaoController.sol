@@ -41,10 +41,6 @@ contract MetaDaoController is AccessControl {
     address public constant SENTINAL = address(0x01);
     address public sentinalWhitelist;
 
-    /// Time snapshot
-    uint256 public claimStart;
-    uint256 public claimDuration;
-
     /// Clone Factory
     address public guildFactory;
 
@@ -69,7 +65,6 @@ contract MetaDaoController is AccessControl {
         usdcToken = IERC20(_usdc);
         amorToken = IERC20(_amor);
         guildFactory = _cloneFactory;
-        claimDuration = 5 days;
         sentinalWhitelist = _amor;
         whitelist[sentinalWhitelist] = SENTINAL;
         whitelist[SENTINAL] = _amor;
@@ -98,19 +93,6 @@ contract MetaDaoController is AccessControl {
         return true;
     }
 
-    /* Old code
-    /// @notice Allows someone to donate AMOR token to the metadao
-    /// @param amount Amount of AMOR to be donated
-    function donate(uint256 amount) public {
-        amorToken.transferFrom(msg.sender, address(this), amount);
-    }
-
-    /// @notice Allows someone to donate AMOR token to the metadao
-    /// @param amount Amount of AMOR to be donated
-    function donateUSDC(uint256 amount) public {
-        usdcToken.transferFrom(msg.sender, address(this), amount);
-    }
-    */
     /// @notice Allows a user to donate a whitelisted asset
     /// @dev    `approve` must have been called on the `token` contract
     /// @param  token the address of the token to be donated
@@ -163,7 +145,6 @@ contract MetaDaoController is AccessControl {
     }
 
     /// @notice Apportions collected AMOR fees
-    /// @dev    Bear in mind tax rates
     /// @param  currentGuildWeights an array of the current weights of the guilds
     function distributeFees(uint256[] memory currentGuildWeights) internal {
         /// Determine amount of AMOR that has been collected from fees
