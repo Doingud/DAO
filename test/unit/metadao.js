@@ -59,41 +59,29 @@ describe("unit - MetaDao", function () {
 
     context('function: removeGuild()', () => {
         it('it fails to remove guilds if not an admin address', async function () {
-            await METADAO.addGuild(user2.address);
-            await expect(METADAO.connect(user1).removeGuild(0,user2.address)).
+            await expect(METADAO.connect(user1).removeGuild(0, user2.address)).
                 to.be.revertedWith('AccessControl');
         });
 
         it('it removes a guild if tx sent by admin', async function () {
-            await METADAO.addGuild(user2.address);
             await METADAO.addGuild(user1.address);
-            await METADAO.removeGuild(0,user2.address);
+            await METADAO.removeGuild(0, user2.address);
             expect(await METADAO.guilds(0)).to.equal(user1.address);  
         });
-
     });
 
     context('function: updateGuildWeight()', () => {
         it('it fails to update the weight is msg.sender is not a guild', async function () {
-            await expect(METADAO.connect(user2).updateGuildWeight(50)).to.be.reverted;
+            await expect(METADAO.connect(user2).updateGuildWeight(ONE_HUNDRED_ETHER)).to.be.reverted;
         });
 
         it('it successfully updates the weight when a Guild address calls the function', async function () {
+            await METADAO.addGuild(user2.address);
             expect(await METADAO.connect(user1).updateGuildWeight(ONE_HUNDRED_ETHER));
+            expect(await METADAO.connect(user2).updateGuildWeight(ONE_HUNDRED_ETHER));
         });
     });
 
-    context('function: donate()', () => {
-        it('it succeeds if amor token is successfully donated to the metadao', async function () {
-            expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
-            expect(await AMOR_TOKEN.balanceOf(METADAO.address) == 0);
-            await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
-            expect(await AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
-            await METADAO.connect(root).donate(AMOR_TOKEN.address, 10);
-        });
-    });
-
-    
     context('function: addWhitelist()', () => {
         it('Should add token to whitelist', async function () {
             await METADAO.addWhitelist(USDC.address);
@@ -104,28 +92,22 @@ describe("unit - MetaDao", function () {
         });
     });
 
+    context('function: donate()', () => {
+        it('it succeeds if amor token is successfully donated to the metadao', async function () {
+            expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
+            expect(await AMOR_TOKEN.balanceOf(METADAO.address) == 0);
+            await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
+            await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
+            expect(await AMOR_TOKEN.allowance(root.address,METADAO.address) == ONE_HUNDRED_ETHER);
+            await METADAO.connect(root).donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER);
+            await METADAO.connect(root).donate(USDC.address, ONE_HUNDRED_ETHER)
+        });
+    });
+
     context('function: distribute()', () => {
         it('it succeeds if amor tokens are distributed to the guild according to guild weight', async function () {
-            await METADAO.addGuild(user1.address);
-            await METADAO.addGuild(user2.address);
-            amorBalance = await AMOR_TOKEN.balanceOf(root.address);
             expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
-            await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
-            await USDC.connect(root).approve(METADAO.address, ONE_HUNDRED_ETHER);
-            expect(await AMOR_TOKEN.allowance(root.address, METADAO.address) == ONE_HUNDRED_ETHER);
-            await METADAO.donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER)
-            await METADAO.connect(root).donate(USDC.address, ONE_HUNDRED_ETHER)
-            expect(await METADAO.connect(user1).updateGuildWeight(ONE_HUNDRED_ETHER));
-            expect(await METADAO.connect(user2).updateGuildWeight(ONE_HUNDRED_ETHER));
             await METADAO.distribute();
-            let guild1Amor = await METADAO.guildFunds(user1.address, AMOR_TOKEN.address);
-            console.log("AMOR: "+guild1Amor);
-            let donatedAmor = await METADAO.donations(AMOR_TOKEN.address);
-            console.log("Donated AMOR: "+donatedAmor);
-            let guildsTotalWeight = await METADAO.guildsTotalWeight();
-            console.log("GuildsTotalWeight: "+guildsTotalWeight);
-            let guild1Weight = await METADAO.guildWeight(user1.address);
-            console.log("Guild 1 Weight: "+guild1Weight);
         });
     });
 
@@ -138,21 +120,7 @@ describe("unit - MetaDao", function () {
         });
 
         it('it succeeds if a guild claims the token according to guildweight', async function () {
-            /// So here you are adding user1.address as a guild controller
-            await METADAO.addGuild(user1.address);
-            expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
-            await AMOR_TOKEN.connect(root).approve(METADAO.address, ONE_HUNDRED_ETHER);
-            expect(await AMOR_TOKEN.allowance(root.address, METADAO.address) == ONE_HUNDRED_ETHER);
-            /// Here you donate 100 wei
-            /// The issue here is that in `donate()` we don't transfer AMOR to `address(this)`
-            await METADAO.connect(root).donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER);
-            expect(await METADAO.connect(user1).updateGuildWeight(ONE_HUNDRED_ETHER));
-            await METADAO.distribute();
             await METADAO.connect(user1).claim();
-            let balanceAMOR = await AMOR_TOKEN.balanceOf(user1.address);
-            console.log("AMOR: "+balanceAMOR);
-            let balanceUSDC = await(USDC.balanceOf(user1.address));
-            console.log("USDC: "+ balanceUSDC);
             expect(await USDC.balanceOf(user1.address)).to.be.equal(FIFTY_ETHER);
         });
 

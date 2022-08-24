@@ -151,10 +151,9 @@ contract MetaDaoController is AccessControl {
         uint256 feesToBeDistributed = amorToken.balanceOf(address(this)) - donations[address(amorToken)];
         for (uint256 i = 0; i < guilds.length; i++) {
             uint256 amountToDistribute = (feesToBeDistributed * currentGuildWeights[i]) / guildsTotalWeight;
-            if (amountToDistribute == 0) {
-                continue;
+            if (amountToDistribute != 0) {
+                guildFunds[guilds[i]][address(amorToken)] += amountToDistribute;
             }
-            guildFunds[guilds[i]][address(amorToken)] += amountToDistribute;
         }
     }
 
