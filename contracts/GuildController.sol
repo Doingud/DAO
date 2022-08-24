@@ -19,6 +19,10 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 contract GuildController is IGuildController, Ownable {
     using SafeERC20 for IERC20;
 
+    // from AMORxGuildToken
+    uint256 public BASIS_POINTS = 10000;
+    uint256 private constant COEFFICIENT = 10**9;
+
     int256[] public reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
     mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
     mapping(uint256 => address[]) public voters; // voters mapping(uint report => address [] voters)
@@ -139,15 +143,18 @@ contract GuildController is IGuildController, Ownable {
         //  Calculate mint amount and mint this to the address `to`
         //  Take AMOR tax into account
         // uint256 taxCorrectedAmount = tokenAmor.balanceOf(address(this)) - stakedAmor;
-        // //  Note there is a tax on staking into AMORxGuild
-        // uint256 mintAmount = COEFFICIENT * ((taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
 
-        // mintAmount = (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS
+        // TODO: fix this formulas
+        //  Note there is a tax on staking into AMORxGuild
+        uint256 mintAmount = COEFFICIENT * ((taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
+        uint256 stakingTaxRate = AMORxGuild.stakingTaxRate;
+console.log("stakingTaxRate is %s", stakingTaxRate);
+            mintAmount = (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS
 
 
             IERC20(token).approve(AMORxGuild, amount);
 
-            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(address(this), 12);//AMORDeducted);
+            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(address(this), AMORDeducted);
             console.log("amorxguildAmount is %s", amorxguildAmount);
         }
 

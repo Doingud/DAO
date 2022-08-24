@@ -131,17 +131,13 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         }
         //  Must calculate stakedAmor prior to transferFrom()
         uint256 stakedAmor = tokenAmor.balanceOf(address(this));
-console.log("   amount is %s", amount);
-console.log("   tokenAmor.balanceOf(msg.sender) is %s", tokenAmor.balanceOf(msg.sender));
         //  Must have enough AMOR to stake
         //  Note that this transferFrom() is taxed due to AMOR tax
         tokenAmor.safeTransferFrom(msg.sender, address(this), amount);
-console.log("   2 tokenAmor.balanceOf(msg.sender) is %s", tokenAmor.balanceOf(msg.sender));
 
         //  Calculate mint amount and mint this to the address `to`
         //  Take AMOR tax into account
         uint256 taxCorrectedAmount = tokenAmor.balanceOf(address(this)) - stakedAmor;
-console.log("   taxCorrectedAmount is %s", taxCorrectedAmount);
         //  Note there is a tax on staking into AMORxGuild
         uint256 mintAmount = COEFFICIENT * ((taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
         _mint(guildController, (mintAmount * stakingTaxRate) / BASIS_POINTS);
