@@ -53,6 +53,8 @@ contract MetaDaoController is AccessControl {
 
     error InvalidClaim();
     error NotListed();
+    /// The guild cannot be added because it already exists
+    error Exists();
 
     constructor(
         address _amor,
@@ -194,6 +196,11 @@ contract MetaDaoController is AccessControl {
     /// @dev give guild role in access control to the controller for the guild
     /// @param controller the controller address of the guild
     function addGuild(address controller) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        for (uint256 i; i < guilds.length; i++) {
+            if (controller == guilds[i]) {
+                revert Exists();
+            }
+        }
         grantRole(GUILD_ROLE, controller);
         guilds.push(controller);
     }

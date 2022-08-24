@@ -3,9 +3,10 @@ const { use, expect } = require("chai");
 const { solidity } = require("ethereum-waffle");
 const init = require('../test-init.js');
 const { 
-    ONE_HUNDRED_ETHER, FIFTY_ETHER, ONE_ADDRESS
+    ONE_HUNDRED_ETHER,
+    FIFTY_ETHER,
+    ONE_ADDRESS
   } = require('../helpers/constants.js');
-const { AddressOne } = require("@gnosis.pm/safe-contracts");
 
 use(solidity);
 
@@ -54,6 +55,11 @@ describe("unit - MetaDao", function () {
         it('it adds a guild if tx sent by admin', async function () {
             await METADAO.addGuild(user2.address);
             expect(await METADAO.guilds(0)).to.equal(user2.address); 
+        });
+
+        it('it fails when trying to add the same guild', async function () {
+            await expect(METADAO.addGuild(user2.address)).
+                to.be.revertedWith("Exists()");
         });
     });
 
@@ -106,8 +112,11 @@ describe("unit - MetaDao", function () {
 
     context('function: distribute()', () => {
         it('it succeeds if amor tokens are distributed to the guild according to guild weight', async function () {
+            let amorBalance = await AMOR_TOKEN.balanceOf(METADAO.address);
             expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
             await METADAO.distribute();
+            expect(await METADAO.guildFunds(user1.address, AMOR_TOKEN.address)).to.equal((amorBalance/2).toString());
+            expect(await METADAO.guildFunds(user1.address, USDC.address)).to.equal(FIFTY_ETHER);
         });
     });
 
@@ -123,7 +132,6 @@ describe("unit - MetaDao", function () {
             await METADAO.connect(user1).claim();
             expect(await USDC.balanceOf(user1.address)).to.be.equal(FIFTY_ETHER);
         });
-
     });
 
 });
