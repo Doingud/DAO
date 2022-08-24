@@ -21,8 +21,8 @@ contract MetaDaoController is AccessControl {
     error InvalidGuild();
 
     /// Guild-related variables
+    /// Array of addresses of Guilds
     address[] public guilds;
-    //  Array of addresses of Guilds
     mapping(address => uint256) public guildWeight;
     /// Mapping of guild --> token --> amount
     mapping(address => mapping(address => uint256)) public guildFunds;
@@ -138,7 +138,7 @@ contract MetaDaoController is AccessControl {
                 if (amountToDistribute == 0) {
                     continue;
                 }
-                guildFunds[whitelist[endOfList]][guilds[i]] += amountToDistribute;
+                guildFunds[guilds[i]][whitelist[endOfList]] += amountToDistribute;
             }
             endOfList = whitelist[endOfList];
         }
@@ -154,7 +154,7 @@ contract MetaDaoController is AccessControl {
             if (amountToDistribute == 0) {
                 continue;
             }
-            guildFunds[address(amorToken)][guilds[i]] += amountToDistribute;
+            guildFunds[guilds[i]][address(amorToken)] += amountToDistribute;
         }
     }
 
@@ -165,9 +165,12 @@ contract MetaDaoController is AccessControl {
         address helper = SENTINAL;
         while (whitelist[helper] != SENTINAL) {
             /// Update the donation total for this token
-            donations[whitelist[helper]] -= guildFunds[msg.sender][whitelist[helper]];
+            donations[whitelist[helper]] = donations[whitelist[helper]] - guildFunds[msg.sender][whitelist[helper]];
             /// Transfer the token
-            IERC20(whitelist[helper]).transfer(msg.sender, guildFunds[msg.sender][whitelist[helper]]);
+            bool success = IERC20(whitelist[helper]).transfer(msg.sender, guildFunds[msg.sender][whitelist[helper]]);
+            if (!success) {
+                revert InvalidClaim();
+            }
             /// Clear this guild's token balance
             delete guildFunds[msg.sender][whitelist[helper]];
             /// Advance the helper to the next link in the list
@@ -218,10 +221,9 @@ contract MetaDaoController is AccessControl {
         }
     }
 
-    function getGuild(uint256 index) public view returns (address) {
-        return guilds[index];
-    }
-
+    /// @notice Checks that a token is whitelisted
+    /// @param  token address of the ERC20 token being checked
+    /// @return bool true if token whitelisted, false if not whitelisted
     function isWhitelisted(address token) external view returns (bool) {
         if (whitelist[token] == address(0)) {
             revert NotListed();
