@@ -13,5 +13,5 @@ interface IMetadao {
     /// @notice returns the current implementation address
     /// @dev    ensures transparency with regards to which funcitonality is implemented
     /// @return address the address of the current implementation contract
-    function isWhitelistedToken(address token) external view returns (bool);
+    function isWhitelisted(address token) external returns (bool);
 }

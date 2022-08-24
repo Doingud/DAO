@@ -70,6 +70,20 @@ const getTokens = async (setup) => {
     return tokens;
 };
 
+const metadao = async (setup) =>{
+  const MetaDaoFactory = await ethers.getContractFactory('MetaDaoControllerMock');
+  const metadao = await MetaDaoFactory.deploy(
+    setup.tokens.AmorTokenImplementation.address,
+    setup.tokens.ERC20Token.address,
+    setup.roles.root.address, //guildFactory.address,
+    setup.roles.root.address
+  );
+
+  setup.metadao = metadao;
+
+  return metadao;
+}
+
 const controller = async (setup) => {
   const controllerFactory = await ethers.getContractFactory('GuildController');
   const controller = await controllerFactory.deploy();
@@ -79,7 +93,7 @@ const controller = async (setup) => {
     setup.tokens.AmorTokenImplementation.address,
     setup.tokens.AmorGuildToken.address, // AMORxGuild
     setup.tokens.FXAMORxGuild.address, // FXAMORxGuild
-    setup.roles.root.address // MetaDaoController
+    setup.metadao.address // MetaDaoController
   );
 
   await setup.tokens.AmorTokenImplementation.init(
@@ -132,20 +146,6 @@ const getGuildFactory = async (setup) => {
   );
 
   return guildFactory;
-}
-
-const metadao = async (setup) =>{
-  const MetaDaoFactory = await ethers.getContractFactory('MetaDaoControllerMock');
-  const metadao = await MetaDaoFactory.deploy(
-    setup.tokens.AmorTokenImplementation.address,
-    setup.tokens.ERC20Token.address,
-    setup.roles.root.address, //guildFactory.address,
-    setup.roles.root.address
-  );
-
-  setup.metadao = metadao;
-
-  return metadao;
 }
 
 module.exports = {

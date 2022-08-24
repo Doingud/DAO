@@ -12,12 +12,13 @@
  */
 
 pragma solidity 0.8.15;
-
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./utils/interfaces/ICloneFactory.sol";
+import "./utils/interfaces/IMetadao.sol";
 
-contract MetaDaoControllerMock is AccessControl {
+contract MetaDaoControllerMock is IMetadao, AccessControl {
     error InvalidGuild();
 
     /// Guild-related variables
@@ -37,9 +38,9 @@ contract MetaDaoControllerMock is AccessControl {
     mapping(address => bool) public whitelist;
     */
     /// Token related variables
-    mapping(address => address) public whitelist;
-    address public constant SENTINAL = address(0x01);
-    address[] public sentinalWhitelist;
+    mapping(address => uint256) public whitelist;
+    // address public constant SENTINAL = address(0x01);
+    // address[] public sentinalWhitelist;
 
     /// Clone Factory
     address public guildFactory;
@@ -66,9 +67,8 @@ contract MetaDaoControllerMock is AccessControl {
         usdcToken = IERC20(_usdc);
         amorToken = IERC20(_amor);
         guildFactory = _cloneFactory;
-        sentinalWhitelist.push(_amor);
-        // whitelist[sentinalWhitelist] = SENTINAL;
-        whitelist[SENTINAL] = _amor;
+        // sentinalWhitelist.push(_amor);
+        whitelist[_amor] = 1;//_amor;
     }
 
     /// @notice adds guild based on the controller address provided
@@ -76,20 +76,23 @@ contract MetaDaoControllerMock is AccessControl {
     /// @param _token the controller address of the guild
     function addWhitelist(address _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
         // check that token won't be added twice
-        for (uint256 i = 0; i < sentinalWhitelist.length; i++) {
-            if (_token == sentinalWhitelist[i]) {
-                revert AlreadyAdded();
-            }
+        if (whitelist[_token] != 0) {
+            revert AlreadyAdded();
         }
-        sentinalWhitelist.push(_token);
-        whitelist[_token] == _token;
+
+        // sentinalWhitelist.push(_token);
+        whitelist[_token] == 1;//_token;
+        console.log("_token is %s", _token);
+        console.log("whitelist[_token] is %s", whitelist[_token]);
     }
 
     /// @notice Checks that a token is whitelisted
     /// @param  token address of the ERC20 token being checked
     /// @return bool true if token whitelisted, false if not whitelisted
     function isWhitelisted(address token) external view returns (bool) {
-        if (whitelist[token] == address(0)) {
+        console.log("token is %s", token);
+        console.log("whitelist[token] is %s", whitelist[token]);
+        if (whitelist[token] == 0) {
             revert NotListed();
         }
         return true;

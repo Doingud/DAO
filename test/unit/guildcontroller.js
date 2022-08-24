@@ -43,9 +43,9 @@ describe('unit - Contract: GuildController', function () {
         AMOR = setup.tokens.AmorTokenImplementation;
         AMORxGuild = setup.tokens.AmorGuildToken;
         FXAMORxGuild = setup.tokens.FXAMORxGuild;
-        controller = await init.controller(setup);
         // await init.getGuildFactory(setup);
         metadao = await init.metadao(setup);
+        controller = await init.controller(setup);
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;
@@ -157,9 +157,9 @@ describe('unit - Contract: GuildController', function () {
     context('» donate testing', () => {
 
         it('it fails to donate AMORxGuild tokens if not enough AMORxGuild', async function () {
-            
+console.log("1 is %s", 1);
             await metadao.connect(root).addWhitelist(AMORxGuild.address);
-
+console.log("2 is %s", 2);
             await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER, AMORxGuild.address)).to.be.revertedWith(
                 'InvalidAmount()'
             );

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
-
+import "hardhat/console.sol";
 import "./utils/interfaces/IAmorToken.sol";
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
@@ -155,8 +155,9 @@ contract GuildController is IGuildController, Ownable {
     /// @notice gathers donation from MetaDaoController in specific token
     /// and calles distribute function for the whole amount of gathered tokens
     function gatherDonation(address token) public {
+        console.log("token is %s", token);
         // check if token in the whitelist of the MetaDaoController
-        if (!IMetadao(MetaDaoController).isWhitelistedToken(token)) {
+        if (!IMetadao(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
         }
         uint256 amount = IERC20(token).balanceOf(MetaDaoController);
@@ -184,14 +185,16 @@ contract GuildController is IGuildController, Ownable {
     // Requires the msg.sender to `approve` amount prior to calling this function
     function donate(uint256 amount, address token) external returns (uint256) {
         // check if token in the whitelist of the MetaDaoController
-        if (!IMetadao(MetaDaoController).isWhitelistedToken(token)) {
+        if (!IMetadao(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
         }
+        console.log("e is %s");
+
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
         if (IERC20(token).balanceOf(msg.sender) < amount || amount < 10) {
             revert InvalidAmount();
         }
-
+console.log("e is %s");
         amount = distribute(amount, token);
 
         return amount;
