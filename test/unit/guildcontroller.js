@@ -234,9 +234,11 @@ describe('unit - Contract: GuildController', function () {
 
             let AMORDeducted = ethers.BigNumber.from((TEST_TRANSFER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
             let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
-
+console.log("nextAMORDeducted is %s", nextAMORDeducted);
             await controller.connect(operator).gatherDonation(AMOR.address);
             // TODO: add check changes
+            expect((await AMORxGuild.balanceOf(controller.address)).toString()).to.equal("12");            
+
         });
 
         it('gathers donation in USDC', async function () {

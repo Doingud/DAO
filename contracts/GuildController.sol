@@ -123,6 +123,8 @@ contract GuildController is IGuildController, Ownable {
 
         // 10% of the tokens in the impact pool are getting:
         if (token != AMORxGuild && token != AMOR) {
+                    console.log("any is %s");
+
             // 1.Exchanged in the pool to AMOR(if it’s not AMOR or AMORxGuild)
             // recieve tokens
             IERC20(token).transfer(address(this), amount);
@@ -140,6 +142,8 @@ contract GuildController is IGuildController, Ownable {
             FxGAmount = (amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
 
         } else if (token == AMOR) {
+                    console.log("A is %s");
+
             // convert AMOR to AMORxGuild
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
             console.log("amount is %s", amount);
@@ -170,15 +174,16 @@ console.log("amorxguildAmount is %s", amorxguildAmount);
             FxGAmount = (amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
 
         } else { // (token == AMORxGuild)
-            ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
+        console.log("w is %s");
+            ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amorxguildAmount);//FxGAmount);
         }
 console.log("FxGAmount is %s", FxGAmount);
         // 3.Staked in the FXAMORxGuild tokens,
         // which are going to be owned by the user.
         // uint256 FxGAmount = (amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
         // ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
-        ERC20AMORxGuild.approve(FXAMORxGuild, FxGAmount);
-        FXGFXAMORxGuild.stake(msg.sender, FxGAmount);
+        ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);//FxGAmount);
+        FxGAmount = FXGFXAMORxGuild.stake(msg.sender, amorxguildAmount);//FxGAmount); // from address(this)
 
         uint256 decAmount = amorxguildAmount - FxGAmount; //decreased amount: other 90%
 
