@@ -133,6 +133,8 @@ contract MetaDaoController is AccessControl {
         address endOfList = SENTINAL;
         /// Loop through linked list
         while (whitelist[endOfList] != SENTINAL) {
+            /// Track the amount of donations distributed
+            uint256 trackDistributions;
             /// Loop through guilds
             for (uint256 i = 0; i < guilds.length; i++) {
                 uint256 amountToDistribute = (donations[whitelist[endOfList]] * currentGuildWeights[i]) /
@@ -141,7 +143,12 @@ contract MetaDaoController is AccessControl {
                     continue;
                 }
                 guildFunds[guilds[i]][whitelist[endOfList]] += amountToDistribute;
+                /// Update the donation total for this token
+                trackDistributions += amountToDistribute;
             }
+            /// Decrease the donations by the amount of tokens distributed
+            /// This prevents multiple calls to distribute attack vector
+            donations[whitelist[endOfList]] -= trackDistributions;
             endOfList = whitelist[endOfList];
         }
     }
@@ -165,8 +172,6 @@ contract MetaDaoController is AccessControl {
         /// Loop through the token linked list
         address helper = SENTINAL;
         while (whitelist[helper] != SENTINAL) {
-            /// Update the donation total for this token
-            donations[whitelist[helper]] = donations[whitelist[helper]] - guildFunds[msg.sender][whitelist[helper]];
             /// Transfer the token
             bool success = IERC20(whitelist[helper]).transfer(msg.sender, guildFunds[msg.sender][whitelist[helper]]);
             if (!success) {

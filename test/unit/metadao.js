@@ -118,6 +118,13 @@ describe("unit - MetaDao", function () {
             expect(await METADAO.guildFunds(user1.address, AMOR_TOKEN.address)).to.equal((amorBalance/2).toString());
             expect(await METADAO.guildFunds(user1.address, USDC.address)).to.equal(FIFTY_ETHER);
         });
+
+        it('does not change the allocations if called more than once', async function () {
+            let fundsAllocated = await METADAO.guildFunds(user1.address, USDC.address);
+            await METADAO.distribute();
+            expect(await METADAO.guildFunds(user1.address, USDC.address)).to.equal(fundsAllocated);
+
+        });
     });
 
     context('function: claim()', () => {
