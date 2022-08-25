@@ -32,10 +32,6 @@ contract MetaDaoController is AccessControl {
     /// Donations variables
     mapping(address => uint256) public donations;
 
-    /*  Changing this to a linked list
-        This allows for testing `isWhitelisted` and iteration in one mapping
-    mapping(address => bool) public whitelist;
-    */
     /// Token related variables
     mapping(address => address) public whitelist;
     address public constant SENTINAL = address(0x01);
@@ -51,10 +47,28 @@ contract MetaDaoController is AccessControl {
     /// Roles
     bytes32 public constant GUILD_ROLE = keccak256("GUILD");
 
+    /// Indexes
+    /// Create the Index object
+    struct Index {
+        address creator;
+        uint256 indexDenominator;
+        mapping(address => uint256) indexWeights;
+    }
+
+    /// Create an array to hold the different indexes
+    mapping(bytes32 => Index) public indexes;
+    bytes32[] public indexHashes;
+    bytes32 internal indexHelper = keccak256("INDEX_HOLDER");
+
+    /// Errors
+    /// The claim is not valid
     error InvalidClaim();
+    /// The token is not whitelisted
     error NotListed();
-    /// The guild cannot be added because it already exists
+    /// The guild/index cannot be added because it already exists
     error Exists();
+    /// The supplied array of index weights does not match the number of guilds
+    error InvalidArray();
 
     constructor(
         address _amor,
@@ -240,5 +254,25 @@ contract MetaDaoController is AccessControl {
             revert NotListed();
         }
         return true;
+    }
+
+    /// @notice Adds a new index to the `Index` array
+    /// @param  weights an array containing the weighting indexes for different guilds
+    /// @return index of the new index in the `Index` array
+    function addIndex(uint256[] memory weights) external returns (uint256) {
+        if (weights.length != guilds.length) {
+            revert InvalidArray();
+        }
+        /// Using the hash of the array allows a O(1) check if that index exists already
+        bytes32 hashArray = keccak256(abi.encodePacked(weights));
+        Index storage index = indexes[hashArray];
+        if (index.indexDenominator == 0) {
+            revert Exists();
+        }
+        for (uint256 i; i < guilds.length; i++) {
+            index.indexWeights[guilds[i]] = weights[i];
+            index.indexDenominator += weights[i];
+        }
+        indexHashes.push(hashArray);
     }
 }
