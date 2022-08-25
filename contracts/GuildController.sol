@@ -117,14 +117,14 @@ contract GuildController is IGuildController, Ownable {
     /// @notice called by donate and gatherDonation, distributes amount of tokens between
     /// all of the impact makers based on their weight.
     /// Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers
-    function distribute(uint256 amount, address token) internal returns (uint256) {
+    function distribute(uint256 allAmount, address token) internal returns (uint256) {
+        // uint256 FxGAmount = amorxguildAmount;//(amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
+
+        uint256 amount = (allAmount * percentToConvert) / FEE_DENOMINATOR; // 10% of tokens
         uint256 amorxguildAmount = amount;
-        uint256 FxGAmount = (amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
 
         // 10% of the tokens in the impact pool are getting:
         if (token != AMORxGuild && token != AMOR) {
-                    console.log("any is %s");
-
             // 1.Exchanged in the pool to AMOR(if it’s not AMOR or AMORxGuild)
             // recieve tokens
             IERC20(token).transfer(address(this), amount);
@@ -135,18 +135,12 @@ contract GuildController is IGuildController, Ownable {
             // give AMOR
             IAmorToken(AMOR).transfer(address(this), amorAmount);
 
-            // uint256 AMORDeducted = amount*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS);
-
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
             amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(msg.sender, amorAmount);
-            FxGAmount = (amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
 
         } else if (token == AMOR) {
-                    console.log("A is %s");
-
             // convert AMOR to AMORxGuild
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
-            console.log("amount is %s", amount);
 
             //  Must calculate stakedAmor prior to transferFrom()
             uint256 stakedAmor = IERC20(token).balanceOf(address(this));
@@ -157,46 +151,35 @@ contract GuildController is IGuildController, Ownable {
             //  Calculate mint amount and mint this to the address `to`
             //  Take AMOR tax into account
             uint256 taxCorrectedAmount = IERC20(token).balanceOf(address(this)) - stakedAmor;
-console.log("taxCorrectedAmount is %s", taxCorrectedAmount);
+
             // TODO: fix this formulas
             //  Note there is a tax on staking into AMORxGuild
-    //         uint256 mintAmount = COEFFICIENT * ((taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
-    //         uint256 stakingTaxRate = IAmorxGuild(AMORxGuild).getTax();
-    // console.log("stakingTaxRate is %s", stakingTaxRate);
+            //         uint256 mintAmount = COEFFICIENT * ((taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
+            //         uint256 stakingTaxRate = IAmorxGuild(AMORxGuild).getTax();
+            //         mintAmount = (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS;
 
-    //         mintAmount = (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS;
-
-// console.log("mintAmount is %s", mintAmount);
-            IERC20(token).approve(AMORxGuild, amount);
+            IERC20(token).approve(AMORxGuild, taxCorrectedAmount);
 
             amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(address(this), taxCorrectedAmount);//12);//mintAmount);
-console.log("amorxguildAmount is %s", amorxguildAmount);
-            FxGAmount = (amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
-
-        } else { // (token == AMORxGuild)
-        console.log("w is %s");
-            ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amorxguildAmount);//FxGAmount);
+        } else { 
+            // token == AMORxGuild
+            ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amorxguildAmount);
         }
-console.log("FxGAmount is %s", FxGAmount);
+
         // 3.Staked in the FXAMORxGuild tokens,
         // which are going to be owned by the user.
-        // uint256 FxGAmount = (amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
-        // ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
-        ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);//FxGAmount);
-        FxGAmount = FXGFXAMORxGuild.stake(msg.sender, amorxguildAmount);//FxGAmount); // from address(this)
-console.log("minted FxGAmount is %s", FxGAmount);
-        uint256 decAmount = amorxguildAmount - FxGAmount; //decreased amount: other 90%
+        ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);
+        FXGFXAMORxGuild.stake(msg.sender, amorxguildAmount); // from address(this)
 
+        uint256 decAmount = allAmount - amount; //decreased amount: other 90%
         // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
         uint256 amountToSendAllVoters = 0;
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
-            // ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
             claimableTokens[impactMakers[i]] += amountToSendVoter;
             amountToSendAllVoters += amountToSendVoter;
         }
-console.log("amountToSendAllVoters is %s", amountToSendAllVoters);
-        // ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendAllVoters);
+        ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendAllVoters);
 
         return amorxguildAmount;
     }
