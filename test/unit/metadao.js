@@ -141,4 +141,17 @@ describe("unit - MetaDao", function () {
         });
     });
 
+    context('function: addIndex()', () => {
+        it('it fails to add an index if the weights array is invalid', async function () {
+            let weightsArray = [100, 100, 100];
+            await expect(METADAO.addIndex(weightsArray)).
+                to.be.revertedWith("InvalidArray()");
+        });
+
+        it('it adds a valid array to the index', async function () {
+            weightsArray = [100, 50];
+            await METADAO.addIndex(weightsArray);
+        });
+    });
+
 });

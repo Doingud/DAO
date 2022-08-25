@@ -266,7 +266,7 @@ contract MetaDaoController is AccessControl {
         /// Using the hash of the array allows a O(1) check if that index exists already
         bytes32 hashArray = keccak256(abi.encodePacked(weights));
         Index storage index = indexes[hashArray];
-        if (index.indexDenominator == 0) {
+        if (index.indexDenominator != 0) {
             revert Exists();
         }
         for (uint256 i; i < guilds.length; i++) {
