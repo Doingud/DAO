@@ -154,13 +154,27 @@ contract DoinGudGovernor {
         if (arrGuardians.length == 0) {
             revert InvalidParameters();
         }
-        delete guardians;
-        for (uint256 i = 0; i < guardians.length; i++) {
-            delete weights[guardians[i]];
-        }
-        for (uint256 i = 0; i < arrGuardians.length; i++) {
-            guardians.push(arrGuardians[i]);
-            weights[arrGuardians[i]] = 1;
+
+        if (guardians.length < arrGuardians.length) {
+            for (uint256 i = 0; i < guardians.length; i++) {
+                delete weights[guardians[i]];
+                guardians[i] = arrGuardians[i];
+                weights[arrGuardians[i]] = 1;
+            }
+            for (uint256 i = guardians.length; i < arrGuardians.length; i++) {
+                guardians.push(arrGuardians[i]);
+                weights[arrGuardians[i]] = 1;
+            }
+        } else {
+            for (uint256 i = 0; i < arrGuardians.length; i++) {
+                delete weights[guardians[i]];
+                guardians[i] = arrGuardians[i];
+                weights[arrGuardians[i]] = 1;
+            }
+            for (uint256 i = arrGuardians.length; i < guardians.length; i++) {
+                delete guardians[i];
+                delete weights[guardians[i]];
+            }
         }
     }
 
@@ -201,7 +215,7 @@ contract DoinGudGovernor {
             }
         }
         guardians[current] = newGuardian;
-        weights[guardians[current]] = 0;
+        delete weights[guardians[current]];
         weights[newGuardian] = 1;
     }
 
