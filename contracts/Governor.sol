@@ -141,13 +141,7 @@ contract DoinGudGovernor {
     }
 
     modifier onlyGuardian() {
-        bool index = false;
-        for (uint256 i = 0; i < guardians.length; i++) {
-            if (msg.sender == guardians[i]) {
-                index = true;
-            }
-        }
-        if (!index) {
+        if (weights[msg.sender] == 0) {
             revert Unauthorized();
         }
         _;
@@ -161,8 +155,12 @@ contract DoinGudGovernor {
             revert InvalidParameters();
         }
         delete guardians;
+        for (uint256 i = 0; i < guardians.length; i++) {
+            delete weights[guardians[i]];
+        }
         for (uint256 i = 0; i < arrGuardians.length; i++) {
             guardians.push(arrGuardians[i]);
+            weights[arrGuardians[i]] = 1;
         }
     }
 
@@ -176,6 +174,7 @@ contract DoinGudGovernor {
             }
         }
         guardians.push(guardian);
+        weights[guardian] = 1;
     }
 
     /// @notice this function removes choosed guardian from the system
@@ -185,6 +184,7 @@ contract DoinGudGovernor {
             if (guardians[i] == guardian) {
                 guardians[i] = guardians[guardians.length - 1];
                 guardians.pop();
+                weights[guardian] = 0;
                 break;
             }
         }
@@ -201,6 +201,8 @@ contract DoinGudGovernor {
             }
         }
         guardians[current] = newGuardian;
+        weights[guardians[current]] = 0;
+        weights[newGuardian] = 1;
     }
 
     /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote.
