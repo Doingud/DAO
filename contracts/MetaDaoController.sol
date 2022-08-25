@@ -46,7 +46,6 @@ contract MetaDaoController is AccessControl {
 
     /// ERC20 tokens used by metada
     IERC20 public amorToken;
-    IERC20 public usdcToken;
 
     /// Roles
     bytes32 public constant GUILD_ROLE = keccak256("GUILD");
@@ -58,13 +57,11 @@ contract MetaDaoController is AccessControl {
 
     constructor(
         address _amor,
-        address _usdc,
         address _cloneFactory,
         address admin
     ) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _setupRole(GUILD_ROLE, admin);
-        usdcToken = IERC20(_usdc);
         amorToken = IERC20(_amor);
         guildFactory = _cloneFactory;
         sentinalWhitelist = _amor;
