@@ -8,6 +8,8 @@ import "./utils/interfaces/IAmorGuildToken.sol";
 import "./utils/interfaces/IGuildController.sol";
 import "./utils/interfaces/IMetadao.sol";
 
+/// Advanced math functions for bonding curve
+import "./utils/ABDKMath64x64.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -17,10 +19,12 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// @notice GuildController contract controls the all of the deployed contracts of the guild
 
 contract GuildController is IGuildController, Ownable {
+    using ABDKMath64x64 for uint256;
     using SafeERC20 for IERC20;
 
     // from AMORxGuildToken
     uint256 public BASIS_POINTS = 10000;
+    // uint256 public TAX_RATE = 
     uint256 private constant COEFFICIENT = 10**9;
 
     int256[] public reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
@@ -115,6 +119,8 @@ contract GuildController is IGuildController, Ownable {
     /// Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers
     function distribute(uint256 amount, address token) internal returns (uint256) {
         uint256 amorxguildAmount = amount;
+        uint256 FxGAmount = (amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
+
         // 10% of the tokens in the impact pool are getting:
         if (token != AMORxGuild && token != AMOR) {
             // 1.Exchanged in the pool to AMOR(if it’s not AMOR or AMORxGuild)
@@ -131,48 +137,61 @@ contract GuildController is IGuildController, Ownable {
 
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
             amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(msg.sender, amorAmount);
+            FxGAmount = (amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
 
         } else if (token == AMOR) {
             // convert AMOR to AMORxGuild
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
             console.log("amount is %s", amount);
-            // uint256 AMORDeducted = amount*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS);
-            // uint256 nextAMORDeducted =  AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS);
-        // tokenAmor.safeTransferFrom(msg.sender, address(this), amount);
 
-        //  Calculate mint amount and mint this to the address `to`
-        //  Take AMOR tax into account
-        // uint256 taxCorrectedAmount = tokenAmor.balanceOf(address(this)) - stakedAmor;
+            //  Must calculate stakedAmor prior to transferFrom()
+            uint256 stakedAmor = IERC20(token).balanceOf(address(this));
 
-        // TODO: fix this formulas
-        //  Note there is a tax on staking into AMORxGuild
-        uint256 mintAmount = COEFFICIENT * ((taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
-        uint256 stakingTaxRate = AMORxGuild.stakingTaxRate;
-console.log("stakingTaxRate is %s", stakingTaxRate);
-            mintAmount = (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS
+            // get all tokens 
+            // Note that if token is AMOR then this transferFrom() is taxed due to AMOR tax
+            IERC20(token).safeTransferFrom(MetaDaoController, address(this), amount);
+            //  Calculate mint amount and mint this to the address `to`
+            //  Take AMOR tax into account
+            uint256 taxCorrectedAmount = IERC20(token).balanceOf(address(this)) - stakedAmor;
+console.log("taxCorrectedAmount is %s", taxCorrectedAmount);
+            // TODO: fix this formulas
+            //  Note there is a tax on staking into AMORxGuild
+    //         uint256 mintAmount = COEFFICIENT * ((taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
+    //         uint256 stakingTaxRate = IAmorxGuild(AMORxGuild).getTax();
+    // console.log("stakingTaxRate is %s", stakingTaxRate);
 
+    //         mintAmount = (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS;
 
+// console.log("mintAmount is %s", mintAmount);
             IERC20(token).approve(AMORxGuild, amount);
 
-            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(address(this), AMORDeducted);
-            console.log("amorxguildAmount is %s", amorxguildAmount);
-        }
+            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(address(this), taxCorrectedAmount);//12);//mintAmount);
+console.log("amorxguildAmount is %s", amorxguildAmount);
+            FxGAmount = (amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
 
+        } else { // (token == AMORxGuild)
+            ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
+        }
+console.log("FxGAmount is %s", FxGAmount);
         // 3.Staked in the FXAMORxGuild tokens,
         // which are going to be owned by the user.
-        uint256 FxGAmount = (amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
-        ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
+        // uint256 FxGAmount = (amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
+        // ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
         ERC20AMORxGuild.approve(FXAMORxGuild, FxGAmount);
         FXGFXAMORxGuild.stake(msg.sender, FxGAmount);
 
         uint256 decAmount = amorxguildAmount - FxGAmount; //decreased amount: other 90%
 
         // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
+        uint256 amountToSendAllVoters = 0;
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
-            ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
+            // ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
             claimableTokens[impactMakers[i]] += amountToSendVoter;
+            amountToSendAllVoters += amountToSendVoter;
         }
+console.log("amountToSendAllVoters is %s", amountToSendAllVoters);
+        // ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendAllVoters);
 
         return amorxguildAmount;
     }
@@ -192,8 +211,8 @@ console.log("stakingTaxRate is %s", stakingTaxRate);
             revert InvalidAmount();
         }
 
-        // get all tokens 
-        IERC20(token).safeTransferFrom(MetaDaoController, address(this), amount);
+        // // get all tokens 
+        // IERC20(token).safeTransferFrom(MetaDaoController, address(this), amount);
 
         // TODO: fix distribute(). breaks here
         // distribute those tokens

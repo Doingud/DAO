@@ -121,6 +121,10 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         stakingTaxRate = newRate;
     }
 
+    function getTax() external view override returns(uint16) {
+        return stakingTaxRate;
+    }
+
     /// @notice Allows a user to stake their AMOR and receive AMORxGuild in return
     /// @param  to address where the AMORxGuild will be sent to
     /// @param  amount uint256 amount of AMOR to be staked

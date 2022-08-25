@@ -46,4 +46,6 @@ interface IAmorxGuild {
     /// @param  amount uint256 amount of AMORxGuild to exchange for AMOR
     /// @return uint256 the amount of AMOR returned from burning AMORxGuild
     function withdrawAmor(uint256 amount) external returns (uint256);
+
+    function getTax() external returns(uint16);
 }
