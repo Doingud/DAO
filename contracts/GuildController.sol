@@ -184,7 +184,7 @@ console.log("FxGAmount is %s", FxGAmount);
         // ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
         ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);//FxGAmount);
         FxGAmount = FXGFXAMORxGuild.stake(msg.sender, amorxguildAmount);//FxGAmount); // from address(this)
-
+console.log("minted FxGAmount is %s", FxGAmount);
         uint256 decAmount = amorxguildAmount - FxGAmount; //decreased amount: other 90%
 
         // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers

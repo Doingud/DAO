@@ -170,6 +170,8 @@ describe('unit - Contract: GuildController', function () {
         });
 
         it('donates AMORxGuild tokens', async function () {
+            expect((await FXAMORxGuild.balanceOf(user.address)).toString()).to.equal("0");
+
             await AMOR.connect(root).transfer(controller.address, TEST_TRANSFER);
             await AMOR.connect(root).transfer(user.address, TEST_TRANSFER);
 
