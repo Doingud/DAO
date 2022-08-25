@@ -59,6 +59,7 @@ contract GuildController is IGuildController, Ownable {
     uint256 public constant HOUR = 1 hours;
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
+    uint256 public percentToDistribute = 900; //90% // FEE_DENOMINATOR/100*90
 
     event Initialized(bool success, address owner, address AMORxGuild);
 
@@ -117,10 +118,13 @@ contract GuildController is IGuildController, Ownable {
     /// @notice called by donate and gatherDonation, distributes amount of tokens between
     /// all of the impact makers based on their weight.
     /// Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers
-    function distribute(uint256 allAmount, address token) internal returns (uint256) {
+    function distribute(uint256 allAmount, address token, address sender) internal returns (uint256) {
         // uint256 FxGAmount = amorxguildAmount;//(amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
+        uint256 amount = allAmount;
+        if (sender != MetaDaoController) {
+            amount = (allAmount * percentToConvert) / FEE_DENOMINATOR; // 10% of tokens
+        }
 
-        uint256 amount = (allAmount * percentToConvert) / FEE_DENOMINATOR; // 10% of tokens
         uint256 amorxguildAmount = amount;
 
         // 10% of the tokens in the impact pool are getting:
@@ -136,7 +140,7 @@ contract GuildController is IGuildController, Ownable {
             IAmorToken(AMOR).transfer(address(this), amorAmount);
 
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
-            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(msg.sender, amorAmount);
+            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(sender, amorAmount);
 
         } else if (token == AMOR) {
             // convert AMOR to AMORxGuild
@@ -144,14 +148,16 @@ contract GuildController is IGuildController, Ownable {
 
             //  Must calculate stakedAmor prior to transferFrom()
             uint256 stakedAmor = IERC20(token).balanceOf(address(this));
-
+            console.log("stakedAmor is %s", stakedAmor);
             // get all tokens 
             // Note that if token is AMOR then this transferFrom() is taxed due to AMOR tax
-            IERC20(token).safeTransferFrom(MetaDaoController, address(this), amount);
+            IERC20(token).safeTransferFrom(sender, address(this), amount);
+            // IERC20(token).safeTransferFrom(MetaDaoController, address(this), amount);
+console.log("IERC20(token).balanceOf(address(this)) is %s", IERC20(token).balanceOf(address(this)));
             //  Calculate mint amount and mint this to the address `to`
             //  Take AMOR tax into account
             uint256 taxCorrectedAmount = IERC20(token).balanceOf(address(this)) - stakedAmor;
-
+console.log("taxCorrectedAmount is %s", taxCorrectedAmount);
             // TODO: fix this formulas
             //  Note there is a tax on staking into AMORxGuild
             //         uint256 mintAmount = COEFFICIENT * ((taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
@@ -161,17 +167,40 @@ contract GuildController is IGuildController, Ownable {
             IERC20(token).approve(AMORxGuild, taxCorrectedAmount);
 
             amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(address(this), taxCorrectedAmount);//12);//mintAmount);
+            // sender = address(this);
         } else { 
             // token == AMORxGuild
-            ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amorxguildAmount);
+            ERC20AMORxGuild.safeTransferFrom(sender, address(this), amorxguildAmount);
+
+            // uint256 decAmount = amount;
+            // if (sender != MetaDaoController) {
+            //     // 3.Staked in the FXAMORxGuild tokens,
+            //     // which are going to be owned by the user.
+            //     ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);
+            //     FXGFXAMORxGuild.stake(sender, amorxguildAmount); // from address(this)
+
+            //     decAmount = allAmount - amount; //decreased amount: other 90%
+            // }
+
+            // // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
+            // uint256 amountToSendAllVoters = 0;
+            // for (uint256 i = 0; i < impactMakers.length; i++) {
+            //     uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
+            //     claimableTokens[impactMakers[i]] += amountToSendVoter;
+            //     amountToSendAllVoters += amountToSendVoter;
+            // }
+            // ERC20AMORxGuild.safeTransferFrom(sender, address(this), amountToSendAllVoters);
+
         }
-
-        // 3.Staked in the FXAMORxGuild tokens,
-        // which are going to be owned by the user.
-        ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);
-        FXGFXAMORxGuild.stake(msg.sender, amorxguildAmount); // from address(this)
-
-        uint256 decAmount = allAmount - amount; //decreased amount: other 90%
+console.log("amorxguildAmount is %s", amorxguildAmount);
+        uint256 decAmount = amount;
+        if (sender != MetaDaoController) {
+            // 3.Staked in the FXAMORxGuild tokens,
+            // which are going to be owned by the user.
+            ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);
+            FXGFXAMORxGuild.stake(sender, amorxguildAmount); // from address(this)
+            decAmount = allAmount - amount; //decreased amount: other 90%
+        }
         // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
         uint256 amountToSendAllVoters = 0;
         for (uint256 i = 0; i < impactMakers.length; i++) {
@@ -179,7 +208,25 @@ contract GuildController is IGuildController, Ownable {
             claimableTokens[impactMakers[i]] += amountToSendVoter;
             amountToSendAllVoters += amountToSendVoter;
         }
-        ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendAllVoters);
+        if (token != AMOR) {
+            ERC20AMORxGuild.safeTransferFrom(sender, address(this), amountToSendAllVoters);
+        }
+
+
+        // // 3.Staked in the FXAMORxGuild tokens,
+        // // which are going to be owned by the user.
+        // ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);
+        // FXGFXAMORxGuild.stake(sender, amorxguildAmount); // from address(this)
+
+        // uint256 decAmount = allAmount - amount; //decreased amount: other 90%
+        // // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
+        // uint256 amountToSendAllVoters = 0;
+        // for (uint256 i = 0; i < impactMakers.length; i++) {
+        //     uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
+        //     claimableTokens[impactMakers[i]] += amountToSendVoter;
+        //     amountToSendAllVoters += amountToSendVoter;
+        // }
+        // ERC20AMORxGuild.safeTransferFrom(sender, address(this), amountToSendAllVoters);
 
         return amorxguildAmount;
     }
@@ -198,13 +245,10 @@ contract GuildController is IGuildController, Ownable {
         if (amount < 10) {
             revert InvalidAmount();
         }
-
-        // // get all tokens 
-        // IERC20(token).safeTransferFrom(MetaDaoController, address(this), amount);
-
+console.log("balanceOf(MetaDaoController) amount is %s", amount);
         // TODO: fix distribute(). breaks here
         // distribute those tokens
-        distribute(amount, token);
+        distribute(amount, token, MetaDaoController);
     }
 
     /// @notice allows to donate AMORxGuild tokens to the Guild
@@ -226,7 +270,9 @@ contract GuildController is IGuildController, Ownable {
             revert InvalidAmount();
         }
 
-        amount = distribute(amount, token);
+        uint256 amountToDistribute = (amount * percentToDistribute) / FEE_DENOMINATOR; // 10% of tokens
+
+        amount = distribute(amountToDistribute, token, msg.sender);
         return amount;
     }
 

@@ -11,14 +11,15 @@ const init = require('../test-init.js');
 const FEE_DENOMINATOR = 1000;
 const percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
 const twoWeeks = time.duration.days(14);
-
 const TEST_TRANSFER_SMALLER = 80;
+const COEFFICIENT = 10**19;
 
 let AMOR;
 let AMORxGuild;
 let FXAMORxGuild
 let controller;
 let metadao;
+let USDC;
 let root;
 let authorizer_adaptor;
 let impactMaker;
@@ -43,7 +44,7 @@ describe('unit - Contract: GuildController', function () {
         AMOR = setup.tokens.AmorTokenImplementation;
         AMORxGuild = setup.tokens.AmorGuildToken;
         FXAMORxGuild = setup.tokens.FXAMORxGuild;
-        // await init.getGuildFactory(setup);
+        USDC = setup.tokens.ERC20Token;
         metadao = await init.metadao(setup);
         controller = await init.controller(setup);
         root = setup.roles.root;
@@ -227,23 +228,47 @@ describe('unit - Contract: GuildController', function () {
         });
 
         it('gathers donation in AMOR', async function () {
+            let previous = await AMORxGuild.balanceOf(controller.address);
+
             // add some funds to MetaDaoController
             await AMOR.connect(root).approve(AMORxGuild.address, TEST_TRANSFER);
             await AMOR.connect(root).transfer(metadao.address, TEST_TRANSFER);
 
             await metadao.connect(root).approveToController(AMOR.address, controller.address);
             await metadao.connect(root).approveToController(AMOR.address, AMORxGuild.address);
+            const amountOfAMOR = await AMOR.balanceOf(metadao.address);
+console.log("   amountOfAMOR is %s", amountOfAMOR);
+            let AMORDeducted = ethers.BigNumber.from((amountOfAMOR*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
+console.log("   AMORDeducted is %s",             AMORDeducted);
+            let taxCorrectedAmount = AMORDeducted * (BASIS_POINTS-TAX_RATE)/BASIS_POINTS;
+console.log("   taxCorrectedAmount is %s", taxCorrectedAmount);
+            let stakedAmorBefore = await AMOR.balanceOf(AMORxGuild.address);
 
-            let AMORDeducted = ethers.BigNumber.from((TEST_TRANSFER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
-            let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
-console.log("nextAMORDeducted is %s", nextAMORDeducted);
+            let amorxguildAmount =  ethers.BigNumber.from("3835391687000000000"); // COEFFICIENT * (Math.sqrt(taxCorrectedAmount * stakedAmorBefore) - Math.sqrt(stakedAmorBefore));
+console.log("   amorxguildAmount is %s", amorxguildAmount);
+
             await controller.connect(operator).gatherDonation(AMOR.address);
             // TODO: add check changes
-            expect((await AMORxGuild.balanceOf(controller.address)).toString()).to.equal("12");            
+            let current = await AMORxGuild.balanceOf(controller.address);
+            expect((current - previous).toString()).to.equal(amorxguildAmount.toString());            
 
         });
 
         it('gathers donation in USDC', async function () {
+            await metadao.connect(root).addWhitelist(USDC.address);
+
+            // add some funds to MetaDaoController
+            await USDC.connect(root).approve(AMOR.address, TEST_TRANSFER);
+            await USDC.connect(root).transfer(metadao.address, TEST_TRANSFER);
+
+            // expect(await AMOR.allowance(root.address,metadao.address) == ONE_HUNDRED_ETHER);
+            // await metadao.connect(root).donate(AMOR.address, ONE_HUNDRED_ETHER);
+            await metadao.connect(root).approveToController(USDC.address, controller.address);
+            await metadao.connect(root).approveToController(USDC.address, AMORxGuild.address);
+
+            // await metadao.connect(root).donate(USDC.address, ONE_HUNDRED_ETHER);
+
+            await controller.connect(operator).gatherDonation(USDC.address);
 
         });
 

@@ -143,7 +143,10 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         //  Take AMOR tax into account
         uint256 taxCorrectedAmount = tokenAmor.balanceOf(address(this)) - stakedAmor;
         //  Note there is a tax on staking into AMORxGuild
+        console.log("(taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu() is %s", (taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
         uint256 mintAmount = COEFFICIENT * ((taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
+        console.log("mintAmount is %s", mintAmount);
+        console.log("www taxCorrectedAmount is %s", taxCorrectedAmount);
         _mint(guildController, (mintAmount * stakingTaxRate) / BASIS_POINTS);
         mintAmount = (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS;
         _mint(to, mintAmount);
