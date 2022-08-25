@@ -38,7 +38,7 @@ contract MetaDaoController is AccessControl {
     */
     /// Token related variables
     mapping(address => address) public whitelist;
-    address public constant SENTINAL = address(0x01);
+    address public constant SENTINEL = address(0x01);
     address public sentinalWhitelist;
 
     /// Clone Factory
@@ -65,8 +65,8 @@ contract MetaDaoController is AccessControl {
         amorToken = IERC20(_amor);
         guildFactory = _cloneFactory;
         sentinalWhitelist = _amor;
-        whitelist[sentinalWhitelist] = SENTINAL;
-        whitelist[SENTINAL] = _amor;
+        whitelist[sentinalWhitelist] = SENTINEL;
+        whitelist[SENTINEL] = _amor;
     }
 
     /// @notice Updates a guild's weight
@@ -127,9 +127,9 @@ contract MetaDaoController is AccessControl {
     /// @notice Apportions approved token donations according to guild weights
     /// @param  currentGuildWeights an array of the current weights of all the guilds
     function distributeTokens(uint256[] memory currentGuildWeights) internal {
-        address endOfList = SENTINAL;
+        address endOfList = SENTINEL;
         /// Loop through linked list
-        while (whitelist[endOfList] != SENTINAL) {
+        while (whitelist[endOfList] != SENTINEL) {
             /// Track the amount of donations distributed
             uint256 trackDistributions;
             /// Loop through guilds
@@ -167,8 +167,8 @@ contract MetaDaoController is AccessControl {
     /// @dev only a guild can call this funtion
     function claim() public onlyRole(GUILD_ROLE) {
         /// Loop through the token linked list
-        address helper = SENTINAL;
-        while (whitelist[helper] != SENTINAL) {
+        address helper = SENTINEL;
+        while (whitelist[helper] != SENTINEL) {
             /// Transfer the token
             bool success = IERC20(whitelist[helper]).transfer(msg.sender, guildFunds[msg.sender][whitelist[helper]]);
             if (!success) {
@@ -213,7 +213,7 @@ contract MetaDaoController is AccessControl {
     function addWhitelist(address _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
         whitelist[sentinalWhitelist] = _token;
         sentinalWhitelist = _token;
-        whitelist[sentinalWhitelist] = SENTINAL;
+        whitelist[sentinalWhitelist] = SENTINEL;
     }
 
     /// @notice removes guild based on id
