@@ -170,9 +170,9 @@ contract GuildController is IGuildController, Ownable {
             IERC20(token).approve(AMORxGuild, taxCorrectedAmount);
 
             amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(address(this), taxCorrectedAmount);//12);//mintAmount);
-            // sender = address(this);
         } else { 
             // token == AMORxGuild
+            console.log("   AAA amorxguildAmount is %s", amorxguildAmount);
             ERC20AMORxGuild.safeTransferFrom(sender, address(this), amorxguildAmount);
 
             // uint256 decAmount = amount;
@@ -197,6 +197,7 @@ contract GuildController is IGuildController, Ownable {
         }
 
         uint256 decAmount = amount;
+        console.log("   AAA decAmount is %s", decAmount);
         if (sender != MetaDaoController) {
             // 3.Staked in the FXAMORxGuild tokens,
             // which are going to be owned by the user.
@@ -208,10 +209,12 @@ contract GuildController is IGuildController, Ownable {
         uint256 amountToSendAllVoters = 0;
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
+            console.log("   AAA amountToSendVoter is %s", amountToSendVoter);
             claimableTokens[impactMakers[i]] += amountToSendVoter;
             amountToSendAllVoters += amountToSendVoter;
         }
-        if (token == AMORxGuild) {
+        console.log("   AAA amountToSendAllVoters is %s", amountToSendAllVoters);
+        if (token == AMORxGuild && sender != MetaDaoController) {
             ERC20AMORxGuild.safeTransferFrom(sender, address(this), amountToSendAllVoters);
         }
 

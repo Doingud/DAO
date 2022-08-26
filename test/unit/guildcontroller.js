@@ -33,6 +33,7 @@ let report;
 let r;
 let s;
 let v;
+let sum;
 
 describe('unit - Contract: GuildController', function () {
 
@@ -191,7 +192,7 @@ describe('unit - Contract: GuildController', function () {
             const FxGAmount = (TEST_TRANSFER_SMALLER * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of amount to Impact poll
             const decIpAmount = (TEST_TRANSFER_SMALLER - FxGAmount); //decreased amount
 
-            let sum = 0;
+            sum = 0;
             let weight = await controller.weights(impactMaker.address);
             let amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
 
@@ -238,15 +239,10 @@ describe('unit - Contract: GuildController', function () {
             await metadao.connect(root).approveToController(AMOR.address, controller.address);
             await metadao.connect(root).approveToController(AMOR.address, AMORxGuild.address);
             const amountOfAMOR = await AMOR.balanceOf(metadao.address);
-console.log("   amountOfAMOR is %s", amountOfAMOR);
             let AMORDeducted = ethers.BigNumber.from((amountOfAMOR*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
-console.log("   AMORDeducted is %s",             AMORDeducted);
             let taxCorrectedAmount = AMORDeducted * (BASIS_POINTS-TAX_RATE)/BASIS_POINTS;
-console.log("   taxCorrectedAmount is %s", taxCorrectedAmount);
             let stakedAmorBefore = await AMOR.balanceOf(AMORxGuild.address);
-
             let amorxguildAmount =  ethers.BigNumber.from("3835391687000000000"); // COEFFICIENT * (Math.sqrt(taxCorrectedAmount * stakedAmorBefore) - Math.sqrt(stakedAmorBefore));
-console.log("   amorxguildAmount is %s", amorxguildAmount);
 
             await controller.connect(operator).gatherDonation(AMOR.address);
             // TODO: add check changes
@@ -262,32 +258,59 @@ console.log("   amorxguildAmount is %s", amorxguildAmount);
             await USDC.connect(root).approve(AMOR.address, TEST_TRANSFER);
             await USDC.connect(root).transfer(metadao.address, TEST_TRANSFER);
 
-            // expect(await AMOR.allowance(root.address,metadao.address) == ONE_HUNDRED_ETHER);
-            // await metadao.connect(root).donate(AMOR.address, ONE_HUNDRED_ETHER);
             await metadao.connect(root).approveToController(USDC.address, controller.address);
             await metadao.connect(root).approveToController(USDC.address, AMOR.address);
-
-            await AMOR.connect(root).approve(controller.address, TEST_TRANSFER);
-
-            // await metadao.connect(root).donate(USDC.address, ONE_HUNDRED_ETHER);
+            const multisig = root;
+            await AMOR.connect(multisig).approve(controller.address, TEST_TRANSFER);
 
             await controller.connect(operator).gatherDonation(USDC.address);
-
         });
 
-        it('gathers donation', async function () {
+        it('gathers donation in AMORxGuild', async function () {
             await AMOR.connect(root).transfer(controller.address, TEST_TRANSFER);
             await AMOR.connect(root).transfer(user.address, TEST_TRANSFER);
-
             await AMOR.connect(user).approve(AMORxGuild.address, TEST_TRANSFER);
 
             let AMORDeducted = ethers.BigNumber.from((TEST_TRANSFER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
             let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
 
-            await AMORxGuild.connect(user).stakeAmor(user.address, nextAMORDeducted);
+            await AMORxGuild.connect(user).stakeAmor(metadao.address, nextAMORDeducted);
             await AMORxGuild.connect(user).approve(controller.address, nextAMORDeducted);
+            await metadao.connect(root).approveToController(AMORxGuild.address, controller.address);
+
+            let impactMakerClaimableBefore = await controller.claimableTokens(impactMaker.address);
+            console.log("impactMakerClaimableBefore is %s", impactMakerClaimableBefore);
+            let stakerClaimableBefore = await controller.claimableTokens(staker.address);
+            let operatorClaimableBefore = await controller.claimableTokens(operator.address);
 
 
+
+
+            const totalWeight = await controller.totalWeight();
+
+            let weight = await controller.weights(impactMaker.address);
+            let amountToSendImpactMaker = Math.floor((TEST_TRANSFER * weight) / totalWeight);
+
+            sum += amountToSendImpactMaker;
+            // console.log("controller.claimableTokens(impactMaker.address)).toString() is %s", await controller.claimableTokens(impactMaker.address));
+            console.log("amountToSendImpactMaker is %s", amountToSendImpactMaker);
+            let currentClaimable = ethers.BigNumber.from(impactMakerClaimableBefore.toString()).add(ethers.BigNumber.from(amountToSendImpactMaker.toString()));
+            console.log("currentClaimable is %s", currentClaimable);
+            expect((await controller.claimableTokens(impactMaker.address)).toString()).to.equal(currentClaimable.toString());            
+
+            weight = await controller.weights(staker.address);
+            amountToSendImpactMaker = Math.floor((TEST_TRANSFER * weight) / totalWeight);
+            sum += amountToSendImpactMaker;
+            currentClaimable = await controller.claimableTokens(staker.address) + amountToSendImpactMaker;
+            expect((await controller.claimableTokens(staker.address)).toString()).to.equal(currentClaimable.toString());
+
+            weight = await controller.weights(operator.address);
+            amountToSendImpactMaker = Math.floor((TEST_TRANSFER * weight) / totalWeight);
+            sum += amountToSendImpactMaker;
+            expect((await controller.claimableTokens(operator.address)).toString()).to.equal(amountToSendImpactMaker.toString());        
+
+
+            
             await controller.connect(user).gatherDonation(AMORxGuild.address);        
 
 
