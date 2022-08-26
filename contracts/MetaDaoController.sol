@@ -24,7 +24,6 @@ contract MetaDaoController is AccessControl {
     /// Guild-related variables
     /// Array of addresses of Guilds
     address[] public guilds;
-    mapping(address => address) public guildControllers;
     mapping(address => uint256) public guildWeight;
     /// Mapping of guild --> token --> amount
     mapping(address => mapping(address => uint256)) public guildFunds;
@@ -53,6 +52,9 @@ contract MetaDaoController is AccessControl {
     /// The guild cannot be added because it already exists
     error Exists();
     error InvalidGuild();
+    /// Not all guilds have weights!!
+    /// Please ensure guild weights have been updated after adding new guild
+    error ArrayError(address guild, uint8 index);
 
     constructor(
         address _amor,
@@ -122,6 +124,9 @@ contract MetaDaoController is AccessControl {
         uint256 trackDistributions;
         /// Loop through guilds
         for (uint256 i = 0; i < guilds.length; i++) {
+            if (guildWeight[i] == 0) {
+                revert ArrayError({guild: guilds[i], index: i});
+            }
             uint256 amountToDistribute = (donations[token] * guildWeight[guilds[i]]) / guildsTotalWeight;
             if (amountToDistribute == 0) {
                 continue;
