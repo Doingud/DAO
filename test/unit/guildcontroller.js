@@ -186,10 +186,10 @@ describe('unit - Contract: GuildController', function () {
             await AMORxGuild.connect(user).stakeAmor(user.address, nextAMORDeducted);
             await AMORxGuild.connect(user).approve(controller.address, nextAMORDeducted);
 
-            await controller.connect(user).donate(TEST_TRANSFER_SMALLER, AMORxGuild.address);        
+            await controller.connect(user).donate(TEST_TRANSFER_SMALLER, AMORxGuild.address);      
 
             const totalWeight = await controller.totalWeight();
-            const FxGAmount = (TEST_TRANSFER_SMALLER * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of amount to Impact poll
+            const FxGAmount = Math.floor((TEST_TRANSFER_SMALLER * percentToConvert) / FEE_DENOMINATOR); // FXAMORxGuild Amount = 10% of amount to Impact poll
             const decIpAmount = (TEST_TRANSFER_SMALLER - FxGAmount); //decreased amount
 
             sum = 0;

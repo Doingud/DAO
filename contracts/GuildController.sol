@@ -174,6 +174,11 @@ contract GuildController is IGuildController, Ownable {
             FXGFXAMORxGuild.stake(sender, amorxguildAmount); // from address(this)
             decAmount = allAmount - amount; //decreased amount: other 90%
         }
+
+        if (sender == MetaDaoController) {
+            decAmount = amorxguildAmount;
+        }
+
         // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
         uint256 amountToSendAllVoters = 0;
         for (uint256 i = 0; i < impactMakers.length; i++) {
@@ -227,10 +232,8 @@ contract GuildController is IGuildController, Ownable {
             revert InvalidAmount();
         }
 
-        uint256 amountToDistribute = (amount * percentToDistribute) / FEE_DENOMINATOR; // 10% of tokens
-
-        amount = distribute(amountToDistribute, token, msg.sender);
-        return amount;
+        uint256 amorxguildAmount = distribute(amount, token, msg.sender);
+        return amorxguildAmount;
     }
 
     /// @notice adds another element to the reportsWeight, with weight 0, and starts voting on it.
@@ -490,7 +493,9 @@ contract GuildController is IGuildController, Ownable {
         if (impact != msg.sender) {
             revert Unauthorized();
         }
-        ERC20AMORxGuild.safeTransfer(impact, claimableTokens[impact]);
+console.log("ERC20AMORxGuild.balanceOf(address(this)); is %s", ERC20AMORxGuild.balanceOf(address(this)));
+console.log("claimableTokens[impact] is %s", claimableTokens[impact]);
+        ERC20AMORxGuild.safeTransferFrom(address(this), impact, claimableTokens[impact]);
         claimableTokens[impact] = 0;
     }
 
