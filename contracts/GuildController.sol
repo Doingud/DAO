@@ -168,6 +168,10 @@ contract GuildController is IGuildController, Ownable {
 
         uint256 decAmount = amount;
         if (sender != MetaDaoController) {
+            // row below if we remove if-from the beggining about if (sender != MetaDaoController) {amount = (all
+            // need if we NEED to converd ALL tokens to AMORxGuild, and claimable for impMakers ONLY AMORxGuild
+            // amount = (amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // 10% of tokens
+
             // 3.Staked in the FXAMORxGuild tokens,
             // which are going to be owned by the user.
             ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);
