@@ -54,7 +54,7 @@ contract MetaDaoController is AccessControl {
     error InvalidGuild();
     /// Not all guilds have weights!!
     /// Please ensure guild weights have been updated after adding new guild
-    error ArrayError(address guild, uint8 index);
+    error ArrayError(address guild, uint256 index);
 
     constructor(
         address _amor,
@@ -124,7 +124,7 @@ contract MetaDaoController is AccessControl {
         uint256 trackDistributions;
         /// Loop through guilds
         for (uint256 i = 0; i < guilds.length; i++) {
-            if (guildWeight[i] == 0) {
+            if (guildWeight[guilds[i]] == 0) {
                 revert ArrayError({guild: guilds[i], index: i});
             }
             uint256 amountToDistribute = (donations[token] * guildWeight[guilds[i]]) / guildsTotalWeight;
@@ -226,6 +226,7 @@ contract MetaDaoController is AccessControl {
                 delete guildFunds[guilds[index]][whitelist[endOfList]];
                 endOfList = whitelist[endOfList];
             }
+            guildsTotalWeight -= guildWeight[guilds[index]];
             guilds[index] = guilds[guilds.length - 1];
             guilds.pop();
             revokeRole(GUILD_ROLE, controller);
