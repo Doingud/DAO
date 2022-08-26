@@ -73,6 +73,7 @@ describe('unit - Contract: GuildController', function () {
                 AMOR.address,
                 AMORxGuild.address,
                 FXAMORxGuild.address,
+                root.address,
                 root.address
             )).to.be.revertedWith("Already initialized");
         });
@@ -264,7 +265,9 @@ console.log("   amorxguildAmount is %s", amorxguildAmount);
             // expect(await AMOR.allowance(root.address,metadao.address) == ONE_HUNDRED_ETHER);
             // await metadao.connect(root).donate(AMOR.address, ONE_HUNDRED_ETHER);
             await metadao.connect(root).approveToController(USDC.address, controller.address);
-            await metadao.connect(root).approveToController(USDC.address, AMORxGuild.address);
+            await metadao.connect(root).approveToController(USDC.address, AMOR.address);
+
+            await AMOR.connect(root).approve(controller.address, TEST_TRANSFER);
 
             // await metadao.connect(root).donate(USDC.address, ONE_HUNDRED_ETHER);
 

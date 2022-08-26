@@ -93,7 +93,8 @@ const controller = async (setup) => {
     setup.tokens.AmorTokenImplementation.address,
     setup.tokens.AmorGuildToken.address, // AMORxGuild
     setup.tokens.FXAMORxGuild.address, // FXAMORxGuild
-    setup.metadao.address // MetaDaoController
+    setup.metadao.address, // MetaDaoController
+    setup.roles.root.address // the multisig address of the MetaDAO, which owns the token
   );
 
   await setup.tokens.AmorTokenImplementation.init(
@@ -101,7 +102,7 @@ const controller = async (setup) => {
     AMOR_TOKEN_SYMBOL, 
     setup.roles.authorizer_adaptor.address, //taxController
     TAX_RATE,
-    setup.roles.root.address // multisig
+    setup.roles.root.address // the multisig address of the MetaDAO, which owns the token
   );
 
   await setup.tokens.AmorGuildToken.init(

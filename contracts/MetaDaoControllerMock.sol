@@ -41,6 +41,7 @@ contract MetaDaoControllerMock is IMetadao, AccessControl {
     address public guildFactory;
 
     /// ERC20 tokens used by metada
+    address public amor;
     IERC20 public amorToken;
     IERC20 public usdcToken;
 
@@ -61,6 +62,7 @@ contract MetaDaoControllerMock is IMetadao, AccessControl {
         _setupRole(GUILD_ROLE, admin);
         usdcToken = IERC20(_usdc);
         amorToken = IERC20(_amor);
+        amor = _amor;
         guildFactory = _cloneFactory;
         whitelist[_amor] = 1;
     }

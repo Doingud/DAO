@@ -43,6 +43,9 @@ contract GuildFactory is ICloneFactory, Ownable {
     address public controllerxGuild;
 
     address public MetaDaoController;
+
+    address public multisig;
+
     /// The DoinGud generic proxy contract (the target)
     address public cloneTarget;
     address[] public amorxGuildTokens;
@@ -63,7 +66,8 @@ contract GuildFactory is ICloneFactory, Ownable {
         address _dAMORxGuildToken,
         address _doinGudProxy,
         address _controllerxGuild,
-        address _metaDaoController
+        address _metaDaoController,
+        address _multisig
     ) {
         amorToken = _amorToken;
         /// Set the implementation addresses
@@ -74,6 +78,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         cloneTarget = _doinGudProxy;
         controllerxGuild = _controllerxGuild;
         MetaDaoController = _metaDaoController;
+        multisig = _multisig;
     }
 
     /// @notice This deploys a new guild with it's associated tokens
@@ -125,7 +130,8 @@ contract GuildFactory is ICloneFactory, Ownable {
             amorToken,
             amorxGuildToken,
             fxAMORxGuildToken,
-            MetaDaoController
+            MetaDaoController,
+            multisig
         );
         guildControllers[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
     }
@@ -198,13 +204,14 @@ contract GuildFactory is ICloneFactory, Ownable {
         address amor,
         address amorxGuild,
         address fxAMORxGuild,
-        address MetaDaoController
+        address MetaDaoController,
+        address multisig
     ) internal returns (address) {
         IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
         proxyContract.initProxy(_implementation);
 
         /// Init the Guild Controller
-        IGuildController(address(proxyContract)).init(guildOwner, amor, amorxGuild, fxAMORxGuild, MetaDaoController);
+        IGuildController(address(proxyContract)).init(guildOwner, amor, amorxGuild, fxAMORxGuild, MetaDaoController, multisig);
 
         return address(proxyContract);
     }
