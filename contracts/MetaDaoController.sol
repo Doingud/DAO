@@ -214,9 +214,9 @@ contract MetaDaoController is AccessControl {
     /// @param controller the address of the guild controller to remove
     function removeGuild(uint256 index, address controller) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (guilds[index] == controller) {
-        /// Transfer unclaimed funds to donations
-        address endOfList = SENTINEL;
-        /// Loop through linked list
+            /// Transfer unclaimed funds to donations
+            address endOfList = SENTINEL;
+            /// Loop through linked list
             while (whitelist[endOfList] != SENTINEL) {
                 donations[whitelist[endOfList]] += guildFunds[guilds[index]][whitelist[endOfList]];
                 delete guildFunds[guilds[index]][whitelist[endOfList]];
