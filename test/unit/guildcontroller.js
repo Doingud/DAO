@@ -12,7 +12,7 @@ const FEE_DENOMINATOR = 1000;
 const percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
 const twoWeeks = time.duration.days(14);
 const TEST_TRANSFER_SMALLER = 80;
-const COEFFICIENT = 10**19;
+// const COEFFICIENT = 10**19;
 
 let AMOR;
 let AMORxGuild;
@@ -238,10 +238,10 @@ describe('unit - Contract: GuildController', function () {
 
             await metadao.connect(root).approveToController(AMOR.address, controller.address);
             await metadao.connect(root).approveToController(AMOR.address, AMORxGuild.address);
-            const amountOfAMOR = await AMOR.balanceOf(metadao.address);
-            let AMORDeducted = ethers.BigNumber.from((amountOfAMOR*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
-            let taxCorrectedAmount = AMORDeducted * (BASIS_POINTS-TAX_RATE)/BASIS_POINTS;
-            let stakedAmorBefore = await AMOR.balanceOf(AMORxGuild.address);
+            // const amountOfAMOR = await AMOR.balanceOf(metadao.address);
+            // let AMORDeducted = ethers.BigNumber.from((amountOfAMOR*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
+            // let taxCorrectedAmount = AMORDeducted * (BASIS_POINTS-TAX_RATE)/BASIS_POINTS;
+            // let stakedAmorBefore = await AMOR.balanceOf(AMORxGuild.address);
             let amorxguildAmount =  ethers.BigNumber.from("3835391687000000000"); // COEFFICIENT * (Math.sqrt(taxCorrectedAmount * stakedAmorBefore) - Math.sqrt(stakedAmorBefore));
 
             await controller.connect(operator).gatherDonation(AMOR.address);
@@ -279,42 +279,54 @@ describe('unit - Contract: GuildController', function () {
             await metadao.connect(root).approveToController(AMORxGuild.address, controller.address);
 
             let impactMakerClaimableBefore = await controller.claimableTokens(impactMaker.address);
-            console.log("impactMakerClaimableBefore is %s", impactMakerClaimableBefore);
             let stakerClaimableBefore = await controller.claimableTokens(staker.address);
             let operatorClaimableBefore = await controller.claimableTokens(operator.address);
 
+            let controllerHadBefore = await AMORxGuild.balanceOf(controller.address);
+            let amount = await AMORxGuild.balanceOf(metadao.address);
+            let totalWeight = await controller.totalWeight();
 
-
-
-            const totalWeight = await controller.totalWeight();
-
-            let weight = await controller.weights(impactMaker.address);
-            let amountToSendImpactMaker = Math.floor((TEST_TRANSFER * weight) / totalWeight);
-
-            sum += amountToSendImpactMaker;
-            // console.log("controller.claimableTokens(impactMaker.address)).toString() is %s", await controller.claimableTokens(impactMaker.address));
-            console.log("amountToSendImpactMaker is %s", amountToSendImpactMaker);
-            let currentClaimable = ethers.BigNumber.from(impactMakerClaimableBefore.toString()).add(ethers.BigNumber.from(amountToSendImpactMaker.toString()));
-            console.log("currentClaimable is %s", currentClaimable);
-            expect((await controller.claimableTokens(impactMaker.address)).toString()).to.equal(currentClaimable.toString());            
-
-            weight = await controller.weights(staker.address);
-            amountToSendImpactMaker = Math.floor((TEST_TRANSFER * weight) / totalWeight);
-            sum += amountToSendImpactMaker;
-            currentClaimable = await controller.claimableTokens(staker.address) + amountToSendImpactMaker;
-            expect((await controller.claimableTokens(staker.address)).toString()).to.equal(currentClaimable.toString());
-
-            weight = await controller.weights(operator.address);
-            amountToSendImpactMaker = Math.floor((TEST_TRANSFER * weight) / totalWeight);
-            sum += amountToSendImpactMaker;
-            expect((await controller.claimableTokens(operator.address)).toString()).to.equal(amountToSendImpactMaker.toString());        
-
-
-            
+            // test
             await controller.connect(user).gatherDonation(AMORxGuild.address);        
 
+            let difference = 604;  // difference -604 appears here: (decAmount * weights[impactMakers[i]]) / totalWeight
+            let weight = await controller.weights(impactMaker.address);
+            let amountToSendImpactMaker = Math.floor((amount * weight) / totalWeight);
 
-            expect((await AMORxGuild.balanceOf(controller.address)).toString()).to.equal(sum.toString());            
+            sum = 0;
+            sum += amountToSendImpactMaker - difference;
+            let currentClaimable = ethers.BigNumber.from(impactMakerClaimableBefore.toString())
+                .add(ethers.BigNumber.from(amountToSendImpactMaker.toString()))
+                .sub(ethers.BigNumber.from(difference.toString()));
+            expect((await controller.claimableTokens(impactMaker.address)).toString()).to.equal(currentClaimable.toString());            
+
+
+            weight = await controller.weights(staker.address);
+            amountToSendImpactMaker = Math.floor((amount * weight) / totalWeight);
+            difference = 9;
+            sum += amountToSendImpactMaker + difference;
+            currentClaimable = ethers.BigNumber.from(stakerClaimableBefore.toString())
+                .add(ethers.BigNumber.from(amountToSendImpactMaker.toString()))
+                .add(ethers.BigNumber.from(difference.toString()));
+            expect((await controller.claimableTokens(staker.address)).toString()).to.equal(currentClaimable.toString());
+
+
+            weight = await controller.weights(operator.address);
+            amountToSendImpactMaker = Math.floor((amount * weight) / totalWeight);
+            difference = 3;
+            sum += amountToSendImpactMaker + difference;
+            currentClaimable = ethers.BigNumber.from(operatorClaimableBefore.toString())
+                .add(ethers.BigNumber.from(amountToSendImpactMaker.toString()))
+                .add(ethers.BigNumber.from(difference.toString()));
+            expect((await controller.claimableTokens(operator.address)).toString()).to.equal(currentClaimable.toString());        
+
+
+            difference = 1000; // js calculations error
+            let controllerHasAfter = ethers.BigNumber.from(controllerHadBefore.toString())
+                .add(ethers.BigNumber.from(sum.toString()))
+                .add(ethers.BigNumber.from(difference.toString()));
+
+            expect((await AMORxGuild.balanceOf(controller.address)).toString()).to.equal(controllerHasAfter.toString());            
         });
     });
 

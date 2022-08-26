@@ -211,7 +211,14 @@ contract GuildFactory is ICloneFactory, Ownable {
         proxyContract.initProxy(_implementation);
 
         /// Init the Guild Controller
-        IGuildController(address(proxyContract)).init(guildOwner, amor, amorxGuild, fxAMORxGuild, MetaDaoController, multisig);
+        IGuildController(address(proxyContract)).init(
+            guildOwner,
+            amor,
+            amorxGuild,
+            fxAMORxGuild,
+            MetaDaoController,
+            multisig
+        );
 
         return address(proxyContract);
     }
