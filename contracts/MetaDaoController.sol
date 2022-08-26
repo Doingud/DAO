@@ -14,11 +14,13 @@
 pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./utils/interfaces/ICloneFactory.sol";
 import "./utils/interfaces/IGuildController.sol";
 
 contract MetaDaoController is AccessControl {
+    using SafeERC20 for IERC20;
     /// Guild-related variables
     /// Array of addresses of Guilds
     address[] public guilds;
@@ -94,12 +96,12 @@ contract MetaDaoController is AccessControl {
         }
         if (token == address(amorToken)) {
             uint256 amorBalance = amorToken.balanceOf(address(this));
-            IERC20(token).transferFrom(msg.sender, address(this), amount);
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
             amorBalance = amorToken.balanceOf(address(this)) - amorBalance;
             donations[token] += amorBalance;
         } else {
             donations[token] += amount;
-            IERC20(token).transferFrom(msg.sender, address(this), amount);
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         }
     }
 
@@ -163,10 +165,7 @@ contract MetaDaoController is AccessControl {
         address helper = SENTINEL;
         while (whitelist[helper] != SENTINEL) {
             /// Donate or transfer the token
-            bool success = IERC20(whitelist[helper]).transfer(msg.sender, guildFunds[msg.sender][whitelist[helper]]);
-            if (!success) {
-                revert InvalidClaim();
-            }
+            IERC20(whitelist[helper]).safeTransfer(msg.sender, guildFunds[msg.sender][whitelist[helper]]);
             /// Clear this guild's token balance
             delete guildFunds[msg.sender][whitelist[helper]];
             /// Advance the helper to the next link in the list
