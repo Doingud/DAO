@@ -7,12 +7,10 @@ const {
     FIFTY_ETHER,
     ONE_ADDRESS
   } = require('../helpers/constants.js');
-const { providers } = require("ethers");
 
 use(solidity);
 
 let AMOR_TOKEN;
-let CONTROLLER;
 let METADAO;
 let USDC;
 let user1;

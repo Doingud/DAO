@@ -70,7 +70,10 @@ contract MetaDaoController is AccessControl {
     /// @notice Updates a guild's weight
     /// @param  guildArray addresses of the guilds
     /// @param  newWeights weights of the guilds, must be correspond to the order of `guildArray`
-    function updateGuildWeights(address[] memory guildArray, uint256[] memory newWeights) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function updateGuildWeights(address[] memory guildArray, uint256[] memory newWeights)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
         if (guildArray.length != guilds.length || newWeights.length != guilds.length) {
             revert InvalidGuild();
         }
@@ -117,15 +120,14 @@ contract MetaDaoController is AccessControl {
         uint256 trackDistributions;
         /// Loop through guilds
         for (uint256 i = 0; i < guilds.length; i++) {
-            uint256 amountToDistribute = (donations[token] * guildWeight[guilds[i]]) /
-                guildsTotalWeight;
+            uint256 amountToDistribute = (donations[token] * guildWeight[guilds[i]]) / guildsTotalWeight;
             if (amountToDistribute == 0) {
                 continue;
             }
             guildFunds[guilds[i]][token] += amountToDistribute;
             /// Update the donation total for this token
             trackDistributions += amountToDistribute;
-            }
+        }
         /// Decrease the donations by the amount of tokens distributed
         /// This prevents multiple calls to distribute attack vector
         donations[token] -= trackDistributions;
