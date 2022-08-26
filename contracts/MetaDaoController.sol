@@ -16,13 +16,13 @@ pragma solidity 0.8.15;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./utils/interfaces/ICloneFactory.sol";
+import "./utils/interfaces/IGuildController.sol";
 
 contract MetaDaoController is AccessControl {
-    error InvalidGuild();
-
     /// Guild-related variables
     /// Array of addresses of Guilds
     address[] public guilds;
+    mapping(address => address) public guildControllers;
     mapping(address => uint256) public guildWeight;
     /// Mapping of guild --> token --> amount
     mapping(address => mapping(address => uint256)) public guildFunds;
@@ -32,10 +32,6 @@ contract MetaDaoController is AccessControl {
     /// Donations variables
     mapping(address => uint256) public donations;
 
-    /*  Changing this to a linked list
-        This allows for testing `isWhitelisted` and iteration in one mapping
-    mapping(address => bool) public whitelist;
-    */
     /// Token related variables
     mapping(address => address) public whitelist;
     address public constant SENTINEL = address(0x01);
@@ -44,16 +40,17 @@ contract MetaDaoController is AccessControl {
     /// Clone Factory
     address public guildFactory;
 
+    /// Access Control
+    bytes32 public GUILD_ROLE = keccak256("GUILD");
+
     /// ERC20 tokens used by metada
     IERC20 public amorToken;
-
-    /// Roles
-    bytes32 public constant GUILD_ROLE = keccak256("GUILD");
 
     error InvalidClaim();
     error NotListed();
     /// The guild cannot be added because it already exists
     error Exists();
+    error InvalidGuild();
 
     constructor(
         address _amor,
@@ -64,32 +61,24 @@ contract MetaDaoController is AccessControl {
         _setupRole(GUILD_ROLE, admin);
         amorToken = IERC20(_amor);
         guildFactory = _cloneFactory;
+        /// Setup the linked list
         sentinalWhitelist = _amor;
         whitelist[sentinalWhitelist] = SENTINEL;
         whitelist[SENTINEL] = _amor;
     }
 
     /// @notice Updates a guild's weight
-    /// @param  newWeight the amount of staked AMORxGuild in this guild
-    /// @return bool the guild's balance was updated successfully
-    function updateGuildWeight(uint256 newWeight) external onlyRole(GUILD_ROLE) returns (bool) {
-        /// If `distribute` is still in cooldown, or if the guild weight does not change
-        if (guildWeight[msg.sender] == newWeight) {
-            return false;
+    /// @param  guildArray addresses of the guilds
+    /// @param  newWeights weights of the guilds, must be correspond to the order of `guildArray`
+    function updateGuildWeights(address[] memory guildArray, uint256[] memory newWeights) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (guildArray.length != guilds.length || newWeights.length != guilds.length) {
+            revert InvalidGuild();
         }
-        /// If the new weight is less than the current weight:
-        /// Decrease the total guilds weight by the difference between the old and the new weight
-        /// Update guildWeight
-        if (guildWeight[msg.sender] > newWeight) {
-            guildsTotalWeight -= (guildWeight[msg.sender] - newWeight);
-            guildWeight[msg.sender] = newWeight;
-            return true;
+        guildsTotalWeight = 0;
+        for (uint256 i; i < guildArray.length; i++) {
+            guildWeight[guildArray[i]] = newWeights[i];
+            guildsTotalWeight += newWeights[i];
         }
-        /// If not yet exited then newWeight > guildWeight
-        /// Increase the total guild weight by the difference and set guildWeight == newWeight
-        guildsTotalWeight += (newWeight - guildWeight[msg.sender]);
-        guildWeight[msg.sender] = newWeight;
-        return true;
     }
 
     /// @notice Allows a user to donate a whitelisted asset
@@ -111,52 +100,54 @@ contract MetaDaoController is AccessControl {
         }
     }
 
-    /// @notice Distributes the amortoken in the metadao to the approved guilds but guild weight
-    /// @dev    Creates an array of the current guild weights to pass to `_distribute`
-    function distribute() public {
-        uint256[] memory currentGuildWeights = new uint256[](guilds.length);
-        for (uint256 i = 0; i < guilds.length; i++) {
-            currentGuildWeights[i] = guildWeight[guilds[i]];
-        }
+    /// @notice Distributes both the fees and the token donations
+    function distributeAll() external {
         /// Apportion the AMOR received from fees
-        distributeFees(currentGuildWeights);
+        distributeFees();
         /// Apportion the token donations
-        distributeTokens(currentGuildWeights);
+        distributeTokens();
+    }
+
+    /// @notice Distributes the specified token
+    /// @param  token address of target token
+    function distributeToken(address token) public {
+        if (whitelist[token] == address(0)) {
+            revert NotListed();
+        }
+        uint256 trackDistributions;
+        /// Loop through guilds
+        for (uint256 i = 0; i < guilds.length; i++) {
+            uint256 amountToDistribute = (donations[token] * guildWeight[guilds[i]]) /
+                guildsTotalWeight;
+            if (amountToDistribute == 0) {
+                continue;
+            }
+            guildFunds[guilds[i]][token] += amountToDistribute;
+            /// Update the donation total for this token
+            trackDistributions += amountToDistribute;
+            }
+        /// Decrease the donations by the amount of tokens distributed
+        /// This prevents multiple calls to distribute attack vector
+        donations[token] -= trackDistributions;
     }
 
     /// @notice Apportions approved token donations according to guild weights
-    /// @param  currentGuildWeights an array of the current weights of all the guilds
-    function distributeTokens(uint256[] memory currentGuildWeights) internal {
+    /// @dev    Loops through all whitelisted tokens and calls `distributeToken()` for each
+    function distributeTokens() public {
         address endOfList = SENTINEL;
         /// Loop through linked list
         while (whitelist[endOfList] != SENTINEL) {
-            /// Track the amount of donations distributed
-            uint256 trackDistributions;
-            /// Loop through guilds
-            for (uint256 i = 0; i < guilds.length; i++) {
-                uint256 amountToDistribute = (donations[whitelist[endOfList]] * currentGuildWeights[i]) /
-                    guildsTotalWeight;
-                if (amountToDistribute == 0) {
-                    continue;
-                }
-                guildFunds[guilds[i]][whitelist[endOfList]] += amountToDistribute;
-                /// Update the donation total for this token
-                trackDistributions += amountToDistribute;
-            }
-            /// Decrease the donations by the amount of tokens distributed
-            /// This prevents multiple calls to distribute attack vector
-            donations[whitelist[endOfList]] -= trackDistributions;
+            distributeToken(whitelist[endOfList]);
             endOfList = whitelist[endOfList];
         }
     }
 
     /// @notice Apportions collected AMOR fees
-    /// @param  currentGuildWeights an array of the current weights of the guilds
-    function distributeFees(uint256[] memory currentGuildWeights) internal {
+    function distributeFees() public {
         /// Determine amount of AMOR that has been collected from fees
         uint256 feesToBeDistributed = amorToken.balanceOf(address(this)) - donations[address(amorToken)];
         for (uint256 i = 0; i < guilds.length; i++) {
-            uint256 amountToDistribute = (feesToBeDistributed * currentGuildWeights[i]) / guildsTotalWeight;
+            uint256 amountToDistribute = (feesToBeDistributed * guildWeight[guilds[i]]) / guildsTotalWeight;
             if (amountToDistribute != 0) {
                 guildFunds[guilds[i]][address(amorToken)] += amountToDistribute;
             }
@@ -169,7 +160,7 @@ contract MetaDaoController is AccessControl {
         /// Loop through the token linked list
         address helper = SENTINEL;
         while (whitelist[helper] != SENTINEL) {
-            /// Transfer the token
+            /// Donate or transfer the token
             bool success = IERC20(whitelist[helper]).transfer(msg.sender, guildFunds[msg.sender][whitelist[helper]]);
             if (!success) {
                 revert InvalidClaim();
