@@ -123,7 +123,7 @@ contract Vesting is Ownable {
     /// @return the amount of dAMOR allocated to the target address
     function balanceOf(address target) external view returns (uint256) {
         /// The voting weight of the beneficiaries can be set here
-        return allocations[target].tokensAllocated;
+        return allocations[target].tokensAllocated - allocations[target].tokensClaimed;
     }
 
     /// @notice Allocates dAMOR to a target beneficiary
@@ -161,7 +161,7 @@ contract Vesting is Ownable {
         uint256 amount,
         uint256 cliff,
         uint256 vestingDate
-    ) external {
+    ) external onlyOwner {
         if (beneficiaries[target] == address(0)) {
             revert NotFound();
         }
