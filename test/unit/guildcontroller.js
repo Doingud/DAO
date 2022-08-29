@@ -76,7 +76,7 @@ describe('unit - Contract: GuildController', function () {
                 FXAMORxGuild.address,
                 root.address,
                 root.address
-            )).to.be.revertedWith("Already initialized");
+            )).to.be.revertedWith("AlreadyInitialized()");
         });
     });
 

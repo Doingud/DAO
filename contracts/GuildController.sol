@@ -62,6 +62,7 @@ contract GuildController is IGuildController, Ownable {
 
     bool private _initialized;
 
+    error AlreadyInitialized();
     error Unauthorized();
     error EmptyArray();
     error InvalidParameters();
@@ -86,8 +87,9 @@ contract GuildController is IGuildController, Ownable {
         address MetaDaoController_,
         address multisig_ // the multisig address of the MetaDAO, which owns the token
     ) external returns (bool) {
-        require(!_initialized, "Already initialized");
-
+        if (_initialized) {
+            revert AlreadyInitialized();
+        }
         _transferOwnership(initOwner);
 
         AMOR = AMOR_;

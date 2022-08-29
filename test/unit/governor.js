@@ -1,9 +1,13 @@
+const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const init = require('../test-init.js');
 
-// let AMOR;
-// let AMORxGuild; // need for testing propose() function
+const twoWeeks = time.duration.days(14);
+
+// let AMOR; // need for AMORxGuild
+let AMORxGuild; // need for testing propose() function
+let avatar;
 let governor;
 let root;
 let authorizer_adaptor;
@@ -13,6 +17,12 @@ let user2;
 let staker;
 let guardians;
 
+let targets;
+let values;
+let calldatas;
+let firstProposalId;
+let secondProposalId;
+
 describe('unit - Contract: Governor', function () {
 
     const setupTests = deployments.createFixture(async () => {
@@ -21,8 +31,9 @@ describe('unit - Contract: Governor', function () {
         await init.getTokens(setup);
         await init.metadao(setup);
         // AMOR = setup.tokens.AmorTokenImplementation;
-        // AMORxGuild = setup.tokens.AmorGuildToken;
+        AMORxGuild = setup.tokens.AmorGuildToken;
         await init.controller(setup);
+        avatar = setup.tokens.AvatarxGuild;
         governor = await init.governor(setup);
         root = setup.roles.root;
         staker = setup.roles.staker;
@@ -38,16 +49,20 @@ describe('unit - Contract: Governor', function () {
 
     context('» init testing', () => {
         it('initialized variables check', async function () {
-            expect(await governor.owner()).to.equals(root.address);
             expect(await governor.snapshotAddress()).to.equals(authorizer_adaptor.address);
+            expect(await governor.avatarAddress()).to.equals(avatar.address);
             expect(await governor.guardians(0)).to.equals(root.address);
+            expect((await governor.votingDelay())).to.equals(1);
+            let weeks = 60 * 60 * 24 * 7 * 2;
+            expect(await governor.votingPeriod()).to.equals(weeks);
         });
 
         it("Should fail if called more than once", async function () {
             await expect(governor.init(
-                root.address, // owner
-                authorizer_adaptor.address // snapshot
-            )).to.be.revertedWith("Already initialized");
+                AMORxGuild.address, //AMORxGuild
+                authorizer_adaptor.address, // Snapshot Address
+                authorizer_adaptor.address // Avatar Address
+            )).to.be.revertedWith("AlreadyInitialized()");
         });
     });
 
@@ -113,6 +128,149 @@ describe('unit - Contract: Governor', function () {
         });
     });
 
+    context('» propose testing', () => {
+
+        it('it fails to propose if not the avatar', async function () {
+            targets = [authorizer_adaptor.address];
+            values = [20];
+            // building hash has to come from system address
+            // 32 bytes of data
+            let messageHash = ethers.utils.solidityKeccak256(
+                ["address"],
+                [authorizer_adaptor.address]
+            );
+            calldatas = [messageHash];
+
+            await expect(governor.connect(user).propose(targets, values, calldatas)).to.be.revertedWith(
+                'Unauthorized()'
+            );
+        });
+        
+        it('it proposes', async function () {
+            await expect(governor.proposals(0)).to.be.reverted;
+            await governor.connect(authorizer_adaptor).propose(targets, values, calldatas);
+            
+            await expect(governor.proposals(1)).to.be.reverted;
+            firstProposalId = await governor.proposals(0);
+            await governor.connect(authorizer_adaptor).state(firstProposalId);
+            expect((await governor.proposalVoting(firstProposalId)).toString()).to.equals("0");
+            expect((await governor.proposalWeight(firstProposalId)).toString()).to.equals("0");
+
+            let newMessageHash = ethers.utils.solidityKeccak256(
+                ["address"],
+                [staker.address]
+            );
+            newcalldatas = [newMessageHash];
+
+            await governor.connect(authorizer_adaptor).propose(targets, values, newcalldatas);
+            secondProposalId = await governor.proposals(1);
+        });
+
+        it('it fails to propose if proposal already exists', async function () {
+            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas)).to.be.revertedWith(
+                'InvalidState()'
+            );
+        });
+
+        it('it fails to propose if proposal function information arity mismatch', async function () {
+            await expect(governor.connect(authorizer_adaptor).propose(targets, [1, 2, 3], calldatas)).to.be.revertedWith(
+                'InvalidParameters()'
+            );
+        });
+
+        it('it fails to propose if empty proposal', async function () {
+            await expect(governor.connect(authorizer_adaptor).propose([], [], [])).to.be.revertedWith(
+                'InvalidParameters()'
+            );
+        });
+
+        it('it fails to propose if too many actions', async function () {
+            let tooManyTargets = [
+                root.address, root.address, root.address, 
+                root.address, root.address, root.address,
+                root.address, root.address, root.address,
+                root.address, root.address
+            ];
+            let tooManyValues = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+            let messageHash = ethers.utils.solidityKeccak256(
+                ["address"],
+                [authorizer_adaptor.address]
+            );
+            let tooManyCalldatas = [
+                messageHash, messageHash, messageHash,
+                messageHash, messageHash, messageHash,
+                messageHash, messageHash, messageHash,
+                messageHash, messageHash
+            ];
+            await expect(governor.connect(authorizer_adaptor).propose(tooManyTargets, tooManyValues, tooManyCalldatas)).to.be.revertedWith(
+                'InvalidParameters()'
+            );
+        });
+    });
+
+    context('» castVote testing', () => {
+
+        it('it fails to castVote if not the guardian', async function () {
+            await expect(governor.connect(authorizer_adaptor).castVote(firstProposalId, 1)).to.be.revertedWith(
+                'Unauthorized()'
+            );
+        });
+
+        it('it fails to castVote if unknown proposal id', async function () {
+            let invalidId = 999;
+            await expect(governor.connect(root).castVote(invalidId, true)).to.be.revertedWith(
+                'Governor: unknown proposal id'
+            );
+        });
+
+        it('it casts Vote', async function () {
+            await governor.connect(root).castVote(firstProposalId, true);
+            await governor.connect(user).castVote(firstProposalId, true);
+            await governor.connect(user2).castVote(firstProposalId, false);
+
+            await governor.connect(user2).castVote(secondProposalId, false);
+        });
+
+        it('it fails to castVote if already voted', async function () {
+            await expect(governor.connect(root).castVote(firstProposalId, false)).to.be.revertedWith(
+                'AlreadyVoted()'
+            );
+        });
+    });
+
+    context('» execute testing', () => {
+
+        it('it fails to execute if invalid parametres', async function () {
+            await expect(governor.connect(root).execute(11, [user.address], values, calldatas)).to.be.revertedWith(
+                'InvalidParameters()'
+            );
+        });
+
+        it('it executes proposal', async function () {
+            // mine 64000 blocks
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(twoWeeks);
+
+            expect(await avatar.check()).to.equals(0);
+            await governor.connect(authorizer_adaptor).execute(firstProposalId, targets, values, calldatas);
+            expect(await avatar.check()).to.equals(1);
+
+            await expect(governor.voters(firstProposalId)).to.be.reverted;
+        });
+
+        it('it fails to execute if proposal not successful', async function () {
+            await expect(governor.connect(root).execute(secondProposalId, targets, values, newcalldatas)).to.be.revertedWith(
+                'InvalidState()'
+            );
+        });
+
+        it('it fails to castVote second time to the proposal with the same id', async function () {
+            await expect(governor.connect(root).castVote(firstProposalId, 1)).to.be.revertedWith(
+                'Governor: unknown proposal id'
+            );
+        });
+    });
+
     context('» removeGuardian testing', () => {
 
         it('it fails to remove guardian if not the snapshot', async function () {
@@ -122,6 +280,7 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it removes guardian', async function () {
+            expect(await governor.guardians(3)).to.equals(user2.address);
             await governor.connect(authorizer_adaptor).removeGuardian(root.address);
             expect(await governor.guardians(1)).to.equals(user2.address);
             await expect(governor.guardians(3)).to.be.reverted;
