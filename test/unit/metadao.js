@@ -151,8 +151,6 @@ describe("unit - MetaDao", function () {
     });
 
     context('function: addIndex()', () => {
-        let weightIndex;
-
         it('it fails to add an index if the weights array is invalid', async function () {
             let weightsArray = [100, 100, 100];
             await expect(METADAO.addIndex(weightsArray)).
@@ -170,7 +168,7 @@ describe("unit - MetaDao", function () {
 
     context('function: claimTokens()', () => {
         it('Should call `donate` appropriately', async function () {
-            
+
         });
     });
 
