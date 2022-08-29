@@ -80,7 +80,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         address guildOwner,
         string memory _name,
         string memory _symbol
-    ) external {
+    ) external returns (address) {
         /// Setup local scope vars
         string memory tokenName;
         string memory tokenSymbol;
@@ -117,6 +117,8 @@ contract GuildFactory is ICloneFactory, Ownable {
         /// Deploy the ControllerxGuild
         clonedContract = _deployGuildController(controllerxGuild, guildOwner, amorxGuildToken, fxAMORxGuildToken);
         guildControllers[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
+
+        return clonedContract;
     }
 
     /// @notice Internal function to deploy clone of an implementation contract
