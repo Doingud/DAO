@@ -166,10 +166,11 @@ describe("unit - MetaDao", function () {
         });
     });
 
+    /* This should be done after governor functions merging
     context('function: claimTokens()', () => {
         it('Should call `donate` appropriately', async function () {
 
         });
     });
-
+    */
 });
