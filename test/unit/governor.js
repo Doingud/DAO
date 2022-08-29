@@ -289,7 +289,7 @@ describe('unit - Contract: Governor', function () {
             time.increase(time.duration.days(1));
 
             await expect(governor.connect(user).castVoteForCancelling(secondProposalId)).to.be.revertedWith(
-                'Governor: vote is still active'
+                'VoteIsStillActive()'
             );
         });
 
@@ -298,7 +298,7 @@ describe('unit - Contract: Governor', function () {
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
 
             await expect(governor.connect(root).cancel(secondProposalId)).to.be.revertedWith(
-                'Governor: proposal not finished yet'
+                'VoteIsStillActive()'
             );
         });
 

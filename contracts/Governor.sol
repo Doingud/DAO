@@ -87,6 +87,9 @@ contract GoinGudGovernor {
     error ProposalNotExists();
     error VotingTimeExpired();
     error AlreadyVoted();
+    error VoteIsStillActive();
+    error CancelNotApproven();
+    error InvalidState();
 
     constructor(IVotes _token, string memory name) {
         token = _token;
@@ -361,10 +364,9 @@ contract GoinGudGovernor {
         ProposalCore storage proposal = _proposals[proposalId];
         ProposalState status = state(proposalId);
 
-        require(
-            status == ProposalState.Succeeded || status == ProposalState.Defeated,
-            "Governor: vote is still active"
-        );
+        if (status == ProposalState.Active) {
+            revert VoteIsStillActive();
+        }
 
         if (AMORxGuild.balanceOf(msg.sender) > 0) {
             revert InvalidAmount();
@@ -387,16 +389,14 @@ contract GoinGudGovernor {
     function cancel(uint256 proposalId) external {
         ProposalState status = state(proposalId);
 
-        require(
-            status == ProposalState.Succeeded || status == ProposalState.Defeated,
-            "Governor: proposal not finished yet"
-        );
+        if (status != ProposalState.Succeeded && status != ProposalState.Defeated) {
+            revert VoteIsStillActive();
+        }
 
         // Proposal should achieve at least 20% approval for cancel from guardians, to be cancelled
-        require(
-            proposalCancelApproval[proposalId] >= int256((20 * guardians.length) / 100),
-            "Governor: cancel for this proposal is not approven"
-        );
+        if (proposalCancelApproval[proposalId] < int256((20 * guardians.length) / 100)) {
+            revert CancelNotApproven();
+        }
 
         _proposals[proposalId].canceled = true;
 
