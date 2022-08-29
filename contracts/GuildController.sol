@@ -156,9 +156,7 @@ contract GuildController is IGuildController, Ownable {
         // than the vote for the next report set instantly starts.
         // The vote starts for all of the untouched reports in the queue.
         // timeVoting == 0 --> for the first queue when there was no voting yet
-        if (trigger == true || timeVoting == 0) {
-            reportsQueue.push(newReportId);
-        }
+        reportsQueue.push(newReportId);
     }
 
     /// @notice burns the amount of FXTokens, and changes a report weight, based on a sign provided.
@@ -276,6 +274,7 @@ contract GuildController is IGuildController, Ownable {
         delete reportsWeight;
         delete reportsVoting;
         totalReportsWeight = 0;
+        timeVoting = 0;
         trigger = false;
     }
 
@@ -283,7 +282,7 @@ contract GuildController is IGuildController, Ownable {
     function startVoting() external {
         // nothing to finalize
         // startVoting will not start voting if there is another voting in progress
-        if (trigger == true || block.timestamp < (timeVoting + ADDITIONAL_VOTING_TIME)) {
+        if (block.timestamp < (timeVoting + ADDITIONAL_VOTING_TIME)) {
             revert VotingTimeNotFinished();
         }
 
@@ -294,7 +293,7 @@ contract GuildController is IGuildController, Ownable {
 
         // if the voting time is over, then startVoting will first call finalizeVoting and then start it's own functional
         // if timeVoting == 0 then skip call finalizeVoting for the first start
-        if (block.timestamp > (timeVoting + ADDITIONAL_VOTING_TIME) && timeVoting != 0) {
+        if (block.timestamp >= (timeVoting + ADDITIONAL_VOTING_TIME) && timeVoting != 0) {
             finalizeVoting();
         }
 
