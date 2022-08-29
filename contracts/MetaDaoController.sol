@@ -57,6 +57,9 @@ contract MetaDaoController is AccessControl {
     bytes32[] public indexHashes;
     bytes32 public constant FEES_INDEX = keccak256("FEES_INDEX");
 
+    /// Constant for Guild based access control
+    bytes32 public constant GUILD_ROLE = keccak256("GUILD_ROLE");
+
     /// Errors
     /// The claim is not valid
     error InvalidClaim();
@@ -121,7 +124,7 @@ contract MetaDaoController is AccessControl {
         uint256 amount,
         uint256 index
     ) internal {
-        Index memory index = indexes[indexHashes[index]];
+        Index storage index = indexes[indexHashes[index]];
         for (uint256 i = 0; i < guilds.length; i++) {
             uint256 amountAllocated = (amount * index.indexWeights[guilds[i]]) / index.indexDenominator;
             guildFunds[guilds[i]][token] += amountAllocated;
@@ -146,7 +149,7 @@ contract MetaDaoController is AccessControl {
         donations[token] -= amount;
         /// Clear this guild's token balance
         delete guildFunds[guild][token];
-        IERC20(whitelist[helper]).safeTransfer(guild, amount);
+        IERC20(token).safeTransfer(guild, amount);
     }
 
     /// @notice Apportions approved token donations according to guild weights
@@ -164,7 +167,7 @@ contract MetaDaoController is AccessControl {
     /// @notice Apportions collected AMOR fees
     /// @param  index the index to use
     function distributeFees() internal {
-        Index memory index = indexes[feesIndex];
+        Index storage index = indexes[FEES_INDEX];
         /// Determine amount of AMOR that has been collected from fees
         uint256 feesToBeDistributed = amorToken.balanceOf(address(this)) - donations[address(amorToken)];
         for (uint256 i = 0; i < guilds.length; i++) {
