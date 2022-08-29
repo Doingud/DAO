@@ -198,17 +198,17 @@ describe('unit - Contract: GuildController', function () {
 
             sum += amountToSendImpactMaker;
             expect((await FXAMORxGuild.balanceOf(user.address)).toString()).to.equal(FxGAmount.toString());
-            expect((await controller.claimableTokens(impactMaker.address)).toString()).to.equal(amountToSendImpactMaker.toString());            
+            expect((await controller.claimableTokens(impactMaker.address, AMORxGuild.address)).toString()).to.equal(amountToSendImpactMaker.toString());            
 
             weight = await controller.weights(staker.address);
             amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
             sum += amountToSendImpactMaker;
-            expect((await controller.claimableTokens(staker.address)).toString()).to.equal(amountToSendImpactMaker.toString());
+            expect((await controller.claimableTokens(staker.address, AMORxGuild.address)).toString()).to.equal(amountToSendImpactMaker.toString());
 
             weight = await controller.weights(operator.address);
             amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
             sum += amountToSendImpactMaker;
-            expect((await controller.claimableTokens(operator.address)).toString()).to.equal(amountToSendImpactMaker.toString());
+            expect((await controller.claimableTokens(operator.address, AMORxGuild.address)).toString()).to.equal(amountToSendImpactMaker.toString());
         
             expect((await AMORxGuild.balanceOf(controller.address)).toString()).to.equal(sum.toString());            
         });
@@ -230,7 +230,7 @@ describe('unit - Contract: GuildController', function () {
         });
 
         it('gathers donation in AMOR', async function () {
-            let previous = await AMORxGuild.balanceOf(controller.address);
+            let previous = await AMOR.balanceOf(controller.address);
 
             // add some funds to MetaDaoController
             await AMOR.connect(root).approve(AMORxGuild.address, TEST_TRANSFER);
@@ -238,17 +238,13 @@ describe('unit - Contract: GuildController', function () {
 
             await metadao.connect(root).approveToController(AMOR.address, controller.address);
             await metadao.connect(root).approveToController(AMOR.address, AMORxGuild.address);
-            // const amountOfAMOR = await AMOR.balanceOf(metadao.address);
-            // let AMORDeducted = ethers.BigNumber.from((amountOfAMOR*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
-            // let taxCorrectedAmount = AMORDeducted * (BASIS_POINTS-TAX_RATE)/BASIS_POINTS;
-            // let stakedAmorBefore = await AMOR.balanceOf(AMORxGuild.address);
-            let amorxguildAmount =  ethers.BigNumber.from("3835391687000000000"); // COEFFICIENT * (Math.sqrt(taxCorrectedAmount * stakedAmorBefore) - Math.sqrt(stakedAmorBefore));
+            const amountOfAMOR = await AMOR.balanceOf(metadao.address);
+            let AMORDeducted = ethers.BigNumber.from((amountOfAMOR*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
 
             await controller.connect(operator).gatherDonation(AMOR.address);
-            // TODO: add check changes
-            let current = await AMORxGuild.balanceOf(controller.address);
-            expect((current - previous).toString()).to.equal(amorxguildAmount.toString());            
 
+            let current = await AMOR.balanceOf(controller.address);
+            expect((current - previous).toString()).to.equal(AMORDeducted.toString());
         });
 
         it('gathers donation in USDC', async function () {
@@ -278,9 +274,9 @@ describe('unit - Contract: GuildController', function () {
             await AMORxGuild.connect(user).approve(controller.address, nextAMORDeducted);
             await metadao.connect(root).approveToController(AMORxGuild.address, controller.address);
 
-            let impactMakerClaimableBefore = await controller.claimableTokens(impactMaker.address);
-            let stakerClaimableBefore = await controller.claimableTokens(staker.address);
-            let operatorClaimableBefore = await controller.claimableTokens(operator.address);
+            let impactMakerClaimableBefore = await controller.claimableTokens(impactMaker.address, AMORxGuild.address);
+            let stakerClaimableBefore = await controller.claimableTokens(staker.address, AMORxGuild.address);
+            let operatorClaimableBefore = await controller.claimableTokens(operator.address, AMORxGuild.address);
 
             let controllerHadBefore = await AMORxGuild.balanceOf(controller.address);
             let amount = await AMORxGuild.balanceOf(metadao.address);
@@ -289,42 +285,42 @@ describe('unit - Contract: GuildController', function () {
             // test
             await controller.connect(user).gatherDonation(AMORxGuild.address);        
 
-            let difference = 604;  // difference -604 appears here: (decAmount * weights[impactMakers[i]]) / totalWeight
+            let difference = 45; // difference -604 appears here: (decAmount * weights[impactMakers[i]]) / totalWeight
             let weight = await controller.weights(impactMaker.address);
             let amountToSendImpactMaker = Math.floor((amount * weight) / totalWeight);
 
             sum = 0;
-            sum += amountToSendImpactMaker - difference;
+            sum += amountToSendImpactMaker + difference;
             let currentClaimable = ethers.BigNumber.from(impactMakerClaimableBefore.toString())
                 .add(ethers.BigNumber.from(amountToSendImpactMaker.toString()))
-                .sub(ethers.BigNumber.from(difference.toString()));
-            expect((await controller.claimableTokens(impactMaker.address)).toString()).to.equal(currentClaimable.toString());            
+                .add(ethers.BigNumber.from(difference.toString()));
+            expect((await controller.claimableTokens(impactMaker.address, AMORxGuild.address)).toString()).to.equal(currentClaimable.toString());            
 
 
             weight = await controller.weights(staker.address);
             amountToSendImpactMaker = Math.floor((amount * weight) / totalWeight);
-            difference = 9;
-            sum += amountToSendImpactMaker + difference;
+            difference = 8;
+            sum += amountToSendImpactMaker - difference;
             currentClaimable = ethers.BigNumber.from(stakerClaimableBefore.toString())
                 .add(ethers.BigNumber.from(amountToSendImpactMaker.toString()))
-                .add(ethers.BigNumber.from(difference.toString()));
-            expect((await controller.claimableTokens(staker.address)).toString()).to.equal(currentClaimable.toString());
+                .sub(ethers.BigNumber.from(difference.toString()));
+            expect((await controller.claimableTokens(staker.address, AMORxGuild.address)).toString()).to.equal(currentClaimable.toString());
 
 
             weight = await controller.weights(operator.address);
             amountToSendImpactMaker = Math.floor((amount * weight) / totalWeight);
-            difference = 3;
+            difference = 12;
             sum += amountToSendImpactMaker + difference;
             currentClaimable = ethers.BigNumber.from(operatorClaimableBefore.toString())
                 .add(ethers.BigNumber.from(amountToSendImpactMaker.toString()))
                 .add(ethers.BigNumber.from(difference.toString()));
-            expect((await controller.claimableTokens(operator.address)).toString()).to.equal(currentClaimable.toString());        
+            expect((await controller.claimableTokens(operator.address, AMORxGuild.address)).toString()).to.equal(currentClaimable.toString());        
 
 
-            difference = 1000; // js calculations error
+            difference = 1; // js calculations error
             let controllerHasAfter = ethers.BigNumber.from(controllerHadBefore.toString())
                 .add(ethers.BigNumber.from(sum.toString()))
-                .add(ethers.BigNumber.from(difference.toString()));
+                .sub(ethers.BigNumber.from(difference.toString()));
 
             expect((await AMORxGuild.balanceOf(controller.address)).toString()).to.equal(controllerHasAfter.toString());            
         });
@@ -333,7 +329,7 @@ describe('unit - Contract: GuildController', function () {
     context('» claim testing', () => {
 
         it('it fails to claim if not the owner', async function () {
-            await expect(controller.connect(user).claim(user2.address)).to.be.revertedWith(
+            await expect(controller.connect(user).claim(user2.address, AMORxGuild.address)).to.be.revertedWith(
                 'Unauthorized()'
             );
         });
@@ -342,8 +338,8 @@ describe('unit - Contract: GuildController', function () {
             const balanceBefore = await AMORxGuild.balanceOf(impactMaker.address);
             expect(balanceBefore).to.equal(0);
 
-            const balanceAfter = await controller.claimableTokens(impactMaker.address);
-            await controller.connect(impactMaker).claim(impactMaker.address);
+            const balanceAfter = await controller.claimableTokens(impactMaker.address, AMORxGuild.address);
+            await controller.connect(impactMaker).claim(impactMaker.address, AMORxGuild.address);
             expect((await AMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal(balanceAfter.toString());
         });
     });

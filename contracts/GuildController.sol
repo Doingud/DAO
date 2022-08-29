@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
-import "hardhat/console.sol";
 
 import "./utils/interfaces/IAmorToken.sol";
 import "./utils/interfaces/IFXAMORxGuild.sol";
@@ -30,7 +29,9 @@ contract GuildController is IGuildController, Ownable {
     uint256 public totalReportsWeight; // total Weight of all of reports
 
     address[] public impactMakers; // list of impactMakers of this DAO
-    mapping(address => uint256) public claimableTokens; // amount of tokens each specific address(impactMaker) can claim
+
+    // user --> token --> amount
+    mapping(address => mapping(address => uint256)) public claimableTokens; // amount of tokens each specific address(impactMaker) can claim
     mapping(address => uint256) public weights; // weight of each specific Impact Maker/Builder
     uint256 public totalWeight; // total Weight of all of the impact makers
     uint256 public timeVoting; // deadlines for the votes for reports
@@ -117,84 +118,22 @@ contract GuildController is IGuildController, Ownable {
     /// all of the impact makers based on their weight.
     /// Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers
     function distribute(
-        uint256 allAmount,
+        uint256 amount,
         address token,
         address sender
     ) internal returns (uint256) {
-        // uint256 FxGAmount = amorxguildAmount;//(amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
-        uint256 amount = allAmount;
-        if (sender != MetaDaoController) {
-            amount = (allAmount * percentToConvert) / FEE_DENOMINATOR; // 10% of tokens
-        }
-
-        uint256 amorxguildAmount = amount;
-
-        // 10% (if it's a donation) of the tokens in the impact pool are getting:
-        if (token != AMORxGuild && token != AMOR) {
-            // 1.Exchanged in the pool to AMOR(if it’s not AMOR or AMORxGuild)
-            // recieve tokens
-            IERC20(token).safeTransferFrom(sender, address(this), amount);
-            // TODO: formula for: convert to AMOR
-            uint256 amorAmount = amount; // TEMPORARY COEFFICIENT CHOICE
-
-            // give AMOR
-            uint256 stakedAmor = IERC20(AMOR).balanceOf(address(this));
-            IERC20(AMOR).safeTransferFrom(multisig, address(this), amorAmount);
-            uint256 taxCorrectedAmorAmount = IERC20(AMOR).balanceOf(address(this)) - stakedAmor;
-
-            // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
-            IERC20(AMOR).approve(AMORxGuild, taxCorrectedAmorAmount);
-            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(sender, taxCorrectedAmorAmount);
-        } else if (token == AMOR) {
-            // convert AMOR to AMORxGuild
-            // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
-
-            // Must calculate stakedAmor prior to transferFrom()
-            uint256 stakedAmor = IERC20(token).balanceOf(address(this));
-            // get all tokens
-            // Note that if token is AMOR then this transferFrom() is taxed due to AMOR tax
-            IERC20(token).safeTransferFrom(sender, address(this), amount);
-            // Calculate mint amount and mint this to the address `to`
-            // Take AMOR tax into account
-            uint256 taxCorrectedAmount = IERC20(token).balanceOf(address(this)) - stakedAmor;
-
-            IERC20(token).approve(AMORxGuild, taxCorrectedAmount);
-
-            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(address(this), taxCorrectedAmount);
-        } else {
-            // token == AMORxGuild
-            ERC20AMORxGuild.safeTransferFrom(sender, address(this), amorxguildAmount);
-        }
-
-        uint256 decAmount = amount;
-        if (sender != MetaDaoController) {
-            // row below if we remove if-from the beggining about if (sender != MetaDaoController) {amount = (all
-            // need if we NEED to converd ALL tokens to AMORxGuild, and claimable for impMakers ONLY AMORxGuild
-            // amount = (amorxguildAmount * percentToConvert) / FEE_DENOMINATOR; // 10% of tokens
-
-            // 3.Staked in the FXAMORxGuild tokens,
-            // which are going to be owned by the user.
-            ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);
-            FXGFXAMORxGuild.stake(sender, amorxguildAmount); // from address(this)
-            decAmount = allAmount - amount; //decreased amount: other 90%
-        }
-
-        if (sender == MetaDaoController) {
-            decAmount = amorxguildAmount;
-        }
-
         // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
         uint256 amountToSendAllVoters = 0;
         for (uint256 i = 0; i < impactMakers.length; i++) {
-            uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
-            claimableTokens[impactMakers[i]] += amountToSendVoter;
+            uint256 amountToSendVoter = (amount * weights[impactMakers[i]]) / totalWeight;
+
+            claimableTokens[impactMakers[i]][token] += amountToSendVoter;
             amountToSendAllVoters += amountToSendVoter;
         }
-        if (token == AMORxGuild && sender != MetaDaoController) {
-            ERC20AMORxGuild.safeTransferFrom(sender, address(this), amountToSendAllVoters);
-        }
 
-        return amorxguildAmount;
+        IERC20(token).safeTransferFrom(sender, address(this), amountToSendAllVoters);
+
+        return amountToSendAllVoters;
     }
 
     /// @notice gathers donation from MetaDaoController in specific token
@@ -212,31 +151,77 @@ contract GuildController is IGuildController, Ownable {
             revert InvalidAmount();
         }
 
-        // TODO: fix distribute(). breaks here
         // distribute those tokens
         distribute(amount, token, MetaDaoController);
     }
 
     /// @notice allows to donate AMORxGuild tokens to the Guild
-    /// @param amount The amount to donate
+    /// @param allAmount The amount to donate
     /// @param token Token in which to donate
     // It automatically distributes tokens between Impact makers.
     // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
     // which are going to be owned by the user.
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     // Requires the msg.sender to `approve` amount prior to calling this function
-    function donate(uint256 amount, address token) external returns (uint256) {
+    function donate(uint256 allAmount, address token) external returns (uint256) {
         // check if token in the whitelist of the MetaDaoController
         if (!IMetadao(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
         }
 
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
-        if (IERC20(token).balanceOf(msg.sender) < amount || amount < 10) {
+        if (IERC20(token).balanceOf(msg.sender) < allAmount || allAmount < 10) {
             revert InvalidAmount();
         }
 
-        uint256 amorxguildAmount = distribute(amount, token, msg.sender);
+        uint256 amount = (allAmount * percentToConvert) / FEE_DENOMINATOR; // 10% of tokens
+        uint256 amorxguildAmount = amount;
+
+        // 10% of the tokens in the impact pool are getting:
+        if (token != AMORxGuild && token != AMOR) {
+            // 1.Exchanged in the pool to AMOR(if it’s not AMOR or AMORxGuild)
+            // recieve tokens
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+
+            uint256 amorAmount = amount; // TEMPORARY COEFFICIENT CHOICE
+
+            // give AMOR
+            uint256 stakedAmor = IERC20(AMOR).balanceOf(address(this));
+            IERC20(AMOR).safeTransferFrom(multisig, address(this), amorAmount);
+            uint256 taxCorrectedAmorAmount = IERC20(AMOR).balanceOf(address(this)) - stakedAmor;
+
+            // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
+            IERC20(AMOR).approve(AMORxGuild, taxCorrectedAmorAmount);
+            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(msg.sender, taxCorrectedAmorAmount);
+        } else if (token == AMOR) {
+            // convert AMOR to AMORxGuild
+            // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
+
+            // Must calculate stakedAmor prior to transferFrom()
+            uint256 stakedAmor = IERC20(token).balanceOf(address(this));
+            // get all tokens
+            // Note that if token is AMOR then this transferFrom() is taxed due to AMOR tax
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+            // Calculate mint amount and mint this to the address `to`
+            // Take AMOR tax into account
+            uint256 taxCorrectedAmount = IERC20(token).balanceOf(address(this)) - stakedAmor;
+
+            IERC20(token).approve(AMORxGuild, taxCorrectedAmount);
+
+            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(address(this), taxCorrectedAmount);
+        } else {
+            // token == AMORxGuild
+            ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amorxguildAmount);
+        }
+
+        // 3.Staked in the FXAMORxGuild tokens,
+        // which are going to be owned by the user.
+        ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);
+        FXGFXAMORxGuild.stake(msg.sender, amorxguildAmount); // from address(this)
+        uint256 decAmount = allAmount - amount; //decreased amount: other 90%
+
+        distribute(decAmount, token, msg.sender); // distribute other 90%
+
         return amorxguildAmount;
     }
 
@@ -493,14 +478,12 @@ contract GuildController is IGuildController, Ownable {
 
     /// @notice allows to claim tokens for specific ImpactMaker address
     /// @param impact Impact maker to to claim tokens from
-    function claim(address impact) external {
+    function claim(address impact, address token) external {
         if (impact != msg.sender) {
             revert Unauthorized();
         }
-console.log("ERC20AMORxGuild.balanceOf(address(this)); is %s", ERC20AMORxGuild.balanceOf(address(this)));
-console.log("claimableTokens[impact] is %s", claimableTokens[impact]);
-        ERC20AMORxGuild.safeTransferFrom(address(this), impact, claimableTokens[impact]);
-        claimableTokens[impact] = 0;
+        IERC20(token).safeTransfer(impact, claimableTokens[impact][token]);
+        claimableTokens[impact][token] = 0;
     }
 
     function getWeekday(uint256 timestamp) public pure returns (uint8) {
