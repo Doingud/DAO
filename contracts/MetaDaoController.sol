@@ -58,7 +58,6 @@ contract MetaDaoController is AccessControl {
     /// Create an array to hold the different indexes
     mapping(bytes32 => Index) public indexes;
     bytes32[] public indexHashes;
-    bytes32 internal indexHelper = keccak256("INDEX_HOLDER");
 
     /// Errors
     /// The claim is not valid
@@ -130,20 +129,18 @@ contract MetaDaoController is AccessControl {
 
     /// @notice Distributes the amortoken in the metadao to the approved guilds but guild weight
     /// @dev    Creates an array of the current guild weights to pass to `_distribute`
-    function distribute() public {
-        uint256[] memory currentGuildWeights = new uint256[](guilds.length);
-        for (uint256 i = 0; i < guilds.length; i++) {
-            currentGuildWeights[i] = guildWeight[guilds[i]];
-        }
+    /// @param  index the chosen index of weights to use
+    function distribute(uint256 index) public {
         /// Apportion the AMOR received from fees
-        distributeFees(currentGuildWeights);
+        distributeFees(index);
         /// Apportion the token donations
-        distributeTokens(currentGuildWeights);
+        distributeTokens(index);
     }
 
     /// @notice Apportions approved token donations according to guild weights
     /// @param  currentGuildWeights an array of the current weights of all the guilds
-    function distributeTokens(uint256[] memory currentGuildWeights) internal {
+    function distributeTokens(uint256 index) internal {
+        Index memory index = indexes[indexHashes[index]];
         address endOfList = SENTINAL;
         /// Loop through linked list
         while (whitelist[endOfList] != SENTINAL) {
@@ -151,8 +148,8 @@ contract MetaDaoController is AccessControl {
             uint256 trackDistributions;
             /// Loop through guilds
             for (uint256 i = 0; i < guilds.length; i++) {
-                uint256 amountToDistribute = (donations[whitelist[endOfList]] * currentGuildWeights[i]) /
-                    guildsTotalWeight;
+                uint256 amountToDistribute = (donations[whitelist[endOfList]] * index.indexWeights[guilds[i]]) /
+                    index.indexDenominator;
                 if (amountToDistribute == 0) {
                     continue;
                 }
@@ -168,12 +165,13 @@ contract MetaDaoController is AccessControl {
     }
 
     /// @notice Apportions collected AMOR fees
-    /// @param  currentGuildWeights an array of the current weights of the guilds
-    function distributeFees(uint256[] memory currentGuildWeights) internal {
+    /// @param  index the index to use
+    function distributeFees(uint256 index) internal {
+        Index memory index = indexes[indexHashes[index]];
         /// Determine amount of AMOR that has been collected from fees
         uint256 feesToBeDistributed = amorToken.balanceOf(address(this)) - donations[address(amorToken)];
         for (uint256 i = 0; i < guilds.length; i++) {
-            uint256 amountToDistribute = (feesToBeDistributed * currentGuildWeights[i]) / guildsTotalWeight;
+            uint256 amountToDistribute = (feesToBeDistributed * index.indexWeights[guilds[i]]) / index.indexDenominator;
             if (amountToDistribute != 0) {
                 guildFunds[guilds[i]][address(amorToken)] += amountToDistribute;
             }
@@ -199,34 +197,30 @@ contract MetaDaoController is AccessControl {
     }
 
     /// @notice use this funtion to create a new guild via the guild factory
-    /// @dev only admin can all this funtion
-    /// @param guildOwner address that will control the functions of the guild
-    /// @param name the name for the guild
-    /// @param tokenSymbol the symbol for the Guild's token
+    /// @dev    only admin can all this funtion
+    /// @param  guildOwner address that will control the functions of the guild
+    /// @param  name the name for the guild
+    /// @param  tokenSymbol the symbol for the Guild's token
     function createGuild(
         address guildOwner,
         string memory name,
         string memory tokenSymbol
     ) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        ICloneFactory(guildFactory).deployGuildContracts(guildOwner, name, tokenSymbol);
+        address newGuildController = ICloneFactory(guildFactory).deployGuildContracts(guildOwner, name, tokenSymbol);
+        addGuild(newGuildController);
     }
 
     /// @notice adds guild based on the controller address provided
-    /// @dev give guild role in access control to the controller for the guild
-    /// @param controller the controller address of the guild
-    function addGuild(address controller) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        for (uint256 i; i < guilds.length; i++) {
-            if (controller == guilds[i]) {
-                revert Exists();
-            }
-        }
+    /// @dev    give guild role in access control to the controller for the guild
+    /// @param  controller the controller address of the guild
+    function addGuild(address controller) internal {
         grantRole(GUILD_ROLE, controller);
         guilds.push(controller);
     }
 
-    /// @notice adds guild based on the controller address provided
-    /// @dev give guild role in access control to the controller for the guild
-    /// @param _token the controller address of the guild
+    /// @notice adds token to whitelist
+    /// @dev    checks if token is present in whitelist mapping
+    /// @param  _token address of the token to be whitelisted
     function addWhitelist(address _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
         whitelist[sentinalWhitelist] = _token;
         sentinalWhitelist = _token;
@@ -234,8 +228,8 @@ contract MetaDaoController is AccessControl {
     }
 
     /// @notice removes guild based on id
-    /// @param index the index of the guild in guilds[]
-    /// @param controller the address of the guild controller to remove
+    /// @param  index the index of the guild in guilds[]
+    /// @param  controller the address of the guild controller to remove
     function removeGuild(uint256 index, address controller) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (guilds[index] == controller) {
             guilds[index] = guilds[guilds.length - 1];
@@ -274,5 +268,6 @@ contract MetaDaoController is AccessControl {
             index.indexDenominator += weights[i];
         }
         indexHashes.push(hashArray);
+        return indexHashes.length;
     }
 }
