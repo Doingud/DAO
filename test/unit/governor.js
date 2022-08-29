@@ -262,6 +262,7 @@ describe('unit - Contract: Governor', function () {
             // mine 64000 blocks
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(twoWeeks);
+        });
 
         it('it fails to execute if proposal not successful', async function () {
             await expect(governor.connect(root).execute(secondProposalId, targets, values, newcalldatas)).to.be.revertedWith(
@@ -296,7 +297,7 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to castVoteForCancelling if not the guardian', async function () {
             targets = [staker.address];
-            await governor.connect(authorizer_adaptor).propose(targets, values, calldatas, description);
+            await governor.connect(authorizer_adaptor).propose(targets, values, calldatas);
             secondProposalId = await governor.proposals(2);
 
             await expect(governor.connect(authorizer_adaptor).castVoteForCancelling(secondProposalId)).to.be.revertedWith(

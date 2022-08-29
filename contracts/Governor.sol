@@ -87,7 +87,6 @@ contract DoinGudGovernor {
     error AlreadyVoted();
     error VoteIsStillActive();
     error CancelNotApproven();
-    error InvalidState();
 
     constructor(IVotes _token, string memory name) {
         token = _token;
@@ -185,7 +184,7 @@ contract DoinGudGovernor {
 
     /// @notice this function adds new guardian to the system
     /// @param guardian New guardian to be added
-    function addGuardian(address guardian) external onlySnapshot {
+    function addGuardian(address guardian) public onlySnapshot {
         // check that guardian won't be added twice
         for (uint256 i = 0; i < guardians.length; i++) {
             if (guardian == guardians[i]) {
