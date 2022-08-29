@@ -48,8 +48,8 @@ describe("unit - Vesting", function () {
 
   context("Constructor", () => {
     it("Should have deployed the contract with the right parameters", async function () {
-      expect(await VESTING.SENTINAL()).to.equal(ONE_ADDRESS);
-      expect(await VESTING.sentinalOwner()).to.equal(ZERO_ADDRESS);
+      expect(await VESTING.SENTINEL()).to.equal(ONE_ADDRESS);
+      expect(await VESTING.SENTINELOwner()).to.equal(ZERO_ADDRESS);
       expect(await VESTING.beneficiaries(ZERO_ADDRESS)).to.equal(ONE_ADDRESS);
     });
   });
@@ -71,7 +71,7 @@ describe("unit - Vesting", function () {
       expect(await VESTING.balanceOf(user1.address)).to.equal(AMORDeducted);
       expect(await VESTING.unallocatedAMOR()).to.equal(0);
       expect(await VESTING.beneficiaries(user1.address)).equal(ONE_ADDRESS);
-      expect(await VESTING.sentinalOwner()).to.equal(user1.address);
+      expect(await VESTING.SENTINELOwner()).to.equal(user1.address);
     });
 
     it("Should fail if unsufficient unallocated AMOR", async function () {

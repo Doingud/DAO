@@ -53,11 +53,11 @@ contract Vesting is Ownable {
 
     uint256 public tokensAllocated;
     uint256 public tokensWithdrawn;
-    address public constant SENTINAL = address(0x1);
-    address public sentinalOwner;
+    address public constant SENTINEL = address(0x1);
+    address public SENTINELOwner;
 
-    /// Address mapping to keep track of the sentinal owner
-    /// Initialized as `SENTINAL`, updated in `allocateVestedTokens`
+    /// Address mapping to keep track of the SENTINEL owner
+    /// Initialized as `SENTINEL`, updated in `allocateVestedTokens`
     /// Linked list of all the beneficiaries
     mapping(address => address) public beneficiaries;
     /// Mapping of beneficiary address to Allocation
@@ -83,8 +83,8 @@ contract Vesting is Ownable {
     constructor(address metaDao, address amor) {
         transferOwnership(metaDao);
         amorToken = IERC20(amor);
-        sentinalOwner = address(0);
-        beneficiaries[sentinalOwner] = SENTINAL;
+        SENTINELOwner = address(0);
+        beneficiaries[SENTINELOwner] = SENTINEL;
     }
 
     /// @notice Receives AMOR and stakes it in the dAMOR contract
@@ -144,9 +144,9 @@ contract Vesting is Ownable {
         tokensAllocated += amount;
         /// Add the beneficiary to the beneficiaries linked list if it doesn't exist yet
         if (beneficiaries[target] == address(0)) {
-            beneficiaries[sentinalOwner] = target;
-            beneficiaries[target] = SENTINAL;
-            sentinalOwner = target;
+            beneficiaries[SENTINELOwner] = target;
+            beneficiaries[target] = SENTINEL;
+            SENTINELOwner = target;
         }
     }
 
