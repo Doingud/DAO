@@ -49,6 +49,7 @@ contract GuildController is IGuildController, Ownable {
 
     bool private _initialized;
 
+    error AlreadyInitialized();
     error Unauthorized();
     error EmptyArray();
     error InvalidParameters();
@@ -69,8 +70,9 @@ contract GuildController is IGuildController, Ownable {
         address AMORxGuild_,
         address FXAMORxGuild_
     ) external returns (bool) {
-        require(!_initialized, "Already initialized");
-
+        if (_initialized) {
+            revert AlreadyInitialized();
+        }
         _transferOwnership(initOwner);
 
         AMORxGuild = IERC20(AMORxGuild_);
