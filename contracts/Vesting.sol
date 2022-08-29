@@ -87,15 +87,6 @@ contract Vesting is Ownable {
         beneficiaries[SENTINELOwner] = SENTINEL;
     }
 
-    /// @notice Receives AMOR and stakes it in the dAMOR contract
-    /// @dev    Requires approval of AMOR amount prior to calling
-    /// @param  amount of AMOR to be transferred to this contract
-    function vestAmor(uint256 amount) external {
-        if (amorToken.transferFrom(msg.sender, address(this), amount) == false) {
-            revert TransferUnsuccessful();
-        }
-    }
-
     /// @notice Allows a beneficiary to withdraw AMOR that has accrued to it
     /// @dev    Converts dAMOR to AMOR and transfers it to the beneficiary
     /// @param  amount the amount of dAMOR to convert to AMOR
@@ -136,10 +127,11 @@ contract Vesting is Ownable {
         address target,
         uint256 amount,
         uint256 cliff,
+        uint256 vestingStart,
         uint256 vestingDate
     ) external onlyOwner {
         /// Create the new struct and add it to the mapping
-        _setAllocationDetail(target, amount, cliff, vestingDate);
+        _setAllocationDetail(target, amount, cliff, vestingStart, vestingDate);
         /// Add the amount to the tokensAllocated;
         tokensAllocated += amount;
         /// Add the beneficiary to the beneficiaries linked list if it doesn't exist yet
@@ -160,12 +152,13 @@ contract Vesting is Ownable {
         address target,
         uint256 amount,
         uint256 cliff,
+        uint256 vestingStart,
         uint256 vestingDate
     ) external onlyOwner {
         if (beneficiaries[target] == address(0)) {
             revert NotFound();
         }
-        _setAllocationDetail(target, amount, cliff, vestingDate);
+        _setAllocationDetail(target, amount, cliff, vestingStart, vestingDate);
     }
 
     /// @notice Calculates the number of AMOR accrued to a given beneficiary
@@ -203,6 +196,7 @@ contract Vesting is Ownable {
         address target,
         uint256 amount,
         uint256 cliff,
+        uint256 vestingStart,
         uint256 vestingDate
     ) internal {
         if (unallocatedAMOR() < amount) {
@@ -214,7 +208,7 @@ contract Vesting is Ownable {
         /// Create the storage pointer and set details
         Allocation storage allocation = allocations[target];
         allocation.cliff = cliff;
-        allocation.vestingStart = block.timestamp;
+        allocation.vestingStart = vestingStart;
         allocation.tokensAllocated += amount;
         allocation.vestingDate = vestingDate;
         allocation.cliff = cliff;
