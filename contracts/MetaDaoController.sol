@@ -73,6 +73,8 @@ contract MetaDaoController is AccessControl {
     error ArrayError(address guild, uint256 index);
     /// The supplied array of index weights does not match the number of guilds
     error InvalidArray();
+    /// The index array has not been set yet
+    error NoIndex();
 
     constructor(
         address _amor,
@@ -87,6 +89,7 @@ contract MetaDaoController is AccessControl {
         sentinelWhitelist = _amor;
         whitelist[sentinelWhitelist] = SENTINEL;
         whitelist[SENTINEL] = _amor;
+        indexHashes.push(FEES_INDEX);
     }
 
     /// @notice Allows a user to donate a whitelisted asset
@@ -100,6 +103,9 @@ contract MetaDaoController is AccessControl {
     ) external {
         if (whitelist[token] == address(0)) {
             revert NotListed();
+        }
+        if (indexes[FEES_INDEX].indexDenominator == 0) {
+            revert NoIndex();
         }
         if (token == address(amorToken)) {
             uint256 amorBalance = amorToken.balanceOf(address(this));
@@ -124,9 +130,9 @@ contract MetaDaoController is AccessControl {
         uint256 amount,
         uint256 index
     ) internal {
-        Index storage index = indexes[indexHashes[index]];
+        Index storage targetIndex = indexes[indexHashes[index]];
         for (uint256 i = 0; i < guilds.length; i++) {
-            uint256 amountAllocated = (amount * index.indexWeights[guilds[i]]) / index.indexDenominator;
+            uint256 amountAllocated = (amount * targetIndex.indexWeights[guilds[i]]) / targetIndex.indexDenominator;
             guildFunds[guilds[i]][token] += amountAllocated;
         }
     }
@@ -165,8 +171,7 @@ contract MetaDaoController is AccessControl {
     }
 
     /// @notice Apportions collected AMOR fees
-    /// @param  index the index to use
-    function distributeFees() internal {
+    function distributeFees() public {
         Index storage index = indexes[FEES_INDEX];
         /// Determine amount of AMOR that has been collected from fees
         uint256 feesToBeDistributed = amorToken.balanceOf(address(this)) - donations[address(amorToken)];
@@ -253,5 +258,16 @@ contract MetaDaoController is AccessControl {
         }
         indexHashes.push(hashArray);
         return indexHashes.length;
+    }
+
+    function updateFeeIndex(uint256[] memory weights) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (weights.length != guilds.length) {
+            revert InvalidArray();
+        }
+        Index storage index = indexes[FEES_INDEX];
+        for (uint256 i; i < guilds.length; i++) {
+            index.indexWeights[guilds[i]] = weights[i];
+            index.indexDenominator += weights[i];
+        }
     }
 }
