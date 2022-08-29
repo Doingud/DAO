@@ -23,26 +23,28 @@ let root;
 describe("unit - MetaDao", function () {
 
     const setupTests = deployments.createFixture(async () => {
-      const signers = await ethers.getSigners();
-      const setup = await init.initialize(signers);
-      ///   Setup token contracts
-      await init.getTokens(setup);
-      AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
-      USDC = setup.tokens.ERC20Token;
-      AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
-      FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
-      DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
-      ///   Setup signer accounts
-      root = setup.roles.root;
-      multisig = setup.roles.doingud_multisig;    
-      user1 = setup.roles.user1;
-      user2 = setup.roles.user2;
-      pool = setup.roles.pool;
-      ///   Setup the guildfactory contract first
-      await init.getGuildFactory(setup);
-      ///   Initialize the metadao
-      await init.metadao(setup);
-      METADAO = setup.metadao;
+        const signers = await ethers.getSigners();
+        const setup = await init.initialize(signers);
+        ///   Setup token contracts
+        await init.getTokens(setup);
+        AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
+        USDC = setup.tokens.ERC20Token;
+        AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
+        FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
+        DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
+        ///   Setup signer accounts
+        root = setup.roles.root;
+        multisig = setup.roles.doingud_multisig;    
+        user1 = setup.roles.user1;
+         user2 = setup.roles.user2;
+         pool = setup.roles.pool;
+        ///   Setup the guildfactory contract first
+        await init.getGuildFactory(setup);
+        ///   Setup the Controller
+        CONTROLLER = setup.factory.controller;
+        ///   Initialize the metadao
+        await init.metadao(setup);
+        METADAO = setup.metadao;
     });
 
     before('setup', async function() {
@@ -82,7 +84,8 @@ describe("unit - MetaDao", function () {
     /* Removed: only the owners can adjust the weights
     context('function: updateGuildWeight()', () => {
         it('it fails to update the weight is msg.sender is not a guild', async function () {
-            await expect(METADAO.connect(user2).updateGuildWeight(ONE_HUNDRED_ETHER)).to.be.reverted;
+            await expect(METADAO.connect(user2).updateGuildWeights([user1.address, user2.address], [ONE_HUNDRED_ETHER, ONE_HUNDRED_ETHER])).
+                to.be.revertedWith('AccessControl');
         });
 
         it('it successfully updates the weight when a Guild address calls the function', async function () {
@@ -111,22 +114,23 @@ describe("unit - MetaDao", function () {
             await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
             expect(await AMOR_TOKEN.allowance(root.address,METADAO.address) == ONE_HUNDRED_ETHER);
             await METADAO.connect(root).donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER);
-            await METADAO.connect(root).donate(USDC.address, ONE_HUNDRED_ETHER)
+            await METADAO.connect(root).donate(USDC.address, ONE_HUNDRED_ETHER);
+            expect(await METADAO.donations(USDC.address)).to.equal(ONE_HUNDRED_ETHER);
         });
     });
 
-    context('function: distribute()', () => {
+    context('function: distributeAll()', () => {
         it('it succeeds if amor tokens are distributed to the guild according to guild weight', async function () {
             let amorBalance = await AMOR_TOKEN.balanceOf(METADAO.address);
             expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
-            await METADAO.distribute();
+            await METADAO.distributeAll();
             expect(await METADAO.guildFunds(user1.address, AMOR_TOKEN.address)).to.equal((amorBalance/2).toString());
             expect(await METADAO.guildFunds(user1.address, USDC.address)).to.equal(FIFTY_ETHER);
         });
 
         it('does not change the allocations if called more than once', async function () {
             let fundsAllocated = await METADAO.guildFunds(user1.address, USDC.address);
-            await METADAO.distribute();
+            await METADAO.distributeAll();
             expect(await METADAO.guildFunds(user1.address, USDC.address)).to.equal(fundsAllocated);
 
         });
