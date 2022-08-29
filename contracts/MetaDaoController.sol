@@ -36,7 +36,7 @@ contract MetaDaoController is AccessControl {
     /// Token related variables
     mapping(address => address) public whitelist;
     address public constant SENTINEL = address(0x01);
-    address public sentinalWhitelist;
+    address public sentinelWhitelist;
 
     /// Clone Factory
     address public guildFactory;
@@ -66,8 +66,8 @@ contract MetaDaoController is AccessControl {
         amorToken = IERC20(_amor);
         guildFactory = _cloneFactory;
         /// Setup the linked list
-        sentinalWhitelist = _amor;
-        whitelist[sentinalWhitelist] = SENTINEL;
+        sentinelWhitelist = _amor;
+        whitelist[sentinelWhitelist] = SENTINEL;
         whitelist[SENTINEL] = _amor;
     }
 
@@ -208,9 +208,9 @@ contract MetaDaoController is AccessControl {
     /// @dev give guild role in access control to the controller for the guild
     /// @param _token the controller address of the guild
     function addWhitelist(address _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        whitelist[sentinalWhitelist] = _token;
-        sentinalWhitelist = _token;
-        whitelist[sentinalWhitelist] = SENTINEL;
+        whitelist[sentinelWhitelist] = _token;
+        sentinelWhitelist = _token;
+        whitelist[sentinelWhitelist] = SENTINEL;
     }
 
     /// @notice removes guild based on id
