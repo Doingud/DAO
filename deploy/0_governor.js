@@ -7,8 +7,8 @@ async function main() {
     console.log("Account balance:", (await deployer.getBalance()).toString());
 
     const TSTtoken = "0xc606e5d95f5066421add3f315c9d3fc5385e76f5";
-    const GoinGudGovernor = await ethers.getContractFactory("GoinGudGovernor");
-    const Governor = await GoinGudGovernor.deploy(TSTtoken, "DoinGud Governor");
+    const DoinGudGovernor = await ethers.getContractFactory("DoinGudGovernor");
+    const Governor = await DoinGudGovernor.deploy(TSTtoken, "DoinGud Governor");
 
     const snapshotGnosis = "0xaFdB15b694Df594787E895692C54F2175C095aB4";
     const tx = await Governor.init(TSTtoken, snapshotGnosis, admin);
