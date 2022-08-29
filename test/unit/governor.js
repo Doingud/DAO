@@ -293,7 +293,7 @@ describe('unit - Contract: Governor', function () {
         });
     });
 
-    context('» castVoteForCancelling testing', () => {
+    context('» castVoteForCancelling and cancel testing', () => {
 
         it('it fails to castVoteForCancelling if not the guardian', async function () {
             targets = [staker.address];
@@ -312,26 +312,7 @@ describe('unit - Contract: Governor', function () {
             );
         });
 
-        it('it fails to cast vote for cancelling if vote is still active', async function () {
-            time.increase(time.duration.days(1));
-
-            await expect(governor.connect(user).castVoteForCancelling(secondProposalId)).to.be.revertedWith(
-                'VoteIsStillActive()'
-            );
-        });
-
-        it('it fails to cast cancel if vote is currently active', async function () {
-            // mine 64000 blocks
-            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
-
-            await expect(governor.connect(root).cancel(secondProposalId)).to.be.revertedWith(
-                'VoteIsStillActive()'
-            );
-        });
-
         it('it casts vote for cancelling', async function () {
-            time.increase(twoWeeks);
-
             await governor.connect(user).castVoteForCancelling(secondProposalId);
             await governor.connect(user2).castVoteForCancelling(secondProposalId);
             expect(await governor.proposalCancelApproval(secondProposalId)).to.equals(2);
@@ -340,15 +321,6 @@ describe('unit - Contract: Governor', function () {
         it('it fails to cast vote for cancelling if already voted', async function () {
             await expect(governor.connect(user).castVoteForCancelling(secondProposalId)).to.be.revertedWith(
                 'AlreadyVoted()'
-            );
-        });
-    });
-
-    context('» cancel testing', () => {
-
-        it('it fails to cancel if unknown proposal id', async function () {
-            await expect(governor.connect(root).cancel(11)).to.be.revertedWith(
-                'Governor: unknown proposal id'
             );
         });
 
@@ -362,5 +334,31 @@ describe('unit - Contract: Governor', function () {
             await expect(governor.cancellers(secondProposalId)).to.be.reverted;
         });
 
+        it('it fails to cast vote for cancelling if vote is not active', async function () {
+            await governor.connect(authorizer_adaptor).propose(targets, values, newcalldatas);
+            secondProposalId = await governor.proposals(1);
+
+            time.increase(time.duration.days(1));
+            time.increase(twoWeeks);
+
+            await expect(governor.connect(user).castVoteForCancelling(secondProposalId)).to.be.revertedWith(
+                'InvalidState()'
+            );
+        });
+
+        it('it fails to cast cancel if vote not active', async function () {
+            // mine 64000 blocks
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+
+            await expect(governor.connect(root).cancel(secondProposalId)).to.be.revertedWith(
+                'InvalidState()'
+            );
+        });
+
+        it('it fails to cancel if unknown proposal id', async function () {
+            await expect(governor.connect(root).cancel(11)).to.be.revertedWith(
+                'Governor: unknown proposal id'
+            );
+        });
     });
 });

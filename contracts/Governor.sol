@@ -85,7 +85,6 @@ contract DoinGudGovernor {
     error ProposalNotExists();
     error VotingTimeExpired();
     error AlreadyVoted();
-    error VoteIsStillActive();
     error CancelNotApproven();
 
     constructor(IVotes _token, string memory name) {
@@ -385,10 +384,10 @@ contract DoinGudGovernor {
     /// @param proposalId ID of the proposal
     function castVoteForCancelling(uint256 proposalId) external onlyGuardian {
         ProposalCore storage proposal = _proposals[proposalId];
-        ProposalState status = state(proposalId);
+        ProposalState state = state(proposalId);
 
-        if (status == ProposalState.Active) {
-            revert VoteIsStillActive();
+        if (state != ProposalState.Active) {
+            revert InvalidState();
         }
 
         if (AMORxGuild.balanceOf(msg.sender) > 0) {
@@ -412,8 +411,8 @@ contract DoinGudGovernor {
     function cancel(uint256 proposalId) external {
         ProposalState status = state(proposalId);
 
-        if (status != ProposalState.Succeeded && status != ProposalState.Defeated) {
-            revert VoteIsStillActive();
+        if (status != ProposalState.Active) {
+            revert InvalidState();
         }
 
         // Proposal should achieve at least 20% approval for cancel from guardians, to be cancelled
