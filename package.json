@@ -11,6 +11,8 @@
     "coverage": "hardhat coverage",
     "deploy:contracts:kovan": "npx hardhat deploy --network kovan",
     "verify:contracts:kovan": "npx hardhat --network kovan etherscan-verify",
+    "deploy:contracts:goerli": "npx hardhat deploy --network goerli",
+    "verify:contracts:goerli": "npx hardhat --network goerli etherscan-verify",
     "deploy:contracts:mainnet": "npx hardhat deploy --network mainnet",
     "dry-run:deployment": "npx hardhat node --tags deployment"
   },
@@ -42,7 +44,7 @@
   },
   "dependencies": {
     "@nomiclabs/hardhat-web3": "^2.0.0",
-    "@openzeppelin/contracts": "^4.5.0",
+    "@openzeppelin/contracts": "4.7.0",
     "dotenv": "^16.0.0",
     "hardhat-deploy-ethers": "^0.3.0-beta.13",
     "openzeppelin-solidity": "^4.5.0",

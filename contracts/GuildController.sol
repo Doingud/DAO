@@ -3,6 +3,7 @@ pragma solidity 0.8.15;
 
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
+import "./utils/interfaces/IGuildController.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -12,7 +13,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// @author Daoism Systems Team
 /// @notice GuildController contract controls the all of the deployed contracts of the guild
 
-contract GuildController is Ownable {
+contract GuildController is IGuildController, Ownable {
     using SafeERC20 for IERC20;
 
     int256[] public reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
@@ -252,7 +253,6 @@ contract GuildController is Ownable {
                     }
                     delete votes[id][people[i]];
                 }
-                // reportsWeight[id] = -reportsWeight[id]; // make the value negative for not-pass check below //wrong
                 // and 50% gets redistributed between the passed reports based on their weights
                 for (uint256 i = 0; i < reportsWeight.length; i++) {
                     // passed reports
