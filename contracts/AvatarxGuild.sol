@@ -166,7 +166,7 @@ contract AvatarxGuild is Executor, AccessControl {
     /// @notice adds guild based on the controller address provided
     /// @dev give guardian role in access control to the guardian address
     /// @param guardian the controller address of the guild
-    function removeGuardian(address guardian) external onlyRole(DEFAULT_ADMIN_ROLE){
+    function removeGuardian(address guardian) external onlyRole(DEFAULT_ADMIN_ROLE) {
         revokeRole(GUARDIAN_ROLE, guardian);
         emit GuardianRemoved(guardian);
     }
