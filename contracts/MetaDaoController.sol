@@ -155,7 +155,8 @@ contract MetaDaoController is AccessControl {
         donations[token] -= amount;
         /// Clear this guild's token balance
         delete guildFunds[guild][token];
-        IERC20(token).safeTransfer(guild, amount);
+        IERC20(token).approve(guild, amount);
+        IGuildController(guild).donate(amount, token);
     }
 
     /// @notice Apportions approved token donations according to guild weights
