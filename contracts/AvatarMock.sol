@@ -4,7 +4,7 @@ pragma solidity 0.8.15;
 import "./utils/interfaces/IAvatar.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract AvatarxGuild is AccessControl, IAvatar {
+contract AvatarxGuildMock is AccessControl, IAvatar {
     event EnabledModule(address module);
     event DisabledModule(address module);
     event ExecutionFromModuleSuccess(address indexed module);

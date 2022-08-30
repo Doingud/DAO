@@ -56,7 +56,7 @@ const getTokens = async (setup) => {
     //  AmorGuild Tokens
     const AmorGuildToken = await AmorGuildTokenFactory.deploy();
 
-    const AvatarxGuildFactory = await ethers.getContractFactory('AvatarxGuild');
+    const AvatarxGuildFactory = await ethers.getContractFactory('AvatarxGuildMock');
     const AvatarxGuild = await AvatarxGuildFactory.deploy();
 
     const tokens = {
