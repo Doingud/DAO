@@ -130,6 +130,10 @@ contract Vesting is Ownable {
         uint256 vestingStart,
         uint256 vestingDate
     ) external onlyOwner {
+        /// Check dates are valid
+        if (vestingStart < block.timestamp) {
+            revert InvalidDate();
+        }
         /// Create the new struct and add it to the mapping
         _setAllocationDetail(target, amount, cliff, vestingStart, vestingDate);
         /// Add the amount to the tokensAllocated;
@@ -202,7 +206,12 @@ contract Vesting is Ownable {
         if (unallocatedAMOR() < amount) {
             revert InsufficientFunds();
         }
-        if (allocations[target].cliff > cliff || allocations[target].vestingDate > vestingDate) {
+        if (
+            allocations[target].cliff > cliff ||
+            allocations[target].vestingDate > vestingDate ||
+            allocations[target].vestingStart > vestingStart ||
+            vestingDate < cliff
+        ) {
             revert InvalidDate();
         }
         /// Create the storage pointer and set details

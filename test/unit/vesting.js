@@ -70,6 +70,7 @@ describe("unit - Vesting", function () {
     it("Should allocate vested tokens to a beneficiary", async function () {
       //AMOR_TOKEN.transfer(VESTING.address, ONE_HUNDRED_ETHER)
       VESTING_START = await time.latest();
+      VESTING_START = parseInt(time.duration.minutes(1)) + parseInt(VESTING_START);
       VESTING_TIME = parseInt(time.duration.years(2)) + parseInt(VESTING_START);
       await VESTING.allocateVestedTokens(user1.address, AMORDeducted, 0, parseInt(VESTING_START), VESTING_TIME);
       expect(await VESTING.balanceOf(user1.address)).to.equal(AMORDeducted);
@@ -88,6 +89,7 @@ describe("unit - Vesting", function () {
     it("Should allow the MetaDAO to change allocation details", async function () {
       ///await AMOR_TOKEN.transfer(VESTING.address, ONE_HUNDRED_ETHER);
       VESTING_START = await time.latest();
+      VESTING_START = parseInt(time.duration.minutes(1)) + parseInt(VESTING_START);
       VESTING_TIME = parseInt(time.duration.years(2)) + parseInt(VESTING_START);
       await VESTING.allocateVestedTokens(user1.address, AMORDeducted, 0, parseInt(VESTING_START), VESTING_TIME);
       await AMOR_TOKEN.transfer(VESTING.address, ONE_HUNDRED_ETHER);
@@ -108,6 +110,7 @@ describe("unit - Vesting", function () {
   context("function: tokensAvailable()", () => {
     it("Should calculate the correct amount of tokens for time passed", async function () {
       VESTING_START = await time.latest();
+      VESTING_START = parseInt(time.duration.minutes(1)) + parseInt(VESTING_START);
       VESTING_TIME = parseInt(time.duration.years(2)) + parseInt(VESTING_START);
       await VESTING.allocateVestedTokens(user1.address, AMORDeducted, 0, parseInt(VESTING_START), VESTING_TIME);
       let userInfo = await VESTING.allocations(user1.address);
@@ -122,6 +125,7 @@ describe("unit - Vesting", function () {
     it("Should allow a user to withdraw an amount of AMOR", async function () {
       await AMOR_TOKEN.transfer(VESTING.address, ONE_HUNDRED_ETHER);
       VESTING_START = await time.latest();
+      VESTING_START = parseInt(time.duration.minutes(1)) + parseInt(VESTING_START);
       VESTING_TIME = parseInt(time.duration.years(2)) + parseInt(VESTING_START);
       await VESTING.allocateVestedTokens(user1.address, (AMORDeducted*2).toString(), 0, parseInt(VESTING_START), VESTING_TIME);
       await time.increaseTo(VESTING_TIME);
@@ -138,8 +142,10 @@ describe("unit - Vesting", function () {
 
     it("Should revert if tokensAvailable exceeded", async function () {
       VESTING_START = await time.latest();
+      VESTING_START = parseInt(time.duration.minutes(1)) + parseInt(VESTING_START);
       VESTING_TIME = parseInt(time.duration.years(2)) + parseInt(VESTING_START);
-      await VESTING.allocateVestedTokens(user1.address, AMORDeducted, 0, parseInt(VESTING_START), VESTING_TIME);
+      await VESTING.allocateVestedTokens(user1.address, AMORDeducted, 0, VESTING_START, VESTING_TIME);
+      await time.increaseTo(VESTING_START + parseInt(time.duration.minutes(30)));
       await expect(VESTING.connect(user1).withdrawAmor(ONE_HUNDRED_ETHER)).
         to.be.revertedWith("InsufficientFunds()")
     });
@@ -153,13 +159,15 @@ describe("unit - Vesting", function () {
   context("function: balanceOf()", () => {
     it("Should return the correct balance", async function () {
       VESTING_START = await time.latest();
+      VESTING_START = parseInt(time.duration.minutes(1)) + parseInt(VESTING_START);
       VESTING_TIME = parseInt(time.duration.years(2)) + parseInt(VESTING_START);
       await VESTING.allocateVestedTokens(user1.address, AMORDeducted, 0, parseInt(VESTING_START), VESTING_TIME);
       let currentTime = await time.latest();
       let cliff = parseInt(currentTime) + parseInt(time.duration.weeks(10));
-      let vestingEnd = parseInt(time.duration.weeks(11));
+      let vestingEnd = cliff + parseInt(time.duration.weeks(11));
       await AMOR_TOKEN.transfer(VESTING.address, ONE_HUNDRED_ETHER);
-      await VESTING.allocateVestedTokens(user2.address, FIFTY_ETHER, cliff, parseInt(currentTime), vestingEnd);
+      VESTING_START = parseInt(time.duration.minutes(1)) + parseInt(VESTING_START);
+      await VESTING.allocateVestedTokens(user2.address, FIFTY_ETHER, cliff, VESTING_START, vestingEnd);
       expect(await VESTING.balanceOf(user2.address)).to.be.equal((FIFTY_ETHER).toString());
     });
   });
