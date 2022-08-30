@@ -14,4 +14,6 @@ interface IMetadao {
     /// @dev    ensures transparency with regards to which funcitonality is implemented
     /// @return address the address of the current implementation contract
     function isWhitelisted(address token) external returns (bool);
+
+    function getGuildFunds(address token, address controller) external returns (uint256);
 }

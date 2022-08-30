@@ -145,8 +145,8 @@ contract GuildController is IGuildController, Ownable {
         if (!IMetadao(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
         }
-        uint256 amount = IERC20(token).balanceOf(MetaDaoController);
 
+        uint256 amount = IMetadao(MetaDaoController).getGuildFunds(token, address(this));
         // check balance of MetaDaoController
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
         if (amount < 10) {
