@@ -105,6 +105,18 @@ const controller = async (setup) => {
   return controller;
 };
 
+const avatar = async (setup) => {
+  const avatarFactory = await ethers.getContractFactory('AvatarxGuild');
+  const avatar = await avatarFactory.deploy();
+
+  await avatar.init(
+    setup.roles.root.address, // owner
+    setup.roles.authorizer_adaptor.address // guardian Address
+  );
+
+  return avatar;
+};
+
 const governor = async (setup) => {
   const governorFactory = await ethers.getContractFactory('GoinGudGovernor');
   const governor = await governorFactory.deploy();
@@ -154,6 +166,7 @@ module.exports = {
   initialize,
   getTokens,
   controller,
+  avatar,
   getGuildFactory,
   governor
 }; 
