@@ -73,6 +73,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
     IERC20 private AMORxGuild;
 
+    error AlreadyInitialized();
     error Unauthorized();
     error EmptyArray();
     error NotDelegatedAny();
@@ -93,8 +94,9 @@ contract dAMORxGuild is ERC20Base, Ownable {
         address _AMORxGuild,
         uint256 amount
     ) external returns (bool) {
-        require(!_initialized, "Already initialized");
-
+        if (_initialized) {
+            revert AlreadyInitialized();
+        }
         _transferOwnership(initOwner);
 
         AMORxGuild = IERC20(_AMORxGuild);
