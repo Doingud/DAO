@@ -372,13 +372,6 @@ contract DoinGudGovernor {
         }
     }
 
-    function _execute(address[] memory targets) internal virtual {
-        for (uint256 i = 0; i < targets.length; ++i) {
-            // add addresses from passed proposal as guardians
-            addGuardian(targets[i]);
-        }
-    }
-
     /// @notice function allows guardian to vote for cancelling the proposal
     /// Proposal should achieve at least 20% approval of guardians, to be cancelled
     /// @param proposalId ID of the proposal
