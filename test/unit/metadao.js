@@ -11,10 +11,12 @@ const {
 use(solidity);
 
 let AMOR_TOKEN;
+let AMOR_GUILD_TOKEN;
 let METADAO;
 let USDC;
 let user1;
 let user2;
+let user3;
 let root;
 
 describe("unit - MetaDao", function () {
@@ -33,8 +35,9 @@ describe("unit - MetaDao", function () {
         root = setup.roles.root;
         multisig = setup.roles.doingud_multisig;    
         user1 = setup.roles.user1;
-         user2 = setup.roles.user2;
-         pool = setup.roles.pool;
+        user2 = setup.roles.user2;
+        user3 = setup.roles.user3;
+        pool = setup.roles.pool;
         ///   Setup the guildfactory contract first
         await init.getGuildFactory(setup);
         ///   Setup the Controller
@@ -44,8 +47,16 @@ describe("unit - MetaDao", function () {
         METADAO = setup.metadao;
     });
 
-    before('setup', async function() {
+    beforeEach('setup', async function() {
         await setupTests();
+        await METADAO.addGuild(user2.address);
+        await METADAO.addGuild(user1.address);
+        await METADAO.addWhitelist(USDC.address);
+        await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
+        await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
+        await METADAO.connect(root).donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER);
+        await METADAO.connect(root).donate(USDC.address, ONE_HUNDRED_ETHER);
+        await METADAO.updateGuildWeights([user1.address, user2.address], [ONE_HUNDRED_ETHER, ONE_HUNDRED_ETHER])
     });
 
     context('function: addGuild()', () => {
@@ -55,8 +66,8 @@ describe("unit - MetaDao", function () {
         });
 
         it('it adds a guild if tx sent by admin', async function () {
-            await METADAO.addGuild(user2.address);
-            expect(await METADAO.guilds(0)).to.equal(user2.address); 
+            await METADAO.addGuild(user3.address);
+            expect(await METADAO.guilds(2)).to.equal(user3.address); 
         });
 
         it('it fails when trying to add the same guild', async function () {
@@ -72,44 +83,47 @@ describe("unit - MetaDao", function () {
         });
 
         it('it removes a guild if tx sent by admin', async function () {
-            await METADAO.addGuild(user1.address);
             await METADAO.removeGuild(0, user2.address);
             expect(await METADAO.guilds(0)).to.equal(user1.address);  
         });
     });
 
     context('function: updateGuildWeights()', () => {
-        it('it fails to update the weight is msg.sender is not a guild', async function () {
-            await expect(METADAO.connect(user2).updateGuildWeights([user1.address, user2.address], [ONE_HUNDRED_ETHER, ONE_HUNDRED_ETHER])).
+        it('it fails to update the weight if msg.sender is not a guild', async function () {
+            await expect(METADAO.connect(user3).updateGuildWeights([user1.address, user2.address], [ONE_HUNDRED_ETHER, ONE_HUNDRED_ETHER])).
                 to.be.revertedWith('AccessControl');
         });
 
         it('it successfully updates the weight when the owner calls the function', async function () {
-            await METADAO.addGuild(user2.address);
-            expect(await METADAO.updateGuildWeights([user1.address, user2.address], [ONE_HUNDRED_ETHER, ONE_HUNDRED_ETHER]));
+            await METADAO.addGuild(user3.address);
+            expect(await METADAO.updateGuildWeights([user1.address, user2.address, user3.address], [ONE_HUNDRED_ETHER, ONE_HUNDRED_ETHER, ONE_HUNDRED_ETHER]));
         });
     });
 
     context('function: addWhitelist()', () => {
         it('Should add token to whitelist', async function () {
-            await METADAO.addWhitelist(USDC.address);
-            expect(await METADAO.isWhitelisted(USDC.address)).to.be.true;
+            await METADAO.addWhitelist(AMOR_GUILD_TOKEN.address);
+            /// Test linked list assumptions
+            expect(await METADAO.isWhitelisted(AMOR_GUILD_TOKEN.address)).to.be.true;
             expect(await METADAO.whitelist(ONE_ADDRESS)).to.equal(AMOR_TOKEN.address);
             expect(await METADAO.whitelist(AMOR_TOKEN.address)).to.equal(USDC.address);
-            expect(await METADAO.whitelist(USDC.address)).to.equal(ONE_ADDRESS);
+            expect(await METADAO.whitelist(USDC.address)).to.equal(AMOR_GUILD_TOKEN.address);
+            expect(await METADAO.whitelist(AMOR_GUILD_TOKEN.address)).to.equal(ONE_ADDRESS);
+        });
+
+        it('Should fail if not called by admin', async function () {
+            await expect(METADAO.connect(user1).addWhitelist(USDC.address)).to.be.revertedWith("AccessControl");
         });
     });
 
     context('function: donate()', () => {
-        it('it succeeds if amor token is successfully donated to the metadao', async function () {
-            expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
-            expect(await AMOR_TOKEN.balanceOf(METADAO.address) == 0);
+        it('it succeeds if tokens are successfully donated to the metadao', async function () {
             await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
             await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
             expect(await AMOR_TOKEN.allowance(root.address,METADAO.address) == ONE_HUNDRED_ETHER);
             await METADAO.connect(root).donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER);
             await METADAO.connect(root).donate(USDC.address, ONE_HUNDRED_ETHER);
-            expect(await METADAO.donations(USDC.address)).to.equal(ONE_HUNDRED_ETHER);
+            expect(await METADAO.donations(USDC.address)).to.equal((ONE_HUNDRED_ETHER*2).toString());
         });
     });
 
@@ -123,34 +137,28 @@ describe("unit - MetaDao", function () {
         });
 
         it('does not change the allocations if called more than once', async function () {
-            let fundsAllocated = await METADAO.guildFunds(user1.address, USDC.address);
             await METADAO.distributeAll();
-            expect(await METADAO.guildFunds(user1.address, USDC.address)).to.equal(fundsAllocated);
+            let fundsAllocated = await METADAO.guildFunds(user2.address, USDC.address);
+            await METADAO.distributeAll();
+            expect(await METADAO.guildFunds(user2.address, USDC.address)).to.equal(fundsAllocated);
 
         });
     });
 
     context('function: claim()', () => {
         it('it fails to claim if msg.sender is not a guild', async function () {
-            expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
-            await AMOR_TOKEN.connect(root).approve(METADAO.address,1000);
-            expect(await AMOR_TOKEN.allowance(root.address,METADAO.address) == 1000);
-            await expect(METADAO.connect(multisig).claim()).to.be.reverted;
+            await expect(METADAO.connect(multisig).claim()).to.be.revertedWith("AccessControl");
         });
 
         it('it succeeds if a guild claims the token according to guildweight', async function () {
+            await METADAO.distributeAll();
             await METADAO.connect(user1).claim();
             expect(await USDC.balanceOf(user1.address)).to.be.equal(FIFTY_ETHER);
         });
     });
 
     context('function: distributeToken()', () => {
-        it('it disctributes a specified token', async function () {
-            await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
-            await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
-            await METADAO.connect(root).donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER);
-            await METADAO.connect(root).donate(USDC.address, ONE_HUNDRED_ETHER);
-    
+        it('it distributes a specified token', async function () {    
             await METADAO.distributeToken(USDC.address);
             expect(await METADAO.guildFunds(user1.address, USDC.address)).to.equal(FIFTY_ETHER);
         });
