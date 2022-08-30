@@ -24,9 +24,18 @@ contract AvatarxGuild is Executor, AccessControl {
     mapping(address => bool) public voters;
     mapping(address => address) internal modules;
 
-    function init(address initOwner, address guardianAddress_) external returns (bool) {
-        require(!_initialized, "Already initialized");
+    /// Custom errors
+    /// Error if the AmorxGuild has already been initialized
+    error AlreadyInitialized();
+    error NotWhitelisted();
+    error NotEnabled();
+    error NotDisabled();
+    error InvalidParameters();
 
+    function init(address initOwner, address guardianAddress_) external returns (bool) {
+        if (_initialized) {
+            revert AlreadyInitialized();
+        }
         _setupRole(DEFAULT_ADMIN_ROLE, initOwner);
         _setupRole(GUARDIAN_ROLE, guardianAddress_);
         _initialized = true;
@@ -40,9 +49,13 @@ contract AvatarxGuild is Executor, AccessControl {
     /// @param module Module to be whitelisted.
     function enableModule(address module) public {
         // Module address cannot be null or sentinel.
-        require(module != address(0) && module != SENTINEL_MODULES, "NOT_ENABLED");
+        if (module == address(0) || module == SENTINEL_MODULES) {
+            revert NotEnabled();
+        }
         // Module cannot be added twice.
-        require(modules[module] == address(0), "GS102");
+        if (modules[module] != address(0)) {
+            revert InvalidParameters();
+        }
         modules[module] = modules[SENTINEL_MODULES];
         modules[SENTINEL_MODULES] = module;
         emit EnabledModule(module);
@@ -55,8 +68,12 @@ contract AvatarxGuild is Executor, AccessControl {
     /// @param module Module to be removed.
     function disableModule(address prevModule, address module) public {
         // Validate module address and check that it corresponds to module index.
-        require(module != address(0) && module != SENTINEL_MODULES, "NOT_DISABLED");
-        require(modules[prevModule] == module, "GS103");
+        if (module == address(0) || module == SENTINEL_MODULES) {
+            revert NotDisabled();
+        }
+        if (modules[prevModule] != module) {
+            revert InvalidParameters();
+        }
         modules[prevModule] = modules[module];
         modules[module] = address(0);
         emit DisabledModule(module);
@@ -74,7 +91,9 @@ contract AvatarxGuild is Executor, AccessControl {
         Enum.Operation operation
     ) public virtual returns (bool success) {
         // Only whitelisted modules are allowed.
-        require(msg.sender != SENTINEL_MODULES && modules[msg.sender] != address(0), "Not_whitelist");
+        if (msg.sender == SENTINEL_MODULES || modules[msg.sender] == address(0)) {
+            revert NotWhitelisted();
+        }
         // Execute transaction without further confirmations.
         success = execute(to, value, data, operation, gasleft());
         if (success) emit ExecutionFromModuleSuccess(msg.sender);
