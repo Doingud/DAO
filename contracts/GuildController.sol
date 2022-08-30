@@ -479,12 +479,16 @@ contract GuildController is IGuildController, Ownable {
 
     /// @notice allows to claim tokens for specific ImpactMaker address
     /// @param impact Impact maker to to claim tokens from
-    function claim(address impact, address token) external {
+    /// @param token Tokens addresess to claim
+    function claim(address impact, address[] memory token) external {
         if (impact != msg.sender) {
             revert Unauthorized();
         }
-        IERC20(token).safeTransfer(impact, claimableTokens[impact][token]);
-        claimableTokens[impact][token] = 0;
+
+        for (uint256 i = 0; i < token.length; i++) {
+            IERC20(token[i]).safeTransfer(impact, claimableTokens[impact][token[i]]);
+            claimableTokens[impact][token[i]] = 0;
+        }
     }
 
     function getWeekday(uint256 timestamp) public pure returns (uint8) {
