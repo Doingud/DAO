@@ -53,9 +53,6 @@ contract MetaDaoController is IMetaDaoController, AccessControl {
     /// The guild cannot be added because it already exists
     error Exists();
     error InvalidGuild();
-    /// Not all guilds have weights!!
-    /// Please ensure guild weights have been updated after adding new guild
-    error ArrayError(address guild, uint256 index);
 
     constructor(
         address _amor,
@@ -126,7 +123,7 @@ contract MetaDaoController is IMetaDaoController, AccessControl {
         /// Loop through guilds
         for (uint256 i = 0; i < guilds.length; i++) {
             if (guildWeight[guilds[i]] == 0) {
-                revert ArrayError({guild: guilds[i], index: i});
+                continue;
             }
             uint256 amountToDistribute = (donations[token] * guildWeight[guilds[i]]) / guildsTotalWeight;
             if (amountToDistribute == 0) {
