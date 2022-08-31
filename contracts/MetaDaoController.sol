@@ -156,7 +156,7 @@ contract MetaDaoController is AccessControl {
         /// Clear this guild's token balance
         delete guildFunds[guild][token];
         IERC20(token).approve(guild, amount);
-        IGuildController(guild).donate(amount, token);
+        IGuildController(guild).gatherDonation(token);
     }
 
     /// @notice Apportions approved token donations according to guild weights
@@ -197,6 +197,14 @@ contract MetaDaoController is AccessControl {
         address controller = ICloneFactory(guildFactory).deployGuildContracts(guildOwner, name, tokenSymbol);
         grantRole(GUILD_ROLE, controller);
         guilds.push(controller);
+    }
+
+    /// @notice Adds an external guild to the registry
+    /// @param  guildAddress the address of the external guild's controller
+    function addExternalGuild(address guildAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        /// Add check that guild address hasn't been added yet here
+        grantRole(GUILD_ROLE, guildAddress);
+        guilds.push(guildAddress);
     }
 
     /// @notice adds token to whitelist
