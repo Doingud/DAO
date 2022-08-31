@@ -213,7 +213,6 @@ contract Vesting is Ownable {
             allocations[target].cliff > cliff ||
             allocations[target].vestingDate > vestingDate ||
             allocations[target].vestingStart > vestingStart ||
-            vestingDate < cliff ||
             vestingStart < block.timestamp
         ) {
             revert InvalidDate();
