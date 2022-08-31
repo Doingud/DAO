@@ -262,6 +262,9 @@ describe('unit - Contract: Governor', function () {
             // mine 64000 blocks
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(twoWeeks);
+            await expect(governor.connect(root).castVote(secondProposalId, 1)).to.be.revertedWith(
+                'InvalidState()'
+            );
         });
 
         it('it fails to execute if proposal not successful', async function () {
