@@ -269,10 +269,13 @@ contract MetaDaoController is AccessControl {
         return indexHashes.length;
     }
 
+    /// @notice Allows DoinGud to update the fee index used
+    /// @param  weights an array of the guild weights
     function updateFeeIndex(uint256[] memory weights) external onlyRole(DEFAULT_ADMIN_ROLE) {
         if (weights.length != guilds.length) {
             revert InvalidArray();
         }
+        /// Create storage pointer
         Index storage index = indexes[FEES_INDEX];
         for (uint256 i; i < guilds.length; i++) {
             index.indexWeights[guilds[i]] = weights[i];
