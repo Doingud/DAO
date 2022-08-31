@@ -113,11 +113,8 @@ contract GuildController is IGuildController, Ownable {
         ADDITIONAL_VOTING_TIME = newTime;
     }
 
-    function setPercentToConvert(uint256 newTime) external onlyOwner {
-        if (newTime < 2 days) {
-            revert InvalidAmount();
-        }
-        ADDITIONAL_VOTING_TIME = newTime;
+    function setPercentToConvert(uint256 newPercentToConvert) external onlyOwner {
+        percentToConvert = newPercentToConvert;
     }
 
     /// @notice called by donate and gatherDonation, distributes amount of tokens between

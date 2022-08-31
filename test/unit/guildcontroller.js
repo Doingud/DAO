@@ -645,4 +645,21 @@ describe('unit - Contract: GuildController', function () {
             expect((await controller.ADDITIONAL_VOTING_TIME())).to.equal(newTime);
         });
     });
+
+    context('» setPercentToConvert testing', () => {
+
+        it('it fails to set new percent to convert if not the owner', async function () {
+            expect((await controller.percentToConvert())).to.equal(percentToConvert);
+            let fiftyPercent = 500;
+            await expect(controller.connect(user).setPercentToConvert(fiftyPercent)).to.be.revertedWith(
+                'Ownable: caller is not the owner'
+            );
+        });
+
+        it('it sets new percent to convert', async function () {
+            let fiftyPercent = 500;
+            await controller.connect(root).setPercentToConvert(fiftyPercent);
+            expect((await controller.percentToConvert())).to.equal(fiftyPercent);
+        });
+    });
 });
