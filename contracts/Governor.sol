@@ -410,7 +410,7 @@ contract DoinGudGovernor {
 
         // Proposal should achieve at least 20% approval for cancel from guardians, to be cancelled
         if (proposalCancelApproval[proposalId] < int256((20 * guardians.length) / 100)) {
-            revert CancelNotApproven();
+            revert CancelNotApproved();
         }
 
         _proposals[proposalId].canceled = true;
