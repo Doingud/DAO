@@ -121,10 +121,6 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         stakingTaxRate = newRate;
     }
 
-    function getTax() external view override returns (uint16) {
-        return stakingTaxRate;
-    }
-
     /// @notice Allows a user to stake their AMOR and receive AMORxGuild in return
     /// @param  to address where the AMORxGuild will be sent to
     /// @param  amount uint256 amount of AMOR to be staked
@@ -135,6 +131,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         }
         //  Must calculate stakedAmor prior to transferFrom()
         uint256 stakedAmor = tokenAmor.balanceOf(address(this));
+
         //  Must have enough AMOR to stake
         //  Note that this transferFrom() is taxed due to AMOR tax
         tokenAmor.safeTransferFrom(msg.sender, address(this), amount);
@@ -144,7 +141,6 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         uint256 taxCorrectedAmount = tokenAmor.balanceOf(address(this)) - stakedAmor;
         //  Note there is a tax on staking into AMORxGuild
         uint256 mintAmount = COEFFICIENT * ((taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
-
         _mint(guildController, (mintAmount * stakingTaxRate) / BASIS_POINTS);
         mintAmount = (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS;
         _mint(to, mintAmount);

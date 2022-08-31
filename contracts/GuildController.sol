@@ -8,7 +8,6 @@ import "./utils/interfaces/IGuildController.sol";
 import "./utils/interfaces/IMetadao.sol";
 
 /// Advanced math functions for bonding curve
-import "./utils/ABDKMath64x64.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -18,7 +17,6 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// @notice GuildController contract controls the all of the deployed contracts of the guild
 
 contract GuildController is IGuildController, Ownable {
-    using ABDKMath64x64 for uint256;
     using SafeERC20 for IERC20;
 
     int256[] public reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
@@ -56,7 +54,6 @@ contract GuildController is IGuildController, Ownable {
     uint256 public constant HOUR = 1 hours;
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
-    uint256 public percentToDistribute = 900; //90% // FEE_DENOMINATOR/100*90
 
     event Initialized(bool success, address owner, address AMORxGuild);
 
@@ -110,6 +107,13 @@ contract GuildController is IGuildController, Ownable {
     }
 
     function setVotingPeriod(uint256 newTime) external onlyOwner {
+        if (newTime < 2 days) {
+            revert InvalidAmount();
+        }
+        ADDITIONAL_VOTING_TIME = newTime;
+    }
+
+    function setPercentToConvert(uint256 newTime) external onlyOwner {
         if (newTime < 2 days) {
             revert InvalidAmount();
         }
