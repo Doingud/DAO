@@ -1,14 +1,37 @@
 // SPDX-License-Identifier: MIT
 
-/// @title  MetaDAO Controller
+/// 
 /// @author Daoism Systems Team
 /// @custom security-contact contact@daoism.systems
 
 /**
- *  @dev Implementation of the MetaDAO controller logic for DoinGud MetaDAO
+ * @title  DoinGud: MetaDAO Controller
+ * @author Daoism Systems
+ * @notice MetaDAO Controller for high level guild actions
+ * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
  *
- *  The MetaDAO creates new guilds and collects fees from AMOR token transfers.
- *  The collected funds can then be claimed by guilds.
+ * MIT License
+ * ===========
+ *
+ * Copyright (c) 2022 DoinGud
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *
  */
 
 pragma solidity 0.8.15;
@@ -119,23 +142,24 @@ contract MetaDaoController is IMetaDaoController, AccessControl {
         if (whitelist[token] == address(0)) {
             revert NotListed();
         }
-        uint256 trackDistributions;
-        /// Loop through guilds
-        for (uint256 i = 0; i < guilds.length; i++) {
-            if (guildWeight[guilds[i]] == 0) {
-                continue;
+        if (donations[token] != 0) {
+            uint256 trackDistributions;
+
+            /// Loop through guilds
+            for (uint256 i = 0; i < guilds.length; i++) {
+                uint256 amountToDistribute = (donations[token] * guildWeight[guilds[i]]) / guildsTotalWeight;
+                if (amountToDistribute == 0) {
+                    continue;
+                }
+                guildFunds[guilds[i]][token] += amountToDistribute;
+                /// Update the donation total for this token
+                trackDistributions += amountToDistribute;
             }
-            uint256 amountToDistribute = (donations[token] * guildWeight[guilds[i]]) / guildsTotalWeight;
-            if (amountToDistribute == 0) {
-                continue;
-            }
-            guildFunds[guilds[i]][token] += amountToDistribute;
-            /// Update the donation total for this token
-            trackDistributions += amountToDistribute;
+            /// Decrease the donations by the amount of tokens distributed
+            /// This prevents multiple calls to distribute attack vector
+            donations[token] -= trackDistributions;
         }
-        /// Decrease the donations by the amount of tokens distributed
-        /// This prevents multiple calls to distribute attack vector
-        donations[token] -= trackDistributions;
+
     }
 
     /// @notice Apportions approved token donations according to guild weights
