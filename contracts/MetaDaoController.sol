@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: MIT
 
-/// 
-/// @author Daoism Systems Team
-/// @custom security-contact contact@daoism.systems
-
 /**
  * @title  DoinGud: MetaDAO Controller
  * @author Daoism Systems
@@ -159,7 +155,6 @@ contract MetaDaoController is IMetaDaoController, AccessControl {
             /// This prevents multiple calls to distribute attack vector
             donations[token] -= trackDistributions;
         }
-
     }
 
     /// @notice Apportions approved token donations according to guild weights
