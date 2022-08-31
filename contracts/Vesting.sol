@@ -205,7 +205,7 @@ contract Vesting is Ownable {
         }
         /// Date values sanity check
         /// For no cliff, `vestingStart` == `cliff`
-        if (vestingStart >= cliff || cliff > vestingDate) {
+        if (vestingStart > cliff || cliff > vestingDate) {
             revert InvalidDate();
         }
         /// Check that dates are valid against existing info, if any
