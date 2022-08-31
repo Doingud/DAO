@@ -246,6 +246,12 @@ describe('unit - Contract: Governor', function () {
             );
         });
 
+        it('it fails to cancel if cancel not approved', async function () {
+            await expect(governor.connect(root).cancel(firstProposalId)).to.be.revertedWith(
+                'CancelNotApproved()'
+            );
+        });
+
         it('it executes proposal', async function () {
             // mine 64000 blocks
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
