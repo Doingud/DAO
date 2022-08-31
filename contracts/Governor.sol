@@ -85,7 +85,7 @@ contract DoinGudGovernor {
     error ProposalNotExists();
     error VotingTimeExpired();
     error AlreadyVoted();
-    error CancelNotApproven();
+    error CancelNotApproved();
 
     constructor(IVotes _token, string memory name) {
         token = _token;
