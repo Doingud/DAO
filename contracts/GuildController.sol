@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
 
+import "./utils/interfaces/IAmorToken.sol";
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
 import "./utils/interfaces/IGuildController.sol";
+import "./utils/interfaces/IMetadao.sol";
 
+/// Advanced math functions for bonding curve
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -24,14 +27,21 @@ contract GuildController is IGuildController, Ownable {
     uint256 public totalReportsWeight; // total Weight of all of reports
 
     address[] public impactMakers; // list of impactMakers of this DAO
-    mapping(address => uint256) public claimableTokens; // amount of tokens each specific address(impactMaker) can claim
+
+    // user --> token --> amount
+    mapping(address => mapping(address => uint256)) public claimableTokens; // amount of tokens each specific address(impactMaker) can claim
     mapping(address => uint256) public weights; // weight of each specific Impact Maker/Builder
     uint256 public totalWeight; // total Weight of all of the impact makers
     uint256 public timeVoting; // deadlines for the votes for reports
 
-    IERC20 private AMORxGuild;
+    IERC20 private ERC20AMORxGuild;
     IFXAMORxGuild private FXGFXAMORxGuild;
+    address public AMOR;
+    address public AMORxGuild;
+    address public dAMORxGuild;
     address public FXAMORxGuild;
+    address public MetaDaoController;
+    address public multisig;
 
     // uint256 public triggerCounter;
     bool public trigger; // set true for a week if previous week were added >= 10 reports; users can vote only if trigger == true
@@ -58,6 +68,7 @@ contract GuildController is IGuildController, Ownable {
     error ReportNotExists();
     error InvalidAmount();
     error VotingNotStarted();
+    error NotWhitelistedToken();
 
     /// Invalid address. Needed address != address(0)
     error AddressZero();
@@ -67,17 +78,24 @@ contract GuildController is IGuildController, Ownable {
 
     function init(
         address initOwner,
+        address AMOR_,
         address AMORxGuild_,
-        address FXAMORxGuild_
+        address FXAMORxGuild_,
+        address MetaDaoController_,
+        address multisig_ // the multisig address of the MetaDAO, which owns the token
     ) external returns (bool) {
         if (_initialized) {
             revert AlreadyInitialized();
         }
         _transferOwnership(initOwner);
 
-        AMORxGuild = IERC20(AMORxGuild_);
+        AMOR = AMOR_;
+        AMORxGuild = AMORxGuild_;
+        ERC20AMORxGuild = IERC20(AMORxGuild_);
         FXGFXAMORxGuild = IFXAMORxGuild(FXAMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
+        MetaDaoController = MetaDaoController_;
+        multisig = multisig_;
         ADDITIONAL_VOTING_TIME = 0;
 
         trigger = false;
@@ -95,36 +113,119 @@ contract GuildController is IGuildController, Ownable {
         ADDITIONAL_VOTING_TIME = newTime;
     }
 
+    function setPercentToConvert(uint256 newPercentToConvert) external onlyOwner {
+        percentToConvert = newPercentToConvert;
+    }
+
+    /// @notice called by donate and gatherDonation, distributes amount of tokens between
+    /// all of the impact makers based on their weight.
+    /// Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers
+    function distribute(
+        uint256 amount,
+        address token,
+        address sender
+    ) internal returns (uint256) {
+        // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
+        uint256 amountToSendAllVoters = 0;
+        for (uint256 i = 0; i < impactMakers.length; i++) {
+            uint256 amountToSendVoter = (amount * weights[impactMakers[i]]) / totalWeight;
+
+            claimableTokens[impactMakers[i]][token] += amountToSendVoter;
+            amountToSendAllVoters += amountToSendVoter;
+        }
+
+        IERC20(token).safeTransferFrom(sender, address(this), amountToSendAllVoters);
+
+        return amountToSendAllVoters;
+    }
+
+    /// @notice gathers donation from MetaDaoController in specific token
+    /// and calles distribute function for the whole amount of gathered tokens
+    function gatherDonation(address token) public {
+        // check if token in the whitelist of the MetaDaoController
+        if (!IMetadao(MetaDaoController).isWhitelisted(token)) {
+            revert NotWhitelistedToken();
+        }
+
+        uint256 amount = IMetadao(MetaDaoController).getGuildFunds(token, address(this));
+        // check balance of MetaDaoController
+        // if amount is below 10, most of the calculations will round down to zero, only wasting gas
+        if (amount < 10) {
+            revert InvalidAmount();
+        }
+
+        // distribute those tokens
+        distribute(amount, token, MetaDaoController);
+    }
+
     /// @notice allows to donate AMORxGuild tokens to the Guild
-    /// @param amount The amount to donate
+    /// @param allAmount The amount to donate
+    /// @param token Token in which to donate
     // It automatically distributes tokens between Impact makers.
     // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
     // which are going to be owned by the user.
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     // Requires the msg.sender to `approve` amount prior to calling this function
-    function donate(uint256 amount) external returns (uint256) {
+    function donate(uint256 allAmount, address token) external returns (uint256) {
+        // check if token in the whitelist of the MetaDaoController
+        if (!IMetadao(MetaDaoController).isWhitelisted(token)) {
+            revert NotWhitelistedToken();
+        }
+
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
-        if (AMORxGuild.balanceOf(msg.sender) < amount || amount < 10) {
+        if (IERC20(token).balanceOf(msg.sender) < allAmount || allAmount < 10) {
             revert InvalidAmount();
         }
 
-        // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
-        // which are going to be owned by the user.
-        uint256 FxGAmount = (amount * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of AMORxGuild, eg = Impact pool AMORxGuildAmount * 100 / 10
-        AMORxGuild.safeTransferFrom(msg.sender, address(this), FxGAmount);
-        AMORxGuild.approve(FXAMORxGuild, FxGAmount);
-        FXGFXAMORxGuild.stake(msg.sender, FxGAmount);
+        uint256 amount = (allAmount * percentToConvert) / FEE_DENOMINATOR; // 10% of tokens
+        uint256 amorxguildAmount = amount;
 
-        uint256 decAmount = amount - FxGAmount; //decreased amount: other 90%
+        // 10% of the tokens in the impact pool are getting:
+        if (token != AMORxGuild && token != AMOR) {
+            // 1.Exchanged in the pool to AMOR(if it’s not AMOR or AMORxGuild)
+            // recieve tokens
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
-        // based on the weights distribution, tokens will be automatically redirected to the impact makers
-        for (uint256 i = 0; i < impactMakers.length; i++) {
-            uint256 amountToSendVoter = (decAmount * weights[impactMakers[i]]) / totalWeight;
-            AMORxGuild.safeTransferFrom(msg.sender, address(this), amountToSendVoter);
-            claimableTokens[impactMakers[i]] += amountToSendVoter;
+            uint256 amorAmount = amount; // TEMPORARY COEFFICIENT CHOICE
+
+            // give AMOR
+            uint256 stakedAmor = IERC20(AMOR).balanceOf(address(this));
+            IERC20(AMOR).safeTransferFrom(multisig, address(this), amorAmount);
+            uint256 taxCorrectedAmorAmount = IERC20(AMOR).balanceOf(address(this)) - stakedAmor;
+
+            // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
+            IERC20(AMOR).approve(AMORxGuild, taxCorrectedAmorAmount);
+            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(msg.sender, taxCorrectedAmorAmount);
+        } else if (token == AMOR) {
+            // convert AMOR to AMORxGuild
+            // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
+
+            // Must calculate stakedAmor prior to transferFrom()
+            uint256 stakedAmor = IERC20(token).balanceOf(address(this));
+            // get all tokens
+            // Note that if token is AMOR then this transferFrom() is taxed due to AMOR tax
+            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+            // Calculate mint amount and mint this to the address `to`
+            // Take AMOR tax into account
+            uint256 taxCorrectedAmount = IERC20(token).balanceOf(address(this)) - stakedAmor;
+
+            IERC20(token).approve(AMORxGuild, taxCorrectedAmount);
+
+            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(address(this), taxCorrectedAmount);
+        } else {
+            // token == AMORxGuild
+            ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amorxguildAmount);
         }
 
-        return amount;
+        // 3.Staked in the FXAMORxGuild tokens,
+        // which are going to be owned by the user.
+        ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);
+        FXGFXAMORxGuild.stake(msg.sender, amorxguildAmount); // from address(this)
+        uint256 decAmount = allAmount - amount; //decreased amount: other 90%
+
+        distribute(decAmount, token, msg.sender); // distribute other 90%
+
+        return amorxguildAmount;
     }
 
     /// @notice adds another element to the reportsWeight, with weight 0, and starts voting on it.
@@ -228,7 +329,7 @@ contract GuildController is IGuildController, Ownable {
             if (reportsVoting[id] > 0) {
                 // If report has positive voting weight, then funds go 50-50%,
                 // 50% go to the report creater,
-                AMORxGuild.safeTransfer(reportsAuthors[id], uint256(fiftyPercent));
+                ERC20AMORxGuild.safeTransfer(reportsAuthors[id], uint256(fiftyPercent));
 
                 // and 50% goes to the people who voted positively
                 for (uint256 i = 0; i < voters[id].length; i++) {
@@ -236,7 +337,7 @@ contract GuildController is IGuildController, Ownable {
                     if (votes[id][people[i]] > 0) {
                         // 50% * user weigth / all 100%
                         int256 amountToSendVoter = (int256(fiftyPercent) * votes[id][people[i]]) / reportsWeight[id];
-                        AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
+                        ERC20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
                     }
                     delete votes[id][people[i]];
                 }
@@ -249,7 +350,7 @@ contract GuildController is IGuildController, Ownable {
                         // allAmountToDistribute(50%) * user weigth in % / all 100%
                         int256 absVotes = abs(votes[id][people[i]]);
                         int256 amountToSendVoter = (fiftyPercent * absVotes) / reportsWeight[id];
-                        AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
+                        ERC20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
                     }
                     delete votes[id][people[i]];
                 }
@@ -259,7 +360,7 @@ contract GuildController is IGuildController, Ownable {
                     if (reportsVoting[i] > 0) {
                         // allAmountToDistribute(50%) * report weigth in % / all 100%
                         int256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / int256(totalReportsWeight);
-                        AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
+                        ERC20AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
                     }
                 }
             }
@@ -379,12 +480,16 @@ contract GuildController is IGuildController, Ownable {
 
     /// @notice allows to claim tokens for specific ImpactMaker address
     /// @param impact Impact maker to to claim tokens from
-    function claim(address impact) external {
+    /// @param token Tokens addresess to claim
+    function claim(address impact, address[] memory token) external {
         if (impact != msg.sender) {
             revert Unauthorized();
         }
-        AMORxGuild.safeTransfer(impact, claimableTokens[impact]);
-        claimableTokens[impact] = 0;
+
+        for (uint256 i = 0; i < token.length; i++) {
+            IERC20(token[i]).safeTransfer(impact, claimableTokens[impact][token[i]]);
+            claimableTokens[impact][token[i]] = 0;
+        }
     }
 
     function getWeekday(uint256 timestamp) public pure returns (uint8) {

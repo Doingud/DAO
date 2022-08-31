@@ -11,8 +11,11 @@ pragma solidity 0.8.15;
 interface IGuildController {
     function init(
         address initOwner,
+        address AMOR_,
         address AMORxGuild_,
-        address FXAMORxGuild_
+        address FXAMORxGuild_,
+        address MetaDaoController_,
+        address multisig
     ) external returns (bool);
 
     function setVotingPeriod(uint256 newTime) external;
@@ -47,5 +50,8 @@ interface IGuildController {
 
     /// @notice allows to claim tokens for specific ImpactMaker address
     /// @param impact Impact maker to to claim tokens from
-    function claim(address impact) external;
+    /// @param token Tokens addresess to claim
+    function claim(address impact, address[] memory token) external;
+
+    function gatherDonation(address token) external;
 }
