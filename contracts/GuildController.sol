@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
 
+import "./utils/interfaces/IAmorGuildToken.sol";
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IGuildController.sol";
 import "./utils/interfaces/IMetadao.sol";
 
 /// Advanced math functions for bonding curve
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -124,17 +124,13 @@ contract GuildController is IGuildController, Ownable {
         address sender
     ) internal returns (uint256) {
         // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
-        uint256 amountToSendAllVoters = 0;
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (amount * weights[impactMakers[i]]) / totalWeight;
 
             claimableTokens[impactMakers[i]][token] += amountToSendVoter;
-            amountToSendAllVoters += amountToSendVoter;
         }
 
-        IERC20(token).safeTransferFrom(sender, address(this), amountToSendAllVoters);
-
-        return amountToSendAllVoters;
+        return amount;
     }
 
     /// @notice gathers donation from MetaDaoController in specific token
@@ -145,12 +141,7 @@ contract GuildController is IGuildController, Ownable {
             revert NotWhitelistedToken();
         }
 
-        uint256 amount = IMetadao(MetaDaoController).getGuildFunds(token, address(this));
-        // check balance of MetaDaoController
-        // if amount is below 10, most of the calculations will round down to zero, only wasting gas
-        if (amount < 10) {
-            revert InvalidAmount();
-        }
+        uint256 amount = IMetadao(MetaDaoController).claimDonation(token, address(this));
 
         // distribute those tokens
         distribute(amount, token, MetaDaoController);
@@ -210,6 +201,8 @@ contract GuildController is IGuildController, Ownable {
             FXGFXAMORxGuild.stake(msg.sender, amorxguildAmount); // from address(this)
         }
         uint256 decAmount = allAmount - amount; //decreased amount: other 90%
+
+        IERC20(token).safeTransferFrom(msg.sender, address(this), decAmount);
 
         distribute(decAmount, token, msg.sender); // distribute other 90%
 

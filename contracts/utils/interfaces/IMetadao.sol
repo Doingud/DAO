@@ -16,4 +16,6 @@ interface IMetadao {
     function isWhitelisted(address token) external returns (bool);
 
     function getGuildFunds(address token, address controller) external returns (uint256);
+
+    function claimDonation(address token, address controller) external returns (uint256);
 }

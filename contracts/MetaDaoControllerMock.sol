@@ -100,6 +100,14 @@ contract MetaDaoControllerMock is IMetadao, AccessControl {
         guildFunds[controller][token] = IERC20(token).balanceOf(address(this));
     }
 
+    function claimDonation(address token, address controller) external returns (uint256) {
+        uint256 amount = IERC20(token).balanceOf(address(this));
+        // transfer funds to the GuildController
+        IERC20(token).transfer(controller, IERC20(token).balanceOf(address(this)));
+        guildFunds[controller][token] = amount;
+        return amount;
+    }
+
     function getGuildFunds(address token, address controller) external returns (uint256) {
         return guildFunds[controller][token];
     }
