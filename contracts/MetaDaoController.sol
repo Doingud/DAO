@@ -93,6 +93,8 @@ contract MetaDaoController is AccessControl {
         whitelist[sentinelWhitelist] = SENTINEL;
         whitelist[SENTINEL] = _amor;
         indexHashes.push(FEES_INDEX);
+        /// Setup guilds linked list
+        sentinelGuilds = address(0x01);
         guilds[sentinelGuilds] = SENTINEL;
         guilds[SENTINEL] = sentinelGuilds;
     }
@@ -138,8 +140,8 @@ contract MetaDaoController is AccessControl {
         address endOfList = SENTINEL;
         Index storage targetIndex = indexes[indexHashes[index]];
         while (guilds[endOfList] != SENTINEL) {
-            uint256 amountAllocated = (amount * targetIndex.indexWeights[endOfList]) / targetIndex.indexDenominator;
-            guildFunds[endOfList][token] += amountAllocated;
+            uint256 amountAllocated = (amount * targetIndex.indexWeights[guilds[endOfList]]) / targetIndex.indexDenominator;
+            guildFunds[guilds[endOfList]][token] += amountAllocated;
         }
     }
 
