@@ -142,6 +142,7 @@ contract MetaDaoController is AccessControl {
         while (guilds[endOfList] != SENTINEL) {
             uint256 amountAllocated = (amount * targetIndex.indexWeights[guilds[endOfList]]) / targetIndex.indexDenominator;
             guildFunds[guilds[endOfList]][token] += amountAllocated;
+            endOfList = guilds[endOfList];
         }
     }
 

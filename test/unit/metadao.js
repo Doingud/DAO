@@ -90,6 +90,7 @@ describe("unit - MetaDao", function () {
         it("Should have set up the linked list addresses correctly", async function () {
             let address1 = await METADAO.guilds(ONE_ADDRESS);
             let address2 = await METADAO.guilds(address1);
+            /// Confirm linked list logic
             expect(await METADAO.guilds(ONE_ADDRESS)).to.be.equal(address1);
             expect(await METADAO.guilds(address1)).to.be.equal(address2);
             expect(await METADAO.guilds(address2)).to.be.equal(ONE_ADDRESS);
@@ -163,9 +164,9 @@ describe("unit - MetaDao", function () {
         it('it succeeds if tokens are successfully donated to the metadao', async function () {
             await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
             await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
-            //await METADAO.connect(root).donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER, 0);
-            //await METADAO.connect(root).donate(USDC.address, ONE_HUNDRED_ETHER, 0);
-            expect(await METADAO.donations(USDC.address)).to.equal((ONE_HUNDRED_ETHER*2).toString());
+            await METADAO.connect(root).donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER, 0);
+            await METADAO.connect(root).donate(USDC.address, ONE_HUNDRED_ETHER, 0);
+            expect(await METADAO.donations(USDC.address)).to.equal((ONE_HUNDRED_ETHER).toString());
         });
     });
 
