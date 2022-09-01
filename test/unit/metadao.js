@@ -60,8 +60,9 @@ describe("unit - MetaDao", function () {
 
         it('it adds a guild if tx sent by admin', async function () {
             await METADAO.createGuild(user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
-            let guild = await METADAO.guilds(0);
+            let guild = await METADAO.guilds(ONE_ADDRESS);
             GUILD_CONTROLLER = AMOR_TOKEN.attach(guild);
+            console.log("Guild 1: " + guild);
 
             expect(await GUILD_CONTROLLER.owner()).to.equal(user2.address); 
         });
@@ -75,7 +76,7 @@ describe("unit - MetaDao", function () {
 
         it('it removes a guild if tx sent by admin', async function () {
             await METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
-            GUILD_CONTROLLER_TWO = await METADAO.guilds(1);
+            GUILD_CONTROLLER_TWO = await METADAO.guilds(GUILD_CONTROLLER.address);
             await METADAO.removeGuild(0, GUILD_CONTROLLER.address);
             GUILD_CONTROLLER_TWO = AMOR_TOKEN.attach(GUILD_CONTROLLER_TWO);
             expect(await METADAO.guilds(0)).to.equal(GUILD_CONTROLLER_TWO.address);  
@@ -108,13 +109,21 @@ describe("unit - MetaDao", function () {
     });
 
     context('function: updateFeesIndex', () => {
+        console.log(GUILD_CONTROLLER_TWO.address);
+        let indexArray = [(GUILD_CONTROLLER_TWO.address, 100), (GUILD_CONTROLLER.address, 100)];
+        const abi = ethers.utils.defaultAbiCoder;
+        indexArray = abi.encode(
+            ["bytes[]"],
+            [indexArray]
+        );
+
         it('Should fail to add an index if the array length is incorrect', async function () {
-            await METADAO.createGuild(user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
-            await expect(METADAO.addIndex([100])).to.be.revertedWith('InvalidArray()');
+            //await METADAO.createGuild(user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
+            //await expect(METADAO.addIndex([100])).to.be.revertedWith('InvalidArray()');
         });
 
         it('Should add a valid fee index to the array', async function () {
-            await METADAO.updateFeeIndex([100, 100]);
+            await METADAO.updateFeeIndex(indexArray);
             let index = await METADAO.FEES_INDEX();
             index = await METADAO.indexes(index);
             expect(index.indexDenominator).to.equal(200);

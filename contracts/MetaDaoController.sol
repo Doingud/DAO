@@ -23,7 +23,10 @@ contract MetaDaoController is AccessControl {
     using SafeERC20 for IERC20;
     /// Guild-related variables
     /// Array of addresses of Guilds
-    address[] public guilds;
+    /// address[] public guilds;
+    mapping(address => address) public guilds;
+    address public sentinelGuilds;
+    uint256 public guildCounter;
     mapping(address => uint256) public guildWeight;
     /// Mapping of guild --> token --> amount
     mapping(address => mapping(address => uint256)) public guildFunds;
@@ -90,6 +93,8 @@ contract MetaDaoController is AccessControl {
         whitelist[sentinelWhitelist] = SENTINEL;
         whitelist[SENTINEL] = _amor;
         indexHashes.push(FEES_INDEX);
+        guilds[sentinelGuilds] = SENTINEL;
+        guilds[SENTINEL] = sentinelGuilds;
     }
 
     /// @notice Allows a user to donate a whitelisted asset
@@ -130,10 +135,11 @@ contract MetaDaoController is AccessControl {
         uint256 amount,
         uint256 index
     ) internal {
+        address endOfList = SENTINEL;
         Index storage targetIndex = indexes[indexHashes[index]];
-        for (uint256 i = 0; i < guilds.length; i++) {
-            uint256 amountAllocated = (amount * targetIndex.indexWeights[guilds[i]]) / targetIndex.indexDenominator;
-            guildFunds[guilds[i]][token] += amountAllocated;
+        while (guilds[endOfList] != SENTINEL) {
+            uint256 amountAllocated = (amount * targetIndex.indexWeights[endOfList]) / targetIndex.indexDenominator;
+            guildFunds[endOfList][token] += amountAllocated;
         }
     }
 
@@ -174,12 +180,14 @@ contract MetaDaoController is AccessControl {
     /// @notice Apportions collected AMOR fees
     function distributeFees() public {
         Index storage index = indexes[FEES_INDEX];
+        address endOfList = SENTINEL;
         /// Determine amount of AMOR that has been collected from fees
         uint256 feesToBeDistributed = amorToken.balanceOf(address(this)) - donations[address(amorToken)];
-        for (uint256 i = 0; i < guilds.length; i++) {
-            uint256 amountToDistribute = (feesToBeDistributed * index.indexWeights[guilds[i]]) / index.indexDenominator;
+
+        while (guilds[endOfList] != SENTINEL) {
+            uint256 amountToDistribute = (feesToBeDistributed * index.indexWeights[endOfList]) / index.indexDenominator;
             if (amountToDistribute != 0) {
-                guildFunds[guilds[i]][address(amorToken)] += amountToDistribute;
+                guildFunds[endOfList][address(amorToken)] += amountToDistribute;
             }
         }
     }
@@ -196,7 +204,11 @@ contract MetaDaoController is AccessControl {
     ) public onlyRole(DEFAULT_ADMIN_ROLE) {
         address controller = ICloneFactory(guildFactory).deployGuildContracts(guildOwner, name, tokenSymbol);
         grantRole(GUILD_ROLE, controller);
-        guilds.push(controller);
+        guilds[sentinelGuilds] = controller;
+        sentinelGuilds = controller;
+        guilds[sentinelGuilds] = SENTINEL;
+        guildCounter += 1;
+        //guilds.push(controller);
     }
 
     /// @notice Adds an external guild to the registry
@@ -204,7 +216,11 @@ contract MetaDaoController is AccessControl {
     function addExternalGuild(address guildAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
         /// Add check that guild address hasn't been added yet here
         grantRole(GUILD_ROLE, guildAddress);
-        guilds.push(guildAddress);
+        guilds[sentinelGuilds] = guildAddress;
+        sentinelGuilds = guildAddress;
+        guilds[sentinelGuilds] = SENTINEL;
+        guildCounter += 1;
+        ///guilds.push(guildAddress);
     }
 
     /// @notice adds token to whitelist
@@ -217,25 +233,30 @@ contract MetaDaoController is AccessControl {
     }
 
     /// @notice removes guild based on id
-    /// @param  index the index of the guild in guilds[]
     /// @param  controller the address of the guild controller to remove
-    function removeGuild(uint256 index, address controller) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (guilds[index] == controller) {
-            /// Transfer unclaimed funds to donations
-            address endOfList = SENTINEL;
-            /// Loop through linked list
-            while (whitelist[endOfList] != SENTINEL) {
-                donations[whitelist[endOfList]] += guildFunds[guilds[index]][whitelist[endOfList]];
-                delete guildFunds[guilds[index]][whitelist[endOfList]];
-                endOfList = whitelist[endOfList];
-            }
-            guildsTotalWeight -= guildWeight[guilds[index]];
-            guilds[index] = guilds[guilds.length - 1];
-            guilds.pop();
-            revokeRole(GUILD_ROLE, controller);
-        } else {
+    function removeGuild(address controller) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (guilds[controller] == address(0)) { 
             revert InvalidGuild();
         }
+        /// Transfer unclaimed funds to donations
+        address endOfList = SENTINEL;
+        /// Loop through linked list
+        while (whitelist[endOfList] != SENTINEL) {
+            donations[whitelist[endOfList]] += guildFunds[guilds[controller]][whitelist[endOfList]];
+            delete guildFunds[guilds[controller]][whitelist[endOfList]];
+            endOfList = whitelist[endOfList];
+        }
+
+        endOfList = SENTINEL;
+        while (guilds[endOfList] != controller) {
+            endOfList = guilds[endOfList];
+        }
+        guilds[endOfList] = guilds[controller];
+        delete guilds[controller];
+        guildCounter -= 1;
+        //guilds[index] = guilds[guilds.length - 1];
+        //guilds.pop();
+        revokeRole(GUILD_ROLE, controller);
     }
 
     /// @notice Checks that a token is whitelisted
@@ -249,21 +270,24 @@ contract MetaDaoController is AccessControl {
     }
 
     /// @notice Adds a new index to the `Index` array
+    /// @dev    Requires an encoded array of tuples in (address, uint256) format
     /// @param  weights an array containing the weighting indexes for different guilds
     /// @return index of the new index in the `Index` array
-    function addIndex(uint256[] memory weights) external returns (uint256) {
-        if (weights.length != guilds.length) {
-            revert InvalidArray();
-        }
+    function addIndex(bytes[] calldata weights) external returns (uint256) {
+        /// This check becomes redundant
+        //if (weights.length != guilds.length) {
+        //    revert InvalidArray();
+        //}
         /// Using the hash of the array allows a O(1) check if that index exists already
-        bytes32 hashArray = keccak256(abi.encodePacked(weights));
+        bytes32 hashArray = keccak256(abi.encode(weights));
         Index storage index = indexes[hashArray];
         if (index.indexDenominator != 0) {
             revert Exists();
         }
-        for (uint256 i; i < guilds.length; i++) {
-            index.indexWeights[guilds[i]] = weights[i];
-            index.indexDenominator += weights[i];
+        for (uint256 i; i < weights.length; i++) {
+            (address guild, uint256 weight) = abi.decode(weights[i], (address, uint256));
+            index.indexWeights[guild] = weight;
+            index.indexDenominator += weight;
         }
         indexHashes.push(hashArray);
         return indexHashes.length;
@@ -271,15 +295,13 @@ contract MetaDaoController is AccessControl {
 
     /// @notice Allows DoinGud to update the fee index used
     /// @param  weights an array of the guild weights
-    function updateFeeIndex(uint256[] memory weights) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (weights.length != guilds.length) {
-            revert InvalidArray();
-        }
+    function updateFeeIndex(bytes[] calldata weights) external onlyRole(DEFAULT_ADMIN_ROLE) {
         /// Create storage pointer
         Index storage index = indexes[FEES_INDEX];
-        for (uint256 i; i < guilds.length; i++) {
-            index.indexWeights[guilds[i]] = weights[i];
-            index.indexDenominator += weights[i];
+        for (uint256 i; i < weights.length; i++) {
+            (address guild, uint256 weight) = abi.decode(weights[i], (address, uint256));
+            index.indexWeights[guild] = weight;
+            index.indexDenominator += weight;
         }
     }
 }
