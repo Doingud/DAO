@@ -168,7 +168,7 @@ contract MetaDaoController is AccessControl {
     /// @notice Apportions approved token donations according to guild weights
     /// @dev    Loops through all whitelisted tokens and calls `distributeToken()` for each
     /// @param  guild the address of the guild claiming tokens
-    function claimTokens(address guild) public onlyRole(GUILD_ROLE) {
+    function claimTokens(address guild) public {
         address endOfList = SENTINEL;
         /// Loop through linked list
         while (whitelist[endOfList] != SENTINEL) {
@@ -194,6 +194,7 @@ contract MetaDaoController is AccessControl {
 
     /// @notice use this funtion to create a new guild via the guild factory
     /// @dev    only admin can all this funtion
+    /// @dev    NB: this function does not check that a guild `name` & `symbol` is unique
     /// @param  guildOwner address that will control the functions of the guild
     /// @param  name the name for the guild
     /// @param  tokenSymbol the symbol for the Guild's token
@@ -214,6 +215,9 @@ contract MetaDaoController is AccessControl {
     /// @param  guildAddress the address of the external guild's controller
     function addExternalGuild(address guildAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
         /// Add check that guild address hasn't been added yet here
+        if (guilds[guildAddress] != address(0)) {
+            revert Exists();
+        }
         grantRole(GUILD_ROLE, guildAddress);
         guilds[sentinelGuilds] = guildAddress;
         sentinelGuilds = guildAddress;
