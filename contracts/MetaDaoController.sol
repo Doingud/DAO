@@ -234,7 +234,7 @@ contract MetaDaoController is AccessControl {
     /// @notice removes guild based on id
     /// @param  controller the address of the guild controller to remove
     function removeGuild(address controller) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (guilds[controller] == address(0)) { 
+        if (guilds[controller] == address(0)) {
             revert InvalidGuild();
         }
         /// Transfer unclaimed funds to donations
@@ -300,7 +300,7 @@ contract MetaDaoController is AccessControl {
     /// @param  arrayHash keccak256 hash of the provided array
     /// @return bool was the index update successful
     function _updateIndex(bytes[] calldata weights, bytes32 arrayHash) internal returns (bool) {
-         Index storage index = indexes[arrayHash];
+        Index storage index = indexes[arrayHash];
         for (uint256 i; i < weights.length; i++) {
             (address guild, uint256 weight) = abi.decode(weights[i], (address, uint256));
             index.indexWeights[guild] = weight;

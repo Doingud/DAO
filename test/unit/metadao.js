@@ -1,11 +1,11 @@
 const { ethers } = require("hardhat");
-const { use, expect } = require("chai");
+const { use } = require("chai");
 const { solidity } = require("ethereum-waffle");
 const init = require('../test-init.js');
 const { 
     ONE_HUNDRED_ETHER,
-    FIFTY_ETHER,
-    ONE_ADDRESS,
+    //FIFTY_ETHER,
+    //ONE_ADDRESS,
     ZERO_ADDRESS,
     MOCK_GUILD_NAMES,
     MOCK_GUILD_SYMBOLS
@@ -14,13 +14,13 @@ const {
 use(solidity);
 
 let AMOR_TOKEN;
-let AMOR_GUILD_TOKEN;
+//let AMOR_GUILD_TOKEN;
 let METADAO;
 let USDC;
 let user1;
 let user2;
-let user3;
-let root;
+//let user3;
+//let root;
 let GUILD_CONTROLLER_ONE;
 let GUILD_CONTROLLER_TWO;
 
