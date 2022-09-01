@@ -208,7 +208,6 @@ contract MetaDaoController is AccessControl {
         sentinelGuilds = controller;
         guilds[sentinelGuilds] = SENTINEL;
         guildCounter += 1;
-        //guilds.push(controller);
     }
 
     /// @notice Adds an external guild to the registry
@@ -280,29 +279,34 @@ contract MetaDaoController is AccessControl {
         //}
         /// Using the hash of the array allows a O(1) check if that index exists already
         bytes32 hashArray = keccak256(abi.encode(weights));
-        Index storage index = indexes[hashArray];
-        if (index.indexDenominator != 0) {
+        if (indexes[hashArray].indexDenominator != 0) {
             revert Exists();
         }
-        for (uint256 i; i < weights.length; i++) {
-            (address guild, uint256 weight) = abi.decode(weights[i], (address, uint256));
-            index.indexWeights[guild] = weight;
-            index.indexDenominator += weight;
-        }
+        _updateIndex(weights, hashArray);
         indexHashes.push(hashArray);
+
         return indexHashes.length;
     }
 
     /// @notice Allows DoinGud to update the fee index used
     /// @param  weights an array of the guild weights
     function updateFeeIndex(bytes[] calldata weights) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        /// Create storage pointer
-        Index storage index = indexes[FEES_INDEX];
+        _updateIndex(weights, FEES_INDEX);
+    }
+
+    /// @notice Adds a new index to the Index mapping
+    /// @dev    Requires `weights` to be sorted prior to creating a new `Index` struct
+    /// @param  weights the encoded tuple of index values (`address`,`uint256`)
+    /// @param  arrayHash keccak256 hash of the provided array
+    /// @return bool was the index update successful
+    function _updateIndex(bytes[] calldata weights, bytes32 arrayHash) internal returns (bool) {
+         Index storage index = indexes[arrayHash];
         for (uint256 i; i < weights.length; i++) {
             (address guild, uint256 weight) = abi.decode(weights[i], (address, uint256));
             index.indexWeights[guild] = weight;
             index.indexDenominator += weight;
             index.creator = msg.sender;
         }
+        return true;
     }
 }
