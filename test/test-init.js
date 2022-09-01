@@ -4,7 +4,7 @@
 const { ethers } = require('hardhat');
 const { TAX_RATE,
         AMOR_TOKEN_NAME, 
-        AMOR_TOKEN_SYMBOL, 
+        AMOR_TOKEN_SYMBOL 
       } = require('./helpers/constants.js');
 
 const initialize = async (accounts) => {
@@ -182,10 +182,25 @@ const getGuildFactory = async (setup) => {
   return factory;
 }
 
+const vestingContract = async (setup) => {
+  const vestingFactory = await ethers.getContractFactory("Vesting");
+
+  const vesting = await vestingFactory.deploy(
+    setup.roles.root.address, //  This will be the MetaDAO address
+    setup.tokens.AmorTokenImplementation.address
+  );
+
+  setup.vesting = vesting;
+
+  return vesting;
+
+}
+
 module.exports = {
   initialize,
   getTokens,
   controller,
+  vestingContract,
   getGuildFactory,
   governor,
   metadao

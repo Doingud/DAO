@@ -36,6 +36,8 @@ contract DoinGudGovernor {
 
     uint256 public proposalMaxOperations = 10;
     mapping(uint256 => ProposalCore) private _proposals;
+    mapping(uint256 => int256) public proposalCancelApproval;
+    mapping(uint256 => address[]) public cancellers; // cancellers mapping(uint proposal => address [] voters)
 
     // id in array --> Id of passed proposal from _proposals
     uint256[] public proposals; // it’s an array of proposals hashes to execute.
@@ -83,6 +85,7 @@ contract DoinGudGovernor {
     error ProposalNotExists();
     error VotingTimeExpired();
     error AlreadyVoted();
+    error CancelNotApproved();
 
     constructor(IVotes _token, string memory name) {
         token = _token;
@@ -180,7 +183,7 @@ contract DoinGudGovernor {
 
     /// @notice this function adds new guardian to the system
     /// @param guardian New guardian to be added
-    function addGuardian(address guardian) external onlySnapshot {
+    function addGuardian(address guardian) public onlySnapshot {
         // check that guardian won't be added twice
         for (uint256 i = 0; i < guardians.length; i++) {
             if (guardian == guardians[i]) {
@@ -343,7 +346,6 @@ contract DoinGudGovernor {
         if (proposal.voteStart == 0) {
             revert("Governor: unknown proposal id");
         }
-
         if (proposal.canceled) {
             return ProposalState.Canceled;
         }
@@ -368,6 +370,70 @@ contract DoinGudGovernor {
         } else {
             return ProposalState.Defeated;
         }
+    }
+
+    /// @notice function allows guardian to vote for cancelling the proposal
+    /// Proposal should achieve at least 20% approval of guardians, to be cancelled
+    /// @param proposalId ID of the proposal
+    function castVoteForCancelling(uint256 proposalId) external onlyGuardian {
+        ProposalCore storage proposal = _proposals[proposalId];
+        ProposalState state = state(proposalId);
+
+        if (state != ProposalState.Active) {
+            revert InvalidState();
+        }
+
+        if (AMORxGuild.balanceOf(msg.sender) > 0) {
+            revert InvalidAmount();
+        }
+
+        for (uint256 i = 0; i < cancellers[proposalId].length; i++) {
+            if (cancellers[proposalId][i] == msg.sender) {
+                // this guardian already voted for this proposal
+                revert AlreadyVoted();
+            }
+        }
+
+        proposalCancelApproval[proposalId] += 1;
+
+        cancellers[proposalId].push(msg.sender);
+    }
+
+    /// @notice Cancels a proposal
+    /// @param proposalId The id of the proposal to cancel
+    function cancel(uint256 proposalId) external {
+        ProposalState status = state(proposalId);
+
+        if (status != ProposalState.Active) {
+            revert InvalidState();
+        }
+
+        // Proposal should achieve at least 20% approval for cancel from guardians, to be cancelled
+        if (
+            proposalCancelApproval[proposalId] < int256((20 * guardians.length) / 100) ||
+            proposalCancelApproval[proposalId] == 0
+        ) {
+            revert CancelNotApproved();
+        }
+
+        _proposals[proposalId].canceled = true;
+
+        // clear mappings
+        for (uint256 i = 0; i < proposals.length; i++) {
+            if (proposals[i] == proposalId) {
+                proposals[i] = proposals[proposals.length - 1];
+                proposals.pop();
+                break;
+            }
+        }
+        delete proposalWeight[proposalId];
+        delete proposalVoting[proposalId];
+        delete voters[proposalId];
+        delete cancellers[proposalId];
+        delete proposalCancelApproval[proposalId];
+        delete _proposals[proposalId];
+
+        emit ProposalCanceled(proposalId);
     }
 
     function votingDelay() external view returns (uint256) {
