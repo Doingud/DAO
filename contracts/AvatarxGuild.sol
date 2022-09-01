@@ -38,6 +38,7 @@ contract AvatarxGuild is Executor, AccessControl {
         }
         _setupRole(DEFAULT_ADMIN_ROLE, initOwner);
         _setupRole(GUARDIAN_ROLE, guardianAddress_);
+        modules[SENTINEL_MODULES] = SENTINEL_MODULES;
         _initialized = true;
         emit Initialized(_initialized, initOwner, guardianAddress_);
         return true;

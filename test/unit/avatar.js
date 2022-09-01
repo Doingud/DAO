@@ -1,15 +1,14 @@
 const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { ZERO_ADDRESS } = require("../helpers/constants.js");
+const { ZERO_ADDRESS, ONE_ADDRESS } = require("../helpers/constants.js");
 const init = require('../test-init.js');
 
 const twoWeeks = time.duration.days(14);
 
 // let AMOR; // need for AMORxGuild
-let AMORxGuild; // need for testing propose() function
+let AMORxGuild;
 let avatar;
-let governor;
 let root;
 let authorizer_adaptor;
 let operator;
@@ -17,12 +16,6 @@ let user;
 let user2;
 let staker;
 let guardians;
-
-let targets;
-let values;
-let calldatas;
-let firstProposalId;
-let secondProposalId;
 
 describe('unit - Contract: Avatar', function () {
 
@@ -52,6 +45,7 @@ describe('unit - Contract: Avatar', function () {
         it('initialized variables check', async function () {
             // expect(await avatar.DEFAULT_ADMIN_ROLE()).to.equals(authorizer_adaptor.address);
             // expect(await avatar.GUARDIAN_ROLE()).to.equals(avatar.address);
+            expect(await avatar.isModuleEnabled(ONE_ADDRESS)).to.equals(false);
         });
 
         it("Should fail if called more than once", async function () {
@@ -69,10 +63,10 @@ describe('unit - Contract: Avatar', function () {
             );
         });
 
-        it('it enables Module guardians', async function () {
+        it('it enables Module', async function () {
+            expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
             await avatar.connect(authorizer_adaptor).enableModule(operator.address);
-            // expect(await avatar.guardians(1)).to.equals(operator.address);
-            // expect(await avatar.guardians(2)).to.equals(user.address);
+            expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
         });
 
         it('it fails to enableModule if trying to add twice', async function () {
@@ -80,5 +74,6 @@ describe('unit - Contract: Avatar', function () {
                 'InvalidParameters()'
             );
         });
+
     });
 });
