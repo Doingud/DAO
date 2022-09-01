@@ -1,21 +1,13 @@
-const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { ZERO_ADDRESS, ONE_ADDRESS } = require("../helpers/constants.js");
 const init = require('../test-init.js');
 
-const twoWeeks = time.duration.days(14);
-
 // let AMOR; // need for AMORxGuild
-let AMORxGuild;
 let avatar;
-let root;
 let authorizer_adaptor;
 let operator;
 let user;
-let user2;
-let staker;
-let guardians;
 
 describe('unit - Contract: Avatar', function () {
 
@@ -57,6 +49,27 @@ describe('unit - Contract: Avatar', function () {
     });
 
     context('» enableModule testing', () => {
+        it('it fails to enableModule if InvalidParameters', async function () {
+            await expect(avatar.connect(user).enableModule(ZERO_ADDRESS)).to.be.revertedWith(
+                'NotEnabled()'
+            );
+        });
+
+        it('it enables Module', async function () {
+            expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
+            await avatar.connect(authorizer_adaptor).enableModule(operator.address);
+            expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
+        });
+
+        it('it fails to enableModule if trying to add twice', async function () {
+            await expect(avatar.connect(authorizer_adaptor).enableModule(operator.address)).to.be.revertedWith(
+                'InvalidParameters()'
+            );
+        });
+
+    });
+
+    context('» disableModule testing', () => {
         it('it fails to enableModule if InvalidParameters', async function () {
             await expect(avatar.connect(user).enableModule(ZERO_ADDRESS)).to.be.revertedWith(
                 'NotEnabled()'
