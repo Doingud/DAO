@@ -67,16 +67,21 @@ describe("unit - MetaDao", function () {
         await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
         await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
         const abi = ethers.utils.defaultAbiCoder;
-        let amount = ethers.utils.hexZeroPad(ethers.utils.hexlify(100), 32);
         let encodedIndex = abi.encode(
-            ["address", "uint256"],
+            ["tuple(address, uint256)"],
             [
-            GUILD_CONTROLLER_ONE.address, 100
+            [GUILD_CONTROLLER_ONE.address, 100]
+            ]
+        );
+        let encodedIndex2 = abi.encode(
+            ["tuple(address, uint256)"],
+            [
+            [GUILD_CONTROLLER_TWO.address, 100]
             ]
         );
 
         //let feesIndex = encodedIndex;
-        await METADAO.updateFeeIndex([encodedIndex]);
+        await METADAO.updateFeeIndex([encodedIndex, encodedIndex2]);
         let hash = await METADAO.indexHashes(0);
         let indexReturn = await METADAO.indexes(hash);
         console.log(indexReturn);
