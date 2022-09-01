@@ -232,8 +232,6 @@ describe('unit - Contract: GuildController', function () {
             await AMOR.connect(root).approve(AMORxGuild.address, TEST_TRANSFER);
             await AMOR.connect(root).transfer(metadao.address, TEST_TRANSFER);
 
-            await metadao.connect(root).approveToController(AMOR.address, controller.address);
-            await metadao.connect(root).approveToController(AMOR.address, AMORxGuild.address);
             const amountOfAMOR = await AMOR.balanceOf(metadao.address);
             let AMORDeducted = ethers.BigNumber.from((amountOfAMOR*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
 
@@ -250,8 +248,6 @@ describe('unit - Contract: GuildController', function () {
             await USDC.connect(root).approve(AMOR.address, TEST_TRANSFER);
             await USDC.connect(root).transfer(metadao.address, TEST_TRANSFER);
 
-            await metadao.connect(root).approveToController(USDC.address, controller.address);
-            await metadao.connect(root).approveToController(USDC.address, AMOR.address);
             const multisig = root;
             await AMOR.connect(multisig).approve(controller.address, TEST_TRANSFER);
 
@@ -268,7 +264,6 @@ describe('unit - Contract: GuildController', function () {
 
             await AMORxGuild.connect(user).stakeAmor(metadao.address, nextAMORDeducted);
             await AMORxGuild.connect(user).approve(controller.address, nextAMORDeducted);
-            await metadao.connect(root).approveToController(AMORxGuild.address, controller.address);
 
             let impactMakerClaimableBefore = await controller.claimableTokens(impactMaker.address, AMORxGuild.address);
             let stakerClaimableBefore = await controller.claimableTokens(staker.address, AMORxGuild.address);
