@@ -37,8 +37,8 @@ describe("unit - MetaDao", function () {
         root = setup.roles.root;
         multisig = setup.roles.doingud_multisig;    
         user1 = setup.roles.user1;
-         user2 = setup.roles.user2;
-         pool = setup.roles.pool;
+        user2 = setup.roles.user2;
+        pool = setup.roles.pool;
         ///   Setup the guildfactory contract first
         await init.getGuildFactory(setup);
         ///   Setup the Controller
