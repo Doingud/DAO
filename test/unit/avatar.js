@@ -3,11 +3,20 @@ const { ethers } = require('hardhat');
 const { ZERO_ADDRESS, ONE_ADDRESS } = require("../helpers/constants.js");
 const init = require('../test-init.js');
 
+const operationCall = 0; // enums are treated as uint8
+const operationDelegateCall = 1;
+
 // let AMOR; // need for AMORxGuild
 let avatar;
+let governor;
 let authorizer_adaptor;
 let operator;
 let user;
+
+// for execTransactionFromModule
+let to; // call redirected to governor
+let value;
+let data;
 
 describe('unit - Contract: Avatar', function () {
 
@@ -20,7 +29,7 @@ describe('unit - Contract: Avatar', function () {
         AMORxGuild = setup.tokens.AmorGuildToken;
         // await init.controller(setup);
         avatar =await init.avatar(setup);
-        // governor = await init.governor(setup);
+        governor = await init.governor(setup);
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;
@@ -87,6 +96,46 @@ describe('unit - Contract: Avatar', function () {
             await expect(avatar.connect(authorizer_adaptor).disableModule(ONE_ADDRESS, operator.address)).to.be.revertedWith(
                 'InvalidParameters()'
             );
+        });
+
+    });
+
+    context('» execTransactionFromModule testing', () => {
+        it('it fails to execTransactionFromModule if NotWhitelisted', async function () {
+            to = governor.address;
+            value = 12;
+            // building hash has to come from system address
+            // 32 bytes of data
+            let messageHash = ethers.utils.solidityKeccak256(
+                ["address"],
+                [to]
+            );
+            data = messageHash;
+
+            await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(to, value, data, operationCall)).
+                to.be.revertedWith(
+                    'NotWhitelisted()'
+            );
+        });
+
+        it('it emits fail in execTransactionFromModule', async function () {
+            expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
+            await avatar.connect(authorizer_adaptor).enableModule(operator.address);
+            expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
+
+            expect(await avatar.connect(operator).execTransactionFromModule(to, value, data, operationCall)).
+                to.emit(avatar, "ExecutionFromModuleFailure").
+                withArgs(
+                    operator.address, 
+                ).toString();
+        });
+
+        it('it emits success in execTransactionFromModule', async function () {
+            expect(await avatar.connect(operator).execTransactionFromModule(to, value, data, operationDelegateCall)).
+                to.emit(avatar, "ExecutionFromModuleSuccess").
+                withArgs(
+                    operator.address, 
+                ).toString();
         });
 
     });

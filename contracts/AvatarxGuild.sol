@@ -69,7 +69,6 @@ contract AvatarxGuild is Executor, AccessControl {
     /// @param module Module to be removed.
     function disableModule(address prevModule, address module) public {
         // Validate module address and check that it corresponds to module index.
-        
         if (module == address(0) || module == SENTINEL_MODULES) {
             revert NotDisabled();
         }
@@ -81,6 +80,7 @@ contract AvatarxGuild is Executor, AccessControl {
         emit DisabledModule(module);
     }
 
+    /// @notice Allows to execute functions from the module(it will send the passed proposals from the snapshot to the Governor)
     /// @dev Allows a Module to execute a Safe transaction without any further confirmations.
     /// @param to Destination address of module transaction.
     /// @param value Ether value of module transaction.
