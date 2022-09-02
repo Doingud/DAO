@@ -41,7 +41,7 @@ contract AvatarxGuildMock is AccessControl, IAvatar {
         uint256[] memory value,
         bytes[] memory proposal
     ) public returns (bool) {
-        check = 1;
+        check += 1;
         return true;
     }
 }
