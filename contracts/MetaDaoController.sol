@@ -95,7 +95,11 @@ contract MetaDaoController is IMetaDaoController, AccessControl {
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        if (guildArray.length != guilds.length || newWeights.length != guilds.length) {
+        if (
+            guildArray.length != guilds.length ||
+            newWeights.length != guilds.length ||
+            keccak256(abi.encode(guildArray)) != keccak256(abi.encode(guilds))
+        ) {
             revert InvalidGuild();
         }
         guildsTotalWeight = 0;

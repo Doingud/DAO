@@ -56,7 +56,7 @@ describe("unit - MetaDao", function () {
         await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
         await METADAO.connect(root).donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER);
         await METADAO.connect(root).donate(USDC.address, ONE_HUNDRED_ETHER);
-        await METADAO.updateGuildWeights([user1.address, user2.address], [ONE_HUNDRED_ETHER, ONE_HUNDRED_ETHER])
+        await METADAO.updateGuildWeights([user2.address, user1.address], [ONE_HUNDRED_ETHER, ONE_HUNDRED_ETHER])
     });
 
     context('function: addGuild()', () => {
@@ -90,13 +90,13 @@ describe("unit - MetaDao", function () {
 
     context('function: updateGuildWeights()', () => {
         it('it fails to update the weight if msg.sender is not a guild', async function () {
-            await expect(METADAO.connect(user3).updateGuildWeights([user1.address, user2.address], [ONE_HUNDRED_ETHER, ONE_HUNDRED_ETHER])).
+            await expect(METADAO.connect(user3).updateGuildWeights([user2.address, user1.address], [ONE_HUNDRED_ETHER, ONE_HUNDRED_ETHER])).
                 to.be.revertedWith('AccessControl');
         });
 
         it('it successfully updates the weight when the owner calls the function', async function () {
             await METADAO.addGuild(user3.address);
-            expect(await METADAO.updateGuildWeights([user1.address, user2.address, user3.address], [ONE_HUNDRED_ETHER, ONE_HUNDRED_ETHER, ONE_HUNDRED_ETHER]));
+            expect(await METADAO.updateGuildWeights([user2.address, user1.address, user3.address], [ONE_HUNDRED_ETHER, ONE_HUNDRED_ETHER, ONE_HUNDRED_ETHER]));
         });
     });
 
