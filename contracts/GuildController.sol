@@ -5,7 +5,7 @@ import "./utils/interfaces/IAmorToken.sol";
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
 import "./utils/interfaces/IGuildController.sol";
-import "./utils/interfaces/IMetadao.sol";
+import "./utils/interfaces/IMetaDaoController.sol";
 
 /// Advanced math functions for bonding curve
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -81,7 +81,7 @@ contract GuildController is IGuildController, Ownable {
         address AMOR_,
         address AMORxGuild_,
         address FXAMORxGuild_,
-        address MetaDaoController_,
+        //address MetaDaoController_,
         address multisig_ // the multisig address of the MetaDAO, which owns the token
     ) external returns (bool) {
         if (_initialized) {
@@ -94,7 +94,7 @@ contract GuildController is IGuildController, Ownable {
         ERC20AMORxGuild = IERC20(AMORxGuild_);
         FXGFXAMORxGuild = IFXAMORxGuild(FXAMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
-        MetaDaoController = MetaDaoController_;
+        //MetaDaoController = MetaDaoController_;
         multisig = multisig_;
         ADDITIONAL_VOTING_TIME = 0;
 
@@ -104,6 +104,11 @@ contract GuildController is IGuildController, Ownable {
         _initialized = true;
         emit Initialized(_initialized, initOwner, AMORxGuild_);
         return true;
+    }
+
+    /// TEMP fix for unit tests!!
+    function setMetaDao(address metadao) external {
+        MetaDaoController = metadao;
     }
 
     function setVotingPeriod(uint256 newTime) external onlyOwner {
@@ -133,8 +138,8 @@ contract GuildController is IGuildController, Ownable {
             claimableTokens[impactMakers[i]][token] += amountToSendVoter;
             amountToSendAllVoters += amountToSendVoter;
         }
-
-        IERC20(token).safeTransferFrom(sender, address(this), amountToSendAllVoters);
+        IMetaDaoController(MetaDaoController).claimToken(token);
+        //IERC20(token).claimToken(sender, address(this), amountToSendAllVoters);
 
         return amountToSendAllVoters;
     }
@@ -143,11 +148,11 @@ contract GuildController is IGuildController, Ownable {
     /// and calles distribute function for the whole amount of gathered tokens
     function gatherDonation(address token) public {
         // check if token in the whitelist of the MetaDaoController
-        if (!IMetadao(MetaDaoController).isWhitelisted(token)) {
+        if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
         }
 
-        uint256 amount = IMetadao(MetaDaoController).getGuildFunds(token, address(this));
+        uint256 amount = IMetaDaoController(MetaDaoController).guildFunds(address(this), token);
         // check balance of MetaDaoController
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
         if (amount < 10) {
@@ -168,7 +173,7 @@ contract GuildController is IGuildController, Ownable {
     // Requires the msg.sender to `approve` amount prior to calling this function
     function donate(uint256 allAmount, address token) external returns (uint256) {
         // check if token in the whitelist of the MetaDaoController
-        if (!IMetadao(MetaDaoController).isWhitelisted(token)) {
+        if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
         }
 

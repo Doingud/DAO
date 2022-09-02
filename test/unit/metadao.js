@@ -42,13 +42,23 @@ describe("unit - MetaDao", function () {
         user2 = setup.roles.user2;
         user3 = setup.roles.user3;
         pool = setup.roles.pool;
-        ///   Setup the guildfactory contract first
-        await init.getGuildFactory(setup);
         ///   Setup the Controller
-        CONTROLLER = setup.factory.controller;
-        ///   Initialize the metadao
+        await init.controller(setup);
+        console.log("Controller init");
+        CONTROLLER = setup.controller;
         await init.metadao(setup);
         METADAO = setup.metadao;
+        await CONTROLLER.setMetaDao(METADAO.address);
+        let varx = await CONTROLLER.MetaDaoController();
+        console.log(varx);
+        console.log("Metadao init");
+        ///   Setup the guildfactory contract first
+        await init.getGuildFactory(setup);
+        await METADAO.setGuildFactory(setup.factory.guildFactory.address);
+        console.log("guildfactory init");
+
+        ///   Initialize the metadao
+
     });
 
     beforeEach('setup', async function() {
@@ -60,7 +70,10 @@ describe("unit - MetaDao", function () {
         GUILD_CONTROLLER_ONE = CONTROLLER.attach(GUILD_CONTROLLER_ONE);
         //console.log("GUILD_ONE " + GUILD_CONTROLLER_ONE.address);
         GUILD_CONTROLLER_TWO = await METADAO.guilds(GUILD_CONTROLLER_ONE.address);
-        GUILD_CONTROLLER_TWO = AMOR_TOKEN.attach(GUILD_CONTROLLER_TWO);
+        GUILD_CONTROLLER_TWO = CONTROLLER.attach(GUILD_CONTROLLER_TWO);
+        //  Fix for tests
+        await GUILD_CONTROLLER_ONE.setMetaDao(METADAO.address);
+        await GUILD_CONTROLLER_TWO.setMetaDao(METADAO.address);
         //console.log("GUILD_TWO " + GUILD_CONTROLLER_TWO.address);
         await METADAO.addWhitelist(USDC.address);
         await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
@@ -172,14 +185,20 @@ describe("unit - MetaDao", function () {
     });
 
     context('function: claimToken()', () => {
-        it('it succeeds if amor tokens are distributed to the guild according to guild weight', async function () {
+        it('it succeeds if amor tokens are distributed to the guild according to fee index weight', async function () {
             await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
             await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
             await METADAO.donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER, 0);
             /// Here we need to call `gatherDonation` from the GuildController
             let something = await GUILD_CONTROLLER_ONE.MetaDaoController();
+            expect(METADAO.address).to.equal(something);
             console.log("MDC: " + something);
+            let amorBalanceMetaDao = await AMOR_TOKEN.balanceOf(METADAO.address);
+            let amorBalanceController = await AMOR_TOKEN.balanceOf(GUILD_CONTROLLER_ONE.address);
             await GUILD_CONTROLLER_ONE.gatherDonation(AMOR_TOKEN.address);
+            let metadaoAfter = await AMOR_TOKEN.balanceOf(METADAO.address);
+            let controllerAfter = await AMOR_TOKEN.balanceOf(GUILD_CONTROLLER_ONE.address);
+            expect((amorBalanceMetaDao - metadaoAfter)*0.95).to.equal(controllerAfter - amorBalanceController);
             /// Step 2: Connect the owner to the guild and call `gatherDonation`
         });
 

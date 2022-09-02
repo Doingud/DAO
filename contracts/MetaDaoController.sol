@@ -79,15 +79,11 @@ contract MetaDaoController is AccessControl {
     /// The index array has not been set yet
     error NoIndex();
 
-    constructor(
-        address _amor,
-        address _cloneFactory,
-        address admin
-    ) {
+    constructor(address _amor, address admin) {
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _setupRole(GUILD_ROLE, admin);
         amorToken = IERC20(_amor);
-        guildFactory = _cloneFactory;
+        //guildFactory = _cloneFactory;
         /// Setup the linked list
         sentinelWhitelist = _amor;
         whitelist[sentinelWhitelist] = SENTINEL;
@@ -97,6 +93,11 @@ contract MetaDaoController is AccessControl {
         sentinelGuilds = address(0x01);
         guilds[sentinelGuilds] = SENTINEL;
         guilds[SENTINEL] = sentinelGuilds;
+    }
+
+    //  Temp fix for unit tests!!
+    function setGuildFactory(address cloneFactory) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        guildFactory = cloneFactory;
     }
 
     /// @notice Allows a user to donate a whitelisted asset
@@ -140,7 +141,8 @@ contract MetaDaoController is AccessControl {
         address endOfList = SENTINEL;
         Index storage targetIndex = indexes[indexHashes[index]];
         while (guilds[endOfList] != SENTINEL) {
-            uint256 amountAllocated = (amount * targetIndex.indexWeights[guilds[endOfList]]) / targetIndex.indexDenominator;
+            uint256 amountAllocated = (amount * targetIndex.indexWeights[guilds[endOfList]]) /
+                targetIndex.indexDenominator;
             guildFunds[guilds[endOfList]][token] += amountAllocated;
             endOfList = guilds[endOfList];
         }
@@ -156,16 +158,18 @@ contract MetaDaoController is AccessControl {
 
     /// @notice Distributes the specified token
     /// @param  token address of target token
-    function claimToken(address token, address guild) public {
+    function claimToken(address token) public {
         if (whitelist[token] == address(0)) {
             revert NotListed();
         }
-        uint256 amount = guildFunds[guild][token];
+        uint256 amount = guildFunds[msg.sender][token];
         donations[token] -= amount;
         /// Clear this guild's token balance
-        delete guildFunds[guild][token];
-        IERC20(token).approve(guild, amount);
-        IGuildController(guild).gatherDonation(token);
+        delete guildFunds[msg.sender][token];
+        IERC20(token).safeTransfer(msg.sender, amount);
+        //IERC20(token).approve(guild, amount);
+        //IERC20(token).safe
+        //IGuildController(guild).gatherDonation(token);
     }
 
     /// @notice Apportions approved token donations according to guild weights
@@ -175,7 +179,7 @@ contract MetaDaoController is AccessControl {
         address endOfList = SENTINEL;
         /// Loop through linked list
         while (whitelist[endOfList] != SENTINEL) {
-            claimToken(whitelist[endOfList], guild);
+            claimToken(whitelist[endOfList]);
             endOfList = whitelist[endOfList];
         }
     }
