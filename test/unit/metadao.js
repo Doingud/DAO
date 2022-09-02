@@ -21,6 +21,7 @@ let user1;
 let user2;
 //let user3;
 //let root;
+let CONTROLLER
 let GUILD_CONTROLLER_ONE;
 let GUILD_CONTROLLER_TWO;
 
@@ -56,10 +57,10 @@ describe("unit - MetaDao", function () {
         await METADAO.createGuild(user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
         await METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
         GUILD_CONTROLLER_ONE = await METADAO.guilds(ONE_ADDRESS);
-        //GUILD_CONTROLLER_ONE = AMOR_TOKEN.attach(guild1);
+        GUILD_CONTROLLER_ONE = CONTROLLER.attach(GUILD_CONTROLLER_ONE);
         //console.log("GUILD_ONE " + GUILD_CONTROLLER_ONE.address);
-        GUILD_CONTROLLER_TWO = await METADAO.guilds(GUILD_CONTROLLER_ONE);
-        //GUILD_CONTROLLER_TWO = AMOR_TOKEN.attach(guild2);
+        GUILD_CONTROLLER_TWO = await METADAO.guilds(GUILD_CONTROLLER_ONE.address);
+        GUILD_CONTROLLER_TWO = AMOR_TOKEN.attach(GUILD_CONTROLLER_TWO);
         //console.log("GUILD_TWO " + GUILD_CONTROLLER_TWO.address);
         await METADAO.addWhitelist(USDC.address);
         await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
@@ -68,13 +69,13 @@ describe("unit - MetaDao", function () {
         let encodedIndex = abi.encode(
             ["tuple(address, uint256)"],
             [
-            [GUILD_CONTROLLER_ONE, 100]
+            [GUILD_CONTROLLER_ONE.address, 100]
             ]
         );
         let encodedIndex2 = abi.encode(
             ["tuple(address, uint256)"],
             [
-            [GUILD_CONTROLLER_TWO, 100]
+            [GUILD_CONTROLLER_TWO.address, 100]
             ]
         );
 
@@ -113,12 +114,12 @@ describe("unit - MetaDao", function () {
 
         it('it creates a new guild if tx sent by admin', async function () {
             await METADAO.createGuild(user3.address, MOCK_GUILD_NAMES[2], MOCK_GUILD_SYMBOLS[2]);
-            expect(await METADAO.guilds(GUILD_CONTROLLER_TWO)).to.not.equal(ONE_ADDRESS);
+            expect(await METADAO.guilds(GUILD_CONTROLLER_TWO.address)).to.not.equal(ONE_ADDRESS);
         });
 
         it('Should add an external guild', async function () {
             await METADAO.addExternalGuild(user3.address);
-            expect(await METADAO.guilds(GUILD_CONTROLLER_TWO)).to.equal(user3.address);
+            expect(await METADAO.guilds(GUILD_CONTROLLER_TWO.address)).to.equal(user3.address);
         })
 
         it('it fails when trying to add the same guild twice', async function () {
@@ -130,13 +131,13 @@ describe("unit - MetaDao", function () {
 
     context('function: removeGuild()', () => {
         it('it fails to remove guilds if not an admin address', async function () {
-            await expect(METADAO.connect(user1).removeGuild(GUILD_CONTROLLER_ONE)).
+            await expect(METADAO.connect(user1).removeGuild(GUILD_CONTROLLER_ONE.address)).
                 to.be.revertedWith('AccessControl');
         });
 
         it('it removes a guild if tx sent by admin', async function () {
-            await METADAO.removeGuild(GUILD_CONTROLLER_TWO);
-            expect(await METADAO.guilds(GUILD_CONTROLLER_ONE)).to.equal(ONE_ADDRESS);  
+            await METADAO.removeGuild(GUILD_CONTROLLER_TWO.address);
+            expect(await METADAO.guilds(GUILD_CONTROLLER_ONE.address)).to.equal(ONE_ADDRESS);  
         });
     });
 
@@ -170,13 +171,16 @@ describe("unit - MetaDao", function () {
         });
     });
 
-    context('function: distributeAll()', () => {
+    context('function: claimToken()', () => {
         it('it succeeds if amor tokens are distributed to the guild according to guild weight', async function () {
-            //let amorBalance = await AMOR_TOKEN.balanceOf(METADAO.address);
-            //expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
-            //await METADAO.distributeAll();
-            //expect(await METADAO.guildFunds(user1.address, AMOR_TOKEN.address)).to.equal((amorBalance/2).toString());
-            //expect(await METADAO.guildFunds(user1.address, USDC.address)).to.equal(FIFTY_ETHER);
+            await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
+            await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
+            await METADAO.donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER, 0);
+            /// Here we need to call `gatherDonation` from the GuildController
+            let something = await GUILD_CONTROLLER_ONE.MetaDaoController();
+            console.log("MDC: " + something);
+            await GUILD_CONTROLLER_ONE.gatherDonation(AMOR_TOKEN.address);
+            /// Step 2: Connect the owner to the guild and call `gatherDonation`
         });
 
         it('does not change the allocations if called more than once', async function () {
