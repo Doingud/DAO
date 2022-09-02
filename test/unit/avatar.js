@@ -70,20 +70,21 @@ describe('unit - Contract: Avatar', function () {
     });
 
     context('» disableModule testing', () => {
-        it('it fails to enableModule if InvalidParameters', async function () {
-            await expect(avatar.connect(user).enableModule(ZERO_ADDRESS)).to.be.revertedWith(
-                'NotEnabled()'
+        it('it fails to disableModule if InvalidParameters', async function () {
+            await expect(avatar.connect(user).disableModule(ONE_ADDRESS, ZERO_ADDRESS)).to.be.revertedWith(
+                'NotDisabled()'
             );
         });
 
-        it('it enables Module', async function () {
-            expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
-            await avatar.connect(authorizer_adaptor).enableModule(operator.address);
+        it('it disable Module', async function () {
             expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
+            const prevModule = ONE_ADDRESS;
+            await avatar.connect(authorizer_adaptor).disableModule(prevModule, operator.address);
+            expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
         });
 
-        it('it fails to enableModule if trying to add twice', async function () {
-            await expect(avatar.connect(authorizer_adaptor).enableModule(operator.address)).to.be.revertedWith(
+        it('it fails to disableModule if trying to add twice', async function () {
+            await expect(avatar.connect(authorizer_adaptor).disableModule(ONE_ADDRESS, operator.address)).to.be.revertedWith(
                 'InvalidParameters()'
             );
         });

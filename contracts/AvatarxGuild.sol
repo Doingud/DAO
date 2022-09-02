@@ -38,7 +38,7 @@ contract AvatarxGuild is Executor, AccessControl {
         }
         _setupRole(DEFAULT_ADMIN_ROLE, initOwner);
         _setupRole(GUARDIAN_ROLE, guardianAddress_);
-        modules[SENTINEL_MODULES] = SENTINEL_MODULES;
+        modules[SENTINEL_MODULES] = address(0x2);
         _initialized = true;
         emit Initialized(_initialized, initOwner, guardianAddress_);
         return true;
@@ -69,6 +69,7 @@ contract AvatarxGuild is Executor, AccessControl {
     /// @param module Module to be removed.
     function disableModule(address prevModule, address module) public {
         // Validate module address and check that it corresponds to module index.
+        
         if (module == address(0) || module == SENTINEL_MODULES) {
             revert NotDisabled();
         }
