@@ -242,7 +242,49 @@ describe("unit - MetaDao", function () {
             await METADAO.distributeFees();
             expect(await METADAO.guildFunds(GUILD_CONTROLLER_ONE.address, AMOR_TOKEN.address)).to.equal((FIFTY_ETHER * 0.95).toString());
         });
+    });
 
+    context("function: addIndex()", () => {
+        it("Should allow a user to set a custom index", async function () {
+            const abi = ethers.utils.defaultAbiCoder;
+            let newIndex0 = abi.encode(
+                ["tuple(address, uint256)"],
+                [
+                [GUILD_CONTROLLER_ONE.address, 50]
+                ]
+            );
+            let newIndex1 = abi.encode(
+                ["tuple(address, uint256)"],
+                [
+                [GUILD_CONTROLLER_TWO.address, 150]
+                ]
+            );
+
+            await METADAO.addIndex([newIndex0, newIndex1]);
+            let index = await METADAO.indexHashes(1);
+            index = await METADAO.indexes(index);
+            expect(index.indexDenominator).to.equal(200);
+        });
+
+        it("Should not allow a user to set a duplicate index", async function () {
+            const abi = ethers.utils.defaultAbiCoder;
+            let newIndex0 = abi.encode(
+                ["tuple(address, uint256)"],
+                [
+                [GUILD_CONTROLLER_ONE.address, 50]
+                ]
+            );
+            let newIndex1 = abi.encode(
+                ["tuple(address, uint256)"],
+                [
+                [GUILD_CONTROLLER_TWO.address, 150]
+                ]
+            );
+
+            await METADAO.addIndex([newIndex0, newIndex1]);
+            await expect(METADAO.addIndex([newIndex0, newIndex1])).
+                to.be.revertedWith("Exists()");
+        });
     });
 
 });

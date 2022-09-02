@@ -64,16 +64,15 @@ contract MetaDaoController is AccessControl {
     bytes32 public constant GUILD_ROLE = keccak256("GUILD_ROLE");
 
     /// Errors
-    /// The claim is not valid
-    error InvalidClaim();
     /// The token is not whitelisted
     error NotListed();
     /// The guild/index cannot be added because it already exists
     error Exists();
+    /// The guild doesn't exist
     error InvalidGuild();
     /// Not all guilds have weights!!
     /// Please ensure guild weights have been updated after adding new guild
-    error ArrayError(address guild, uint256 index);
+    error IndexError();
     /// The supplied array of index weights does not match the number of guilds
     error InvalidArray();
     /// The index array has not been set yet
@@ -286,15 +285,14 @@ contract MetaDaoController is AccessControl {
     /// @return index of the new index in the `Index` array
     function addIndex(bytes[] calldata weights) external returns (uint256) {
         /// This check becomes redundant
-        //if (weights.length != guilds.length) {
-        //    revert InvalidArray();
-        //}
         /// Using the hash of the array allows a O(1) check if that index exists already
         bytes32 hashArray = keccak256(abi.encode(weights));
         if (indexes[hashArray].indexDenominator != 0) {
             revert Exists();
         }
-        _updateIndex(weights, hashArray);
+        if (_updateIndex(weights, hashArray) != true) {
+            revert IndexError();
+        }
         indexHashes.push(hashArray);
 
         return indexHashes.length;
