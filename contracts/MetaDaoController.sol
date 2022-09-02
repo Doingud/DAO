@@ -109,7 +109,7 @@ contract MetaDaoController is AccessControl {
         uint256 amount,
         uint256 index
     ) external {
-        if (whitelist[token] == address(0)) {
+        if (this.isWhitelisted(token) == false) {
             revert NotListed();
         }
         if (indexes[FEES_INDEX].indexDenominator == 0) {
@@ -158,15 +158,15 @@ contract MetaDaoController is AccessControl {
 
     /// @notice Distributes the specified token
     /// @param  token address of target token
-    function claimToken(address token) public {
+    function claimToken(address guild, address token) public {
         if (whitelist[token] == address(0)) {
             revert NotListed();
         }
-        uint256 amount = guildFunds[msg.sender][token];
+        uint256 amount = guildFunds[guild][token];
         donations[token] -= amount;
         /// Clear this guild's token balance
-        delete guildFunds[msg.sender][token];
-        IERC20(token).safeTransfer(msg.sender, amount);
+        delete guildFunds[guild][token];
+        IERC20(token).safeTransfer(guild, amount);
         //IERC20(token).approve(guild, amount);
         //IERC20(token).safe
         //IGuildController(guild).gatherDonation(token);
@@ -179,7 +179,7 @@ contract MetaDaoController is AccessControl {
         address endOfList = SENTINEL;
         /// Loop through linked list
         while (whitelist[endOfList] != SENTINEL) {
-            claimToken(whitelist[endOfList]);
+            claimToken(guild, whitelist[endOfList]);
             endOfList = whitelist[endOfList];
         }
     }
@@ -196,6 +196,7 @@ contract MetaDaoController is AccessControl {
             if (amountToDistribute != 0) {
                 guildFunds[endOfList][address(amorToken)] += amountToDistribute;
             }
+            endOfList = guilds[endOfList];
         }
     }
 

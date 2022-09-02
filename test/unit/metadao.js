@@ -44,14 +44,10 @@ describe("unit - MetaDao", function () {
         pool = setup.roles.pool;
         ///   Setup the Controller
         await init.controller(setup);
-        console.log("Controller init");
         CONTROLLER = setup.controller;
         await init.metadao(setup);
         METADAO = setup.metadao;
         await CONTROLLER.setMetaDao(METADAO.address);
-        let varx = await CONTROLLER.MetaDaoController();
-        console.log(varx);
-        console.log("Metadao init");
         ///   Setup the guildfactory contract first
         await init.getGuildFactory(setup);
         await METADAO.setGuildFactory(setup.factory.guildFactory.address);
@@ -120,12 +116,12 @@ describe("unit - MetaDao", function () {
     });
 
     context('function: addGuild()', () => {
-        it('it fails add guilds if not an admin address', async function () {
+        it('Should fail to add guilds if not an admin address', async function () {
             await expect(METADAO.connect(user1).createGuild(user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0])).
                 to.be.revertedWith('AccessControl');
         });
 
-        it('it creates a new guild if tx sent by admin', async function () {
+        it('Should create a new guild if tx sent by admin', async function () {
             await METADAO.createGuild(user3.address, MOCK_GUILD_NAMES[2], MOCK_GUILD_SYMBOLS[2]);
             expect(await METADAO.guilds(GUILD_CONTROLLER_TWO.address)).to.not.equal(ONE_ADDRESS);
         });
@@ -135,7 +131,7 @@ describe("unit - MetaDao", function () {
             expect(await METADAO.guilds(GUILD_CONTROLLER_TWO.address)).to.equal(user3.address);
         })
 
-        it('it fails when trying to add the same guild twice', async function () {
+        it('Should fail when trying to add the same guild twice', async function () {
             await METADAO.addExternalGuild(user3.address);
             await expect(METADAO.addExternalGuild(user3.address)).
                 to.be.revertedWith('Exists()');
@@ -143,12 +139,12 @@ describe("unit - MetaDao", function () {
     });
 
     context('function: removeGuild()', () => {
-        it('it fails to remove guilds if not an admin address', async function () {
+        it('Should fail to remove guilds if not an admin address', async function () {
             await expect(METADAO.connect(user1).removeGuild(GUILD_CONTROLLER_ONE.address)).
                 to.be.revertedWith('AccessControl');
         });
 
-        it('it removes a guild if tx sent by admin', async function () {
+        it('Should remove a guild if tx sent by admin', async function () {
             await METADAO.removeGuild(GUILD_CONTROLLER_TWO.address);
             expect(await METADAO.guilds(GUILD_CONTROLLER_ONE.address)).to.equal(ONE_ADDRESS);  
         });
@@ -175,7 +171,7 @@ describe("unit - MetaDao", function () {
             await expect(METADAO.donate(AMOR_GUILD_TOKEN.address, ONE_HUNDRED_ETHER, 0)).to.be.revertedWith("NotListed()");
         });
 
-        it('it succeeds if tokens are successfully donated to the metadao', async function () {
+        it('Should succeed if tokens are successfully donated to the metadao', async function () {
             await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
             await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
             await METADAO.connect(root).donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER, 0);
@@ -189,44 +185,62 @@ describe("unit - MetaDao", function () {
             await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
             await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
             await METADAO.donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER, 0);
+            await METADAO.donate(USDC.address, ONE_HUNDRED_ETHER, 0);
             /// Here we need to call `gatherDonation` from the GuildController
-            let something = await GUILD_CONTROLLER_ONE.MetaDaoController();
-            expect(METADAO.address).to.equal(something);
-            console.log("MDC: " + something);
-            let amorBalanceMetaDao = await AMOR_TOKEN.balanceOf(METADAO.address);
-            let amorBalanceController = await AMOR_TOKEN.balanceOf(GUILD_CONTROLLER_ONE.address);
-            await GUILD_CONTROLLER_ONE.gatherDonation(AMOR_TOKEN.address);
+            /// Check AMOR claims
+            let amorMetaDaoBefore = await AMOR_TOKEN.balanceOf(METADAO.address);
+            let amorControllerBefore = await AMOR_TOKEN.balanceOf(GUILD_CONTROLLER_ONE.address);
+            /// await GUILD_CONTROLLER_ONE.gatherDonation(AMOR_TOKEN.address);
+            await METADAO.claimToken(GUILD_CONTROLLER_ONE.address, AMOR_TOKEN.address);
             let metadaoAfter = await AMOR_TOKEN.balanceOf(METADAO.address);
             let controllerAfter = await AMOR_TOKEN.balanceOf(GUILD_CONTROLLER_ONE.address);
-            expect((amorBalanceMetaDao - metadaoAfter)*0.95).to.equal(controllerAfter - amorBalanceController);
-            /// Step 2: Connect the owner to the guild and call `gatherDonation`
+            expect((amorMetaDaoBefore - metadaoAfter)*0.95).to.equal(controllerAfter - amorControllerBefore);
+            /// Check USDC claims
+            let usdcMetaDaoBefore = await USDC.balanceOf(METADAO.address);
+            let usdcControllerBefore = await USDC.balanceOf(GUILD_CONTROLLER_ONE.address);
+            await METADAO.claimToken(GUILD_CONTROLLER_ONE.address, USDC.address);
+            //await GUILD_CONTROLLER_ONE.gatherDonation(USDC.address);
+            let usdcMetaDaoAfter = await USDC.balanceOf(METADAO.address);
+            let usdcControllerAfter = await USDC.balanceOf(GUILD_CONTROLLER_ONE.address);
+            expect(usdcMetaDaoBefore - usdcMetaDaoAfter).to.equal(usdcControllerAfter - usdcControllerBefore);
         });
 
-        it('does not change the allocations if called more than once', async function () {
-            //await METADAO.distributeAll();
-            //let fundsAllocated = await METADAO.guildFunds(user2.address, USDC.address);
-            //await METADAO.distributeAll();
-            //expect(await METADAO.guildFunds(user2.address, USDC.address)).to.equal(fundsAllocated);
-
-        });
-    });
-
-    context('function: claim()', () => {
-        it('it fails to claim if msg.sender is not a guild', async function () {
-            //await expect(METADAO.connect(multisig).claim()).to.be.revertedWith("AccessControl");
-        });
-
-        it('it succeeds if a guild claims the token according to guildweight', async function () {
-            //await METADAO.distributeAll();
-            //await METADAO.connect(user1).claim();
-            //expect(await USDC.balanceOf(user1.address)).to.be.equal(FIFTY_ETHER);
+        it('Should revert if called with no tokens allocated', async function () {
+            await expect(GUILD_CONTROLLER_ONE.gatherDonation(USDC.address)).
+                to.be.revertedWith("InvalidAmount()");
         });
     });
 
-    context('function: distributeToken()', () => {
-        it('it distributes a specified token', async function () {    
-            //await METADAO.distributeToken(USDC.address);
-            //expect(await METADAO.guildFunds(user1.address, USDC.address)).to.equal(FIFTY_ETHER);
+    context('function: claimTokens()', () => {
+        it('Should transfer correct amounts of all tokens to guild', async function () {
+            await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
+            await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
+            await METADAO.donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER, 0);
+            await METADAO.donate(USDC.address, ONE_HUNDRED_ETHER, 0);
+
+            let amorMetaDaoBefore = await AMOR_TOKEN.balanceOf(METADAO.address);
+            let amorControllerBefore = await AMOR_TOKEN.balanceOf(GUILD_CONTROLLER_TWO.address);
+            let usdcMetaDaoBefore = await USDC.balanceOf(METADAO.address);
+            let usdcControllerBefore = await USDC.balanceOf(GUILD_CONTROLLER_TWO.address);
+
+            await METADAO.claimTokens(GUILD_CONTROLLER_TWO.address);
+
+            let metadaoAfter = await AMOR_TOKEN.balanceOf(METADAO.address);
+            let controllerAfter = await AMOR_TOKEN.balanceOf(GUILD_CONTROLLER_TWO.address);
+            let usdcMetaDaoAfter = await USDC.balanceOf(METADAO.address);
+            let usdcControllerAfter = await USDC.balanceOf(GUILD_CONTROLLER_TWO.address);
+
+            expect((amorMetaDaoBefore - metadaoAfter)*0.95).to.equal(controllerAfter - amorControllerBefore);
+            expect(usdcMetaDaoBefore - usdcMetaDaoAfter).to.equal(usdcControllerAfter - usdcControllerBefore);
+        });
+    });
+
+    context('function: distributeFees()', () => {
+        it('it distributes collected AMOR tokens from fees', async function () {    
+            await AMOR_TOKEN.transfer(METADAO.address, ONE_HUNDRED_ETHER);
+            expect(await METADAO.guildFunds(GUILD_CONTROLLER_ONE.address, AMOR_TOKEN.address)).to.equal(0);
+            await METADAO.distributeFees();
+            expect(await METADAO.guildFunds(GUILD_CONTROLLER_ONE.address, AMOR_TOKEN.address)).to.equal((FIFTY_ETHER * 0.95).toString());
         });
 
     });
