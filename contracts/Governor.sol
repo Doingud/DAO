@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
-
+import "hardhat/console.sol";
 import "./utils/interfaces/IAvatar.sol";
 
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
@@ -315,6 +315,7 @@ contract DoinGudGovernor {
         uint256[] memory values,
         bytes[] memory calldatas
     ) external returns (uint256) {
+    console.log("called is %s");
         uint256 checkProposalId = hashProposal(targets, values, calldatas);
 
         if (checkProposalId != proposalId) {

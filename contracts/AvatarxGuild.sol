@@ -174,6 +174,7 @@ contract AvatarxGuild is Executor, AccessControl {
         assembly {
             mstore(array, moduleCount)
         }
+        return (array, next);
     }
 
     /// @notice adds guild based on the controller address provided
