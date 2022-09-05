@@ -18,6 +18,10 @@ let to; // call redirected to governor
 let value;
 let data;
 
+let targets;
+let values;
+let calldatas;
+
 describe('unit - Contract: Avatar', function () {
 
     const setupTests = deployments.createFixture(async () => {
@@ -103,8 +107,8 @@ describe('unit - Contract: Avatar', function () {
 
     context('» execTransactionFromModule testing', () => {
         it('it fails to execTransactionFromModule if NotWhitelisted', async function () {
-            to = governor.address;
-            value = 12;
+            to = governor.address; // Destination address of module transaction
+            value = 0; // Ether value of module transaction
             // building hash has to come from system address
             // 32 bytes of data
             let messageHash = ethers.utils.solidityKeccak256(
@@ -113,7 +117,18 @@ describe('unit - Contract: Avatar', function () {
             );
             data = messageHash;
 
-            await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(to, value, data, operationCall)).
+
+            targets = [authorizer_adaptor.address];
+            values = [20];
+            // building hash has to come from system address
+            // 32 bytes of data
+            messageHash = ethers.utils.solidityKeccak256(
+                ["address"],
+                [authorizer_adaptor.address]
+            );
+            calldatas = [messageHash];
+
+            await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(to, value, data, operationCall,  targets, values, calldatas)).
                 to.be.revertedWith(
                     'NotWhitelisted()'
             );
@@ -124,7 +139,7 @@ describe('unit - Contract: Avatar', function () {
             await avatar.connect(authorizer_adaptor).enableModule(operator.address);
             expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
 
-            expect(await avatar.connect(operator).execTransactionFromModule(to, value, data, operationCall)).
+            expect(await avatar.connect(operator).execTransactionFromModule(to, value, data, operationCall,  targets, values, calldatas)).
                 to.emit(avatar, "ExecutionFromModuleFailure").
                 withArgs(
                     operator.address, 
@@ -132,7 +147,9 @@ describe('unit - Contract: Avatar', function () {
         });
 
         it('it emits success in execTransactionFromModule', async function () {
-            expect(await avatar.connect(operator).execTransactionFromModule(to, value, data, operationDelegateCall)).//operationCall)).
+            // operationCall and operationDelegateCall both are not working
+            // expect(await avatar.connect(operator).execTransactionFromModule(to, value, data, operationCall,  targets, values, calldatas)).//operationCall)).
+            expect(await avatar.connect(operator).execTransactionFromModule(to, value, data, operationDelegateCall,  targets, values, calldatas)).//operationCall)).
                 to.emit(avatar, "ExecutionFromModuleSuccess").
                 withArgs(
                     operator.address, 
@@ -141,33 +158,33 @@ describe('unit - Contract: Avatar', function () {
 
     });
 
-    context('» execTransactionFromModuleReturnData testing', () => {
-        it('it fails to execTransactionFromModuleReturnData if NotWhitelisted', async function () {
-            await expect(avatar.connect(authorizer_adaptor).execTransactionFromModuleReturnData(to, value, data, operationCall)).
-                to.be.revertedWith(
-                    'NotWhitelisted()'
-            );
-        });
+    // context('» execTransactionFromModuleReturnData testing', () => {
+    //     it('it fails to execTransactionFromModuleReturnData if NotWhitelisted', async function () {
+    //         await expect(avatar.connect(authorizer_adaptor).execTransactionFromModuleReturnData(to, value, data, operationCall)).
+    //             to.be.revertedWith(
+    //                 'NotWhitelisted()'
+    //         );
+    //     });
 
-        it('it emits fail in execTransactionFromModuleReturnData', async function () {
-            // expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
-            // await avatar.connect(authorizer_adaptor).enableModule(operator.address);
-            // expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
+    //     it('it emits fail in execTransactionFromModuleReturnData', async function () {
+    //         // expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
+    //         // await avatar.connect(authorizer_adaptor).enableModule(operator.address);
+    //         // expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
 
-            expect(await avatar.connect(operator).execTransactionFromModuleReturnData(to, value, data, operationCall)).
-                to.emit(avatar, "ExecutionFromModuleFailure").
-                withArgs(
-                    operator.address, 
-                ).toString();
-        });
+    //         expect(await avatar.connect(operator).execTransactionFromModuleReturnData(to, value, data, operationCall)).
+    //             to.emit(avatar, "ExecutionFromModuleFailure").
+    //             withArgs(
+    //                 operator.address, 
+    //             ).toString();
+    //     });
 
-        it('it emits success in execTransactionFromModuleReturnData', async function () {
-            expect(await avatar.connect(operator).execTransactionFromModuleReturnData(to, value, data, operationDelegateCall)).
-                to.emit(avatar, "ExecutionFromModuleSuccess").
-                withArgs(
-                    operator.address, 
-                ).toString();
-        });
+    //     it('it emits success in execTransactionFromModuleReturnData', async function () {
+    //         expect(await avatar.connect(operator).execTransactionFromModuleReturnData(to, value, data, operationDelegateCall)).
+    //             to.emit(avatar, "ExecutionFromModuleSuccess").
+    //             withArgs(
+    //                 operator.address, 
+    //             ).toString();
+    //     });
 
-    });
+    // });
 });

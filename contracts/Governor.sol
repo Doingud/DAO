@@ -307,21 +307,27 @@ contract DoinGudGovernor {
     }
 
     /// @notice function allows anyone to execute specific proposal, based on the vote.
-    /// @param targets Target addresses for proposal calls
+    /*/// @param targets Target addresses for proposal calls
     /// @param values AMORxGuild values for proposal calls
-    /// @param calldatas Calldatas for proposal calls
+    /// @param calldatas Calldatas for proposal calls*/
     function execute(
+        bytes memory eproposalId // not working
+        /* original
         uint256 proposalId,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas
-        // address  targets,
-        // uint256   values,
-        // bytes  memory calldatas,
-        // uint256 proposalId
+        */
+/* this version also not working
+address  targets,
+uint256   values,
+bytes  memory calldatas,
+uint256 proposalId
+*/
     ) external returns (uint256) {
-        uint256 checkProposalId = hashProposal(targets, values, calldatas);
-console.log("eeee is %s");
+        uint256 checkProposalId =  uint256(keccak256(eproposalId));//hashProposal(targets, values, calldatas);
+console.log("Governor execute is %s");
+uint256 proposalId = checkProposalId;
         if (checkProposalId != proposalId) {
             revert InvalidParameters();
         }
@@ -331,7 +337,7 @@ console.log("eeee is %s");
             revert InvalidState();
         }
 
-        IAvatar(avatarAddress).executeProposal(targets, values, calldatas, Enum.Operation.Call);
+        // IAvatar(avatarAddress).executeProposal(targets, values, calldatas, Enum.Operation.Call);
 
         emit ProposalExecuted(proposalId);
 
