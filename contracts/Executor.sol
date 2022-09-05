@@ -13,15 +13,14 @@ contract Executor {
         uint256 txGas
     ) internal returns (bool success) {
         if (operation == Enum.Operation.DelegateCall) {
-            console.log("eee before is %s");
-
+console.log("delegatecall is %s");
             // solhint-disable-next-line no-inline-assembly
             assembly {
                 success := delegatecall(txGas, to, add(data, 0x20), mload(data), 0, 0)
             }
             console.log("eee after is %s");
         } else {
-            console.log("q is %s");
+console.log("call is %s");
             // solhint-disable-next-line no-inline-assembly
             assembly {
                 success := call(txGas, to, value, add(data, 0x20), mload(data), 0, 0)

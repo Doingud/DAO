@@ -3,7 +3,7 @@ pragma solidity 0.8.15;
 import "./utils/Enum.sol";
 import "./Executor.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-
+import "hardhat/console.sol";
 contract AvatarxGuild is Executor, AccessControl {
     event EnabledModule(address module);
     event DisabledModule(address module);
@@ -80,6 +80,14 @@ contract AvatarxGuild is Executor, AccessControl {
         emit DisabledModule(module);
     }
 
+    function TESTER(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas
+    ) public {
+        // TODO: call execTransactionFromModule()
+    }
+
     /// @notice Allows to execute functions from the module(it will send the passed proposals from the snapshot to the Governor)
     /// @dev Allows a Module to execute a Safe transaction without any further confirmations.
     /// @param to Destination address of module transaction.
@@ -90,14 +98,32 @@ contract AvatarxGuild is Executor, AccessControl {
         address to,
         uint256 value,
         bytes memory data,
-        Enum.Operation operation
+        Enum.Operation operation,
+
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas
     ) public virtual returns (bool success) {
         // Only whitelisted modules are allowed.
         if (msg.sender == SENTINEL_MODULES || modules[msg.sender] == address(0)) {
             revert NotWhitelisted();
         }
+
+        console.log("execTransactionFromModule is %s");
+
+        uint256 proposalId = uint256(keccak256(abi.encode(targets, values, calldatas)));
+
+// TypeError: Invalid type for argument in function call. Invalid implicit conversion from address to bytes4 requested.
+// bytes memory passData = abi.encodeWithSelector(targets[0], values[0], calldatas[0]);
+// bytes memory passData = abi.encodeWithSelector(targets, values, calldatas);
+        bytes memory passData = abi.encode(targets, values, calldatas);
+
+// console.log("passData is %s", uint256(keccak256(passData)));
+// console.log("uint256(keccak256(abi.encode(targets, values, calldatas))) is %s", uint256(keccak256(abi.encode(targets, values, calldatas))));
+        
         // Execute transaction without further confirmations.
-        success = execute(to, value, data, operation, gasleft());
+        success = execute(to, value, passData, operation, gasleft());
+
         if (success) emit ExecutionFromModuleSuccess(msg.sender);
         else emit ExecutionFromModuleFailure(msg.sender);
     }
@@ -113,7 +139,7 @@ contract AvatarxGuild is Executor, AccessControl {
         bytes memory data,
         Enum.Operation operation
     ) public returns (bool success, bytes memory returnData) {
-        success = execTransactionFromModule(to, value, data, operation);
+        // success = execTransactionFromModule(to, value, data, operation);
         // solhint-disable-next-line no-inline-assembly
         assembly {
             // Load free memory location

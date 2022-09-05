@@ -2,7 +2,8 @@
 pragma solidity 0.8.15;
 import "hardhat/console.sol";
 import "./utils/interfaces/IAvatar.sol";
-
+import "./utils/Enum.sol";
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -306,18 +307,27 @@ contract DoinGudGovernor {
     }
 
     /// @notice function allows anyone to execute specific proposal, based on the vote.
-    /// @param targets Target addresses for proposal calls
+    /*/// @param targets Target addresses for proposal calls
     /// @param values AMORxGuild values for proposal calls
-    /// @param calldatas Calldatas for proposal calls
+    /// @param calldatas Calldatas for proposal calls*/
     function execute(
+        bytes memory eproposalId // not working
+        /* original
         uint256 proposalId,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas
+        */
+/* this version also not working
+address  targets,
+uint256   values,
+bytes  memory calldatas,
+uint256 proposalId
+*/
     ) external returns (uint256) {
-    console.log("called is %s");
-        uint256 checkProposalId = hashProposal(targets, values, calldatas);
-
+        uint256 checkProposalId =  uint256(keccak256(eproposalId));//hashProposal(targets, values, calldatas);
+console.log("Governor execute is %s");
+uint256 proposalId = checkProposalId;
         if (checkProposalId != proposalId) {
             revert InvalidParameters();
         }
@@ -327,7 +337,7 @@ contract DoinGudGovernor {
             revert InvalidState();
         }
 
-        IAvatar(avatarAddress).executeProposal(targets, values, calldatas);
+        // IAvatar(avatarAddress).executeProposal(targets, values, calldatas, Enum.Operation.Call);
 
         emit ProposalExecuted(proposalId);
 
