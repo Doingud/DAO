@@ -287,4 +287,29 @@ describe("unit - MetaDao", function () {
         });
     });
 
+    context("function: donate()", () => {
+        it("Should allow a user to donate according to a custom index", async function () {
+            const abi = ethers.utils.defaultAbiCoder;
+            let newIndex0 = abi.encode(
+                ["tuple(address, uint256)"],
+                [
+                [GUILD_CONTROLLER_ONE.address, 50]
+                ]
+            );
+            let newIndex1 = abi.encode(
+                ["tuple(address, uint256)"],
+                [
+                [GUILD_CONTROLLER_TWO.address, 150]
+                ]
+            );
+
+            await METADAO.addIndex([newIndex0, newIndex1]);
+            await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
+            await METADAO.donate(USDC.address, ONE_HUNDRED_ETHER, 1);
+
+            expect(await METADAO.guildFunds(GUILD_CONTROLLER_ONE.address, USDC.address)).to.equal((ONE_HUNDRED_ETHER/4).toString());
+            expect(await METADAO.guildFunds(GUILD_CONTROLLER_TWO.address, USDC.address)).to.equal((ONE_HUNDRED_ETHER * 0.75).toString());
+        })
+    });
+
 });
