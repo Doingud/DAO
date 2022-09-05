@@ -7,6 +7,8 @@
 pragma solidity 0.8.15;
 
 interface IMetaDaoController {
+    function init(address amor, address factory) external;
+
     /// @notice Updates a guild's weight
     /// @param  guildArray addresses of the guilds
     /// @param  newWeights weights of the guilds, must be correspond to the order of `guildArray`
@@ -21,7 +23,7 @@ interface IMetaDaoController {
     function donate(address token, uint256 amount) external;
 
     /// @notice Distributes both the fees and the token donations
-    function distributeAll() external;
+    ///function distributeAll() external;
 
     /// @notice Distributes the specified token
     /// @param  token address of target token

@@ -15,11 +15,11 @@ pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/interfaces/ICloneFactory.sol";
 import "./utils/interfaces/IGuildController.sol";
 
-contract MetaDaoController is AccessControl {
+contract MetaDaoController is Ownable {
     using SafeERC20 for IERC20;
     /// Guild-related variables
     /// Array of addresses of Guilds
@@ -78,25 +78,22 @@ contract MetaDaoController is AccessControl {
     /// The index array has not been set yet
     error NoIndex();
 
-    constructor(address _amor, address admin) {
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _setupRole(GUILD_ROLE, admin);
-        amorToken = IERC20(_amor);
-        //guildFactory = _cloneFactory;
+    constructor(address admin) {
+        _transferOwnership(admin);
+    }
+
+    function init(address amor, address cloneFactory) external onlyOwner {
+        amorToken = IERC20(amor);
+        guildFactory = cloneFactory;
         /// Setup the linked list
-        sentinelWhitelist = _amor;
+        sentinelWhitelist = amor;
         whitelist[sentinelWhitelist] = SENTINEL;
-        whitelist[SENTINEL] = _amor;
+        whitelist[SENTINEL] = amor;
         indexHashes.push(FEES_INDEX);
         /// Setup guilds linked list
         sentinelGuilds = address(0x01);
         guilds[sentinelGuilds] = SENTINEL;
         guilds[SENTINEL] = sentinelGuilds;
-    }
-
-    //  Temp fix for unit tests!!
-    function setGuildFactory(address cloneFactory) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        guildFactory = cloneFactory;
     }
 
     /// @notice Allows a user to donate a whitelisted asset
@@ -147,41 +144,46 @@ contract MetaDaoController is AccessControl {
         }
     }
 
+    /// This function may be deprecated
+    /*
     /// @notice Distributes both the fees and the token donations
-    function claimAll(address guild) external {
+    function claimAll() external {
         /// Apportion the AMOR received from fees
         distributeFees();
         /// Apportion the token donations
-        claimTokens(guild);
+        claimTokens();
     }
+    */
 
     /// @notice Distributes the specified token
     /// @param  token address of target token
-    function claimToken(address guild, address token) public {
+    function claimToken(address token) public {
+        if (guilds[msg.sender] == address(0)) {
+            revert InvalidGuild();
+        }
         if (whitelist[token] == address(0)) {
             revert NotListed();
         }
-        uint256 amount = guildFunds[guild][token];
+        uint256 amount = guildFunds[msg.sender][token];
         donations[token] -= amount;
         /// Clear this guild's token balance
-        delete guildFunds[guild][token];
-        IERC20(token).safeTransfer(guild, amount);
-        //IERC20(token).approve(guild, amount);
-        //IERC20(token).safe
-        //IGuildController(guild).gatherDonation(token);
+        delete guildFunds[msg.sender][token];
+        IERC20(token).safeTransfer(msg.sender, amount);
     }
 
     /// @notice Apportions approved token donations according to guild weights
     /// @dev    Loops through all whitelisted tokens and calls `distributeToken()` for each
-    /// @param  guild the address of the guild claiming tokens
-    function claimTokens(address guild) public {
+    /// This function may be deprecated
+    /*
+    function claimTokens() public {
         address endOfList = SENTINEL;
         /// Loop through linked list
         while (whitelist[endOfList] != SENTINEL) {
-            claimToken(guild, whitelist[endOfList]);
+            claimToken(whitelist[endOfList]);
             endOfList = whitelist[endOfList];
         }
     }
+    */
 
     /// @notice Apportions collected AMOR fees
     function distributeFees() public {
@@ -209,9 +211,8 @@ contract MetaDaoController is AccessControl {
         address guildOwner,
         string memory name,
         string memory tokenSymbol
-    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) public onlyOwner {
         address controller = ICloneFactory(guildFactory).deployGuildContracts(guildOwner, name, tokenSymbol);
-        grantRole(GUILD_ROLE, controller);
         guilds[sentinelGuilds] = controller;
         sentinelGuilds = controller;
         guilds[sentinelGuilds] = SENTINEL;
@@ -220,12 +221,11 @@ contract MetaDaoController is AccessControl {
 
     /// @notice Adds an external guild to the registry
     /// @param  guildAddress the address of the external guild's controller
-    function addExternalGuild(address guildAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function addExternalGuild(address guildAddress) external onlyOwner {
         /// Add check that guild address hasn't been added yet here
         if (guilds[guildAddress] != address(0)) {
             revert Exists();
         }
-        grantRole(GUILD_ROLE, guildAddress);
         guilds[sentinelGuilds] = guildAddress;
         sentinelGuilds = guildAddress;
         guilds[sentinelGuilds] = SENTINEL;
@@ -236,7 +236,7 @@ contract MetaDaoController is AccessControl {
     /// @notice adds token to whitelist
     /// @dev    checks if token is present in whitelist mapping
     /// @param  _token address of the token to be whitelisted
-    function addWhitelist(address _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function addWhitelist(address _token) external onlyOwner {
         whitelist[sentinelWhitelist] = _token;
         sentinelWhitelist = _token;
         whitelist[sentinelWhitelist] = SENTINEL;
@@ -244,7 +244,7 @@ contract MetaDaoController is AccessControl {
 
     /// @notice removes guild based on id
     /// @param  controller the address of the guild controller to remove
-    function removeGuild(address controller) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function removeGuild(address controller) external onlyOwner {
         if (guilds[controller] == address(0)) {
             revert InvalidGuild();
         }
@@ -264,9 +264,6 @@ contract MetaDaoController is AccessControl {
         guilds[endOfList] = guilds[controller];
         delete guilds[controller];
         guildCounter -= 1;
-        //guilds[index] = guilds[guilds.length - 1];
-        //guilds.pop();
-        revokeRole(GUILD_ROLE, controller);
     }
 
     /// @notice Checks that a token is whitelisted
@@ -300,7 +297,7 @@ contract MetaDaoController is AccessControl {
 
     /// @notice Allows DoinGud to update the fee index used
     /// @param  weights an array of the guild weights
-    function updateFeeIndex(bytes[] calldata weights) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function updateFeeIndex(bytes[] calldata weights) external onlyOwner {
         _updateIndex(weights, FEES_INDEX);
     }
 

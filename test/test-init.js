@@ -84,7 +84,7 @@ const controller = async (setup) => {
     setup.tokens.AmorTokenImplementation.address,
     setup.tokens.AmorGuildToken.address, // AMORxGuild
     setup.tokens.FXAMORxGuild.address, // FXAMORxGuild
-    //setup.metadao.address, // MetaDaoController
+    setup.metadao.address, // MetaDaoController
     setup.roles.root.address // the multisig address of the MetaDAO, which owns the token
   );
 
@@ -157,7 +157,7 @@ const getGuildFactory = async (setup) => {
     setup.tokens.dAMORxGuild.address,
     setup.tokens.AmorTokenProxy.address,
     setup.controller.address,
-    setup.roles.authorizer_adaptor.address, // metaDaoController
+    setup.metadao.address, // metaDaoController
     setup.roles.root.address // multisig
   );
 
@@ -174,7 +174,6 @@ const getGuildFactory = async (setup) => {
 const metadao = async(setup) =>{
   const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController');
   const metadao = await MetaDaoFactory.deploy(
-    setup.tokens.AmorTokenImplementation.address,
     setup.roles.root.address
   );
 

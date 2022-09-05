@@ -130,7 +130,7 @@ contract GuildFactory is ICloneFactory, Ownable {
             amorToken,
             amorxGuildToken,
             fxAMORxGuildToken,
-            //MetaDaoController,
+            MetaDaoController,
             multisig
         );
         guildControllers[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
@@ -206,7 +206,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         address amor,
         address amorxGuild,
         address fxAMORxGuild,
-        //address MetaDaoController,
+        address MetaDaoController,
         address multisig
     ) internal returns (address) {
         IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
@@ -218,7 +218,7 @@ contract GuildFactory is ICloneFactory, Ownable {
             amor,
             amorxGuild,
             fxAMORxGuild,
-            //MetaDaoController,
+            MetaDaoController,
             multisig
         );
 

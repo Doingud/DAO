@@ -81,7 +81,7 @@ contract GuildController is IGuildController, Ownable {
         address AMOR_,
         address AMORxGuild_,
         address FXAMORxGuild_,
-        //address MetaDaoController_,
+        address MetaDaoController_,
         address multisig_ // the multisig address of the MetaDAO, which owns the token
     ) external returns (bool) {
         if (_initialized) {
@@ -94,7 +94,7 @@ contract GuildController is IGuildController, Ownable {
         ERC20AMORxGuild = IERC20(AMORxGuild_);
         FXGFXAMORxGuild = IFXAMORxGuild(FXAMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
-        //MetaDaoController = MetaDaoController_;
+        MetaDaoController = MetaDaoController_;
         multisig = multisig_;
         ADDITIONAL_VOTING_TIME = 0;
 
@@ -107,9 +107,9 @@ contract GuildController is IGuildController, Ownable {
     }
 
     /// TEMP fix for unit tests!!
-    function setMetaDao(address metadao) external {
-        MetaDaoController = metadao;
-    }
+    //function setMetaDao(address metadao) external {
+    //    MetaDaoController = metadao;
+    //}
 
     function setVotingPeriod(uint256 newTime) external onlyOwner {
         if (newTime < 2 days) {
