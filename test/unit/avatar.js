@@ -27,8 +27,9 @@ describe('unit - Contract: Avatar', function () {
 
         // AMOR = setup.tokens.AmorTokenImplementation;
         AMORxGuild = setup.tokens.AmorGuildToken;
+        avatar = setup.tokens.AvatarxGuild;
         // await init.controller(setup);
-        avatar =await init.avatar(setup);
+        // avatar =await init.avatar(setup);
         governor = await init.governor(setup);
         root = setup.roles.root;
         staker = setup.roles.staker;
@@ -131,7 +132,7 @@ describe('unit - Contract: Avatar', function () {
         });
 
         it('it emits success in execTransactionFromModule', async function () {
-            expect(await avatar.connect(operator).execTransactionFromModule(to, value, data, operationDelegateCall)).
+            expect(await avatar.connect(operator).execTransactionFromModule(to, value, data, operationDelegateCall)).//operationCall)).
                 to.emit(avatar, "ExecutionFromModuleSuccess").
                 withArgs(
                     operator.address, 
@@ -149,9 +150,9 @@ describe('unit - Contract: Avatar', function () {
         });
 
         it('it emits fail in execTransactionFromModuleReturnData', async function () {
-            expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
-            await avatar.connect(authorizer_adaptor).enableModule(operator.address);
-            expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
+            // expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
+            // await avatar.connect(authorizer_adaptor).enableModule(operator.address);
+            // expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
 
             expect(await avatar.connect(operator).execTransactionFromModuleReturnData(to, value, data, operationCall)).
                 to.emit(avatar, "ExecutionFromModuleFailure").

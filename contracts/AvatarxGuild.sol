@@ -90,7 +90,11 @@ contract AvatarxGuild is Executor, AccessControl {
         address to,
         uint256 value,
         bytes memory data,
-        Enum.Operation operation
+        Enum.Operation operation,
+
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas
     ) public virtual returns (bool success) {
         console.log("eeWWW 1 is %s");
 
@@ -98,8 +102,15 @@ contract AvatarxGuild is Executor, AccessControl {
         if (msg.sender == SENTINEL_MODULES || modules[msg.sender] == address(0)) {
             revert NotWhitelisted();
         }
+
+        uint256 proposalId = uint256(keccak256(abi.encode(targets, values, calldatas))));
+
+        bytes memory passData = abi.encodeWithSelector(proposalId, targets[], values[], calldatas[]);
+console.log("passData is %s", passData);
+console.log("uint256(keccak256(abi.encode(targets, values, calldatas))) is %s", uint256(keccak256(abi.encode(targets, values, calldatas))));
         // Execute transaction without further confirmations.
-        success = execute(to, value, data, operation, gasleft());
+        success = execute(to, value, passData, operation, gasleft());
+
         if (success) emit ExecutionFromModuleSuccess(msg.sender);
         else emit ExecutionFromModuleFailure(msg.sender);
     }

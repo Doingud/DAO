@@ -315,6 +315,10 @@ contract DoinGudGovernor {
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas
+        // address  targets,
+        // uint256   values,
+        // bytes  memory calldatas,
+        // uint256 proposalId
     ) external returns (uint256) {
         uint256 checkProposalId = hashProposal(targets, values, calldatas);
 console.log("eeee is %s");
