@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
 
-import "./utils/interfaces/IAmorToken.sol";
-import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
+import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IGuildController.sol";
 import "./utils/interfaces/IMetaDaoController.sol";
 
 /// Advanced math functions for bonding curve
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -106,11 +104,6 @@ contract GuildController is IGuildController, Ownable {
         return true;
     }
 
-    /// TEMP fix for unit tests!!
-    //function setMetaDao(address metadao) external {
-    //    MetaDaoController = metadao;
-    //}
-
     function setVotingPeriod(uint256 newTime) external onlyOwner {
         if (newTime < 2 days) {
             revert InvalidAmount();
@@ -131,17 +124,13 @@ contract GuildController is IGuildController, Ownable {
         address sender
     ) internal returns (uint256) {
         // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
-        uint256 amountToSendAllVoters = 0;
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (amount * weights[impactMakers[i]]) / totalWeight;
 
             claimableTokens[impactMakers[i]][token] += amountToSendVoter;
-            amountToSendAllVoters += amountToSendVoter;
         }
-        IMetaDaoController(MetaDaoController).claimToken(token);
-        //IERC20(token).claimToken(sender, address(this), amountToSendAllVoters);
 
-        return amountToSendAllVoters;
+        return amount;
     }
 
     /// @notice gathers donation from MetaDaoController in specific token
@@ -153,14 +142,10 @@ contract GuildController is IGuildController, Ownable {
         }
 
         uint256 amount = IMetaDaoController(MetaDaoController).guildFunds(address(this), token);
-        // check balance of MetaDaoController
-        // if amount is below 10, most of the calculations will round down to zero, only wasting gas
-        if (amount < 10) {
-            revert InvalidAmount();
-        }
 
         // distribute those tokens
         distribute(amount, token, MetaDaoController);
+        IMetaDaoController(MetaDaoController).claimToken(token);
     }
 
     /// @notice allows to donate AMORxGuild tokens to the Guild
@@ -187,20 +172,8 @@ contract GuildController is IGuildController, Ownable {
 
         // 10% of the tokens in the impact pool are getting:
         if (token != AMORxGuild && token != AMOR) {
-            // 1.Exchanged in the pool to AMOR(if it’s not AMOR or AMORxGuild)
             // recieve tokens
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
-
-            uint256 amorAmount = amount; // TEMPORARY COEFFICIENT CHOICE
-
-            // give AMOR
-            uint256 stakedAmor = IERC20(AMOR).balanceOf(address(this));
-            IERC20(AMOR).safeTransferFrom(multisig, address(this), amorAmount);
-            uint256 taxCorrectedAmorAmount = IERC20(AMOR).balanceOf(address(this)) - stakedAmor;
-
-            // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
-            IERC20(AMOR).approve(AMORxGuild, taxCorrectedAmorAmount);
-            amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(msg.sender, taxCorrectedAmorAmount);
         } else if (token == AMOR) {
             // convert AMOR to AMORxGuild
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
@@ -222,11 +195,15 @@ contract GuildController is IGuildController, Ownable {
             ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amorxguildAmount);
         }
 
-        // 3.Staked in the FXAMORxGuild tokens,
-        // which are going to be owned by the user.
-        ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);
-        FXGFXAMORxGuild.stake(msg.sender, amorxguildAmount); // from address(this)
+        if (token == AMORxGuild || token == AMOR) {
+            // 3.Staked in the FXAMORxGuild tokens,
+            // which are going to be owned by the user.
+            ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);
+            FXGFXAMORxGuild.stake(msg.sender, amorxguildAmount); // from address(this)
+        }
         uint256 decAmount = allAmount - amount; //decreased amount: other 90%
+
+        IERC20(token).safeTransferFrom(msg.sender, address(this), decAmount);
 
         distribute(decAmount, token, msg.sender); // distribute other 90%
 

@@ -27,6 +27,8 @@ describe("unit - Clone Factory", function () {
     const signers = await ethers.getSigners();
     const setup = await init.initialize(signers);
     await init.getTokens(setup);
+    await init.metadao(setup);
+    await init.controller(setup);
 
     AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
     AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
@@ -39,7 +41,7 @@ describe("unit - Clone Factory", function () {
 
     await init.getGuildFactory(setup);
     CLONE_FACTORY = setup.factory.guildFactory;
-    CONTROLLERXGUILD = setup.factory.controller;
+    CONTROLLERXGUILD = setup.controller;
   });
 
   before('Setup', async function() {

@@ -4,7 +4,8 @@ const { ethers } = require('hardhat');
 const { ONE_HUNDRED_ETHER,
         TEST_TRANSFER,
         TAX_RATE,
-        BASIS_POINTS
+        BASIS_POINTS,
+        ONE_ADDRESS
       } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
@@ -19,6 +20,7 @@ let AMORxGuild;
 let FXAMORxGuild
 let controller;
 let metadao;
+let guildFactory;
 let USDC;
 let root;
 let authorizer_adaptor;
@@ -41,13 +43,18 @@ describe('unit - Contract: GuildController', function () {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(signers);
         await init.getTokens(setup);
+        await init.metadao(setup);
+        await init.controller(setup);
 
         AMOR = setup.tokens.AmorTokenImplementation;
         AMORxGuild = setup.tokens.AmorGuildToken;
         FXAMORxGuild = setup.tokens.FXAMORxGuild;
         USDC = setup.tokens.ERC20Token;
-        metadao = await init.metadao(setup);
-        controller = await init.controller(setup);
+        
+        metadao = setup.metadao;
+        controller = setup.controller;
+        guildFactory = await init.getGuildFactory(setup);
+        await metadao.init(AMOR.address, guildFactory.guildFactory.address);
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;
@@ -181,7 +188,7 @@ describe('unit - Contract: GuildController', function () {
             await AMOR.connect(user).approve(AMORxGuild.address, TEST_TRANSFER);
 
             let AMORDeducted = ethers.BigNumber.from((TEST_TRANSFER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
-            let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
+            let nextAMORDeducted = ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
 
             await AMORxGuild.connect(user).stakeAmor(user.address, nextAMORDeducted);
             await AMORxGuild.connect(user).approve(controller.address, nextAMORDeducted);
@@ -189,7 +196,7 @@ describe('unit - Contract: GuildController', function () {
             await controller.connect(user).donate(TEST_TRANSFER_SMALLER, AMORxGuild.address);      
 
             const totalWeight = await controller.totalWeight();
-            const FxGAmount = Math.floor((TEST_TRANSFER_SMALLER * percentToConvert) / FEE_DENOMINATOR); // FXAMORxGuild Amount = 10% of amount to Impact poll
+            const FxGAmount = (TEST_TRANSFER_SMALLER * percentToConvert) / FEE_DENOMINATOR; // FXAMORxGuild Amount = 10% of amount to Impact poll
             const decIpAmount = (TEST_TRANSFER_SMALLER - FxGAmount); //decreased amount
 
             sum = 0;
@@ -210,17 +217,13 @@ describe('unit - Contract: GuildController', function () {
             sum += amountToSendImpactMaker;
             expect((await controller.claimableTokens(operator.address, AMORxGuild.address)).toString()).to.equal(amountToSendImpactMaker.toString());
         
+            const difference = 1; // rounding error
+            sum += difference;
             expect((await AMORxGuild.balanceOf(controller.address)).toString()).to.equal(sum.toString());            
         });
     });
 
     context('» gatherDonation and distribute testing', () => {
-
-        it('it fails to gatherDonation if not enough tokens', async function () {
-            await expect(controller.connect(operator).gatherDonation(AMORxGuild.address)).to.be.revertedWith(
-                'InvalidAmount()'
-            );
-        });
 
         it('it fails to gatherDonation if token not in the whitelist', async function () {
             // gatherDonation --> distribute
@@ -230,20 +233,36 @@ describe('unit - Contract: GuildController', function () {
         });
 
         it('gathers donation in AMOR', async function () {
+            await metadao.addExternalGuild(controller.address);
+            const abi = ethers.utils.defaultAbiCoder;
+            let encodedIndex = abi.encode(
+                ["tuple(address, uint256)"],
+                [
+                [controller.address, 100]
+                ]
+            );
+            await metadao.updateFeeIndex([encodedIndex]);
+
+            let something = await metadao.guilds(controller.address);
+            console.log("Something: " + something);
+            console.log(controller.address);
+
+            await AMOR.transfer(controller.address, TEST_TRANSFER);
             let previous = await AMOR.balanceOf(controller.address);
+            console.log(previous.toString());
 
             // add some funds to MetaDaoController
             await AMOR.connect(root).approve(AMORxGuild.address, TEST_TRANSFER);
-            await AMOR.connect(root).transfer(metadao.address, TEST_TRANSFER);
+            await AMOR.transfer(metadao.address, TEST_TRANSFER);
 
-            await metadao.connect(root).approveToController(AMOR.address, controller.address);
-            await metadao.connect(root).approveToController(AMOR.address, AMORxGuild.address);
             const amountOfAMOR = await AMOR.balanceOf(metadao.address);
             let AMORDeducted = ethers.BigNumber.from((amountOfAMOR*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
 
+            await metadao.distributeFees();
             await controller.connect(operator).gatherDonation(AMOR.address);
 
             let current = await AMOR.balanceOf(controller.address);
+            console.log(current);
             expect((current - previous).toString()).to.equal(AMORDeducted.toString());
         });
 
@@ -254,8 +273,6 @@ describe('unit - Contract: GuildController', function () {
             await USDC.connect(root).approve(AMOR.address, TEST_TRANSFER);
             await USDC.connect(root).transfer(metadao.address, TEST_TRANSFER);
 
-            await metadao.connect(root).approveToController(USDC.address, controller.address);
-            await metadao.connect(root).approveToController(USDC.address, AMOR.address);
             const multisig = root;
             await AMOR.connect(multisig).approve(controller.address, TEST_TRANSFER);
 
@@ -272,7 +289,6 @@ describe('unit - Contract: GuildController', function () {
 
             await AMORxGuild.connect(user).stakeAmor(metadao.address, nextAMORDeducted);
             await AMORxGuild.connect(user).approve(controller.address, nextAMORDeducted);
-            await metadao.connect(root).approveToController(AMORxGuild.address, controller.address);
 
             let impactMakerClaimableBefore = await controller.claimableTokens(impactMaker.address, AMORxGuild.address);
             let stakerClaimableBefore = await controller.claimableTokens(staker.address, AMORxGuild.address);
@@ -283,11 +299,14 @@ describe('unit - Contract: GuildController', function () {
             let totalWeight = await controller.totalWeight();
 
             // test
+            let AMORxGuildAmount = await AMORxGuild.connect(user).balanceOf(user.address);
+            await AMORxGuild.connect(user).approve(metadao.address, AMORxGuildAmount);
+            await metadao.connect(user).donate(AMORxGuild.address, (AMORxGuildAmount).toString(), 0);
             await controller.connect(user).gatherDonation(AMORxGuild.address);        
 
             let difference = 45; // difference -604 appears here: (decAmount * weights[impactMakers[i]]) / totalWeight
             let weight = await controller.weights(impactMaker.address);
-            let amountToSendImpactMaker = Math.floor((amount * weight) / totalWeight);
+            let amountToSendImpactMaker = (amount * weight) / totalWeight;
 
             sum = 0;
             sum += amountToSendImpactMaker + difference;
@@ -317,10 +336,8 @@ describe('unit - Contract: GuildController', function () {
             expect((await controller.claimableTokens(operator.address, AMORxGuild.address)).toString()).to.equal(currentClaimable.toString());        
 
 
-            difference = 1; // js calculations error
             let controllerHasAfter = ethers.BigNumber.from(controllerHadBefore.toString())
-                .add(ethers.BigNumber.from(sum.toString()))
-                .sub(ethers.BigNumber.from(difference.toString()));
+                .add(ethers.BigNumber.from(sum.toString()));
 
             expect((await AMORxGuild.balanceOf(controller.address)).toString()).to.equal(controllerHasAfter.toString());            
         });
