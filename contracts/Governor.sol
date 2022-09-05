@@ -2,7 +2,8 @@
 pragma solidity 0.8.15;
 
 import "./utils/interfaces/IAvatar.sol";
-
+import "./utils/Enum.sol";
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -316,7 +317,7 @@ contract DoinGudGovernor {
         bytes[] memory calldatas
     ) external returns (uint256) {
         uint256 checkProposalId = hashProposal(targets, values, calldatas);
-
+console.log("eeee is %s");
         if (checkProposalId != proposalId) {
             revert InvalidParameters();
         }
@@ -326,7 +327,7 @@ contract DoinGudGovernor {
             revert InvalidState();
         }
 
-        IAvatar(avatarAddress).executeProposal(targets, values, calldatas);
+        IAvatar(avatarAddress).executeProposal(targets, values, calldatas, Enum.Operation.Call);
 
         emit ProposalExecuted(proposalId);
 

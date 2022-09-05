@@ -139,4 +139,34 @@ describe('unit - Contract: Avatar', function () {
         });
 
     });
+
+    context('» execTransactionFromModuleReturnData testing', () => {
+        it('it fails to execTransactionFromModuleReturnData if NotWhitelisted', async function () {
+            await expect(avatar.connect(authorizer_adaptor).execTransactionFromModuleReturnData(to, value, data, operationCall)).
+                to.be.revertedWith(
+                    'NotWhitelisted()'
+            );
+        });
+
+        it('it emits fail in execTransactionFromModuleReturnData', async function () {
+            expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
+            await avatar.connect(authorizer_adaptor).enableModule(operator.address);
+            expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
+
+            expect(await avatar.connect(operator).execTransactionFromModuleReturnData(to, value, data, operationCall)).
+                to.emit(avatar, "ExecutionFromModuleFailure").
+                withArgs(
+                    operator.address, 
+                ).toString();
+        });
+
+        it('it emits success in execTransactionFromModuleReturnData', async function () {
+            expect(await avatar.connect(operator).execTransactionFromModuleReturnData(to, value, data, operationDelegateCall)).
+                to.emit(avatar, "ExecutionFromModuleSuccess").
+                withArgs(
+                    operator.address, 
+                ).toString();
+        });
+
+    });
 });

@@ -3,7 +3,7 @@ pragma solidity 0.8.15;
 import "./utils/Enum.sol";
 import "./Executor.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-
+import "hardhat/console.sol";
 contract AvatarxGuild is Executor, AccessControl {
     event EnabledModule(address module);
     event DisabledModule(address module);
@@ -92,6 +92,8 @@ contract AvatarxGuild is Executor, AccessControl {
         bytes memory data,
         Enum.Operation operation
     ) public virtual returns (bool success) {
+        console.log("eeWWW 1 is %s");
+
         // Only whitelisted modules are allowed.
         if (msg.sender == SENTINEL_MODULES || modules[msg.sender] == address(0)) {
             revert NotWhitelisted();
@@ -136,6 +138,7 @@ contract AvatarxGuild is Executor, AccessControl {
         bytes memory proposal,
         Enum.Operation operation
     ) public onlyRole(GUARDIAN_ROLE) {
+        console.log("eeWWW 2 is %s");
         bool success = execute(target, value, proposal, operation, gasleft());
         if (success) emit ExecutionFromGuardianSuccess(msg.sender);
         else emit ExecutionFromGuardianFailure(msg.sender);

@@ -3,6 +3,7 @@ pragma solidity 0.8.15;
 
 import "./utils/interfaces/IAvatar.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./utils/Enum.sol";
 
 contract AvatarxGuildMock is AccessControl, IAvatar {
     event EnabledModule(address module);
@@ -39,7 +40,8 @@ contract AvatarxGuildMock is AccessControl, IAvatar {
     function executeProposal(
         address[] memory target,
         uint256[] memory value,
-        bytes[] memory proposal
+        bytes[] memory proposal,
+        Enum.Operation operation
     ) public returns (bool) {
         check += 1;
         return true;
