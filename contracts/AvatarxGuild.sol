@@ -103,9 +103,9 @@ contract AvatarxGuild is Executor, AccessControl {
             revert NotWhitelisted();
         }
 
-        uint256 proposalId = uint256(keccak256(abi.encode(targets, values, calldatas))));
+        uint256 proposalId = uint256(keccak256(abi.encode(targets, values, calldatas)));
 
-        bytes memory passData = abi.encodeWithSelector(proposalId, targets[], values[], calldatas[]);
+        bytes memory passData = abi.encodeWithSelector(proposalId, targets, values, calldatas);
 console.log("passData is %s", passData);
 console.log("uint256(keccak256(abi.encode(targets, values, calldatas))) is %s", uint256(keccak256(abi.encode(targets, values, calldatas))));
         // Execute transaction without further confirmations.
