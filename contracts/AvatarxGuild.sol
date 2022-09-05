@@ -113,9 +113,9 @@ contract AvatarxGuild is Executor, AccessControl {
 
         uint256 proposalId = uint256(keccak256(abi.encode(targets, values, calldatas)));
 
-        // TypeError: Invalid type for argument in function call. Invalid implicit conversion from address to bytes4 requested.
-        // bytes memory passData = abi.encodeWithSelector(targets[0], values[0], calldatas[0]);
-        // bytes memory passData = abi.encodeWithSelector(targets, values, calldatas);
+// TypeError: Invalid type for argument in function call. Invalid implicit conversion from address to bytes4 requested.
+// bytes memory passData = abi.encodeWithSelector(targets[0], values[0], calldatas[0]);
+// bytes memory passData = abi.encodeWithSelector(targets, values, calldatas);
         bytes memory passData = abi.encode(targets, values, calldatas);
 
 // console.log("passData is %s", uint256(keccak256(passData)));
