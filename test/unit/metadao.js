@@ -195,7 +195,7 @@ describe("unit - MetaDao", function () {
 
         it('Should revert if called with no tokens allocated', async function () {
             await expect(GUILD_CONTROLLER_ONE.gatherDonation(USDC.address)).
-                to.be.revertedWith("InvalidAmount()");
+                to.be.revertedWith("InvalidClaim()");
         });
     });
 

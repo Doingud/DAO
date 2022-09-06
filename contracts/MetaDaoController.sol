@@ -77,6 +77,7 @@ contract MetaDaoController is Ownable {
     error InvalidArray();
     /// The index array has not been set yet
     error NoIndex();
+    error InvalidClaim();
 
     constructor(address admin) {
         _transferOwnership(admin);
@@ -165,6 +166,9 @@ contract MetaDaoController is Ownable {
             revert NotListed();
         }
         uint256 amount = guildFunds[msg.sender][token];
+        if (amount == 0) {
+            revert InvalidClaim();
+        }
         donations[token] -= amount;
         /// Clear this guild's token balance
         delete guildFunds[msg.sender][token];
