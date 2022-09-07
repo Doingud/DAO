@@ -160,6 +160,7 @@ describe("unit - MetaDao", function () {
 
     context('function: distributeToken()', () => {
         it('it distributes a specified token', async function () {    
+            expect(await METADAO.guildFunds(user1.address, USDC.address)).to.be.lt(FIFTY_ETHER);
             await METADAO.distributeToken(USDC.address);
             expect(await METADAO.guildFunds(user1.address, USDC.address)).to.equal(FIFTY_ETHER);
         });
