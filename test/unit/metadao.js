@@ -151,6 +151,7 @@ describe("unit - MetaDao", function () {
         });
 
         it('it succeeds if a guild claims the token according to guildweight', async function () {
+           expect(await USDC.balanceOf(user1.address)).to.be.equal("0");
             await METADAO.distributeAll();
             await METADAO.connect(user1).claim();
             expect(await USDC.balanceOf(user1.address)).to.be.equal(FIFTY_ETHER);
