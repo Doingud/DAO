@@ -129,6 +129,7 @@ describe("unit - MetaDao", function () {
 
     context('function: distributeAll()', () => {
         it('it succeeds if amor tokens are distributed to the guild according to guild weight', async function () {
+            expect(await METADAO.guildFunds(user1.address, USDC.address)).to.be.lt(FIFTY_ETHER);
             let amorBalance = await AMOR_TOKEN.balanceOf(METADAO.address);
             expect(await AMOR_TOKEN.balanceOf(root.address) > 0);
             await METADAO.distributeAll();
