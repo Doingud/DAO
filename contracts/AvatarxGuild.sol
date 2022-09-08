@@ -191,7 +191,7 @@ contract AvatarxGuild is AccessControl, IAvatar {
             // Point the return data to the correct memory location
             returnData := ptr
         } */
-        
+
         /// Emit events
         if (success) {
             emit ExecutionFromModuleSuccess(msg.sender);
@@ -200,13 +200,24 @@ contract AvatarxGuild is AccessControl, IAvatar {
         }
     }
 
+    /// @notice This function executes the proposal voted on by the GOVERNOR
+    /// @dev    Not to be confused with SNAPSHOT
+    /// @param  to Destination address of module transaction.
+    /// @param  value Ether value of module transaction.
+    /// @param  data Data payload of module transaction.
+    /// @param  operation Operation type of module transaction.
     function executeProposal(
         address target,
         uint256 value,
         bytes memory proposal,
         Enum.Operation operation
     ) public onlyRole(GUARDIAN_ROLE) {
-        bool success = execute(target, value, proposal, operation, gasleft());
+        /// Enum resolves to 0 or 1
+        /// 0: call; 1: delegatecall
+        if (operation == 1) (success, ) = to.delegatecall(data);
+        else (success, ) = to.call{value: value}(data);
+
+        /// Emit events
         if (success) emit ExecutionFromGuardianSuccess(msg.sender);
         else emit ExecutionFromGuardianFailure(msg.sender);
     }

@@ -1,17 +1,45 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
-import "hardhat/console.sol";
-import "./utils/interfaces/IAvatar.sol";
-import "./utils/Enum.sol";
-import "hardhat/console.sol";
+
+/**
+ * @title   DoinGud: Governor.sol
+ * @author  Daoism Systems
+ * @notice  Governor Implementation for DoinGud Guilds
+ * @custom:security-contact arseny@daoism.systems || konstantin@daoism.systems
+ * @dev     IGovernor IERC165 Pattern
+ *
+ * Governor contract will allow to Guardians to add and vote for the proposals
+ *
+ * MIT License
+ * ===========
+ *
+ * Copyright (c) 2022 DoinGud
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *
+ */
+
+import "@gnosis.pm/zodiac/contracts/interfaces/IAvatar.sol";
+import "@gnosis.pm/safe-contracts/contracts/Enum.sol";
+
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-/// @title Governor contract
-/// @author Daoism Systems Team
-/// @dev    IGovernor IERC165 Pattern
-/// @notice Governor contract will allow to add and vote for the proposals
 
 contract DoinGudGovernor {
     using SafeCast for uint256;
