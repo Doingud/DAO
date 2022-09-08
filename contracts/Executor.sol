@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity >=0.7.0 <0.9.0;
-import "./utils/Enum.sol";
+import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 import "hardhat/console.sol";
 /// @title Executor - A contract that can execute transactions
 /// @author Richard Meissner - <richard@gnosis.pm>

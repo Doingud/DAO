@@ -1,9 +1,10 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT 
+/*
 pragma solidity 0.8.15;
 
-import "./utils/interfaces/IAvatar.sol";
+import "@gnosis.pm/zodiac/contracts/interfaces/IAvatar.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./utils/Enum.sol";
+import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
 contract AvatarxGuildMock is AccessControl, IAvatar {
     event EnabledModule(address module);
@@ -47,3 +48,4 @@ contract AvatarxGuildMock is AccessControl, IAvatar {
         return true;
     }
 }
+*/
