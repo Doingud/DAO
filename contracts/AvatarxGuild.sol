@@ -3,8 +3,10 @@ pragma solidity 0.8.15;
 import "./utils/Enum.sol";
 import "./Executor.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@gnosis.pm/zodiac/interfaces/IAvatar.sol";
 import "hardhat/console.sol";
-contract AvatarxGuild is Executor, AccessControl {
+
+contract AvatarxGuild is Executor, AccessControl, IAvatar {
     event EnabledModule(address module);
     event DisabledModule(address module);
     event ExecutionFromModuleSuccess(address indexed module);
