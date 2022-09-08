@@ -36,10 +36,9 @@ pragma solidity 0.8.15;
  *
  */
 
-import "./utils/Enum.sol";
-import "./Executor.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@gnosis.pm/zodiac/interfaces/IAvatar.sol";
+import "@gnosis.pm/safe-contracts/common/Enum.sol";
 import "hardhat/console.sol";
 
 contract AvatarxGuild is AccessControl, IAvatar {
