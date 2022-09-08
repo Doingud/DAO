@@ -42,6 +42,7 @@ import "@gnosis.pm/safe-contracts/common/Enum.sol";
 import "hardhat/console.sol";
 
 contract AvatarxGuild is AccessControl, IAvatar {
+    /// Events
     event EnabledModule(address module);
     event DisabledModule(address module);
     event ExecutionFromModuleSuccess(address indexed module);
@@ -117,13 +118,14 @@ contract AvatarxGuild is AccessControl, IAvatar {
         emit DisabledModule(module);
     }
 
-    function TESTER(
+    /*function TESTER(
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas
     ) public {
         // TODO: call execTransactionFromModule()
     }
+    */
 
     /// @notice Allows to execute functions from the module(it will send the passed proposals from the snapshot to the Governor)
     /// @dev Allows a Module to execute a Safe transaction without any further confirmations.
@@ -132,37 +134,26 @@ contract AvatarxGuild is AccessControl, IAvatar {
     /// @param data Data payload of module transaction.
     /// @param operation Operation type of module transaction.
     function execTransactionFromModule(
-        address to,
+        address payable to,
         uint256 value,
-        bytes memory data,
-        Enum.Operation operation,
-
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas
-    ) public virtual returns (bool success) {
+        bytes calldata data,
+        Enum.Operation operation
+    ) external virtual returns (bool success) {
         // Only whitelisted modules are allowed.
         if (msg.sender == SENTINEL_MODULES || modules[msg.sender] == address(0)) {
             revert NotWhitelisted();
         }
+        /// Enum resolves to 0 or 1
+        /// 0: call; 1: delegatecall
+        if (operation == 1) (success, ) = to.delegatecall(data);
+        else (success, ) = to.call{value: value}(data);
 
-        console.log("execTransactionFromModule is %s");
+        if (success) {
+            emit ExecutionFromModuleSuccess(msg.sender);
+        } else {
+            emit ExecutionFromModuleFailure(msg.sender)
+        }
 
-        uint256 proposalId = uint256(keccak256(abi.encode(targets, values, calldatas)));
-
-// TypeError: Invalid type for argument in function call. Invalid implicit conversion from address to bytes4 requested.
-// bytes memory passData = abi.encodeWithSelector(targets[0], values[0], calldatas[0]);
-// bytes memory passData = abi.encodeWithSelector(targets, values, calldatas);
-        bytes memory passData = abi.encode(targets, values, calldatas);
-
-// console.log("passData is %s", uint256(keccak256(passData)));
-// console.log("uint256(keccak256(abi.encode(targets, values, calldatas))) is %s", uint256(keccak256(abi.encode(targets, values, calldatas))));
-        
-        // Execute transaction without further confirmations.
-        success = execute(to, value, passData, operation, gasleft());
-
-        if (success) emit ExecutionFromModuleSuccess(msg.sender);
-        else emit ExecutionFromModuleFailure(msg.sender);
     }
 
     /// @dev Allows a Module to execute a Safe transaction without any further confirmations and return data
@@ -173,12 +164,21 @@ contract AvatarxGuild is AccessControl, IAvatar {
     function execTransactionFromModuleReturnData(
         address to,
         uint256 value,
-        bytes memory data,
+        bytes calldata data,
         Enum.Operation operation
     ) public returns (bool success, bytes memory returnData) {
+        /// Check that a module sent the transaction
+        if (modules[msg.sender] == address(0)) {
+            revert NotWhitelisted();
+        }
+        /// Enum resolves to 0 or 1
+        /// 0: call; 1: delegatecall
+        if (operation == 1) (success, ) = to.delegatecall(data);
+        else (success, returnData) = to.call{value: value}(data);
+
         // success = execTransactionFromModule(to, value, data, operation);
         // solhint-disable-next-line no-inline-assembly
-        assembly {
+        /*assembly {
             // Load free memory location
             let ptr := mload(0x40)
             // We allocate memory for the return data by setting the free memory location to
@@ -190,6 +190,13 @@ contract AvatarxGuild is AccessControl, IAvatar {
             returndatacopy(add(ptr, 0x20), 0, returndatasize())
             // Point the return data to the correct memory location
             returnData := ptr
+        } */
+        
+        /// Emit events
+        if (success) {
+            emit ExecutionFromModuleSuccess(msg.sender);
+        } else {
+            emit ExecutionFromModuleFailure(msg.sender)
         }
     }
 
