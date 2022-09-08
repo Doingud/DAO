@@ -25,14 +25,8 @@ contract ModuleMock is Module {
     }
 }
 
-
 // /// @title Module Interface - A contract that can pass messages to a Module Manager contract if enabled by that contract.
 // pragma solidity >=0.7.0 <0.9.0;
-
-// import "@openzeppelin/contracts/access/Ownable.sol";
-// import "./utils/interfaces/IAvatar.sol";
-// // import "../guard/Guardable.sol";
-// import "@openzeppelin/contracts/access/AccessControl.sol";
 
 // abstract contract Module is Ownable{//}, AccessControl {//Guardable {
 // event ChangedGuard(address guard);
