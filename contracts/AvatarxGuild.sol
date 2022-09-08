@@ -1,12 +1,48 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
+
+/**
+ * @title  DoinGud: AvatarxGuild.sol
+ * @author Daoism Systems
+ * @notice Avatar Implementation for DoinGud Guilds
+ * @custom:security-contact arseny@daoism.systems || konstantin@daoism.systems
+ * @dev Implementation of an Avatar Interface
+ *
+ * AvatarxGuild contract is needed to manage the funds of the guild,
+ * receive and execute the proposals, attach modules and interact with
+ * external voting contracts
+ *
+ * MIT License
+ * ===========
+ *
+ * Copyright (c) 2022 DoinGud
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *
+ */
+
 import "./utils/Enum.sol";
 import "./Executor.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@gnosis.pm/zodiac/interfaces/IAvatar.sol";
 import "hardhat/console.sol";
 
-contract AvatarxGuild is Executor, AccessControl, IAvatar {
+contract AvatarxGuild is AccessControl, IAvatar {
     event EnabledModule(address module);
     event DisabledModule(address module);
     event ExecutionFromModuleSuccess(address indexed module);
