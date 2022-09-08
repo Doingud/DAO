@@ -175,7 +175,7 @@ describe('unit - Contract: Avatar', function () {
                 withArgs(
                     operator.address, 
                 ).toString();
-            */
+                */
         });
 
     });
@@ -187,7 +187,7 @@ describe('unit - Contract: Avatar', function () {
                 to.be.revertedWith(
                     'NotWhitelisted()'
             );
-            */
+                */
         });
 
         it('it emits fail in execTransactionFromModuleReturnData', async function () {
@@ -199,7 +199,7 @@ describe('unit - Contract: Avatar', function () {
                 withArgs(
                     operator.address, 
                 ).toString();
-            */
+                */
         });
 
         it('it emits success in execTransactionFromModuleReturnData', async function () {
@@ -210,7 +210,7 @@ describe('unit - Contract: Avatar', function () {
                 withArgs(
                     operator.address, 
                 ).toString();
-            */
+                */
         });
 
     });
@@ -223,7 +223,7 @@ describe('unit - Contract: Avatar', function () {
                 withArgs(
                     operator.address, 
                 ).toString();
-            */
+                */
         });
 
         it('it emits success in getModulesPaginated', async function () {
@@ -233,7 +233,7 @@ describe('unit - Contract: Avatar', function () {
                 withArgs(
                     operator.address, 
                 ).toString();
-            */
+                */
         });
     });
 });
