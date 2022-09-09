@@ -159,27 +159,18 @@ describe('unit - Contract: Avatar', function () {
             console.log(encoded);
             console.log(mockModule.address);
 
-            await expect(avatar.execTransactionFromModule(mockModule.address, 0, encoded, 0)).to.emit(avatar.address, "ExecutionFromModuleSuccess").withArgs(root.address);
+            await expect(avatar.connect(root).execTransactionFromModule(mockModule.address, 0, encoded, 0))
+                .to
+                .emit(avatar, "ExecutionFromModuleSuccess").withArgs(root.address);
             expect(await mockModule.testValues()).to.equal(1);
-            //.to.emit(avatar.address, "ExecutionFromModuleFailure").withArgs(root.address);
-            //await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
-            /*
-            expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
-            await avatar.connect(authorizer_adaptor).enableModule(operator.address);
-            expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
-
-            expect(await avatar.connect(operator).execTransactionFromModule(to, value, data, operationCall,  targets, values, calldatas)).
-                to.emit(avatar, "ExecutionFromModuleFailure").
-                withArgs(
-                    operator.address, 
-                ).toString();
-                */
         });
 
         it('it emits success in execTransactionFromModule', async function () {
             await avatar.enableModule(operator.address);
             expect(await avatar.isModuleEnabled(root.address)).to.be.true;
-            expect(await avatar.execTransactionFromModule(tx.to, tx.value, tx.data, tx.operation)).to.emit(avatar.address, "ExecutionFromModuleSuccess");
+            expect(await avatar.execTransactionFromModule(tx.to, tx.value, tx.data, tx.operation))
+                .to
+                .emit(avatar.address, "ExecutionFromModuleSuccess");
             /*
             await expect(
                 avatar.execTransactionFromModule(
@@ -207,6 +198,8 @@ describe('unit - Contract: Avatar', function () {
                     'NotWhitelisted()'
             );
                 */
+
+
         });
 
         it('it emits fail in execTransactionFromModuleReturnData', async function () {
