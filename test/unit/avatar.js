@@ -43,7 +43,7 @@ describe('unit - Contract: Avatar', function () {
         console.log("Setup: init.governor passed");
         // await init.controller(setup);
         // avatar =await init.avatar(setup);
-        governor = await init.governor(setup);
+        //governor = await init.governor(setup);
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;
@@ -143,20 +143,25 @@ describe('unit - Contract: Avatar', function () {
             await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(to, value, data, operationCall,  targets, values, calldatas)).
                 to.be.revertedWith(
                     'NotWhitelisted()'
-            );
+            ); */
         });
 
         it('it emits fail in execTransactionFromModule', async function () {
             await avatar.connect(authorizer_adaptor).enableModule(root.address);
+            console.log("Module Enabled");
             //await expect(avatar.execTransactionFromModule(avatar.address, 0, "0x", 1)).to.emit(avatar.address, "ExecutionFromModuleFailure");
             let iface = new ethers.utils.Interface([
-                "function testInteraction1(uint256 value)"
+                "function testInteraction(uint256 value)"
             ]);
 
-            let encoded = iface.encodeFunctionData("testInteraction1", ["1"]);
+            let encoded = iface.encodeFunctionData("testInteraction", ["1"]);
             console.log(encoded);
+            console.log(mockModule.address);
 
-            await expect(avatar.execTransactionFromModule(mockModule.address, 0, encoded, 0)).to.emit(avatar.address, "ExecutionFromModuleFailure").withArgs(root.address);
+            await expect(avatar.execTransactionFromModule(mockModule.address, 0, encoded, 0)).to.emit(avatar.address, "ExecutionFromModuleSuccess").withArgs(root.address);
+            expect(await mockModule.testValues()).to.equal(1);
+            //.to.emit(avatar.address, "ExecutionFromModuleFailure").withArgs(root.address);
+            //await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             /*
             expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
             await avatar.connect(authorizer_adaptor).enableModule(operator.address);
@@ -167,6 +172,7 @@ describe('unit - Contract: Avatar', function () {
                 withArgs(
                     operator.address, 
                 ).toString();
+                */
         });
 
         it('it emits success in execTransactionFromModule', async function () {
@@ -181,8 +187,6 @@ describe('unit - Contract: Avatar', function () {
                 tx.data,
                 tx.operation
                 )
-                */
-            /*
             // operationCall and operationDelegateCall both are not working
             // expect(await avatar.connect(operator).execTransactionFromModule(to, value, data, operationCall,  targets, values, calldatas)).//operationCall)).
             expect(await avatar.connect(operator).execTransactionFromModule(to, value, data, operationDelegateCall,  targets, values, calldatas)).//operationCall)).
@@ -190,8 +194,8 @@ describe('unit - Contract: Avatar', function () {
                 withArgs(
                     operator.address, 
                 ).toString();
+                */
         });
-
     });
 
     context('» execTransactionFromModuleReturnData testing', () => {

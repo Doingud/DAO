@@ -114,6 +114,9 @@ const avatar = async (setup) => {
   const avatarFactory = await ethers.getContractFactory('AvatarxGuild');
   const avatar = await avatarFactory.deploy();
 
+  const moduleFactory = await ethers.getContractFactory('ModuleMock');
+  const module = await moduleFactory.deploy(avatar.address, avatar.address);
+
   await avatar.init(
     setup.roles.root.address, // owner
     setup.roles.authorizer_adaptor.address // guardian Address
@@ -141,7 +144,9 @@ const avatar = async (setup) => {
     tx
   }
 
-  return avatar;
+  setup.avatars = avatars;
+
+  return avatars;
 };
 
 const governor = async (setup) => {
@@ -151,15 +156,15 @@ const governor = async (setup) => {
     "DoinGud Governor"
   );
 
-  await setup.tokens.AvatarxGuild.init(    
-    setup.roles.authorizer_adaptor.address, // owner Address
-    governor.address // GUARDIAN_ROLE
-  );
+  //await setup.tokens.AvatarxGuild.init(    
+  //  setup.roles.authorizer_adaptor.address, // owner Address
+  //  governor.address // GUARDIAN_ROLE
+  //);
 
   await governor.init(    
     setup.tokens.AmorGuildToken.address, //AMORxGuild
     setup.roles.authorizer_adaptor.address, // Snapshot Address
-    setup.tokens.AvatarxGuild.address // Avatar Address
+    setup.avatars.avatar.address // Avatar Address
   );
 
   return governor;

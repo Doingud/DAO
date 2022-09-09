@@ -144,10 +144,12 @@ contract AvatarxGuild is AccessControl, IAvatar {
         if (msg.sender == SENTINEL_MODULES || modules[msg.sender] == address(0)) {
             revert NotWhitelisted();
         }
+        emit ExecutionFromModuleSuccess(msg.sender);
         /// Enum resolves to 0 or 1
         /// 0: call; 1: delegatecall
         if (uint8(operation) == 1 ) (success, ) = to.delegatecall(data);
         else (success, ) = to.call{value: value}(data);
+
 
         if (success) {
             emit ExecutionFromModuleSuccess(msg.sender);

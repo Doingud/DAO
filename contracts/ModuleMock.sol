@@ -26,8 +26,9 @@ contract ModuleMock is Module {
         return success;
     }
 
-    function testInteraction(uint256 value) external {
+    function testInteraction(uint256 value) external returns (bool) {
         testValues = value;
+        return true;
     }
 }
 
