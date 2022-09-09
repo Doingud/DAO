@@ -37,8 +37,8 @@ pragma solidity 0.8.15;
  */
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@gnosis.pm/zodiac/interfaces/IAvatar.sol";
-import "@gnosis.pm/safe-contracts/common/Enum.sol";
+import "@gnosis.pm/zodiac/contracts/interfaces/IAvatar.sol";
+import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 import "hardhat/console.sol";
 
 contract AvatarxGuild is AccessControl, IAvatar {
@@ -173,7 +173,7 @@ contract AvatarxGuild is AccessControl, IAvatar {
         }
         /// Enum resolves to 0 or 1
         /// 0: call; 1: delegatecall
-        if (uint8(operation) == 1 ) (success, ) = to.delegatecall(data);
+        if (uint8(operation) == 1) (success, ) = to.delegatecall(data);
         else (success, returnData) = to.call{value: value}(data);
 
         // success = execTransactionFromModule(to, value, data, operation);
@@ -221,7 +221,7 @@ contract AvatarxGuild is AccessControl, IAvatar {
         /// Emit events
         if (success) emit ExecutionFromGuardianSuccess(msg.sender);
         else emit ExecutionFromGuardianFailure(msg.sender);
-    }*/
+        }*/
 
     /// @dev Returns if an module is enabled
     /// @return True if the module is enabled
