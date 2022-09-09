@@ -12,6 +12,7 @@ let governor;
 let authorizer_adaptor;
 let operator;
 let user;
+let tx;
 
 // for execTransactionFromModule
 let to; // call redirected to governor
@@ -35,6 +36,7 @@ describe('unit - Contract: Avatar', function () {
         await init.avatar(setup);
         console.log("Setup: init.avatar passed")
         avatar = setup.avatars.avatar;
+        tx = setup.avatars.tx;
         await init.governor(setup);
         governor = await init.governor(setup);
         console.log("Setup: init.governor passed");
@@ -156,6 +158,15 @@ describe('unit - Contract: Avatar', function () {
         });
 
         it('it emits success in execTransactionFromModule', async function () {
+            await avatar.enableModule(operator.address);
+            await expect(
+                avatar.execTransactionFromModule(
+                tx.to,
+                tx.value,
+                tx.data,
+                tx.operation
+                )
+            );
             /*
             // operationCall and operationDelegateCall both are not working
             // expect(await avatar.connect(operator).execTransactionFromModule(to, value, data, operationCall,  targets, values, calldatas)).//operationCall)).

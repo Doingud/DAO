@@ -4,7 +4,8 @@
 const { ethers } = require('hardhat');
 const { TAX_RATE,
         AMOR_TOKEN_NAME, 
-        AMOR_TOKEN_SYMBOL 
+        AMOR_TOKEN_SYMBOL,
+        ZERO_ADDRESS
       } = require('./helpers/constants.js');
 
 const initialize = async (accounts) => {
@@ -124,9 +125,25 @@ const avatar = async (setup) => {
   );
   console.log("Test init: avatar.init called");
 
+  const tx = {
+    to: avatar.address,
+
+    value: 0,
+    data: "0x",
+    operation: 0,
+    avatarTxGas: 0,
+    baseGas: 0,
+    gasPrice: 0,
+    gasToken: ZERO_ADDRESS,
+    refundReceiver: ZERO_ADDRESS,
+    signatures: "0x",
+  };
+  console.log("Test init: tx is setted %s", tx);
+
   const avatars = {
     avatar,
-    module
+    module, 
+    tx
   }
 
   setup.avatars = avatars
