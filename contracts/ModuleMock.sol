@@ -8,6 +8,7 @@ import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
 contract ModuleMock is Module {
 
+    uint256 public testValues;
     constructor(address avatar, address target) {
         target = target;
         avatar = avatar;
@@ -20,8 +21,13 @@ contract ModuleMock is Module {
     }
 
     /// This function recreates the reality module's action once a vote has passed
-    function executeAfterSuccesfulVote(address[] memory targets, uint256[] memory values, bytes[] calldata data, Enum.Operation operation) external {
-        IAvatar(avatar).execTransactionFromModule(avatar, values[0], data[0], operation);
+    function executeAfterSuccessfulVote(address[] memory targets, uint256[] memory values, bytes[] calldata data, Enum.Operation operation) external returns (bool success) {
+        success = IAvatar(avatar).execTransactionFromModule(avatar, 0, bytes(""), operation);
+        return success;
+    }
+
+    function testInteraction(uint256 value) external {
+        testValues = value;
     }
 }
 

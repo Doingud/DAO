@@ -43,6 +43,7 @@ import "hardhat/console.sol";
 
 contract AvatarxGuild is AccessControl, IAvatar {
     /// Events
+    /// These events are already declared in IAvatar.sol
     //event EnabledModule(address module);
     //event DisabledModule(address module);
     //event ExecutionFromModuleSuccess(address indexed module);
@@ -138,7 +139,7 @@ contract AvatarxGuild is AccessControl, IAvatar {
         uint256 value,
         bytes calldata data,
         Enum.Operation operation
-    ) external virtual returns (bool success) {
+    ) external returns (bool success) {
         // Only whitelisted modules are allowed.
         if (msg.sender == SENTINEL_MODULES || modules[msg.sender] == address(0)) {
             revert NotWhitelisted();

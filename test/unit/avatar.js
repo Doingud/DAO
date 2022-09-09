@@ -3,8 +3,8 @@ const { ethers } = require('hardhat');
 const { ZERO_ADDRESS, ONE_ADDRESS } = require("../helpers/constants.js");
 const init = require('../test-init.js');
 
-// const operationCall = 0; // enums are treated as uint8
-// const operationDelegateCall = 1;
+const operationCall = 0; // enums are treated as uint8
+const operationDelegateCall = 1;
 
 // let AMOR; // need for AMORxGuild
 let avatar;
@@ -13,6 +13,7 @@ let authorizer_adaptor;
 let operator;
 let user;
 let tx;
+let mockModule;
 
 // // for execTransactionFromModule
 // let to; // call redirected to governor
@@ -36,6 +37,7 @@ describe('unit - Contract: Avatar', function () {
         await init.avatar(setup);
         console.log("Setup: init.avatar passed")
         avatar = setup.avatars.avatar;
+        mockModule = setup.avatars.module;
         tx = setup.avatars.tx;
         await init.governor(setup);
         governor = await init.governor(setup);
@@ -114,6 +116,8 @@ describe('unit - Contract: Avatar', function () {
 
     context('» execTransactionFromModule testing', () => {
         it('it fails to execTransactionFromModule if NotWhitelisted', async function () {
+            expect(await avatar.isModuleEnabled(root.address)).to.be.false;
+            await expect(avatar.execTransactionFromModule(avatar.address, 0, "0x", 1)).to.be.revertedWith("NotWhitelisted");
             /*
             to = governor.address; // Destination address of module transaction
             value = 0; // Ether value of module transaction
@@ -144,6 +148,16 @@ describe('unit - Contract: Avatar', function () {
         });
 
         it('it emits fail in execTransactionFromModule', async function () {
+            await avatar.connect(authorizer_adaptor).enableModule(root.address);
+            //await expect(avatar.execTransactionFromModule(avatar.address, 0, "0x", 1)).to.emit(avatar.address, "ExecutionFromModuleFailure");
+            let iface = new ethers.utils.Interface([
+                "function testInteraction1(uint256 value)"
+            ]);
+
+            let encoded = iface.encodeFunctionData("testInteraction1", ["1"]);
+            console.log(encoded);
+
+            await expect(avatar.execTransactionFromModule(mockModule.address, 0, encoded, 0)).to.emit(avatar.address, "ExecutionFromModuleFailure").withArgs(root.address);
             /*
             expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
             await avatar.connect(authorizer_adaptor).enableModule(operator.address);
@@ -159,6 +173,9 @@ describe('unit - Contract: Avatar', function () {
 
         it('it emits success in execTransactionFromModule', async function () {
             await avatar.enableModule(operator.address);
+            expect(await avatar.isModuleEnabled(root.address)).to.be.true;
+            expect(await avatar.execTransactionFromModule(tx.to, tx.value, tx.data, tx.operation)).to.emit(avatar.address, "ExecutionFromModuleSuccess");
+            /*
             await expect(
                 avatar.execTransactionFromModule(
                 tx.to,
@@ -166,7 +183,7 @@ describe('unit - Contract: Avatar', function () {
                 tx.data,
                 tx.operation
                 )
-            );
+                */
             /*
             // operationCall and operationDelegateCall both are not working
             // expect(await avatar.connect(operator).execTransactionFromModule(to, value, data, operationCall,  targets, values, calldatas)).//operationCall)).
