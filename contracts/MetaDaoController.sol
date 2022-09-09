@@ -43,8 +43,6 @@ import "./utils/interfaces/IGuildController.sol";
 contract MetaDaoController is Ownable {
     using SafeERC20 for IERC20;
     /// Guild-related variables
-    /// Array of addresses of Guilds
-    /// address[] public guilds;
     mapping(address => address) public guilds;
     address public sentinelGuilds;
     uint256 public guildCounter;
@@ -80,9 +78,6 @@ contract MetaDaoController is Ownable {
     mapping(bytes32 => Index) public indexes;
     bytes32[] public indexHashes;
     bytes32 public constant FEES_INDEX = keccak256("FEES_INDEX");
-
-    /// Constant for Guild based access control
-    bytes32 public constant GUILD_ROLE = keccak256("GUILD_ROLE");
 
     /// Errors
     /// The token is not whitelisted
