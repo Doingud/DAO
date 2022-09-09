@@ -3,8 +3,8 @@ const { ethers } = require('hardhat');
 const { ZERO_ADDRESS, ONE_ADDRESS } = require("../helpers/constants.js");
 const init = require('../test-init.js');
 
-const operationCall = 0; // enums are treated as uint8
-const operationDelegateCall = 1;
+// const operationCall = 0; // enums are treated as uint8
+// const operationDelegateCall = 1;
 
 // let AMOR; // need for AMORxGuild
 let avatar;
@@ -14,14 +14,14 @@ let operator;
 let user;
 let tx;
 
-// for execTransactionFromModule
-let to; // call redirected to governor
-let value;
-let data;
+// // for execTransactionFromModule
+// let to; // call redirected to governor
+// let value;
+// let data;
 
-let targets;
-let values;
-let calldatas;
+// let targets;
+// let values;
+// let calldatas;
 
 describe('unit - Contract: Avatar', function () {
 
