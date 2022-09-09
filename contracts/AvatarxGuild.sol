@@ -134,7 +134,7 @@ contract AvatarxGuild is AccessControl, IAvatar {
     /// @param data Data payload of module transaction.
     /// @param operation Operation type of module transaction.
     function execTransactionFromModule(
-        address payable to,
+        address to,
         uint256 value,
         bytes calldata data,
         Enum.Operation operation
@@ -145,13 +145,13 @@ contract AvatarxGuild is AccessControl, IAvatar {
         }
         /// Enum resolves to 0 or 1
         /// 0: call; 1: delegatecall
-        if (operation == 1) (success, ) = to.delegatecall(data);
+        if (uint8(operation) == 1 ) (success, ) = to.delegatecall(data);
         else (success, ) = to.call{value: value}(data);
 
         if (success) {
             emit ExecutionFromModuleSuccess(msg.sender);
         } else {
-            emit ExecutionFromModuleFailure(msg.sender)
+            emit ExecutionFromModuleFailure(msg.sender);
         }
 
     }
@@ -173,7 +173,7 @@ contract AvatarxGuild is AccessControl, IAvatar {
         }
         /// Enum resolves to 0 or 1
         /// 0: call; 1: delegatecall
-        if (operation == 1) (success, ) = to.delegatecall(data);
+        if (uint8(operation) == 1 ) (success, ) = to.delegatecall(data);
         else (success, returnData) = to.call{value: value}(data);
 
         // success = execTransactionFromModule(to, value, data, operation);
@@ -196,10 +196,11 @@ contract AvatarxGuild is AccessControl, IAvatar {
         if (success) {
             emit ExecutionFromModuleSuccess(msg.sender);
         } else {
-            emit ExecutionFromModuleFailure(msg.sender)
+            emit ExecutionFromModuleFailure(msg.sender);
         }
     }
 
+    /*
     /// @notice This function executes the proposal voted on by the GOVERNOR
     /// @dev    Not to be confused with SNAPSHOT
     /// @param  to Destination address of module transaction.
@@ -220,7 +221,7 @@ contract AvatarxGuild is AccessControl, IAvatar {
         /// Emit events
         if (success) emit ExecutionFromGuardianSuccess(msg.sender);
         else emit ExecutionFromGuardianFailure(msg.sender);
-    }
+    }*/
 
     /// @dev Returns if an module is enabled
     /// @return True if the module is enabled
