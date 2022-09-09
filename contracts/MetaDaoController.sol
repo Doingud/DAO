@@ -197,7 +197,8 @@ contract MetaDaoController is Ownable {
         uint256 feesToBeDistributed = amorToken.balanceOf(address(this)) - donations[address(amorToken)];
 
         while (guilds[endOfList] != SENTINEL) {
-            uint256 amountToDistribute = (feesToBeDistributed * index.indexWeights[guilds[endOfList]]) / index.indexDenominator;
+            uint256 amountToDistribute = (feesToBeDistributed * index.indexWeights[guilds[endOfList]]) /
+                index.indexDenominator;
             if (amountToDistribute != 0) {
                 guildFunds[guilds[endOfList]][address(amorToken)] += amountToDistribute;
                 donations[address(amorToken)] += amountToDistribute;

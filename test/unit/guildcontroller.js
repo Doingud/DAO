@@ -4,8 +4,7 @@ const { ethers } = require('hardhat');
 const { ONE_HUNDRED_ETHER,
         TEST_TRANSFER,
         TAX_RATE,
-        BASIS_POINTS,
-        ONE_ADDRESS
+        BASIS_POINTS
       } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
