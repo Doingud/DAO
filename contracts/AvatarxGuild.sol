@@ -208,8 +208,12 @@ contract AvatarxGuild is AccessControl, IAvatar {
     /// @param  value Ether value of module transaction.
     /// @param  data Data payload of module transaction.
     /// @param  operation Operation type of module transaction.
-    function executeProposal(uint256 proposalId) public onlyRole(GUARDIAN_ROLE) returns (bool success) {
-        /*
+    function executeProposal(
+        address target,
+        uint256 value,
+        bytes memory proposal,
+        Enum.Operation operation
+    ) public onlyRole(GUARDIAN_ROLE) {
         /// Enum resolves to 0 or 1
         /// 0: call; 1: delegatecall
         if (operation == 1) (success, ) = to.delegatecall(data);

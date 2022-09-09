@@ -155,6 +155,7 @@ contract DoinGudGovernor is Module {
         return true;
     }
 
+
     function setUp(bytes memory initializeParams) public override {
 
     }
@@ -351,24 +352,9 @@ contract DoinGudGovernor is Module {
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas
-        //bytes memory eproposalId // not working
-        /* original
-        ,
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas
-        */
-        //address  targets,
-        //uint256   values,
-        //bytes  memory calldatas,
-        //uint256 proposalId
     ) external returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas);
         console.log("Governor execute is %s");
-        //uint256 proposalId = checkProposalId;
-        //if (checkProposalId != proposalId) {
-        //    revert InvalidParameters();
-        //}
 
         ProposalState status = state(proposalId);
         if (status != ProposalState.Succeeded) {
