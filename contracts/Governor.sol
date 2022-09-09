@@ -35,16 +35,13 @@ pragma solidity 0.8.15;
  */
 
 import "@gnosis.pm/zodiac/contracts/interfaces/IAvatar.sol";
-import "@gnosis.pm/zodiac/contracts/core/Module.sol";
-import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
+import "@gnosis.pm/safe-contracts/contracts/Enum.sol";
 
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "hardhat/console.sol";
-
-contract DoinGudGovernor is Module {
+contract DoinGudGovernor {
     using SafeCast for uint256;
 
     enum ProposalState {
@@ -124,7 +121,6 @@ contract DoinGudGovernor is Module {
         _name = name;
         // person who inflicted the creation of the contract is set as the only guardian of the system
         guardians.push(msg.sender);
-        _transferOwnership(msg.sender);
     }
 
     /// @notice Initializes the Governor contract
@@ -139,8 +135,7 @@ contract DoinGudGovernor is Module {
         if (_initialized) {
             revert AlreadyInitialized();
         }
-        setAvatar(avatarAddress_);
-        setTarget(avatarAddress_);
+
         AMORxGuild = IERC20(AMORxGuild_);
 
         snapshotAddress = snapshotAddress_;
@@ -153,10 +148,6 @@ contract DoinGudGovernor is Module {
 
         emit Initialized(_initialized, avatarAddress_, snapshotAddress_);
         return true;
-    }
-
-    function setUp(bytes memory initializeParams) public override {
-
     }
 
     /// @notice this modifier is needed to validate that amount of the Guardians is sufficient to vote and approve the “Many” decision
@@ -348,34 +339,33 @@ contract DoinGudGovernor is Module {
     /// @param values AMORxGuild values for proposal calls
     /// @param calldatas Calldatas for proposal calls*/
     function execute(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas
-        //bytes memory eproposalId // not working
+        bytes memory eproposalId // not working
         /* original
-        ,
+        uint256 proposalId,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas
         */
-        //address  targets,
-        //uint256   values,
-        //bytes  memory calldatas,
-        //uint256 proposalId
+/* this version also not working
+address  targets,
+uint256   values,
+bytes  memory calldatas,
+uint256 proposalId
+*/
     ) external returns (uint256) {
-        uint256 proposalId = hashProposal(targets, values, calldatas);
-        console.log("Governor execute is %s");
-        //uint256 proposalId = checkProposalId;
-        //if (checkProposalId != proposalId) {
-        //    revert InvalidParameters();
-        //}
+        uint256 checkProposalId =  uint256(keccak256(eproposalId));//hashProposal(targets, values, calldatas);
+console.log("Governor execute is %s");
+uint256 proposalId = checkProposalId;
+        if (checkProposalId != proposalId) {
+            revert InvalidParameters();
+        }
 
         ProposalState status = state(proposalId);
         if (status != ProposalState.Succeeded) {
             revert InvalidState();
         }
 
-        //IAvatar(avatarAddress).executeProposal(targets, values, calldatas, Enum.Operation.Call);
+        // IAvatar(avatarAddress).executeProposal(targets, values, calldatas, Enum.Operation.Call);
 
         emit ProposalExecuted(proposalId);
 

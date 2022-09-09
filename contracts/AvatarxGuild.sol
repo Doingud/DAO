@@ -37,16 +37,16 @@ pragma solidity 0.8.15;
  */
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@gnosis.pm/zodiac/contracts/interfaces/IAvatar.sol";
-import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
+import "@gnosis.pm/zodiac/interfaces/IAvatar.sol";
+import "@gnosis.pm/safe-contracts/common/Enum.sol";
 import "hardhat/console.sol";
 
 contract AvatarxGuild is AccessControl, IAvatar {
     /// Events
-    //event EnabledModule(address module);
-    //event DisabledModule(address module);
-    //event ExecutionFromModuleSuccess(address indexed module);
-    //event ExecutionFromModuleFailure(address indexed module);
+    event EnabledModule(address module);
+    event DisabledModule(address module);
+    event ExecutionFromModuleSuccess(address indexed module);
+    event ExecutionFromModuleFailure(address indexed module);
     event ExecutionFromGuardianSuccess(address guardianAddress);
     event ExecutionFromGuardianFailure(address guardianAddress);
     event Initialized(bool success, address owner, address guardianAddress);
@@ -134,7 +134,7 @@ contract AvatarxGuild is AccessControl, IAvatar {
     /// @param data Data payload of module transaction.
     /// @param operation Operation type of module transaction.
     function execTransactionFromModule(
-        address to,
+        address payable to,
         uint256 value,
         bytes calldata data,
         Enum.Operation operation
@@ -145,13 +145,13 @@ contract AvatarxGuild is AccessControl, IAvatar {
         }
         /// Enum resolves to 0 or 1
         /// 0: call; 1: delegatecall
-        if (uint8(operation) == 1 ) (success, ) = to.delegatecall(data);
+        if (operation == 1) (success, ) = to.delegatecall(data);
         else (success, ) = to.call{value: value}(data);
 
         if (success) {
             emit ExecutionFromModuleSuccess(msg.sender);
         } else {
-            emit ExecutionFromModuleFailure(msg.sender);
+            emit ExecutionFromModuleFailure(msg.sender)
         }
 
     }
@@ -173,7 +173,7 @@ contract AvatarxGuild is AccessControl, IAvatar {
         }
         /// Enum resolves to 0 or 1
         /// 0: call; 1: delegatecall
-        if (uint8(operation) == 1) (success, ) = to.delegatecall(data);
+        if (operation == 1) (success, ) = to.delegatecall(data);
         else (success, returnData) = to.call{value: value}(data);
 
         // success = execTransactionFromModule(to, value, data, operation);
@@ -196,19 +196,22 @@ contract AvatarxGuild is AccessControl, IAvatar {
         if (success) {
             emit ExecutionFromModuleSuccess(msg.sender);
         } else {
-            emit ExecutionFromModuleFailure(msg.sender);
+            emit ExecutionFromModuleFailure(msg.sender)
         }
     }
 
-    /*
     /// @notice This function executes the proposal voted on by the GOVERNOR
     /// @dev    Not to be confused with SNAPSHOT
     /// @param  to Destination address of module transaction.
     /// @param  value Ether value of module transaction.
     /// @param  data Data payload of module transaction.
     /// @param  operation Operation type of module transaction.
-    function executeProposal(uint256 proposalId) public onlyRole(GUARDIAN_ROLE) returns (bool success) {
-        /*
+    function executeProposal(
+        address target,
+        uint256 value,
+        bytes memory proposal,
+        Enum.Operation operation
+    ) public onlyRole(GUARDIAN_ROLE) {
         /// Enum resolves to 0 or 1
         /// 0: call; 1: delegatecall
         if (operation == 1) (success, ) = to.delegatecall(data);
@@ -217,7 +220,7 @@ contract AvatarxGuild is AccessControl, IAvatar {
         /// Emit events
         if (success) emit ExecutionFromGuardianSuccess(msg.sender);
         else emit ExecutionFromGuardianFailure(msg.sender);
-        }*/
+    }
 
     /// @dev Returns if an module is enabled
     /// @return True if the module is enabled

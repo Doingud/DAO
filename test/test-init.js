@@ -57,8 +57,8 @@ const getTokens = async (setup) => {
     //  AmorGuild Tokens
     const AmorGuildToken = await AmorGuildTokenFactory.deploy();
 
-    //const AvatarxGuildFactory = await ethers.getContractFactory('AvatarxGuild');//Mock');
-    //const AvatarxGuild = await AvatarxGuildFactory.deploy();
+    const AvatarxGuildFactory = await ethers.getContractFactory('AvatarxGuild');//Mock');
+    const AvatarxGuild = await AvatarxGuildFactory.deploy();
 
     const tokens = {
       ERC20Token,
@@ -67,8 +67,8 @@ const getTokens = async (setup) => {
       AmorTokenImplementation,
       AmorTokenProxy,
       AmorTokenMockUpgrade,
-      AmorGuildToken
-      //AvatarxGuild
+      AmorGuildToken,
+      AvatarxGuild
     };
 
     setup.tokens = tokens;
@@ -113,11 +113,6 @@ const controller = async (setup) => {
 const avatar = async (setup) => {
   const avatarFactory = await ethers.getContractFactory('AvatarxGuild');
   const avatar = await avatarFactory.deploy();
-  console.log("Test init: avat deployed");
-
-  const moduleFactory = await ethers.getContractFactory('ModuleMock');
-  const module = await moduleFactory.deploy(avatar.address, avatar.address);
-  console.log("Test init: mock module deployed");
 
   await avatar.init(
     setup.roles.root.address, // owner
@@ -146,9 +141,7 @@ const avatar = async (setup) => {
     tx
   }
 
-  setup.avatars = avatars
-
-  return avatars;
+  return avatar;
 };
 
 const governor = async (setup) => {
@@ -158,15 +151,15 @@ const governor = async (setup) => {
     "DoinGud Governor"
   );
 
-  //await setup.tokens.AvatarxGuild.init(    
-  //  setup.roles.authorizer_adaptor.address, // owner Address
-  //  governor.address // GUARDIAN_ROLE
-  //);
+  await setup.tokens.AvatarxGuild.init(    
+    setup.roles.authorizer_adaptor.address, // owner Address
+    governor.address // GUARDIAN_ROLE
+  );
 
   await governor.init(    
     setup.tokens.AmorGuildToken.address, //AMORxGuild
     setup.roles.authorizer_adaptor.address, // Snapshot Address
-    setup.avatars.avatar.address// Avatar Address
+    setup.tokens.AvatarxGuild.address // Avatar Address
   );
 
   return governor;

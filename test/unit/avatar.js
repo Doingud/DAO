@@ -29,7 +29,6 @@ describe('unit - Contract: Avatar', function () {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(signers);
         await init.getTokens(setup);
-        console.log("Setup: getTokens passed");
 
         // AMOR = setup.tokens.AmorTokenImplementation;
         AMORxGuild = setup.tokens.AmorGuildToken;
@@ -42,6 +41,7 @@ describe('unit - Contract: Avatar', function () {
         console.log("Setup: init.governor passed");
         // await init.controller(setup);
         // avatar =await init.avatar(setup);
+        governor = await init.governor(setup);
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;
@@ -114,7 +114,6 @@ describe('unit - Contract: Avatar', function () {
 
     context('» execTransactionFromModule testing', () => {
         it('it fails to execTransactionFromModule if NotWhitelisted', async function () {
-            /*
             to = governor.address; // Destination address of module transaction
             value = 0; // Ether value of module transaction
             // building hash has to come from system address
@@ -136,15 +135,13 @@ describe('unit - Contract: Avatar', function () {
             );
             calldatas = [messageHash];
 
-            //await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(to, value, data, operationCall,  targets, values, calldatas)).
-            //    to.be.revertedWith(
-            //        'NotWhitelisted()'
-            //);
-            */
+            await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(to, value, data, operationCall,  targets, values, calldatas)).
+                to.be.revertedWith(
+                    'NotWhitelisted()'
+            );
         });
 
         it('it emits fail in execTransactionFromModule', async function () {
-            /*
             expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
             await avatar.connect(authorizer_adaptor).enableModule(operator.address);
             expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
@@ -154,7 +151,6 @@ describe('unit - Contract: Avatar', function () {
                 withArgs(
                     operator.address, 
                 ).toString();
-            */
         });
 
         it('it emits success in execTransactionFromModule', async function () {
@@ -175,23 +171,19 @@ describe('unit - Contract: Avatar', function () {
                 withArgs(
                     operator.address, 
                 ).toString();
-                */
         });
 
     });
 
     context('» execTransactionFromModuleReturnData testing', () => {
         it('it fails to execTransactionFromModuleReturnData if NotWhitelisted', async function () {
-            /*
             await expect(avatar.connect(authorizer_adaptor).execTransactionFromModuleReturnData(to, value, data, operationCall)).
                 to.be.revertedWith(
                     'NotWhitelisted()'
             );
-            */
         });
 
         it('it emits fail in execTransactionFromModuleReturnData', async function () {
-            /*
             expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
 
             expect(await avatar.connect(operator).execTransactionFromModuleReturnData(to, value, data, operationCall)).
@@ -199,41 +191,34 @@ describe('unit - Contract: Avatar', function () {
                 withArgs(
                     operator.address, 
                 ).toString();
-                */
         });
 
         it('it emits success in execTransactionFromModuleReturnData', async function () {
-            /*
             to = governor.address;
             expect(await avatar.connect(operator).execTransactionFromModuleReturnData(to, value, data, operationDelegateCall)).
                 to.emit(avatar, "ExecutionFromModuleSuccess").
                 withArgs(
                     operator.address, 
                 ).toString();
-                */
         });
 
     });
 
     context('» getModulesPaginated testing', () => {
         it('it emits fail in getModulesPaginated', async function () {
-            /*
             expect(await avatar.connect(operator).getModulesPaginated(to, value)).
                 to.emit(avatar, "ExecutionFromModuleFailure").
                 withArgs(
                     operator.address, 
                 ).toString();
-                */
         });
 
         it('it emits success in getModulesPaginated', async function () {
-            /*
             expect(await avatar.connect(operator).getModulesPaginated(to, value)).
                 to.emit(avatar, "ExecutionFromModuleSuccess").
                 withArgs(
                     operator.address, 
                 ).toString();
-                */
         });
     });
 });

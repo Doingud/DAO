@@ -1,33 +1,12 @@
 // // SPDX-License-Identifier: LGPL-3.0-only
 
-pragma solidity 0.8.15;
-
-import "@gnosis.pm/zodiac/contracts/core/Module.sol";
-import "@gnosis.pm/zodiac/contracts/interfaces/IAvatar.sol";
-import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
-
-contract ModuleMock is Module {
-
-    constructor(address avatar, address target) {
-        target = target;
-        avatar = avatar;
-        setUp("0x");
-        _transferOwnership(avatar);
-    }
-
-    function setUp(bytes memory initializeParams) public override {
-
-    }
-
-    /// This function recreates the reality module's action once a vote has passed
-    function executeAfterSuccesfulVote(address[] memory targets, uint256[] memory values, bytes[] calldata data, Enum.Operation operation) external {
-        IAvatar(avatar).execTransactionFromModule(avatar, values[0], data[0], operation);
-    }
-}
-
 // /// @title Module Interface - A contract that can pass messages to a Module Manager contract if enabled by that contract.
 // pragma solidity >=0.7.0 <0.9.0;
 
+// import "@openzeppelin/contracts/access/Ownable.sol";
+// import "./utils/interfaces/IAvatar.sol";
+// // import "../guard/Guardable.sol";
+// import "@openzeppelin/contracts/access/AccessControl.sol";
 
 // abstract contract Module is Ownable{//}, AccessControl {//Guardable {
 // event ChangedGuard(address guard);
