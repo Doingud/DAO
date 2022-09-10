@@ -113,17 +113,14 @@ const controller = async (setup) => {
 const avatar = async (setup) => {
   const avatarFactory = await ethers.getContractFactory('AvatarxGuild');
   const avatar = await avatarFactory.deploy();
-  console.log("Test init: avat deployed");
 
   const moduleFactory = await ethers.getContractFactory('ModuleMock');
   const module = await moduleFactory.deploy(avatar.address, avatar.address);
-  console.log("Test init: mock module deployed");
 
   await avatar.init(
     setup.roles.root.address, // owner
     setup.roles.authorizer_adaptor.address // guardian Address
   );
-  console.log("Test init: avatar.init called");
 
   const tx = {
     to: avatar.address,
@@ -138,7 +135,6 @@ const avatar = async (setup) => {
     refundReceiver: ZERO_ADDRESS,
     signatures: "0x",
   };
-  console.log("Test init: tx is setted %s", tx);
 
   const avatars = {
     avatar,

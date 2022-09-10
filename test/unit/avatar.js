@@ -1,28 +1,14 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { ZERO_ADDRESS, ONE_ADDRESS } = require("../helpers/constants.js");
+const { ZERO_ADDRESS, ONE_ADDRESS, TWO_ADDRESS } = require("../helpers/constants.js");
 const init = require('../test-init.js');
 
-const operationCall = 0; // enums are treated as uint8
-const operationDelegateCall = 1;
-
-// let AMOR; // need for AMORxGuild
 let avatar;
 let governor;
 let authorizer_adaptor;
 let operator;
 let user;
-let tx;
 let mockModule;
-
-// for execTransactionFromModule
-let to; // call redirected to governor
-let value;
-let data;
-
-let targets;
-let values;
-let calldatas;
 
 let iface;
 let encoded;
@@ -33,21 +19,12 @@ describe('unit - Contract: Avatar', function () {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(signers);
         await init.getTokens(setup);
-        console.log("Setup: getTokens passed");
-
-        // AMOR = setup.tokens.AmorTokenImplementation;
         AMORxGuild = setup.tokens.AmorGuildToken;
         await init.avatar(setup);
-        console.log("Setup: init.avatar passed")
         avatar = setup.avatars.avatar;
         mockModule = setup.avatars.module;
-        tx = setup.avatars.tx;
         await init.governor(setup);
         governor = await init.governor(setup);
-        console.log("Setup: init.governor passed");
-        // await init.controller(setup);
-        // avatar =await init.avatar(setup);
-        //governor = await init.governor(setup);
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;
@@ -62,8 +39,6 @@ describe('unit - Contract: Avatar', function () {
 
     context('» init testing', () => {
         it('initialized variables check', async function () {
-            // expect(await avatar.DEFAULT_ADMIN_ROLE()).to.equals(authorizer_adaptor.address);
-            // expect(await avatar.GUARDIAN_ROLE()).to.equals(avatar.address);
             expect(await avatar.isModuleEnabled(ONE_ADDRESS)).to.equals(false);
         });
 
@@ -93,7 +68,6 @@ describe('unit - Contract: Avatar', function () {
                 'InvalidParameters()'
             );
         });
-
     });
 
     context('» disableModule testing', () => {
@@ -115,42 +89,16 @@ describe('unit - Contract: Avatar', function () {
                 'InvalidParameters()'
             );
         });
-
     });
 
     context('» execTransactionFromModule testing', () => {
         it('it fails to execTransactionFromModule if NotWhitelisted', async function () {
             expect(await avatar.isModuleEnabled(root.address)).to.be.false;
-            // await expect(avatar.execTransactionFromModule(avatar.address, 0, "0x", 1)).to.be.revertedWith("NotWhitelisted");
-            /*
-            to = governor.address; // Destination address of module transaction
-            value = 0; // Ether value of module transaction
-            // building hash has to come from system address
-            // 32 bytes of data
-            let messageHash = ethers.utils.solidityKeccak256(
-                ["address"],
-                [to]
-            );
-            data = messageHash;
 
-
-            targets = [authorizer_adaptor.address];
-            values = [20];
-            // building hash has to come from system address
-            // 32 bytes of data
-            messageHash = ethers.utils.solidityKeccak256(
-                ["address"],
-                [authorizer_adaptor.address]
-            );
-            calldatas = [messageHash];
-*/
             iface = new ethers.utils.Interface([
                 "function testInteraction(uint256 value)"
             ]);
-
             encoded = iface.encodeFunctionData("testInteraction", ["1"]);
-            console.log(encoded);
-            console.log(mockModule.address);
 
             await expect(avatar.connect(root).execTransactionFromModule(mockModule.address, 0, encoded, 0))
                 .to.be.revertedWith(
@@ -169,50 +117,12 @@ describe('unit - Contract: Avatar', function () {
         });
 
         it('it emits success in execTransactionFromModule', async function () {
-            // await avatar.connect(authorizer_adaptor).enableModule(root.address);
             expect(await avatar.isModuleEnabled(root.address)).to.be.true;
-            console.log("Module Enabled");
-            //await expect(avatar.execTransactionFromModule(avatar.address, 0, "0x", 1)).to.emit(avatar.address, "ExecutionFromModuleFailure");
-            // let iface = new ethers.utils.Interface([
-            //     "function testInteraction(uint256 value)"
-            // ]);
-
-            // let encoded = iface.encodeFunctionData("testInteraction", ["1"]);
-            // console.log(encoded);
-            // console.log(mockModule.address);
 
             await expect(avatar.connect(root).execTransactionFromModule(mockModule.address, 0, encoded, 0))
                 .to
                 .emit(avatar, "ExecutionFromModuleSuccess").withArgs(root.address);
             expect(await mockModule.testValues()).to.equal(1);
-            
-            
-            
-            
-            
-            
-            
-            // await avatar.enableModule(operator.address);
-            // expect(await avatar.isModuleEnabled(root.address)).to.be.true;
-            // expect(await avatar.execTransactionFromModule(tx.to, tx.value, tx.data, tx.operation))
-            //     .to
-            //     .emit(avatar.address, "ExecutionFromModuleSuccess");
-            /*
-            await expect(
-                avatar.execTransactionFromModule(
-                tx.to,
-                tx.value,
-                tx.data,
-                tx.operation
-                )
-            // operationCall and operationDelegateCall both are not working
-            // expect(await avatar.connect(operator).execTransactionFromModule(to, value, data, operationCall,  targets, values, calldatas)).//operationCall)).
-            expect(await avatar.connect(operator).execTransactionFromModule(to, value, data, operationDelegateCall,  targets, values, calldatas)).//operationCall)).
-                to.emit(avatar, "ExecutionFromModuleSuccess").
-                withArgs(
-                    operator.address, 
-                ).toString();
-                */
         });
     });
 
@@ -232,21 +142,6 @@ describe('unit - Contract: Avatar', function () {
             let encodedFail = "0x";
             expect(await avatar.connect(root).execTransactionFromModuleReturnData(mockModule.address, 0, encodedFail, 0))
                 .to.emit(avatar, "ExecutionFromModuleFailure").withArgs(root.address);
-
-            //await expect(avatar.execTransactionFromModule(avatar.address, 0, "0x", 1)).to.emit(avatar.address, "ExecutionFromModuleFailure");
-            // let iface = new ethers.utils.Interface([
-            //     "function testInteraction(uint256 value)"
-            // ]);
-
-            // let encoded = iface.encodeFunctionData("testInteraction", ["1"]);
-            // console.log(encoded);
-            // console.log(mockModule.address);
-
-            // await expect(avatar.connect(root).execTransactionFromModule(mockModule.address, 0, encoded, 0))
-            //     .to
-            //     .emit(avatar, "ExecutionFromModuleSuccess").withArgs(root.address);
-            // expect(await mockModule.testValues()).to.equal(1);
-
         });
 
         it('it emits success in execTransactionFromModuleReturnData', async function () {
@@ -254,28 +149,15 @@ describe('unit - Contract: Avatar', function () {
             expect(await avatar.connect(root).execTransactionFromModuleReturnData(mockModule.address, 0, encoded, 0))
                 .to.emit(avatar, "ExecutionFromModuleSuccess").withArgs(root.address);
         });
-
     });
 
     context('» getModulesPaginated testing', () => {
-        it('it emits fail in getModulesPaginated', async function () {
-            /*
-            expect(await avatar.connect(operator).getModulesPaginated(to, value)).
-                to.emit(avatar, "ExecutionFromModuleFailure").
-                withArgs(
-                    operator.address, 
-                ).toString();
-                */
-        });
-
-        it('it emits success in getModulesPaginated', async function () {
-            /*
-            expect(await avatar.connect(operator).getModulesPaginated(to, value)).
-                to.emit(avatar, "ExecutionFromModuleSuccess").
-                withArgs(
-                    operator.address, 
-                ).toString();
-                */
+        it("returns array of enabled modules", async () => {
+            let transaction = await avatar.enableModule(user2.address);
+            let array, next;
+            [array, next] = await avatar.getModulesPaginated(user2.address, 1);
+            await expect(array.toString()).to.be.equals([root.address].toString());
+            await expect(next).to.be.equals(TWO_ADDRESS);
         });
     });
 });

@@ -35,13 +35,12 @@ pragma solidity 0.8.15;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *
  */
-
+import "./Executor.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@gnosis.pm/zodiac/contracts/interfaces/IAvatar.sol";
 import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
-import "hardhat/console.sol";
 
-contract AvatarxGuild is AccessControl, IAvatar {
+contract AvatarxGuild is Executor, AccessControl, IAvatar {
     /// Events
     /// These events are already declared in IAvatar.sol
     //event EnabledModule(address module);
@@ -119,15 +118,6 @@ contract AvatarxGuild is AccessControl, IAvatar {
         emit DisabledModule(module);
     }
 
-    /*function TESTER(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas
-    ) public {
-        // TODO: call execTransactionFromModule()
-    }
-    */
-
     /// @notice Allows to execute functions from the module(it will send the passed proposals from the snapshot to the Governor)
     /// @dev Allows a Module to execute a Safe transaction without any further confirmations.
     /// @param to Destination address of module transaction.
@@ -181,7 +171,7 @@ contract AvatarxGuild is AccessControl, IAvatar {
 
         // success = execTransactionFromModule(to, value, data, operation);
         // solhint-disable-next-line no-inline-assembly
-        /*assembly {
+        assembly {
             // Load free memory location
             let ptr := mload(0x40)
             // We allocate memory for the return data by setting the free memory location to
@@ -193,7 +183,7 @@ contract AvatarxGuild is AccessControl, IAvatar {
             returndatacopy(add(ptr, 0x20), 0, returndatasize())
             // Point the return data to the correct memory location
             returnData := ptr
-        } */
+        }
 
         /// Emit events
         if (success) {
@@ -203,12 +193,11 @@ contract AvatarxGuild is AccessControl, IAvatar {
         }
     }
 
-    /*
     /// @notice This function executes the proposal voted on by the GOVERNOR
     /// @dev    Not to be confused with SNAPSHOT
-    /// @param  to Destination address of module transaction.
+    /// @param  target Destination address of module transaction.
     /// @param  value Ether value of module transaction.
-    /// @param  data Data payload of module transaction.
+    /// @param  proposal Data payload of module transaction.
     /// @param  operation Operation type of module transaction.
     function executeProposal(
         address target,
@@ -216,15 +205,10 @@ contract AvatarxGuild is AccessControl, IAvatar {
         bytes memory proposal,
         Enum.Operation operation
     ) public onlyRole(GUARDIAN_ROLE) {
-        /// Enum resolves to 0 or 1
-        /// 0: call; 1: delegatecall
-        if (operation == 1) (success, ) = to.delegatecall(data);
-        else (success, ) = to.call{value: value}(data);
-
-        /// Emit events
+        bool success = execute(target, value, proposal, operation, gasleft());
         if (success) emit ExecutionFromGuardianSuccess(msg.sender);
         else emit ExecutionFromGuardianFailure(msg.sender);
-        }*/
+    }
 
     /// @dev Returns if an module is enabled
     /// @return True if the module is enabled
