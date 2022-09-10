@@ -365,8 +365,20 @@ contract DoinGudGovernor is Module {
         if (status != ProposalState.Succeeded) {
             revert InvalidState();
         }
+// v1
+        // IAvatarxGuild(avatarAddress).executeProposal(targets[0], values[0], calldatas[0], Enum.Operation.Call);
 
-        IAvatarxGuild(avatarAddress).executeProposal(targets[0], values[0], calldatas[0], Enum.Operation.Call);
+        // _execute(targets, values, calldatas);
+
+// v2
+        string memory errorMessage = "Governor: call reverted without message";
+        for (uint256 i = 0; i < targets.length; ++i) {
+            (bool success, bytes memory returndata) = targets[i].call{value: values[i]}(calldatas[i]);
+            AddressUpgradeable.verifyCallResult(success, returndata, errorMessage);
+        }
+// v3
+        // (bool success, ) = targets[0].call{value: values[0]}(calldatas[0]);
+        // require(success, "TimelockController: underlying transaction reverted");
 
         emit ProposalExecuted(proposalId);
 
@@ -376,6 +388,21 @@ contract DoinGudGovernor is Module {
         delete proposalWeight[proposalId];
 
         return proposalId;
+    }
+
+    /**
+     * @dev Internal execution mechanism. Can be overriden to implement different execution mechanism
+     */
+    function _execute(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas
+    ) internal virtual {
+        string memory errorMessage = "Governor: call reverted without message";
+        for (uint256 i = 0; i < targets.length; ++i) {
+            (bool success, bytes memory returndata) = targets[i].call{value: values[i]}(calldatas[i]);
+            AddressUpgradeable.verifyCallResult(success, returndata, errorMessage);
+        }
     }
 
     /// @notice function allows anyone to check state of the proposal

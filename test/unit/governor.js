@@ -142,6 +142,13 @@ describe('unit - Contract: Governor', function () {
             );
             calldatas = [messageHash];
 
+            calldatas = [AMORxGuild.interface.encodeFunctionData('transfer', [authorizer_adaptor.address, 0])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+
+            // iface = new ethers.utils.Interface([
+            //     "function testInteraction(uint256 value)"
+            // ]);
+            // calldatas = iface.encodeFunctionData("testInteraction", ["1"]);
+
             await expect(governor.connect(user).propose(targets, values, calldatas)).to.be.revertedWith(
                 'Unauthorized()'
             );
@@ -203,6 +210,7 @@ describe('unit - Contract: Governor', function () {
                 messageHash, messageHash, messageHash,
                 messageHash, messageHash
             ];
+
             await expect(governor.connect(authorizer_adaptor).propose(tooManyTargets, tooManyValues, tooManyCalldatas)).to.be.revertedWith(
                 'InvalidParameters()'
             );
@@ -257,6 +265,14 @@ describe('unit - Contract: Governor', function () {
             // mine 64000 blocks
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(twoWeeks);
+
+            // const descriptionHash = ethers.utils.id("Proposal #1: Give grant to team");
+            // await governor.queue(
+            // [tokenAddress],
+            // [0],
+            // [transferCalldata],
+            // descriptionHash,
+            // );
 
             // expect(await avatar.check()).to.equals(0);
             await governor.connect(authorizer_adaptor).execute(firstProposalId, targets, values, calldatas);
