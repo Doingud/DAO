@@ -33,8 +33,9 @@ pragma solidity 0.8.15;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *
  */
+import "./utils/interfaces/IAvatarxGuild.sol";
 
-import "@gnosis.pm/zodiac/contracts/interfaces/IAvatar.sol";
+// import "@gnosis.pm/zodiac/contracts/interfaces/IAvatar.sol";
 import "@gnosis.pm/zodiac/contracts/core/Module.sol";
 import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
@@ -345,23 +346,27 @@ contract DoinGudGovernor is Module {
     }
 
     /// @notice function allows anyone to execute specific proposal, based on the vote.
-    /*/// @param targets Target addresses for proposal calls
+    /// @param targets Target addresses for proposal calls
     /// @param values AMORxGuild values for proposal calls
-    /// @param calldatas Calldatas for proposal calls*/
+    /// @param calldatas Calldatas for proposal calls
     function execute(
+        uint256 proposalId,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas
     ) external returns (uint256) {
-        uint256 proposalId = hashProposal(targets, values, calldatas);
-        console.log("Governor execute is %s");
+        uint256 checkProposalId = hashProposal(targets, values, calldatas);
+
+        if (checkProposalId != proposalId) {
+            revert InvalidParameters();
+        }
 
         ProposalState status = state(proposalId);
         if (status != ProposalState.Succeeded) {
             revert InvalidState();
         }
 
-        //IAvatar(avatarAddress).executeProposal(targets, values, calldatas, Enum.Operation.Call);
+        IAvatarxGuild(avatarAddress).executeProposal(targets[0], values[0], calldatas[0], Enum.Operation.Call);
 
         emit ProposalExecuted(proposalId);
 

@@ -37,10 +37,11 @@ pragma solidity 0.8.15;
  */
 import "./Executor.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@gnosis.pm/zodiac/contracts/interfaces/IAvatar.sol";
+// import "@gnosis.pm/zodiac/contracts/interfaces/IAvatar.sol";\
+import "./utils/interfaces/IAvatarxGuild.sol";
 import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
-contract AvatarxGuild is Executor, AccessControl, IAvatar {
+contract AvatarxGuild is Executor, AccessControl, IAvatarxGuild {
     /// Events
     /// These events are already declared in IAvatar.sol
     //event EnabledModule(address module);
