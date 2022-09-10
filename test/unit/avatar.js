@@ -160,4 +160,26 @@ describe('unit - Contract: Avatar', function () {
             await expect(next).to.be.equals(TWO_ADDRESS);
         });
     });
+
+    context('» executeProposal testing', () => {
+        it('it emits fail in executeProposal if not guardian', async function () {
+            await expect(avatar.connect(root).executeProposal(mockModule.address, 0, encoded, 0))
+                .to.be.revertedWith(
+                    "AccessControl: account 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 is missing role 0x8b5b16d04624687fcf0d0228f19993c9157c1ed07b41d8d430fd9100eb099fe8"
+                );
+        });
+
+        it('it emits fail in executeProposal', async function () {
+            let encodedFail = "0x";
+            await expect(avatar.connect(authorizer_adaptor).executeProposal(mockModule.address, 0, encodedFail, 0))
+                .to
+                .emit(avatar, "ExecutionFromGuardianFailure").withArgs(authorizer_adaptor.address);
+        });
+
+        it('it emits success in executeProposal', async function () {
+            await expect(avatar.connect(authorizer_adaptor).executeProposal(mockModule.address, 0, encoded, 0))
+                .to
+                .emit(avatar, "ExecutionFromGuardianSuccess").withArgs(authorizer_adaptor.address);
+        });
+    });
 });
