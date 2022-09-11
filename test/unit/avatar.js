@@ -175,7 +175,7 @@ describe('unit - Contract: Avatar', function () {
 
     context('» getModulesPaginated testing', () => {
         it("returns array of enabled modules", async () => {
-            let transaction = await avatar.enableModule(user2.address);
+            await avatar.enableModule(user2.address);
             let array, next;
             [array, next] = await avatar.getModulesPaginated(user2.address, 1);
             await expect(array.toString()).to.be.equals([root.address].toString());

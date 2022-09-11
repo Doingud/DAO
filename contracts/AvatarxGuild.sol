@@ -138,16 +138,14 @@ contract AvatarxGuild is Executor, AccessControl, IAvatarxGuild {
         emit ExecutionFromModuleSuccess(msg.sender);
         /// Enum resolves to 0 or 1
         /// 0: call; 1: delegatecall
-        if (uint8(operation) == 1 ) (success, ) = to.delegatecall(data);
+        if (uint8(operation) == 1) (success, ) = to.delegatecall(data);
         else (success, ) = to.call{value: value}(data);
-
 
         if (success) {
             emit ExecutionFromModuleSuccess(msg.sender);
         } else {
             emit ExecutionFromModuleFailure(msg.sender);
         }
-
     }
 
     /// @dev Allows a Module to execute a Safe transaction without any further confirmations and return data

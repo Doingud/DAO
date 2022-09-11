@@ -73,5 +73,6 @@ interface IAvatarxGuild {
         address target,
         uint256 value,
         bytes memory proposal,
-        Enum.Operation operation) external;
+        Enum.Operation operation
+    ) external;
 }

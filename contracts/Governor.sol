@@ -34,16 +34,12 @@ pragma solidity 0.8.15;
  *
  */
 import "./utils/interfaces/IAvatarxGuild.sol";
-
-// import "@gnosis.pm/zodiac/contracts/interfaces/IAvatar.sol";
 import "@gnosis.pm/zodiac/contracts/core/Module.sol";
 import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import "hardhat/console.sol";
 
 contract DoinGudGovernor is Module {
     using SafeCast for uint256;
@@ -158,10 +154,7 @@ contract DoinGudGovernor is Module {
         return true;
     }
 
-
-    function setUp(bytes memory initializeParams) public override {
-
-    }
+    function setUp(bytes memory initializeParams) public override {}
 
     /// @notice this modifier is needed to validate that amount of the Guardians is sufficient to vote and approve the “Many” decision
     modifier GuardianLimitReached() {
@@ -356,7 +349,6 @@ contract DoinGudGovernor is Module {
         uint256[] memory values,
         bytes[] memory calldatas
     ) external returns (uint256) {
-        console.log("Governor execute() was called");
         uint256 proposalId = hashProposal(targets, values, calldatas);
 
         ProposalState status = state(proposalId);
@@ -380,7 +372,6 @@ contract DoinGudGovernor is Module {
 
         return proposalId;
     }
-
 
     function testInteraction(uint256 value) external returns (bool) {
         testValues = value;
