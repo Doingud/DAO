@@ -119,10 +119,24 @@ describe('unit - Contract: Avatar', function () {
         it('it emits success in execTransactionFromModule', async function () {
             expect(await avatar.isModuleEnabled(root.address)).to.be.true;
 
+            // call test
             await expect(avatar.connect(root).execTransactionFromModule(mockModule.address, 0, encoded, 0))
                 .to
                 .emit(avatar, "ExecutionFromModuleSuccess").withArgs(root.address);
             expect(await mockModule.testValues()).to.equal(1);
+
+            targets = [authorizer_adaptor.address];
+            values = [20];
+            calldatas = [AMORxGuild.interface.encodeFunctionData('transfer', [authorizer_adaptor.address, 0])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+            iface = new ethers.utils.Interface([
+                "function execute(address[] memory targets, uint256[] memory values, bytes[] memory calldatas)"
+            ]);
+            encoded = iface.encodeFunctionData("execute", [targets, values, calldatas]);
+
+            // governor test
+            await expect(avatar.connect(root).execTransactionFromModule(governor.address, 0, encoded, 0))
+                .to
+                .emit(avatar, "ExecutionFromModuleSuccess").withArgs(root.address);
         });
     });
 
@@ -177,6 +191,11 @@ describe('unit - Contract: Avatar', function () {
         });
 
         it('it emits success in executeProposal', async function () {
+            iface = new ethers.utils.Interface([
+                "function testInteraction(uint256 value)"
+            ]);
+            encoded = iface.encodeFunctionData("testInteraction", ["1"]);
+
             await expect(avatar.connect(authorizer_adaptor).executeProposal(mockModule.address, 0, encoded, 0))
                 .to
                 .emit(avatar, "ExecutionFromGuardianSuccess").withArgs(authorizer_adaptor.address);
