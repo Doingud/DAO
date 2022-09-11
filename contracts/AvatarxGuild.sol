@@ -36,12 +36,10 @@ pragma solidity 0.8.15;
  *
  */
 import "./Executor.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-// import "@gnosis.pm/zodiac/contracts/interfaces/IAvatar.sol";\
 import "./utils/interfaces/IAvatarxGuild.sol";
 import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
-contract AvatarxGuild is Executor, AccessControl, IAvatarxGuild {
+contract AvatarxGuild is Executor, IAvatarxGuild {
     /// Events
     /// These events are already declared in IAvatar.sol
     //event EnabledModule(address module);
@@ -54,8 +52,8 @@ contract AvatarxGuild is Executor, AccessControl, IAvatarxGuild {
     event GuardianAdded(address guardian);
     event GuardianRemoved(address guardian);
 
-    /// Roles
-    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN");
+    address public admin;
+    mapping(address => uint256) public guardians;
 
     address internal constant SENTINEL_MODULES = address(0x1);
     bool private _initialized;
@@ -70,13 +68,30 @@ contract AvatarxGuild is Executor, AccessControl, IAvatarxGuild {
     error NotEnabled();
     error NotDisabled();
     error InvalidParameters();
+    error Unauthorized();
+
+    modifier onlyGuardian() {
+        if (guardians[msg.sender] == 0) {
+            revert Unauthorized();
+        }
+        _;
+    }
+
+    modifier onlyAdmin() {
+        if (msg.sender != admin) {
+            revert Unauthorized();
+        }
+        _;
+    }
 
     function init(address initOwner, address guardianAddress_) external returns (bool) {
         if (_initialized) {
             revert AlreadyInitialized();
         }
-        _setupRole(DEFAULT_ADMIN_ROLE, initOwner);
-        _setupRole(GUARDIAN_ROLE, guardianAddress_);
+        // _setupRole(DEFAULT_ADMIN_ROLE, initOwner);
+        // _setupRole(GUARDIAN_ROLE, guardianAddress_);
+        guardians[guardianAddress_] = 1;
+        admin = initOwner;
         modules[SENTINEL_MODULES] = address(0x2);
         _initialized = true;
         emit Initialized(_initialized, initOwner, guardianAddress_);
@@ -203,7 +218,7 @@ contract AvatarxGuild is Executor, AccessControl, IAvatarxGuild {
         uint256 value,
         bytes memory proposal,
         Enum.Operation operation
-    ) public onlyRole(GUARDIAN_ROLE) {
+    ) public onlyGuardian {
         bool success = execute(target, value, proposal, operation, gasleft());
         if (success) emit ExecutionFromGuardianSuccess(msg.sender);
         else emit ExecutionFromGuardianFailure(msg.sender);
@@ -248,16 +263,23 @@ contract AvatarxGuild is Executor, AccessControl, IAvatarxGuild {
     /// @notice adds guild based on the controller address provided
     /// @dev give guardian role in access control to the guardian address
     /// @param guardian the controller address of the guild
-    function addGuardian(address guardian) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setupRole(GUARDIAN_ROLE, guardian);
+    function addGuardian(address guardian) external onlyAdmin {
+        // check that guardian won't be added twice
+        if (guardians[guardian] != 0) {
+            revert InvalidParameters();
+        }
+        guardians[guardian] = 1;
         emit GuardianAdded(guardian);
     }
 
     /// @notice adds guild based on the controller address provided
     /// @dev give guardian role in access control to the guardian address
     /// @param guardian the controller address of the guild
-    function removeGuardian(address guardian) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        revokeRole(GUARDIAN_ROLE, guardian);
+    function removeGuardian(address guardian) external onlyAdmin {
+        if (guardians[guardian] == 0) {
+            revert InvalidParameters();
+        }
+        guardians[guardian] = 0;
         emit GuardianRemoved(guardian);
     }
 }

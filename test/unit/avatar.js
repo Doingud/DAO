@@ -187,7 +187,7 @@ describe('unit - Contract: Avatar', function () {
         it('it emits fail in executeProposal if not guardian', async function () {
             await expect(avatar.connect(root).executeProposal(mockModule.address, 0, encoded, 0))
                 .to.be.revertedWith(
-                    "AccessControl: account 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 is missing role 0x8b5b16d04624687fcf0d0228f19993c9157c1ed07b41d8d430fd9100eb099fe8"
+                    "Unauthorized()"
                 );
         });
 
