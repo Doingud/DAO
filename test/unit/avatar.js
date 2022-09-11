@@ -159,9 +159,17 @@ describe('unit - Contract: Avatar', function () {
         });
 
         it('it emits success in execTransactionFromModuleReturnData', async function () {
+            iface = new ethers.utils.Interface([
+                "function testInteraction(uint256 value)"
+            ]);
+            encoded = iface.encodeFunctionData("testInteraction", ["2"]);
+            expect(await mockModule.testValues()).to.equal(1);
+
             expect(await avatar.isModuleEnabled(root.address)).to.equals(true);
             expect(await avatar.connect(root).execTransactionFromModuleReturnData(mockModule.address, 0, encoded, 0))
                 .to.emit(avatar, "ExecutionFromModuleSuccess").withArgs(root.address);
+
+            expect(await mockModule.testValues()).to.equal(2);
         });
     });
 
