@@ -47,6 +47,7 @@ import "hardhat/console.sol";
 
 contract DoinGudGovernor is Module {
     using SafeCast for uint256;
+    uint256 public testValues;
 
     enum ProposalState {
         Pending,
@@ -362,11 +363,9 @@ contract DoinGudGovernor is Module {
         if (status != ProposalState.Succeeded) {
             revert InvalidState();
         }
-// v1
-        // IAvatarxGuild(avatarAddress).executeProposal(targets[0], values[0], calldatas[0], Enum.Operation.Call);
-// v2
+
         for (uint256 i = 0; i < targets.length; ++i) {
-            (bool success, bytes memory returndata) = targets[i].call{value: values[i]}(calldatas[i]);
+            (bool success, ) = targets[i].call{value: values[i]}(calldatas[i]);
             if (!success) {
                 revert UnderlyingTransactionReverted();
             }
@@ -380,6 +379,12 @@ contract DoinGudGovernor is Module {
         delete proposalWeight[proposalId];
 
         return proposalId;
+    }
+
+
+    function testInteraction(uint256 value) external returns (bool) {
+        testValues = value;
+        return true;
     }
 
     /// @notice function allows anyone to check state of the proposal
