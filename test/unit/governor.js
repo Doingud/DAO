@@ -29,7 +29,7 @@ describe('unit - Contract: Governor', function () {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(signers);
         await init.getTokens(setup);
-
+        await init.metadaoMock(setup);
         // AMOR = setup.tokens.AmorTokenImplementation;
         AMORxGuild = setup.tokens.AmorGuildToken;
         await init.controller(setup);

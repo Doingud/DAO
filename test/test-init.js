@@ -75,14 +75,31 @@ const getTokens = async (setup) => {
     return tokens;
 };
 
+const metadaoMock = async (setup) =>{
+  const MetaDaoFactory = await ethers.getContractFactory('MetaDaoControllerMock');
+  const metadao = await MetaDaoFactory.deploy(
+    setup.tokens.AmorTokenImplementation.address,
+    setup.tokens.ERC20Token.address,
+    setup.roles.root.address, //guildFactory.address,
+    setup.roles.root.address
+  );
+
+  setup.metadao = metadao;
+
+  return metadao;
+}
+
 const controller = async (setup) => {
   const controllerFactory = await ethers.getContractFactory('GuildController');
   const controller = await controllerFactory.deploy();
 
   await controller.init(
     setup.roles.root.address, // owner
+    setup.tokens.AmorTokenImplementation.address,
     setup.tokens.AmorGuildToken.address, // AMORxGuild
-    setup.tokens.FXAMORxGuild.address // FXAMORxGuild
+    setup.tokens.FXAMORxGuild.address, // FXAMORxGuild
+    setup.metadao.address, // MetaDaoController
+    setup.roles.root.address // the multisig address of the MetaDAO, which owns the token
   );
 
   await setup.tokens.AmorTokenImplementation.init(
@@ -90,7 +107,7 @@ const controller = async (setup) => {
     AMOR_TOKEN_SYMBOL, 
     setup.roles.authorizer_adaptor.address, //taxController
     TAX_RATE,
-    setup.roles.root.address // multisig
+    setup.roles.root.address // the multisig address of the MetaDAO, which owns the token
   );
 
   await setup.tokens.AmorGuildToken.init(
@@ -133,7 +150,7 @@ const governor = async (setup) => {
 
 const getGuildFactory = async (setup) => {
   const cloneFactory = await ethers.getContractFactory("GuildFactory");
-
+  
   await setup.tokens.AmorTokenImplementation.init(
     AMOR_TOKEN_NAME, 
     AMOR_TOKEN_SYMBOL, 
@@ -151,7 +168,9 @@ const getGuildFactory = async (setup) => {
     setup.tokens.FXAMORxGuild.address,
     setup.tokens.dAMORxGuild.address,
     setup.tokens.AmorTokenProxy.address,
-    controller.address
+    controller.address,
+    setup.roles.authorizer_adaptor.address, // metaDaoController
+    setup.roles.root.address // multisig
   );
 
   const factory = {
@@ -197,5 +216,6 @@ module.exports = {
   vestingContract,
   getGuildFactory,
   governor,
-  metadao
+  metadao,
+  metadaoMock
 }; 
