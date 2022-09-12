@@ -356,7 +356,7 @@ contract DoinGudGovernor is Module {
         }
 
         for (uint256 i = 0; i < targets.length; ++i) {
-            (bool success, ) = targets[i].call{value: values[i]}(calldatas[i]);
+            bool success = IAvatarxGuild(avatarAddress).executeProposal(targets[i], values[i], calldatas[i], Enum.Operation.Call);
             if (!success) {
                 revert UnderlyingTransactionReverted();
             }

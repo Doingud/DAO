@@ -119,7 +119,7 @@ const avatar = async (setup) => {
 
   await avatar.init(
     setup.roles.root.address, // owner
-    setup.roles.authorizer_adaptor.address // guardian Address
+    setup.roles.authorizer_adaptor.address // governor Address
   );
 
   const tx = {

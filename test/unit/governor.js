@@ -274,6 +274,7 @@ describe('unit - Contract: Governor', function () {
             let unSValues = [20];
             let unSCalldatas = [mockModule.interface.encodeFunctionData("testInteraction", [20])];
 
+            await avatar.connect(root).setGovernor(governor.address);
             await expect(governor.connect(authorizer_adaptor).execute(unSTargets, unSValues, unSCalldatas))
                 .to.be.revertedWith(
                 'UnderlyingTransactionReverted()'

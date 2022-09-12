@@ -74,5 +74,5 @@ interface IAvatarxGuild {
         uint256 value,
         bytes memory proposal,
         Enum.Operation operation
-    ) external;
+    ) external returns (bool success);
 }

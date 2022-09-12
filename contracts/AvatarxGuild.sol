@@ -52,7 +52,8 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
     event GuardianAdded(address guardian);
     event GuardianRemoved(address guardian);
 
-    address public admin;
+    address public owner;
+    address public governor;
     mapping(address => uint256) public guardians;
 
     address internal constant SENTINEL_MODULES = address(0x1);
@@ -76,8 +77,15 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         _;
     }
 
-    modifier onlyAdmin() {
-        if (msg.sender != admin) {
+    modifier onlyGovernor() {
+        if (msg.sender != governor) {
+            revert Unauthorized();
+        }
+        _;
+    }
+
+    modifier onlyOwner() {
+        if (msg.sender != owner) {
             revert Unauthorized();
         }
         _;
@@ -87,14 +95,21 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         if (_initialized) {
             revert AlreadyInitialized();
         }
-        // _setupRole(DEFAULT_ADMIN_ROLE, initOwner);
-        // _setupRole(GUARDIAN_ROLE, guardianAddress_);
         guardians[guardianAddress_] = 1;
-        admin = initOwner;
+        governor = guardianAddress_;
+        owner = initOwner;
         modules[SENTINEL_MODULES] = address(0x2);
         _initialized = true;
         emit Initialized(_initialized, initOwner, guardianAddress_);
         return true;
+    }
+
+    function setGovernor(address newGovernor) external onlyOwner {
+        if (newGovernor == governor) {
+            revert AlreadyInitialized();
+        }
+
+        governor = newGovernor;
     }
 
     /// @dev Allows to add a module to the whitelist.
@@ -217,10 +232,11 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         uint256 value,
         bytes memory proposal,
         Enum.Operation operation
-    ) public onlyGuardian {
+    ) public onlyGovernor returns (bool){
         bool success = execute(target, value, proposal, operation, gasleft());
         if (success) emit ExecutionFromGuardianSuccess(msg.sender);
         else emit ExecutionFromGuardianFailure(msg.sender);
+        return success;
     }
 
     /// @dev Returns if an module is enabled
@@ -262,7 +278,7 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
     /// @notice adds guild based on the controller address provided
     /// @dev give guardian role in access control to the guardian address
     /// @param guardian the controller address of the guild
-    function addGuardian(address guardian) external onlyAdmin {
+    function addGuardian(address guardian) external onlyOwner {
         // check that guardian won't be added twice
         if (guardians[guardian] != 0) {
             revert InvalidParameters();
@@ -274,7 +290,7 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
     /// @notice adds guild based on the controller address provided
     /// @dev give guardian role in access control to the guardian address
     /// @param guardian the controller address of the guild
-    function removeGuardian(address guardian) external onlyAdmin {
+    function removeGuardian(address guardian) external onlyOwner {
         if (guardians[guardian] == 0) {
             revert InvalidParameters();
         }
