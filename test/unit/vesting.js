@@ -25,6 +25,8 @@ describe("unit - Vesting", function () {
     const signers = await ethers.getSigners();
     const setup = await init.initialize(signers);
     await init.getTokens(setup);
+    await init.metadao(setup);
+    await init.controller(setup);
 
     AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
     AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
