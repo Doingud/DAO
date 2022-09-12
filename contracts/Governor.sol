@@ -34,14 +34,13 @@ pragma solidity 0.8.15;
  *
  */
 import "./utils/interfaces/IAvatarxGuild.sol";
-import "@gnosis.pm/zodiac/contracts/core/Module.sol";
 import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract DoinGudGovernor is Module {
+contract DoinGudGovernor {
     using SafeCast for uint256;
 
     enum ProposalState {
@@ -122,7 +121,6 @@ contract DoinGudGovernor is Module {
         _name = name;
         // person who inflicted the creation of the contract is set as the only guardian of the system
         guardians.push(msg.sender);
-        _transferOwnership(msg.sender);
     }
 
     /// @notice Initializes the Governor contract
@@ -137,8 +135,6 @@ contract DoinGudGovernor is Module {
         if (_initialized) {
             revert AlreadyInitialized();
         }
-        setAvatar(avatarAddress_);
-        setTarget(avatarAddress_);
         AMORxGuild = IERC20(AMORxGuild_);
 
         snapshotAddress = snapshotAddress_;
@@ -152,8 +148,6 @@ contract DoinGudGovernor is Module {
         emit Initialized(_initialized, avatarAddress_, snapshotAddress_);
         return true;
     }
-
-    function setUp(bytes memory initializeParams) public override {}
 
     /// @notice this modifier is needed to validate that amount of the Guardians is sufficient to vote and approve the “Many” decision
     modifier GuardianLimitReached() {
