@@ -40,12 +40,6 @@ import "./utils/interfaces/IAvatarxGuild.sol";
 import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
 contract AvatarxGuild is Executor, IAvatarxGuild {
-    /// Events
-    /// These events are already declared in IAvatar.sol
-    //event EnabledModule(address module);
-    //event DisabledModule(address module);
-    //event ExecutionFromModuleSuccess(address indexed module);
-    //event ExecutionFromModuleFailure(address indexed module);
     event ExecutionFromGovernorSuccess(address governorAddress);
     event ExecutionFromGovernorFailure(address governorAddress);
     event Initialized(bool success, address owner, address governorAddress);
