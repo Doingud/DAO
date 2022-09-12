@@ -43,7 +43,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract DoinGudGovernor is Module {
     using SafeCast for uint256;
-    uint256 public testValues;
 
     enum ProposalState {
         Pending,
@@ -371,11 +370,6 @@ contract DoinGudGovernor is Module {
         delete proposalWeight[proposalId];
 
         return proposalId;
-    }
-
-    function testInteraction(uint256 value) external returns (bool) {
-        testValues = value;
-        return true;
     }
 
     /// @notice function allows anyone to check state of the proposal

@@ -58,7 +58,6 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
     address internal constant SENTINEL_MODULES = address(0x1);
     bool private _initialized;
 
-    mapping(address => bool) public voters;
     mapping(address => address) internal modules;
 
     /// Custom errors

@@ -9,6 +9,8 @@ const twoWeeks = time.duration.days(14);
 let AMORxGuild; // need for testing propose() function
 let avatar;
 let governor;
+let mockModule;
+
 let root;
 let authorizer_adaptor;
 let operator;
@@ -36,6 +38,7 @@ describe('unit - Contract: Governor', function () {
         await init.controller(setup);
         await init.avatar(setup);
         avatar = setup.avatars.avatar;
+        mockModule = setup.avatars.module;
         governor = await init.governor(setup);
         root = setup.roles.root;
         staker = setup.roles.staker;
@@ -133,9 +136,9 @@ describe('unit - Contract: Governor', function () {
     context('» propose testing', () => {
 
         it('it fails to propose if not the avatar', async function () {
-            targets = [governor.address];
+            targets = [mockModule.address];
             values = [0];
-            calldatas = [governor.interface.encodeFunctionData("testInteraction", [20])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+            calldatas = [mockModule.interface.encodeFunctionData("testInteraction", [20])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
 
             await expect(governor.connect(user).propose(targets, values, calldatas)).to.be.revertedWith(
                 'Unauthorized()'
@@ -204,9 +207,9 @@ describe('unit - Contract: Governor', function () {
             );
 
 
-            let unSTargets = [governor.address];
+            let unSTargets = [mockModule.address];
             let unSValues = [20];
-            let unSCalldatas = [governor.interface.encodeFunctionData("testInteraction", [20])];
+            let unSCalldatas = [mockModule.interface.encodeFunctionData("testInteraction", [20])];
 
             await governor.connect(authorizer_adaptor).propose(unSTargets, unSValues, unSCalldatas);
             thirdProposalId = await governor.proposals(2);
@@ -267,9 +270,9 @@ describe('unit - Contract: Governor', function () {
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(twoWeeks);
 
-            let unSTargets = [governor.address];
+            let unSTargets = [mockModule.address];
             let unSValues = [20];
-            let unSCalldatas = [governor.interface.encodeFunctionData("testInteraction", [20])];
+            let unSCalldatas = [mockModule.interface.encodeFunctionData("testInteraction", [20])];
 
             await expect(governor.connect(authorizer_adaptor).execute(unSTargets, unSValues, unSCalldatas))
                 .to.be.revertedWith(
@@ -278,13 +281,13 @@ describe('unit - Contract: Governor', function () {
         });
     
         it('it executes proposal', async function () {
-            expect(await governor.testValues()).to.equal(0);
+            expect(await mockModule.testValues()).to.equal(0);
 
             await expect(governor.connect(authorizer_adaptor).execute(targets, values, calldatas))
                 .to
                 .emit(governor, "ProposalExecuted").withArgs(firstProposalId);
 
-            expect(await governor.testValues()).to.equal(20);
+            expect(await mockModule.testValues()).to.equal(20);
             await expect(governor.voters(firstProposalId)).to.be.reverted;
         });
 
