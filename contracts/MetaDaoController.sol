@@ -117,6 +117,7 @@ contract MetaDaoController is Ownable {
     /// @dev    `approve` must have been called on the `token` contract
     /// @param  token the address of the token to be donated
     /// @param  amount the amount of tokens to donate
+    /// @param  index indicates which index to use in donation calcs
     function donate(
         address token,
         uint256 amount,
@@ -299,7 +300,7 @@ contract MetaDaoController is Ownable {
     }
 
     /// @notice Adds a new index to the `Index` array
-    /// @dev    Requires an encoded array of tuples in (address, uint256) format
+    /// @dev    Requires an encoded array of SORTED tuples in (address, uint256) format
     /// @param  weights an array containing the weighting indexes for different guilds
     /// @return index of the new index in the `Index` array
     function addIndex(bytes[] calldata weights) external returns (uint256) {
