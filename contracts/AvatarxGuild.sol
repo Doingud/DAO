@@ -232,7 +232,7 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         uint256 value,
         bytes memory proposal,
         Enum.Operation operation
-    ) public onlyGovernor returns (bool){
+    ) public onlyGovernor returns (bool) {
         bool success = execute(target, value, proposal, operation, gasleft());
         if (success) emit ExecutionFromGuardianSuccess(msg.sender);
         else emit ExecutionFromGuardianFailure(msg.sender);
