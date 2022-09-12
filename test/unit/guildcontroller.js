@@ -46,7 +46,7 @@ describe('unit - Contract: GuildController', function () {
         AMORxGuild = setup.tokens.AmorGuildToken;
         FXAMORxGuild = setup.tokens.FXAMORxGuild;
         USDC = setup.tokens.ERC20Token;
-        metadao = await init.metadao(setup);
+        metadao = await init.metadaoMock(setup);
         controller = await init.controller(setup);
         root = setup.roles.root;
         staker = setup.roles.staker;

@@ -18,6 +18,7 @@ const initialize = async (accounts) => {
     authorizer_adaptor: accounts[5],
     operator: accounts[6],
     staker: accounts[7],
+    pool: accounts[8]
   };
 
   return setup;
@@ -74,7 +75,7 @@ const getTokens = async (setup) => {
     return tokens;
 };
 
-const metadao = async (setup) =>{
+const metadaoMock = async (setup) =>{
   const MetaDaoFactory = await ethers.getContractFactory('MetaDaoControllerMock');
   const metadao = await MetaDaoFactory.deploy(
     setup.tokens.AmorTokenImplementation.address,
@@ -182,6 +183,19 @@ const getGuildFactory = async (setup) => {
   return factory;
 }
 
+const metadao = async(setup) =>{
+  const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController');
+  const metadao = await MetaDaoFactory.deploy(
+    setup.tokens.AmorTokenImplementation.address,
+    setup.factory.guildFactory.address,
+    setup.roles.root.address
+  );
+
+  setup.metadao = metadao;
+
+  return metadao;
+}
+
 const vestingContract = async (setup) => {
   const vestingFactory = await ethers.getContractFactory("Vesting");
 
@@ -193,7 +207,6 @@ const vestingContract = async (setup) => {
   setup.vesting = vesting;
 
   return vesting;
-
 }
 
 module.exports = {
@@ -203,5 +216,6 @@ module.exports = {
   vestingContract,
   getGuildFactory,
   governor,
-  metadao
+  metadao,
+  metadaoMock
 }; 
