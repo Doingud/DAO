@@ -163,17 +163,6 @@ contract MetaDaoController is Ownable {
         }
     }
 
-    /// This function may be deprecated
-    /*
-    /// @notice Distributes both the fees and the token donations
-    function claimAll() external {
-        /// Apportion the AMOR received from fees
-        distributeFees();
-        /// Apportion the token donations
-        claimTokens();
-    }
-    */
-
     /// @notice Distributes the specified token
     /// @param  token address of target token
     function claimToken(address token) public {
@@ -192,20 +181,6 @@ contract MetaDaoController is Ownable {
         delete guildFunds[msg.sender][token];
         IERC20(token).safeTransfer(msg.sender, amount);
     }
-
-    /// @notice Apportions approved token donations according to guild weights
-    /// @dev    Loops through all whitelisted tokens and calls `distributeToken()` for each
-    /// This function may be deprecated
-    /*
-    function claimTokens() public {
-        address endOfList = SENTINEL;
-        /// Loop through linked list
-        while (whitelist[endOfList] != SENTINEL) {
-            claimToken(whitelist[endOfList]);
-            endOfList = whitelist[endOfList];
-        }
-    }
-    */
 
     /// @notice Apportions collected AMOR fees
     function distributeFees() public {
