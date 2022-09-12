@@ -195,7 +195,7 @@ describe('unit - Contract: Avatar', function () {
             let encodedFail = "0x";
             await expect(avatar.connect(authorizer_adaptor).executeProposal(mockModule.address, 0, encodedFail, 0))
                 .to
-                .emit(avatar, "ExecutionFromGuardianFailure").withArgs(authorizer_adaptor.address);
+                .emit(avatar, "ExecutionFromGovernorFailure").withArgs(authorizer_adaptor.address);
         });
 
         it('it emits success in executeProposal', async function () {
@@ -206,7 +206,7 @@ describe('unit - Contract: Avatar', function () {
 
             await expect(avatar.connect(authorizer_adaptor).executeProposal(mockModule.address, 0, encoded, 0))
                 .to
-                .emit(avatar, "ExecutionFromGuardianSuccess").withArgs(authorizer_adaptor.address);
+                .emit(avatar, "ExecutionFromGovernorSuccess").withArgs(authorizer_adaptor.address);
         });
     });
 });

@@ -46,15 +46,12 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
     //event DisabledModule(address module);
     //event ExecutionFromModuleSuccess(address indexed module);
     //event ExecutionFromModuleFailure(address indexed module);
-    event ExecutionFromGuardianSuccess(address guardianAddress);
-    event ExecutionFromGuardianFailure(address guardianAddress);
-    event Initialized(bool success, address owner, address guardianAddress);
-    event GuardianAdded(address guardian);
-    event GuardianRemoved(address guardian);
+    event ExecutionFromGovernorSuccess(address governorAddress);
+    event ExecutionFromGovernorFailure(address governorAddress);
+    event Initialized(bool success, address owner, address governorAddress);
 
     address public owner;
     address public governor;
-    mapping(address => uint256) public guardians;
 
     address internal constant SENTINEL_MODULES = address(0x1);
     bool private _initialized;
@@ -70,13 +67,6 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
     error InvalidParameters();
     error Unauthorized();
 
-    modifier onlyGuardian() {
-        if (guardians[msg.sender] == 0) {
-            revert Unauthorized();
-        }
-        _;
-    }
-
     modifier onlyGovernor() {
         if (msg.sender != governor) {
             revert Unauthorized();
@@ -91,16 +81,15 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         _;
     }
 
-    function init(address initOwner, address guardianAddress_) external returns (bool) {
+    function init(address initOwner, address governorAddress_) external returns (bool) {
         if (_initialized) {
             revert AlreadyInitialized();
         }
-        guardians[guardianAddress_] = 1;
-        governor = guardianAddress_;
+        governor = governorAddress_;
         owner = initOwner;
         modules[SENTINEL_MODULES] = address(0x2);
         _initialized = true;
-        emit Initialized(_initialized, initOwner, guardianAddress_);
+        emit Initialized(_initialized, initOwner, governorAddress_);
         return true;
     }
 
@@ -234,8 +223,8 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         Enum.Operation operation
     ) public onlyGovernor returns (bool) {
         bool success = execute(target, value, proposal, operation, gasleft());
-        if (success) emit ExecutionFromGuardianSuccess(msg.sender);
-        else emit ExecutionFromGuardianFailure(msg.sender);
+        if (success) emit ExecutionFromGovernorSuccess(msg.sender);
+        else emit ExecutionFromGovernorFailure(msg.sender);
         return success;
     }
 
@@ -273,28 +262,5 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
             mstore(array, moduleCount)
         }
         return (array, next);
-    }
-
-    /// @notice adds guild based on the controller address provided
-    /// @dev give guardian role in access control to the guardian address
-    /// @param guardian the controller address of the guild
-    function addGuardian(address guardian) external onlyOwner {
-        // check that guardian won't be added twice
-        if (guardians[guardian] != 0) {
-            revert InvalidParameters();
-        }
-        guardians[guardian] = 1;
-        emit GuardianAdded(guardian);
-    }
-
-    /// @notice adds guild based on the controller address provided
-    /// @dev give guardian role in access control to the guardian address
-    /// @param guardian the controller address of the guild
-    function removeGuardian(address guardian) external onlyOwner {
-        if (guardians[guardian] == 0) {
-            revert InvalidParameters();
-        }
-        guardians[guardian] = 0;
-        emit GuardianRemoved(guardian);
     }
 }
