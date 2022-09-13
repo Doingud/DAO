@@ -57,9 +57,6 @@ const getTokens = async (setup) => {
     //  AmorGuild Tokens
     const AmorGuildToken = await AmorGuildTokenFactory.deploy();
 
-    // const AvatarxGuildFactory = await ethers.getContractFactory('AvatarxGuild');//Mock');
-    // const AvatarxGuild = await AvatarxGuildFactory.deploy();
-
     const tokens = {
       ERC20Token,
       FXAMORxGuild,
@@ -68,7 +65,6 @@ const getTokens = async (setup) => {
       AmorTokenProxy,
       AmorTokenMockUpgrade,
       AmorGuildToken
-      //AvatarxGuild
     };
 
     setup.tokens = tokens;

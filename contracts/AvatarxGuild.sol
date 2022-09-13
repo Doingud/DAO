@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity 0.8.15;
 
 /**
@@ -179,22 +179,6 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         /// 0: call; 1: delegatecall
         if (uint8(operation) == 1) (success, ) = to.delegatecall(data);
         else (success, returnData) = to.call{value: value}(data);
-
-        // success = execTransactionFromModule(to, value, data, operation);
-        // solhint-disable-next-line no-inline-assembly
-        assembly {
-            // Load free memory location
-            let ptr := mload(0x40)
-            // We allocate memory for the return data by setting the free memory location to
-            // current free memory location + data size + 32 bytes for data size value
-            mstore(0x40, add(ptr, add(returndatasize(), 0x20)))
-            // Store the size
-            mstore(ptr, returndatasize())
-            // Store the data
-            returndatacopy(add(ptr, 0x20), 0, returndatasize())
-            // Point the return data to the correct memory location
-            returnData := ptr
-        }
 
         /// Emit events
         if (success) {
