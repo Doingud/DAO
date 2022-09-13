@@ -23,6 +23,8 @@ let FACTORY;
 let GUILD_CONTROLLER_ONE;
 let GUILD_CONTROLLER_TWO;
 
+//const FEE_INDEX = ethers.utils.keccak256(toUtf8Bytes("FEE_INDEX"));
+
 describe("unit - MetaDao", function () {
 
     const setupTests = deployments.createFixture(async () => {
@@ -79,7 +81,7 @@ describe("unit - MetaDao", function () {
             ]
         );
 
-        await METADAO.updateFeeIndex([encodedIndex, encodedIndex2]);
+        await METADAO.updateIndex([encodedIndex, encodedIndex2], 0);
     });
 
     context("initialization", () => {

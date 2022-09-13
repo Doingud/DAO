@@ -107,7 +107,10 @@ contract MetaDaoController is Ownable {
         sentinelWhitelist = amor;
         whitelist[sentinelWhitelist] = SENTINEL;
         whitelist[SENTINEL] = amor;
+        /// Setup the fee index
         indexHashes.push(FEES_INDEX);
+        Index storage index = indexes[FEES_INDEX];
+        index.creator = owner();
         /// Setup guilds linked list
         sentinelGuilds = address(0x01);
         guilds[sentinelGuilds] = SENTINEL;
@@ -286,18 +289,26 @@ contract MetaDaoController is Ownable {
         if (indexes[hashArray].indexDenominator != 0) {
             revert Exists();
         }
-        if (_updateIndex(weights, hashArray) != true) {
-            revert IndexError();
-        }
         indexHashes.push(hashArray);
+        _updateIndex(weights, indexHashes[indexHashes.length - 1]);
 
-        return indexHashes.length;
+        return indexHashes.length - 1;
     }
 
     /// @notice Allows DoinGud to update the fee index used
     /// @param  weights an array of the guild weights
-    function updateFeeIndex(bytes[] calldata weights) external onlyOwner {
-        _updateIndex(weights, FEES_INDEX);
+    function updateIndex(bytes[] calldata weights, uint256 index) external returns (uint256) {
+        if (indexes[indexHashes[index]].creator != msg.sender) {
+            revert IndexError();
+        }
+        bytes32 key = _updateIndex(weights, indexHashes[index]);
+        if (index > 0) {
+            indexHashes[index] = indexHashes[indexHashes.length - 1];
+            indexHashes.pop();
+            indexHashes.push(key);
+            return indexHashes.length;
+        }
+        return 0;
     }
 
     /// @notice Adds a new index to the Index mapping
@@ -305,14 +316,22 @@ contract MetaDaoController is Ownable {
     /// @param  weights the encoded tuple of index values (`address`,`uint256`)
     /// @param  arrayHash keccak256 hash of the provided array
     /// @return bool was the index update successful
-    function _updateIndex(bytes[] calldata weights, bytes32 arrayHash) internal returns (bool) {
+    function _updateIndex(bytes[] calldata weights, bytes32 arrayHash) internal returns (bytes32) {
+        /// Delete the previous index
+        /// Even a small change will create a very different hash
+        if (arrayHash != FEES_INDEX) {
+            delete indexes[arrayHash];
+            arrayHash = keccak256(abi.encode(weights));
+        }
+        /// Set the storage pointer
         Index storage index = indexes[arrayHash];
+
         for (uint256 i; i < weights.length; i++) {
             (address guild, uint256 weight) = abi.decode(weights[i], (address, uint256));
             index.indexWeights[guild] = weight;
             index.indexDenominator += weight;
             index.creator = msg.sender;
         }
-        return true;
+        return arrayHash;
     }
 }
