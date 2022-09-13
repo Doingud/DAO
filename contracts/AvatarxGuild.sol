@@ -200,7 +200,10 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         bytes memory proposal,
         Enum.Operation operation
     ) public onlyGovernor returns (bool) {
-        bool success = execute(target, value, proposal, operation, gasleft());
+        bool success;
+        if (uint8(operation) == 1) (success, ) = target.delegatecall(proposal);
+        else (success, ) = target.call{value: value}(proposal);
+
         if (success) emit ExecutionFromGovernorSuccess(msg.sender);
         else emit ExecutionFromGovernorFailure(msg.sender);
         return success;

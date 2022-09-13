@@ -150,11 +150,6 @@ const governor = async (setup) => {
     "DoinGud Governor"
   );
 
-  //await setup.tokens.AvatarxGuild.init(    
-  //  setup.roles.authorizer_adaptor.address, // owner Address
-  //  governor.address // GUARDIAN_ROLE
-  //);
-
   await governor.init(    
     setup.tokens.AmorGuildToken.address, //AMORxGuild
     setup.roles.authorizer_adaptor.address, // Snapshot Address
