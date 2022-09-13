@@ -48,8 +48,7 @@ describe('unit - Contract: GuildController', function () {
         AMOR = setup.tokens.AmorTokenImplementation;
         AMORxGuild = setup.tokens.AmorGuildToken;
         FXAMORxGuild = setup.tokens.FXAMORxGuild;
-        USDC = setup.tokens.ERC20Token;
-        
+        USDC = setup.tokens.ERC20Token;    
         metadao = setup.metadao;
         controller = setup.controller;
         guildFactory = await init.getGuildFactory(setup);
@@ -241,9 +240,7 @@ describe('unit - Contract: GuildController', function () {
                 ]
             );
             await metadao.updateIndex([encodedIndex], 0);
-
             await AMOR.transfer(controller.address, TEST_TRANSFER);
-            let previous = await AMOR.balanceOf(controller.address);
 
             // add some funds to MetaDaoController
             await AMOR.connect(root).approve(AMORxGuild.address, TEST_TRANSFER);
@@ -265,6 +262,7 @@ describe('unit - Contract: GuildController', function () {
             // add some funds to MetaDaoController
             await USDC.connect(root).approve(metadao.address, TEST_TRANSFER);
             await metadao.donate(USDC.address, TEST_TRANSFER, 0);
+            
             await USDC.connect(root).transfer(metadao.address, TEST_TRANSFER);
 
             const multisig = root;
@@ -310,6 +308,7 @@ describe('unit - Contract: GuildController', function () {
             let currentClaimable = ethers.BigNumber.from(impactMakerClaimableBefore.toString())
                 .add(ethers.BigNumber.from(amountToSendImpactMaker.toString()))
                 .add(ethers.BigNumber.from(difference.toString()));
+                
             /// The below check h
             expect((await controller.claimableTokens(impactMaker.address, AMORxGuild.address))).to.be.closeTo(currentClaimable, 5000);
             //equal(currentClaimable.toString());
@@ -322,11 +321,13 @@ describe('unit - Contract: GuildController', function () {
             currentClaimable = ethers.BigNumber.from(stakerClaimableBefore.toString())
                 .add(ethers.BigNumber.from(amountToSendImpactMaker.toString()))
                 .sub(ethers.BigNumber.from(difference.toString()));
+                
             expect((await controller.claimableTokens(staker.address, AMORxGuild.address)).toString()).to.be.closeTo(currentClaimable, 200);
 
 
             weight = await controller.weights(operator.address);
             amountToSendImpactMaker = ((amount * weight) / totalWeight);
+            
             difference = 12;
             sum += amountToSendImpactMaker + difference;
             currentClaimable = ethers.BigNumber.from(operatorClaimableBefore.toString())

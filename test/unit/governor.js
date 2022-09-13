@@ -30,7 +30,6 @@ describe('unit - Contract: Governor', function () {
         const setup = await init.initialize(signers);
         await init.getTokens(setup);
         await init.metadao(setup);
-        // AMOR = setup.tokens.AmorTokenImplementation;
         AMORxGuild = setup.tokens.AmorGuildToken;
         await init.controller(setup);
         avatar = setup.tokens.AvatarxGuild;

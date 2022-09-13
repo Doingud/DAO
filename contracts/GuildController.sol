@@ -6,6 +6,7 @@ import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IGuildController.sol";
 import "./utils/interfaces/IMetaDaoController.sol";
 
+
 /// Advanced math functions for bonding curve
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -137,15 +138,14 @@ contract GuildController is IGuildController, Ownable {
     /// and calles distribute function for the whole amount of gathered tokens
     function gatherDonation(address token) public {
         // check if token in the whitelist of the MetaDaoController
-        if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
+        if (!IMetadao(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
         }
 
-        uint256 amount = IMetaDaoController(MetaDaoController).guildFunds(address(this), token);
+        uint256 amount = IMetadao(MetaDaoController).claimDonation(token, address(this));
 
         // distribute those tokens
         distribute(amount, token, MetaDaoController);
-        IMetaDaoController(MetaDaoController).claimToken(token);
     }
 
     /// @notice allows to donate AMORxGuild tokens to the Guild
