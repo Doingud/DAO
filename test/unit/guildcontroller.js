@@ -240,7 +240,7 @@ describe('unit - Contract: GuildController', function () {
                 [controller.address, 100]
                 ]
             );
-            await metadao.updateFeeIndex([encodedIndex]);
+            await metadao.updateIndex([encodedIndex], 0);
 
             await AMOR.transfer(controller.address, TEST_TRANSFER);
             let previous = await AMOR.balanceOf(controller.address);
