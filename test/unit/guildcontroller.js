@@ -248,6 +248,7 @@ describe('unit - Contract: GuildController', function () {
 
             const amountOfAMOR = await AMOR.balanceOf(metadao.address);
             let AMORDeducted = ethers.BigNumber.from((amountOfAMOR*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
+            let previous = await AMOR.balanceOf(controller.address);
 
             await metadao.distributeFees();
             await controller.connect(operator).gatherDonation(AMOR.address);
