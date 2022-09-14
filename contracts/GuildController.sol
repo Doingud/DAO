@@ -6,7 +6,6 @@ import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IGuildController.sol";
 import "./utils/interfaces/IMetaDaoController.sol";
 
-
 /// Advanced math functions for bonding curve
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
