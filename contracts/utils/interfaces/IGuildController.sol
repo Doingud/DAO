@@ -11,8 +11,11 @@ pragma solidity 0.8.15;
 interface IGuildController {
     function init(
         address initOwner,
+        address AMOR_,
         address AMORxGuild_,
-        address FXAMORxGuild_
+        address FXAMORxGuild_,
+        address MetaDaoController_,
+        address multisig
     ) external returns (bool);
 
     function setVotingPeriod(uint256 newTime) external;
@@ -23,7 +26,7 @@ interface IGuildController {
     // 10% of the tokens in the impact pool are getting staked in the FXAMORxGuild tokens,
     // which are going to be owned by the user.
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
-    function donate(uint256 amount) external returns (uint256);
+    function donate(uint256 amount, address token) external returns (uint256);
 
     /// @notice removes impact makers, resets mapping and array, and creates new array, mapping, and sets weights
     /// @param arrImpactMakers The array of impact makers
@@ -47,5 +50,8 @@ interface IGuildController {
 
     /// @notice allows to claim tokens for specific ImpactMaker address
     /// @param impact Impact maker to to claim tokens from
-    function claim(address impact) external;
+    /// @param token Tokens addresess to claim
+    function claim(address impact, address[] memory token) external;
+
+    function gatherDonation(address token) external;
 }

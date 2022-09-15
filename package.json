@@ -8,9 +8,11 @@
     "test:integration-clean": "npx hardhat test --grep 'Kovan clean deployment'",
     "test:integration-existing": "npx hardhat test --grep 'Kovan integration with deployed contracts'",
     "lint": "eslint . --ext .js && solhint 'contracts/**/*.sol'",
-    "coverage": "hardhat coverage",
+    "coverage": "hardhat coverage --testfiles test/unit",
     "deploy:contracts:kovan": "npx hardhat deploy --network kovan",
     "verify:contracts:kovan": "npx hardhat --network kovan etherscan-verify",
+    "deploy:contracts:goerli": "npx hardhat deploy --network goerli",
+    "verify:contracts:goerli": "npx hardhat --network goerli etherscan-verify",
     "deploy:contracts:mainnet": "npx hardhat deploy --network mainnet",
     "dry-run:deployment": "npx hardhat node --tags deployment"
   },
@@ -41,14 +43,16 @@
     "openzeppelin-contracts-sol8": "npm:@openzeppelin/contracts@4.2.0"
   },
   "dependencies": {
+    "@gnosis.pm/zodiac": "^1.1.4",
     "@nomiclabs/hardhat-web3": "^2.0.0",
-    "@openzeppelin/contracts": "^4.5.0",
+    "@openzeppelin/contracts": "^4.7.0",
+    "@reality.eth/contracts": "^3.0.15",
     "dotenv": "^16.0.0",
     "hardhat-deploy-ethers": "^0.3.0-beta.13",
     "openzeppelin-solidity": "^4.5.0",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "solhint": "^3.3.7",
-    "solhint-plugin-prettier": "0.0.5",
+    "solhint-plugin-prettier": "^0.0.5",
     "solidity-coverage": "^0.7.20"
   }
 }
