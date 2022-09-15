@@ -232,7 +232,6 @@ contract MetaDaoController is Ownable {
         sentinelGuilds = guildAddress;
         guilds[sentinelGuilds] = SENTINEL;
         guildCounter += 1;
-        ///guilds.push(guildAddress);
     }
 
     /// @notice adds token to whitelist
