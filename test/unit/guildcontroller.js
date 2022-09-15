@@ -281,15 +281,11 @@ describe('unit - Contract: GuildController', function () {
             let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
 
             await AMORxGuild.connect(user).stakeAmor(user.address, nextAMORDeducted);
-            //let userAmorxGuildAmount = await AMORxGuild.balanceOf(user.address);
-            //await AMORxGuild.connect(user).approve(metadao.address, userAmorxGuildAmount);
 
             let impactMakerClaimableBefore = await controller.claimableTokens(impactMaker.address, AMORxGuild.address);
             let stakerClaimableBefore = await controller.claimableTokens(staker.address, AMORxGuild.address);
             let operatorClaimableBefore = await controller.claimableTokens(operator.address, AMORxGuild.address);
 
-            //let controllerHadBefore = await AMORxGuild.balanceOf(controller.address);
-            
             let totalWeight = await controller.totalWeight();
 
             // test
@@ -309,10 +305,8 @@ describe('unit - Contract: GuildController', function () {
             let currentClaimable = ethers.BigNumber.from(impactMakerClaimableBefore.toString())
                 .add(ethers.BigNumber.from(amountToSendImpactMaker.toString()))
                 .add(ethers.BigNumber.from(difference.toString()));
-                
-            /// The below check h
+
             expect((await controller.claimableTokens(impactMaker.address, AMORxGuild.address))).to.be.closeTo(currentClaimable, 5000);
-            //equal(currentClaimable.toString());
 
 
             weight = await controller.weights(staker.address);
@@ -335,14 +329,6 @@ describe('unit - Contract: GuildController', function () {
                 .add(ethers.BigNumber.from(amountToSendImpactMaker.toString()))
                 .add(ethers.BigNumber.from(difference.toString()));
             expect((await controller.claimableTokens(operator.address, AMORxGuild.address)).toString()).to.be.closeTo(currentClaimable, 200);        
-
-
-            /*
-            let controllerHasAfter = ethers.BigNumber.from(controllerHadBefore.toString())
-                .add(ethers.BigNumber.from(sum.toString()));
-
-            expect((await AMORxGuild.balanceOf(controller.address)).toString()).to.equal(controllerHasAfter.toString());            
-            */
         });
     });
 
