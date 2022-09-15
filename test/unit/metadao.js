@@ -201,32 +201,6 @@ describe("unit - MetaDao", function () {
         });
     });
 
-    /*
-    context('function: claimTokens()', () => {
-        it('Should transfer correct amounts of all tokens to guild', async function () {
-            await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
-            await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
-            await METADAO.donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER, 0);
-            await METADAO.donate(USDC.address, ONE_HUNDRED_ETHER, 0);
-
-            let amorMetaDaoBefore = await AMOR_TOKEN.balanceOf(METADAO.address);
-            let amorControllerBefore = await AMOR_TOKEN.balanceOf(GUILD_CONTROLLER_TWO.address);
-            let usdcMetaDaoBefore = await USDC.balanceOf(METADAO.address);
-            let usdcControllerBefore = await USDC.balanceOf(GUILD_CONTROLLER_TWO.address);
-
-            await METADAO.claimTokens(GUILD_CONTROLLER_TWO.address);
-
-            let metadaoAfter = await AMOR_TOKEN.balanceOf(METADAO.address);
-            let controllerAfter = await AMOR_TOKEN.balanceOf(GUILD_CONTROLLER_TWO.address);
-            let usdcMetaDaoAfter = await USDC.balanceOf(METADAO.address);
-            let usdcControllerAfter = await USDC.balanceOf(GUILD_CONTROLLER_TWO.address);
-
-            expect((amorMetaDaoBefore - metadaoAfter)*0.95).to.equal(controllerAfter - amorControllerBefore);
-            expect(usdcMetaDaoBefore - usdcMetaDaoAfter).to.equal(usdcControllerAfter - usdcControllerBefore);
-        });
-    });
-    */
-
     context('function: distributeFees()', () => {
         it('it distributes collected AMOR tokens from fees', async function () {    
             await AMOR_TOKEN.transfer(METADAO.address, ONE_HUNDRED_ETHER);
