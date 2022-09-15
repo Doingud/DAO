@@ -18,6 +18,8 @@ use(solidity);
   let VESTING_START
   let VESTING_TIME;
   let AMORDeducted;
+  let user1;
+  let user2;
 
 describe("unit - Vesting", function () {
 
@@ -29,10 +31,6 @@ describe("unit - Vesting", function () {
     await init.controller(setup);
 
     AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
-    AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
-    FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
-    DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
-    CLONE_FACTORY = await init.getGuildFactory(setup);
 
     root = setup.roles.root;
     multisig = setup.roles.doingud_multisig;
