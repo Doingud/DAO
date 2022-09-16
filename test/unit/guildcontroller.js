@@ -243,14 +243,13 @@ describe('unit - Contract: GuildController', function () {
             await AMOR.transfer(controller.address, TEST_TRANSFER);
 
             // add some funds to MetaDaoController
-            await AMOR.connect(root).approve(AMORxGuild.address, TEST_TRANSFER);
-            await AMOR.transfer(metadao.address, TEST_TRANSFER);
+            await AMOR.approve(metadao.address, TEST_TRANSFER);
+            await metadao.donate(AMOR.address, TEST_TRANSFER, 0);
 
             const amountOfAMOR = await AMOR.balanceOf(metadao.address);
             let AMORDeducted = ethers.BigNumber.from((amountOfAMOR*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
             let previous = await AMOR.balanceOf(controller.address);
 
-            await metadao.distributeFees();
             await controller.connect(operator).gatherDonation(AMOR.address);
 
             let current = await AMOR.balanceOf(controller.address);
