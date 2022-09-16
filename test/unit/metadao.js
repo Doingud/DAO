@@ -7,8 +7,7 @@ const {
     FIFTY_ETHER,
     ONE_ADDRESS,
     MOCK_GUILD_NAMES,
-    MOCK_GUILD_SYMBOLS,
-    ZERO_ADDRESS
+    MOCK_GUILD_SYMBOLS
   } = require('../helpers/constants.js');
 
 use(solidity);
