@@ -7,7 +7,8 @@ const {
     FIFTY_ETHER,
     ONE_ADDRESS,
     MOCK_GUILD_NAMES,
-    MOCK_GUILD_SYMBOLS
+    MOCK_GUILD_SYMBOLS,
+    ZERO_ADDRESS
   } = require('../helpers/constants.js');
 
 use(solidity);
@@ -204,11 +205,27 @@ describe("unit - MetaDao", function () {
     context('function: distributeFees()', () => {
         it('it distributes collected AMOR tokens from fees', async function () {    
             await AMOR_TOKEN.transfer(METADAO.address, ONE_HUNDRED_ETHER);
-            expect(await METADAO.guildFunds(GUILD_CONTROLLER_ONE.address, AMOR_TOKEN.address)).to.equal(0);
+            expect(await METADAO.guildFees(GUILD_CONTROLLER_ONE.address)).to.equal(0);
             await METADAO.distributeFees();
-            expect(await METADAO.guildFunds(GUILD_CONTROLLER_ONE.address, AMOR_TOKEN.address)).to.equal((FIFTY_ETHER * 0.95).toString());
+            expect(await METADAO.guildFees(GUILD_CONTROLLER_ONE.address)).to.equal((FIFTY_ETHER * 0.95).toString());
         });
     });
+
+    context("function: claimFees()", () => {
+        it("it fails if an invalid guild address is supplied", async function () {
+            await expect(METADAO.claimFees(METADAO.address)).to.be.revertedWith("InvalidGuild()");
+        });
+
+        it("it allows a guild to claim fees apportioned to it", async function () {
+            await AMOR_TOKEN.transfer(METADAO.address, ONE_HUNDRED_ETHER);
+            await METADAO.distributeFees();
+            let guildAmor = await METADAO.guildFees(GUILD_CONTROLLER_ONE.address);
+            await expect(METADAO.claimFees(GUILD_CONTROLLER_ONE.address)).
+                to.emit(AMOR_TOKEN, "Transfer").
+                withArgs(METADAO.address, GUILD_CONTROLLER_ONE.address, (guildAmor * 0.95).toString());
+            expect(await METADAO.guildFees(GUILD_CONTROLLER_ONE.address)).to.equal(0);
+        });
+    })
 
     context("function: addIndex()", () => {
         it("Should allow a user to set a custom index", async function () {

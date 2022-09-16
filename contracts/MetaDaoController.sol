@@ -52,6 +52,11 @@ contract MetaDaoController is Ownable {
     mapping(address => mapping(address => uint256)) public guildFunds;
     /// The total weight of the guilds
     uint256 public guildsTotalWeight;
+    /// The Avatar associated with a guildController
+    /// The fees distributed will go the AvatarxGuild
+    mapping(address => address) public guildAvatar;
+    /// Keeping track of the AMOR fees apportioned to each guild
+    mapping(address => uint256) public guildFees;
 
     /// Donations variables
     mapping(address => uint256) public donations;
@@ -196,11 +201,22 @@ contract MetaDaoController is Ownable {
             uint256 amountToDistribute = (feesToBeDistributed * index.indexWeights[guilds[endOfList]]) /
                 index.indexDenominator;
             if (amountToDistribute != 0) {
-                guildFunds[guilds[endOfList]][address(amorToken)] += amountToDistribute;
-                donations[address(amorToken)] += amountToDistribute;
+                guildFees[guilds[endOfList]] += amountToDistribute;
+                //guildFunds[guilds[endOfList]][address(amorToken)] += amountToDistribute;
+                //donations[address(amorToken)] += amountToDistribute;
             }
             endOfList = guilds[endOfList];
         }
+    }
+
+    /// @notice Allows a guild to transfer fees to the Guild
+    /// @param  guild The target guild
+    function claimFees(address guild) public {
+        if (guilds[guild] == address(0)) {
+            revert InvalidGuild();
+        }
+        amorToken.safeTransfer(guild, guildFees[guild]);
+        delete guildFees[guild];
     }
 
     /// @notice use this funtion to create a new guild via the guild factory
