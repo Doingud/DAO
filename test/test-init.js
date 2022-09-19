@@ -4,7 +4,8 @@
 const { ethers } = require('hardhat');
 const { TAX_RATE,
         AMOR_TOKEN_NAME, 
-        AMOR_TOKEN_SYMBOL 
+        AMOR_TOKEN_SYMBOL,
+        ZERO_ADDRESS
       } = require('./helpers/constants.js');
 
 const initialize = async (accounts) => {
@@ -57,9 +58,6 @@ const getTokens = async (setup) => {
     //  AmorGuild Tokens
     const AmorGuildToken = await AmorGuildTokenFactory.deploy();
 
-    const AvatarxGuildFactory = await ethers.getContractFactory('AvatarxGuild');
-    const AvatarxGuild = await AvatarxGuildFactory.deploy();
-
     const tokens = {
       ERC20Token,
       FXAMORxGuild,
@@ -67,8 +65,7 @@ const getTokens = async (setup) => {
       AmorTokenImplementation,
       AmorTokenProxy,
       AmorTokenMockUpgrade,
-      AmorGuildToken,
-      AvatarxGuild
+      AmorGuildToken
     };
 
     setup.tokens = tokens;
@@ -129,6 +126,43 @@ const controller = async (setup) => {
   return controller;
 };
 
+const avatar = async (setup) => {
+  const avatarFactory = await ethers.getContractFactory('AvatarxGuild');
+  const avatar = await avatarFactory.deploy();
+
+  const moduleFactory = await ethers.getContractFactory('ModuleMock');
+  const module = await moduleFactory.deploy(avatar.address, avatar.address);
+
+  await avatar.init(
+    setup.roles.root.address, // owner
+    setup.roles.authorizer_adaptor.address // governor Address
+  );
+
+  const tx = {
+    to: avatar.address,
+
+    value: 0,
+    data: "0x",
+    operation: 0,
+    avatarTxGas: 0,
+    baseGas: 0,
+    gasPrice: 0,
+    gasToken: ZERO_ADDRESS,
+    refundReceiver: ZERO_ADDRESS,
+    signatures: "0x",
+  };
+
+  const avatars = {
+    avatar,
+    module, 
+    tx
+  }
+
+  setup.avatars = avatars;
+
+  return avatars;
+};
+
 const governor = async (setup) => {
   const governorFactory = await ethers.getContractFactory('DoinGudGovernor');
   const governor = await governorFactory.deploy(
@@ -136,15 +170,10 @@ const governor = async (setup) => {
     "DoinGud Governor"
   );
 
-  await setup.tokens.AvatarxGuild.init(    
-    setup.roles.authorizer_adaptor.address, // owner Address
-    governor.address // GUARDIAN_ROLE
-  );
-
   await governor.init(    
     setup.tokens.AmorGuildToken.address, //AMORxGuild
     setup.roles.authorizer_adaptor.address, // Snapshot Address
-    setup.tokens.AvatarxGuild.address // Avatar Address
+    setup.avatars.avatar.address // Avatar Address
   );
 
   return governor;
@@ -205,6 +234,7 @@ module.exports = {
   initialize,
   getTokens,
   controller,
+  avatar,
   vestingContract,
   getGuildFactory,
   governor,
