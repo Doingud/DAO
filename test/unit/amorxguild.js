@@ -68,7 +68,7 @@ describe("unit - AMORxGuild", function () {
           MOCK_GUILD_NAMES[0], 
           MOCK_GUILD_SYMBOLS[0],
           user2.address
-        )).to.be.reverted;
+        )).to.be.revertedWith('AlreadyInitialized()');
       });
     });
   });
