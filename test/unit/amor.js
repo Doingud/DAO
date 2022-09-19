@@ -6,7 +6,8 @@ const { TAX_RATE,
         BASIS_POINTS, 
         AMOR_TOKEN_NAME, 
         AMOR_TOKEN_SYMBOL, 
-        INIT_MINT
+        INIT_MINT,
+        ZERO_ADDRESS
       } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
@@ -159,6 +160,31 @@ describe("unit - AMOR Token", function () {
 
         expect(await PROXY.balanceOf(user1.address)).to.equal(taxAmount.toString());
       });
+      it("transfers from one user to another when tax is zero", async function () {
+        await PROXY.setTaxRate(0);
+        await PROXY.approve(root.address, TEST_TRANSFER);
+
+        expect(await PROXY.transferFrom(root.address, user2.address, TEST_TRANSFER))
+          .to.emit(PROXY, "Transfer")
+            .withArgs(root.address, user2.address, (TEST_TRANSFER).toString());
+
+
+        expect(await PROXY.balanceOf(user2.address)).to.equal(TEST_TRANSFER.toString());
+
+        await PROXY.setTaxRate(TAX_RATE);
+      });
+      it("it fails to transfers from one user to another if not enough tokens", async function () {
+        // this is the message instead of '[I]if (fromBalance < amount) { revert InvalidTransfer(); }'
+        // thus '[I]if (fromBalance < amount) { revert InvalidTransfer(); } ' cannot be tested 
+        await expect(PROXY.transferFrom(multisig.address, user1.address, TEST_TRANSFER)).to.be.revertedWith(
+          'InvalidAmount()'
+        );
+      });
+      it("it fails to transfers from one user to another if zero address", async function () {
+        await expect(PROXY.transfer(ZERO_ADDRESS, TEST_TRANSFER)).to.be.revertedWith(
+          'InvalidTransfer()'
+        );
+      });
     });
 
     context("function: viewRate()", () => {
@@ -186,4 +212,58 @@ describe("unit - AMOR Token", function () {
           to.equal(MOCK_UPGRADE_IMPLEMENTATION.address);
       });
     })
+
+    context("function: setTaxRate()", () => {
+      it("sets new tax rate", async function () {
+        expect(await PROXY.taxRate()).
+          to.equal(TAX_RATE);
+
+        const NEW_TAX_RATE = 321;
+        await PROXY.setTaxRate(NEW_TAX_RATE);
+        
+        expect(await PROXY.taxRate()).
+          to.equal(NEW_TAX_RATE);
+      });
+
+      it("fails to set new tax rate if InvalidRate", async function () {
+        const NEW_TAX_RATE = 501;
+        await expect(PROXY.setTaxRate(NEW_TAX_RATE)).to.be.revertedWith(
+          'InvalidRate()'
+        );
+      });
+    });
+
+    context("function: updateController()", () => {
+      it("sets new controller address", async function () {
+        expect(await PROXY.taxController()).
+          to.equal(multisig.address);
+
+        const NEW_ADDRESS = user1.address;
+        await PROXY.updateController(NEW_ADDRESS);
+
+        expect(await PROXY.taxController()).
+          to.equal(NEW_ADDRESS);
+      });
+
+      it("fails to set new controller address if InvalidTaxCollector", async function () {
+        const NEW_ADDRESS = PROXY.address;
+        await expect(PROXY.updateController(NEW_ADDRESS)).to.be.revertedWith(
+          'InvalidTaxCollector()'
+        );
+      });
+    });
+
+    context("function: pause() and unpause()", () => {
+      it("it pauses the contract", async function () {
+        expect(await PROXY.pause()).
+          to.emit(PROXY, "Paused")
+          .withArgs(root.address);
+      });
+
+      it("it unpauses the contract", async function () {
+        expect(await PROXY.unpause()).
+          to.emit(PROXY, "Unpaused")
+          .withArgs(root.address);
+      });
+    });
 });
