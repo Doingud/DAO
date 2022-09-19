@@ -1,6 +1,7 @@
 const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+const { ZERO_ADDRESS } = require("../helpers/constants.js");
 const init = require('../test-init.js');
 
 const twoWeeks = time.duration.days(14);
@@ -72,6 +73,16 @@ describe('unit - Contract: Governor', function () {
     });
 
     context('» setGuardians testing', () => {
+        it('it fails to propose if Guardian Limit not Reached', async function () {
+            targets = [mockModule.address];
+            values = [0];
+            calldatas = [mockModule.interface.encodeFunctionData("testInteraction", [20])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+
+            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas)).to.be.revertedWith(
+                'NotEnoughGuardians()'
+            );
+        });
+        
         it('it fails to set guardians if not the snapshot', async function () {
             guardians = [staker.address, operator.address, user.address];
             await expect(governor.connect(user).setGuardians(guardians)).to.be.revertedWith(
@@ -90,6 +101,35 @@ describe('unit - Contract: Governor', function () {
             expect(await governor.guardians(0)).to.equals(staker.address);
             expect(await governor.guardians(1)).to.equals(operator.address);
             expect(await governor.guardians(2)).to.equals(user.address);
+        });
+
+        it('it sets guardians when list of the new guardians is less than before', async function () {
+            guardians = [operator.address, staker.address];
+
+            await governor.connect(authorizer_adaptor).setGuardians(guardians);
+            expect(await governor.guardians(0)).to.equals(operator.address);
+            expect(await governor.guardians(1)).to.equals(staker.address);
+            expect(await governor.guardians(2)).to.equals(ZERO_ADDRESS);
+
+            // return previous user and guardians variables back            
+            guardians = [staker.address, operator.address, user.address];
+            await governor.connect(authorizer_adaptor).setGuardians(guardians);
+        });
+    });
+
+    context('» changeGuardiansLimit testing', () => {
+
+        it('it fails to change guardians limit if not the guardian', async function () {
+            await expect(governor.connect(user2).changeGuardiansLimit(user2.address)).to.be.revertedWith(
+                'Unauthorized()'
+            );
+        });
+
+        it('it changes guardians limit ', async function () {
+            expect(await governor.GUARDIANS_LIMIT()).to.equals(2);
+            await governor.connect(operator).changeGuardiansLimit(3);
+            expect(await governor.GUARDIANS_LIMIT()).to.equals(3);
+            await governor.connect(operator).changeGuardiansLimit(2);
         });
     });
 
@@ -369,6 +409,12 @@ describe('unit - Contract: Governor', function () {
             expect(await governor.proposalCancelApproval(secondProposalId)).to.equals(0);
             await expect(governor.voters(secondProposalId)).to.be.reverted;
             await expect(governor.cancellers(secondProposalId)).to.be.reverted;
+        });
+
+        it('it fails to execute cancelled proposal', async function () {
+            await expect(governor.connect(root).execute([staker.address], values, calldatas)).to.be.revertedWith(
+                'Governor: unknown proposal id'
+            );
         });
 
         it('it fails to cast vote for cancelling if vote is not active', async function () {
