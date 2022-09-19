@@ -9,6 +9,8 @@ const twoWeeks = time.duration.days(14);
 let AMORxGuild; // need for testing propose() function
 let avatar;
 let governor;
+let mockModule;
+
 let root;
 let authorizer_adaptor;
 let operator;
@@ -22,6 +24,7 @@ let values;
 let calldatas;
 let firstProposalId;
 let secondProposalId;
+let thirdProposalId;
 
 describe('unit - Contract: Governor', function () {
 
@@ -33,7 +36,9 @@ describe('unit - Contract: Governor', function () {
         // AMOR = setup.tokens.AmorTokenImplementation;
         AMORxGuild = setup.tokens.AmorGuildToken;
         await init.controller(setup);
-        avatar = setup.tokens.AvatarxGuild;
+        await init.avatar(setup);
+        avatar = setup.avatars.avatar;
+        mockModule = setup.avatars.module;
         governor = await init.governor(setup);
         root = setup.roles.root;
         staker = setup.roles.staker;
@@ -131,15 +136,9 @@ describe('unit - Contract: Governor', function () {
     context('» propose testing', () => {
 
         it('it fails to propose if not the avatar', async function () {
-            targets = [authorizer_adaptor.address];
-            values = [20];
-            // building hash has to come from system address
-            // 32 bytes of data
-            let messageHash = ethers.utils.solidityKeccak256(
-                ["address"],
-                [authorizer_adaptor.address]
-            );
-            calldatas = [messageHash];
+            targets = [mockModule.address];
+            values = [0];
+            calldatas = [mockModule.interface.encodeFunctionData("testInteraction", [20])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
 
             await expect(governor.connect(user).propose(targets, values, calldatas)).to.be.revertedWith(
                 'Unauthorized()'
@@ -202,9 +201,18 @@ describe('unit - Contract: Governor', function () {
                 messageHash, messageHash, messageHash,
                 messageHash, messageHash
             ];
+
             await expect(governor.connect(authorizer_adaptor).propose(tooManyTargets, tooManyValues, tooManyCalldatas)).to.be.revertedWith(
                 'InvalidParameters()'
             );
+
+
+            let unSTargets = [mockModule.address];
+            let unSValues = [20];
+            let unSCalldatas = [mockModule.interface.encodeFunctionData("testInteraction", [20])];
+
+            await governor.connect(authorizer_adaptor).propose(unSTargets, unSValues, unSCalldatas);
+            thirdProposalId = await governor.proposals(2);
         });
     });
 
@@ -229,6 +237,11 @@ describe('unit - Contract: Governor', function () {
             await governor.connect(user2).castVote(firstProposalId, false);
             expect(await governor.proposalVoting(firstProposalId)).to.equals(2);
             expect(await governor.proposalWeight(firstProposalId)).to.equals(3);
+
+
+            await governor.connect(root).castVote(thirdProposalId, true);
+            await governor.connect(user).castVote(thirdProposalId, true);
+            await governor.connect(user2).castVote(thirdProposalId, true);
         });
 
         it('it fails to castVote if already voted', async function () {
@@ -240,9 +253,9 @@ describe('unit - Contract: Governor', function () {
 
     context('» execute testing', () => {
 
-        it('it fails to execute if invalid parametres', async function () {
-            await expect(governor.connect(root).execute(11, [user.address], values, calldatas)).to.be.revertedWith(
-                'InvalidParameters()'
+        it('it fails to execute if unknown proposal id', async function () {
+            await expect(governor.connect(root).execute([user.address], values, calldatas)).to.be.revertedWith(
+                'Governor: unknown proposal id'
             );
         });
 
@@ -252,15 +265,30 @@ describe('unit - Contract: Governor', function () {
             );
         });
 
-        it('it executes proposal', async function () {
+        it('it fails to execute if UnderlyingTransactionReverted', async function () {
             // mine 64000 blocks
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(twoWeeks);
 
-            expect(await avatar.check()).to.equals(0);
-            await governor.connect(authorizer_adaptor).execute(firstProposalId, targets, values, calldatas);
-            expect(await avatar.check()).to.equals(1);
+            let unSTargets = [mockModule.address];
+            let unSValues = [20];
+            let unSCalldatas = [mockModule.interface.encodeFunctionData("testInteraction", [20])];
 
+            await avatar.connect(root).setGovernor(governor.address);
+            await expect(governor.connect(authorizer_adaptor).execute(unSTargets, unSValues, unSCalldatas))
+                .to.be.revertedWith(
+                'UnderlyingTransactionReverted()'
+            );
+        });
+    
+        it('it executes proposal', async function () {
+            expect(await mockModule.testValues()).to.equal(0);
+
+            await expect(governor.connect(authorizer_adaptor).execute(targets, values, calldatas))
+                .to
+                .emit(governor, "ProposalExecuted").withArgs(firstProposalId);
+
+            expect(await mockModule.testValues()).to.equal(20);
             await expect(governor.voters(firstProposalId)).to.be.reverted;
         });
 
@@ -274,7 +302,7 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it fails to execute if proposal not successful', async function () {
-            await expect(governor.connect(root).execute(secondProposalId, targets, values, newcalldatas)).to.be.revertedWith(
+            await expect(governor.connect(root).execute(targets, values, newcalldatas)).to.be.revertedWith(
                 'InvalidState()'
             );
         });
@@ -307,7 +335,7 @@ describe('unit - Contract: Governor', function () {
         it('it fails to castVoteForCancelling if not the guardian', async function () {
             targets = [staker.address];
             await governor.connect(authorizer_adaptor).propose(targets, values, calldatas);
-            secondProposalId = await governor.proposals(2);
+            secondProposalId = await governor.proposals(3);
 
             await expect(governor.connect(authorizer_adaptor).castVoteForCancelling(secondProposalId)).to.be.revertedWith(
                 'Unauthorized()'
@@ -345,7 +373,7 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to cast vote for cancelling if vote is not active', async function () {
             await governor.connect(authorizer_adaptor).propose(targets, values, newcalldatas);
-            secondProposalId = await governor.proposals(1);
+            secondProposalId = await governor.proposals(2);
 
             time.increase(time.duration.days(1));
             time.increase(twoWeeks);
