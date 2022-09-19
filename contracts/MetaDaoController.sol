@@ -202,8 +202,6 @@ contract MetaDaoController is Ownable {
                 index.indexDenominator;
             if (amountToDistribute != 0) {
                 guildFees[guilds[endOfList]] += amountToDistribute;
-                //guildFunds[guilds[endOfList]][address(amorToken)] += amountToDistribute;
-                //donations[address(amorToken)] += amountToDistribute;
             }
             endOfList = guilds[endOfList];
         }
