@@ -95,8 +95,7 @@ contract Vesting is Ownable {
             revert InsufficientFunds();
         }
         Allocation storage allocation = allocations[msg.sender];
-// console.log("allocation.cliff is %s", allocation.cliff);
-// console.log("block.timestamp is %s", block.timestamp);
+
         if (allocation.cliff > block.timestamp) {
             revert NotVested();
         }
@@ -106,7 +105,8 @@ contract Vesting is Ownable {
         tokensWithdrawn += amount;
         /// Transfer the AMOR to the caller
         amorToken.transfer(msg.sender, amount);
-// we already have revert in amorToken, also there's an amount check above
+
+        // we already have revert in amorToken, also there's an amount check above
         // if (!amorToken.transfer(msg.sender, amount)) {
         //     revert TransferUnsuccessful();
         // }
