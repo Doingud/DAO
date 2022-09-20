@@ -64,16 +64,12 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     // amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
 
-    bool private _initialized;
-
-    address public _owner; //GuildController
+    address public guildController; //GuildController
     address public controller; //contract that has a voting function
 
     IERC20 public AMORxGuild;
 
-    error AlreadyInitialized();
     error Unauthorized();
-    error EmptyArray();
     error NotDelegatedAny();
 
     /// Invalid address. Needed address != address(0)
@@ -91,24 +87,15 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         address initOwner_,
         address AMORxGuild_
     ) external override {
-        if (_initialized) {
-            revert AlreadyInitialized();
-        }
-
+        _setTokenDetail(name_, symbol_);  // Checks if the contract is already initialized
         _transferOwnership(initOwner_);
-
-        _owner = initOwner_;
+        guildController = initOwner_;
         controller = initOwner_;
         AMORxGuild = IERC20(AMORxGuild_);
-        //  Set the name and symbol
-        name = name_;
-        symbol = symbol_;
-
-        _initialized = true;
-        emit Initialized(_initialized, initOwner_, AMORxGuild_);
+        emit Initialized(initOwner_, AMORxGuild_);
     }
 
-    function setController(address _controller) external onlyAddress(_owner) {
+    function setController(address _controller) external onlyAddress(guildController) {
         if (_controller == address(0)) {
             revert AddressZero();
         }
@@ -131,7 +118,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     /// @param  to Address where FXAMORxGuild must be minted to
     /// @param  amount uint256 amount of AMORxGuild to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
-    function stake(address to, uint256 amount) external onlyAddress(_owner) returns (uint256) {
+    function stake(address to, uint256 amount) external onlyAddress(guildController) returns (uint256) {
         if (to == msg.sender) {
             revert InvalidSender();
         }
@@ -159,7 +146,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     //       to the controller(contract that has a voting function)
     /// @param  account address from which must burn tokens
     /// @param  amount uint256 representing amount of burning tokens
-    function burn(address account, uint256 amount) external onlyAddress(_owner) {
+    function burn(address account, uint256 amount) external onlyAddress(guildController) {
         if (stakes[account] < amount) {
             revert InvalidAmount();
         }

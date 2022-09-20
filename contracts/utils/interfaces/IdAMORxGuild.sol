@@ -11,7 +11,7 @@ interface IdAMORxGuild {
         address initOwner,
         address _AMORxGuild,
         uint256 amount
-    ) external returns (bool);
+    ) external;
 
     //  receives ERC20 AMORxGuild tokens, which are getting locked
     //  and generate dAMORxGuild tokens in return.

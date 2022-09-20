@@ -261,7 +261,7 @@ contract MetaDaoController is IMetaDaoController, AccessControl {
     /// @return bool true if token whitelisted, false if not whitelisted
     function isWhitelisted(address token) external view returns (bool) {
         if (whitelist[token] == address(0)) {
-            revert NotListed();
+            return false;
         }
         return true;
     }

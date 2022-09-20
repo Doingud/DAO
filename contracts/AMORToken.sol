@@ -48,6 +48,10 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract AMORToken is ERC20Base, Pausable, Ownable {
+
+    event TaxCollectorChanged(address newTaxCollector);
+    event TaxRateChanged(uint256 newTaxRate);
+
     //  Tax controller
     address public taxController;
     //  Tax Rate
@@ -57,13 +61,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
 
     error InvalidRate();
 
-    error InvalidTaxCollector();
-
-    error AlreadyInitialized();
-
-    event Initialized(bool success, address taxCollector, uint256 rate);
-
-    bool private _initialized;
+    event Initialized(address taxCollector, uint256 rate);
 
     /// @notice Initializes the token
     /// @dev    Must call `_setTokenDetail` to set `name` and `symol`
@@ -71,38 +69,44 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
     /// @param  _symbol the token symbol
     /// @param  _initCollector the tax/fee collector (DoinGud MetaDAO)
     /// @param  _multisig the multisig address of the MetaDAO, which owns the token
-    /// @return bool value, true if successful
     function init(
         string memory _name,
         string memory _symbol,
         address _initCollector,
         uint256 _initTaxRate,
         address _multisig
-    ) external returns (bool) {
-        if (_initialized) {
-            revert AlreadyInitialized();
-        }
+    ) external {
+        //  Set the name and symbol
+        _setTokenDetail(_name, _symbol); // Checks if the contract is already initialized
         //  Set the owner to the Multisig
         _transferOwnership(_multisig);
-        //  Set the name and symbol
-        _setTokenDetail(_name, _symbol);
-        decimals = 18;
         //  Pre-mint to the multisig address
-        _mint(_multisig, 10000000 * 10**decimals);
+        _mint(_multisig, 10000000 * 10**18);
         //  Set the tax collector address
         updateController(_initCollector);
         //  Set the tax rate
         setTaxRate(_initTaxRate);
-        _initialized = true;
-        emit Initialized(_initialized, _initCollector, _initTaxRate);
-        return true;
+        emit Initialized(_initCollector, _initTaxRate);
+    }
+
+    /// @notice Pause functionality for AMOR
+    /// @dev    For security purposes, should there be an exploit.
+    ///         The owner should be a multisig and have strong security practices
+    //          Actions invoking `pause` and `unpause` must be transparent to the community
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice Unpause contract
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     /// @notice Sets the tax rate for transfer and transferFrom
     /// @dev    Rate is expressed in basis points, this must be divided by 10 000 to equal desired rate
     /// @param  newRate uint256 representing new tax rate, must be <= 500
     function setTaxRate(uint256 newRate) public onlyOwner {
-        if (newRate > 500) {
+        if (newRate > 500) { // TODO: owner can update contract implementation and remove this check, so no point of having it in the first place
             revert InvalidRate();
         }
         _setTaxRate(newRate);
@@ -111,9 +115,6 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
     /// @notice Sets the address which receives taxes
     /// @param  newTaxCollector address which must receive taxes
     function updateController(address newTaxCollector) public onlyOwner {
-        if (newTaxCollector == address(this)) {
-            revert InvalidTaxCollector();
-        }
         _updateController(newTaxCollector);
     }
 
@@ -121,6 +122,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
     /// @param  newTaxCollector address which must receive taxes
     function _updateController(address newTaxCollector) internal {
         taxController = newTaxCollector;
+        emit TaxCollectorChanged(newTaxCollector);
     }
 
     /// @notice Sets the tax rate for transfer and transferFrom
@@ -128,6 +130,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
     /// @param  newRate uint256 representing new tax rate, must be <= 500
     function _setTaxRate(uint256 newRate) internal {
         taxRate = newRate;
+        emit TaxRateChanged(newRate);
     }
 
     /// @notice This transfer function overrides the normal _transfer from ERC20Base
@@ -141,8 +144,6 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
             revert InvalidTransfer();
         }
 
-        _beforeTokenTransfer(from, to, amount);
-
         uint256 fromBalance = _balances[from];
         if (fromBalance < amount) {
             revert InvalidTransfer();
@@ -155,39 +156,21 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         if (taxRate > 0) {
             uint256 taxAmount = (amount * taxRate) / BASIS_POINTS;
             uint256 afterTaxAmount = amount - taxAmount;
-            _balances[taxController] += taxAmount;
 
             emit Transfer(from, taxController, taxAmount);
+            emit Transfer(from, to, afterTaxAmount);
+            
+            unchecked {
+                _balances[taxController] += taxAmount;
+                _balances[to] += afterTaxAmount;
+            }
 
-            _balances[to] += afterTaxAmount;
-
-            emit Transfer(from, to, (amount - taxAmount));
         } else {
-            _balances[to] += amount;
+            unchecked {
+                _balances[to] += amount;
+            }
 
             emit Transfer(from, to, amount);
         }
-
-        _afterTokenTransfer(from, to, amount);
-    }
-
-    /// @notice Pause functionality for AMOR
-    /// @dev    For security purposes, should there be an exploit.
-    ///         The owner should be a multisig and have strong security practices
-    //          Actions invoking `pause` and `unpause` must be transparent to the community
-    function pause() external onlyOwner {
-        _pause();
-    }
-
-    function unpause() external onlyOwner {
-        _unpause();
-    }
-
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 amount
-    ) internal override whenNotPaused {
-        super._beforeTokenTransfer(from, to, amount);
     }
 }

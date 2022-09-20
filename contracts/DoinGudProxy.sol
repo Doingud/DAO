@@ -66,7 +66,7 @@ contract DoinGudProxy is Proxy, ERC1967Upgrade {
     }
 
     //  Uprade the token implementation
-    //  Still needs access control
+    //  Still needs access control // TODO: don't forget about this
     function upgradeImplementation(address newImplementation) external {
         _upgradeTo(newImplementation);
     }

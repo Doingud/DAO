@@ -31,23 +31,26 @@ import "./utils/interfaces/IdAMORxGuild.sol";
 import "./utils/interfaces/IGuildController.sol";
 
 contract GuildFactory is ICloneFactory, Ownable {
+    uint256 public constant DEFAULT_GUARDIAN_TRESHOLD = 10;
+
     /// The AMOR Token address
-    address public amorToken;
+    address public immutable amorToken;
     /// The address for the AMORxGuild Token implementation
-    address public amorxGuildToken;
+    address public immutable amorxGuildToken;
     /// The FXAMORxGuild Token implementation
-    address public fxAMORxGuildToken;
+    address public immutable fxAMORxGuildToken;
     /// The dAMORxGuild Token implementation
-    address public dAMORxGuildToken;
+    address public immutable dAMORxGuildToken;
     /// The ControllerxGuild implementation
-    address public controllerxGuild;
+    address public immutable controllerxGuild;
 
-    address public MetaDaoController;
+    address public immutable MetaDaoController;
 
-    address public multisig;
+    address public immutable multisig;
 
     /// The DoinGud generic proxy contract (the target)
-    address public cloneTarget;
+    address public immutable cloneTarget;
+
     address[] public amorxGuildTokens;
     ///mapping(address => address) public amorxGuildTokens;
     ///address[] public fxAMORxGuildTokens;
@@ -56,8 +59,6 @@ contract GuildFactory is ICloneFactory, Ownable {
     mapping(address => address) public dAMORxGuildTokens;
     ///address[] public guildControllers;
     mapping(address => address) public guildControllers;
-
-    uint256 public defaultGuardianThreshold = 10;
 
     constructor(
         address _amorToken,
@@ -148,10 +149,6 @@ contract GuildFactory is ICloneFactory, Ownable {
     ) internal returns (address) {
         IAmorxGuild proxyContract = IAmorxGuild(Clones.clone(cloneTarget));
 
-        if (address(proxyContract) == address(0)) {
-            revert CreationFailed();
-        }
-
         IDoinGudProxy(address(proxyContract)).initProxy(_implementation);
         proxyContract.init(guildName, guildSymbol, amorToken, msg.sender);
 
@@ -172,9 +169,6 @@ contract GuildFactory is ICloneFactory, Ownable {
         IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
         proxyContract.initProxy(_implementation);
 
-        if (address(proxyContract) == address(0)) {
-            revert CreationFailed();
-        }
         /// Check which token contract should be deployed
         if (fxAMORxGuildTokens[guildTokenAddress] != address(0)) {
             IdAMORxGuild(address(proxyContract)).init(
@@ -182,7 +176,7 @@ contract GuildFactory is ICloneFactory, Ownable {
                 guildSymbol,
                 msg.sender,
                 guildTokenAddress,
-                defaultGuardianThreshold
+                DEFAULT_GUARDIAN_TRESHOLD
             );
         } else {
             /// FXAMOR uses the same `init` layout as IAMORxGuild
@@ -204,8 +198,8 @@ contract GuildFactory is ICloneFactory, Ownable {
         address amor,
         address amorxGuild,
         address fxAMORxGuild,
-        address MetaDaoController,
-        address multisig
+        address _metaDaoController,
+        address _multisig
     ) internal returns (address) {
         IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
         proxyContract.initProxy(_implementation);
@@ -216,8 +210,8 @@ contract GuildFactory is ICloneFactory, Ownable {
             amor,
             amorxGuild,
             fxAMORxGuild,
-            MetaDaoController,
-            multisig
+            _metaDaoController,
+            _multisig
         );
 
         return address(proxyContract);

@@ -131,7 +131,7 @@ contract DoinGudGovernor {
         address AMORxGuild_,
         address snapshotAddress_,
         address avatarAddress_
-    ) external returns (bool) {
+    ) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -146,7 +146,6 @@ contract DoinGudGovernor {
         _votingPeriod = 2 weeks;
 
         emit Initialized(_initialized, avatarAddress_, snapshotAddress_);
-        return true;
     }
 
     /// @notice this modifier is needed to validate that amount of the Guardians is sufficient to vote and approve the “Many” decision

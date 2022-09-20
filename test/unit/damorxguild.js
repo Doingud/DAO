@@ -82,7 +82,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
         it('it fails to stakes AMORxGuild tokens if not enough AMORxGuild', async function () {
             await expect(dAMORxGuild.connect(staker).stake(ONE_HUNDRED_ETHER, normalTime)).to.be.revertedWith(
-                'InvalidAmount()'
+                'ERC20: insufficient allowance'
             );
         });
 

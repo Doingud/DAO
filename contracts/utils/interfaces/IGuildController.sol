@@ -16,7 +16,7 @@ interface IGuildController {
         address FXAMORxGuild_,
         address MetaDaoController_,
         address multisig
-    ) external returns (bool);
+    ) external;
 
     function setVotingPeriod(uint256 newTime) external;
 

@@ -41,7 +41,7 @@ contract GuildController is IGuildController, Ownable {
     address public MetaDaoController;
     address public multisig;
 
-    // uint256 public triggerCounter;
+    // uint256 public triggerCounter; // TODO: remove / uncomment
     bool public trigger; // set true for a week if previous week were added >= 10 reports; users can vote only if trigger == true
     uint256[] public reportsQueue;
     mapping(uint256 => address) public queueReportsAuthors;
@@ -53,13 +53,12 @@ contract GuildController is IGuildController, Ownable {
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
 
-    event Initialized(bool success, address owner, address AMORxGuild);
+    event Initialized(address owner, address AMORxGuild);
 
     bool private _initialized;
 
     error AlreadyInitialized();
     error Unauthorized();
-    error EmptyArray();
     error InvalidParameters();
     error VotingTimeExpired();
     error VotingTimeNotFinished();
@@ -81,7 +80,7 @@ contract GuildController is IGuildController, Ownable {
         address FXAMORxGuild_,
         address MetaDaoController_,
         address multisig_ // the multisig address of the MetaDAO, which owns the token
-    ) external returns (bool) {
+    ) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -100,8 +99,7 @@ contract GuildController is IGuildController, Ownable {
         timeVoting = 0;
 
         _initialized = true;
-        emit Initialized(_initialized, initOwner, AMORxGuild_);
-        return true;
+        emit Initialized(initOwner, AMORxGuild_);
     }
 
     function setVotingPeriod(uint256 newTime) external onlyOwner {
@@ -121,7 +119,7 @@ contract GuildController is IGuildController, Ownable {
     function distribute(
         uint256 amount,
         address token,
-        address sender
+        address sender // TODO: unused variable
     ) internal returns (uint256) {
         // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {

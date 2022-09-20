@@ -63,22 +63,17 @@ contract dAMORxGuild is ERC20Base, Ownable {
     // amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
 
-    event Initialized(bool success, address owner, address AMORxGuild, uint256 amount);
+    event Initialized(address owner, address AMORxGuild, uint256 amount);
 
-    bool private _initialized;
     uint256 public constant COEFFICIENT = 2;
-    uint256 public constant TIME_DENOMINATOR = 1000000000000000000;
+    uint256 public constant TIME_DENOMINATOR = 10**18;
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     uint256 public constant MIN_LOCK_TIME = 7 days; // 1 week is the time for the new deposided tokens to be locked until they can be withdrawn
 
     IERC20 private AMORxGuild;
 
-    error AlreadyInitialized();
-    error Unauthorized();
-    error EmptyArray();
     error NotDelegatedAny();
     /// Invalid address. Needed address != address(0)
-    error AddressZero();
     /// Invalid address to transfer. Needed `to` != msg.sender
     error InvalidSender();
     error TimeTooSmall();
@@ -88,23 +83,16 @@ contract dAMORxGuild is ERC20Base, Ownable {
      *          It can only be run once.
      */
     function init(
-        string memory name,
-        string memory symbol,
+        string memory _name,
+        string memory _symbol,
         address initOwner,
         address _AMORxGuild,
-        uint256 amount
-    ) external returns (bool) {
-        if (_initialized) {
-            revert AlreadyInitialized();
-        }
+        uint256 amount // TODO: amount doesn't do anything, should it mint?
+    ) external {
+        _setTokenDetail(_name, _symbol); // Checks if the contract is already initialized
         _transferOwnership(initOwner);
-
         AMORxGuild = IERC20(_AMORxGuild);
-        _setTokenDetail(name, symbol);
-
-        _initialized = true;
-        emit Initialized(_initialized, initOwner, _AMORxGuild, amount);
-        return true;
+        emit Initialized(initOwner, _AMORxGuild, amount);
     }
 
     /// @notice Mint AMORxGuild tokens to staker
@@ -133,9 +121,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
         if (time > MAX_LOCK_TIME) {
             revert TimeTooBig();
-        }
-        if (AMORxGuild.balanceOf(msg.sender) < amount) {
-            revert InvalidAmount();
         }
         // send to AMORxGuild contract to stake
         AMORxGuild.safeTransferFrom(msg.sender, address(this), amount);
