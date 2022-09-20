@@ -29,6 +29,7 @@ import "./utils/interfaces/ICloneFactory.sol";
 import "./utils/interfaces/IDoinGudProxy.sol";
 import "./utils/interfaces/IdAMORxGuild.sol";
 import "./utils/interfaces/IGuildController.sol";
+import "./utils/interfaces/IAvatarxGuild.sol";
 
 contract GuildFactory is ICloneFactory, Ownable {
     /// The AMOR Token address
