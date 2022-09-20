@@ -42,6 +42,8 @@ contract GuildFactory is ICloneFactory, Ownable {
     address public dAMORxGuildToken;
     /// The ControllerxGuild implementation
     address public controllerxGuild;
+    /// The GovernorxGuild implementation address
+    address public governorxGuild;
 
     address public MetaDaoController;
 
@@ -67,6 +69,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         address _dAMORxGuildToken,
         address _doinGudProxy,
         address _controllerxGuild,
+        address _governor,
         address _metaDaoController,
         address _multisig
     ) {

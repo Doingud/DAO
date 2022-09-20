@@ -176,6 +176,8 @@ const governor = async (setup) => {
     setup.avatars.avatar.address // Avatar Address
   );
 
+  setup.governor = governor;
+
   return governor;
 };
 
@@ -192,6 +194,7 @@ const getGuildFactory = async (setup) => {
     setup.tokens.dAMORxGuild.address,
     setup.tokens.AmorTokenProxy.address,
     setup.controller.address,
+    setup.governor.address,
     setup.metadao.address, // metaDaoController
     setup.roles.root.address // multisig
   );

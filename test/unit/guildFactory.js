@@ -29,6 +29,8 @@ describe("unit - Clone Factory", function () {
     await init.getTokens(setup);
     await init.metadao(setup);
     await init.controller(setup);
+    await init.avatar(setup);
+    await init.governor(setup);
 
     AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
     AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
