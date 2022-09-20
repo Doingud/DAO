@@ -26,6 +26,7 @@ let root;
 let multisig;
 let user1;
 let user2;
+let user3;
 
 describe("unit - AMOR Token", function () {
 
@@ -42,6 +43,7 @@ describe("unit - AMOR Token", function () {
     multisig = setup.roles.doingud_multisig;
     user1 = setup.roles.user1;
     user2 = setup.roles.user2;
+    user3 = setup.roles.user3;
     
   });
 
@@ -176,7 +178,7 @@ describe("unit - AMOR Token", function () {
       it("it fails to transfers from one user to another if not enough tokens", async function () {
         // this is the message instead of '[I]if (fromBalance < amount) { revert InvalidTransfer(); }'
         // thus '[I]if (fromBalance < amount) { revert InvalidTransfer(); } ' cannot be tested 
-        await expect(PROXY.transferFrom(multisig.address, user1.address, TEST_TRANSFER)).to.be.revertedWith(
+        await expect(PROXY.transferFrom(user3.address, user1.address, TEST_TRANSFER)).to.be.revertedWith(
           'InvalidAmount()'
         );
       });

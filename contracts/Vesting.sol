@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
-
+import "hardhat/console.sol";
 /**
  * @title  DoinGud: Vesting.sol
  * @author Daoism Systems
@@ -95,7 +95,8 @@ contract Vesting is Ownable {
             revert InsufficientFunds();
         }
         Allocation storage allocation = allocations[msg.sender];
-
+// console.log("allocation.cliff is %s", allocation.cliff);
+// console.log("block.timestamp is %s", block.timestamp);
         if (allocation.cliff > block.timestamp) {
             revert NotVested();
         }
@@ -104,9 +105,11 @@ contract Vesting is Ownable {
         allocation.tokensClaimed += amount;
         tokensWithdrawn += amount;
         /// Transfer the AMOR to the caller
-        if (!amorToken.transfer(msg.sender, amount)) {
-            revert TransferUnsuccessful();
-        }
+        amorToken.transfer(msg.sender, amount);
+// we already have revert in amorToken, also there's an amount check above
+        // if (!amorToken.transfer(msg.sender, amount)) {
+        //     revert TransferUnsuccessful();
+        // }
     }
 
     /// @notice Returns the amount of vested tokens allocated to the target

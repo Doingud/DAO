@@ -58,11 +58,12 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
         it("Should fail if called more than once", async function () {
             await expect(dAMORxGuild.init(
-                AMORxGuild.address, 
                 MOCK_GUILD_NAMES[0], 
                 MOCK_GUILD_SYMBOLS[0],
+                root.address,
+                AMORxGuild.address,
                 ONE_HUNDRED_ETHER
-            )).to.be.reverted;
+            )).to.be.revertedWith("AlreadyInitialized()");
         });
     });
     
@@ -290,7 +291,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             await expect(dAMORxGuild.connect(staker).withdraw()).to.be.revertedWith(
                 'TimeTooSmall()'
             ); 
-        });  
+        });
 
         it('withdraw dAMORxGuild tokens if not delegated any', async function () {
             time.increase(maxLockTime);
@@ -310,6 +311,23 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             const withdrawedTokens = (await AMORxGuild.balanceOf(staker2.address)).toString();
             
             expect(withdrawedTokens).to.equal(currentAmount);
-        });         
+        });
+
+        it('it fails to withdraw dAMORxGuild tokens if nothung to withdraw', async function () {
+            await expect(dAMORxGuild.connect(staker2).withdraw()).to.be.revertedWith(
+                'InvalidAmount()'
+            ); 
+        });
+    });
+
+    context('» non-transferable testing', () => {
+
+        it('it fails to transfer', async function () {
+            expect(await dAMORxGuild.connect(staker).transfer(root.address, 1)).to.be.false;
+        });
+
+        it('it fails to transferFrom', async function () {
+            expect(await dAMORxGuild.connect(staker).transferFrom(staker.address, root.address, 1)).to.equal(false);
+        });
     });
 });
