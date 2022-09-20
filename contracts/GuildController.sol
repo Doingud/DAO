@@ -136,9 +136,7 @@ contract GuildController is IGuildController, Ownable {
     /// and calles distribute function for the whole amount of gathered tokens
     function gatherDonation(address token) public {
         // check if token in the whitelist of the MetaDaoController
-        if (!IMetadao(MetaDaoController).isWhitelisted(token)) {
-            revert NotWhitelistedToken();
-        }
+        IMetadao(MetaDaoController).isWhitelisted(token);
 
         uint256 amount = IMetadao(MetaDaoController).claimDonation(token, address(this));
 
@@ -156,9 +154,7 @@ contract GuildController is IGuildController, Ownable {
     // Requires the msg.sender to `approve` amount prior to calling this function
     function donate(uint256 allAmount, address token) external returns (uint256) {
         // check if token in the whitelist of the MetaDaoController
-        if (!IMetadao(MetaDaoController).isWhitelisted(token)) {
-            revert NotWhitelistedToken();
-        }
+        IMetadao(MetaDaoController).isWhitelisted(token);
 
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
         if (IERC20(token).balanceOf(msg.sender) < allAmount || allAmount < 10) {

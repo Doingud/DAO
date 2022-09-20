@@ -266,6 +266,12 @@ describe('unit - Contract: GuildController', function () {
             expect((await AMOR.balanceOf(controller.address)).toString()).to.equal(expectedAMORBalance.toString());
             expect((await FXAMORxGuild.balanceOf(user.address)).toString()).to.equal(expectedfxamorBalance.toString());            
         });
+
+        it('it fails to donate if NotWhitelistedToken', async function () {
+            await expect(controller.connect(user).donate(TEST_TRANSFER_SMALLER, USDC.address)).to.be.revertedWith(
+                'NotListed()'
+            );
+        });
     });
 
     context('» gatherDonation and distribute testing', () => {
@@ -540,6 +546,7 @@ describe('unit - Contract: GuildController', function () {
             expect(await controller.reportsVoting(0)).to.equals(2);
             expect(await controller.reportsWeight(0)).to.equals(2);
 
+            time.increase(time.duration.days(1));
             await controller.connect(operator).voteForReport(id, 1, false);
             expect(await controller.reportsVoting(0)).to.equals(1);
             expect(await controller.reportsWeight(0)).to.equals(3);
