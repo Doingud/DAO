@@ -48,7 +48,6 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract AMORToken is ERC20Base, Pausable, Ownable {
-
     event TaxCollectorChanged(address newTaxCollector);
     event TaxRateChanged(uint256 newTaxRate);
 
@@ -106,7 +105,8 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
     /// @dev    Rate is expressed in basis points, this must be divided by 10 000 to equal desired rate
     /// @param  newRate uint256 representing new tax rate, must be <= 500
     function setTaxRate(uint256 newRate) public onlyOwner {
-        if (newRate > 500) { // TODO: owner can update contract implementation and remove this check, so no point of having it in the first place
+        if (newRate > 500) {
+            // TODO: owner can update contract implementation and remove this check, so no point of having it in the first place
             revert InvalidRate();
         }
         _setTaxRate(newRate);
@@ -159,12 +159,11 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
 
             emit Transfer(from, taxController, taxAmount);
             emit Transfer(from, to, afterTaxAmount);
-            
+
             unchecked {
                 _balances[taxController] += taxAmount;
                 _balances[to] += afterTaxAmount;
             }
-
         } else {
             unchecked {
                 _balances[to] += amount;

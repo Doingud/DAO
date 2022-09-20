@@ -108,7 +108,8 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     /// @dev    Requires the new tax rate in basis points, where each point equals 0.01% change
     /// @param  newRate uint8 representing the new tax rate expressed in basis points.
     function setTax(uint16 newRate) external onlyOwner {
-        if (newRate > 2000) { // TODO: owner can update contract implementation and remove this check, so no point of having it in the first place
+        if (newRate > 2000) {
+            // TODO: owner can update contract implementation and remove this check, so no point of having it in the first place
             revert InvalidTaxRate();
         }
 
@@ -121,7 +122,8 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     /// @param  amount uint256 amount of AMOR to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
     function stakeAmor(address to, uint256 amount) external override whenNotPaused returns (uint256) {
-        if (tokenAmor.balanceOf(msg.sender) < amount) { // TODO: nice error handling, but not really necessary, because safeTransferFrom will fail if this happens
+        if (tokenAmor.balanceOf(msg.sender) < amount) {
+            // TODO: nice error handling, but not really necessary, because safeTransferFrom will fail if this happens
             revert UnsufficientAmount();
         }
         //  Must calculate stakedAmor prior to transferFrom()
@@ -147,7 +149,8 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     /// @param  amount uint256 amount of AMORxGuild to exchange for AMOR
     /// @return uint256 the amount of AMOR returned from burning AMORxGuild
     function withdrawAmor(uint256 amount) external override whenNotPaused returns (uint256) {
-        if (amount > balanceOf(msg.sender)) { // TODO: burn will fail if this is the case
+        if (amount > balanceOf(msg.sender)) {
+            // TODO: burn will fail if this is the case
             revert UnsufficientAmount();
         }
         uint256 currentSupply = totalSupply();

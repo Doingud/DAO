@@ -87,7 +87,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         address initOwner_,
         address AMORxGuild_
     ) external override {
-        _setTokenDetail(name_, symbol_);  // Checks if the contract is already initialized
+        _setTokenDetail(name_, symbol_); // Checks if the contract is already initialized
         _transferOwnership(initOwner_);
         guildController = initOwner_;
         controller = initOwner_;
