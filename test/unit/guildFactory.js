@@ -20,6 +20,7 @@ use(solidity);
   let GUILD_ONE_DAMORXGUILD;
   let GUILD_ONE_FXAMORXGUILD;
   let GUILD_ONE_CONTROLLERXGUILD;
+  let TEST_ZERO_FACTORY;
 
 describe("unit - Clone Factory", function () {
 
@@ -40,6 +41,8 @@ describe("unit - Clone Factory", function () {
     await init.getGuildFactory(setup);
     CLONE_FACTORY = setup.factory.guildFactory;
     CONTROLLERXGUILD = setup.factory.controller;
+
+    TEST_ZERO_FACTORY = setup.factory.testGuildZeroFactory;
   });
 
   before('Setup', async function() {
@@ -61,6 +64,13 @@ describe("unit - Clone Factory", function () {
       GUILD_ONE_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(this.guildOneControllerxGuild);
     });
 
+    it("Should fail to deploy the Guild Token Contracts if cloneTarget = address 0", async function () {
+      console.log("await TEST_ZERO_FACTORY.cloneTarget() is %s", await TEST_ZERO_FACTORY.cloneTarget());
+      await expect(TEST_ZERO_FACTORY.deployGuildContracts(user1.address, MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0])).to.be.revertedWith(
+        'CreationFailed()'
+      );
+    });
+  
     it("Should have set the tokens' paramaters correctly", async function () {
       expect(await GUILD_ONE_AMORXGUILD.name()).to.equal("AMORx"+MOCK_GUILD_NAMES[0]);
       expect(await GUILD_ONE_DAMORXGUILD.name()).to.equal("dAMORx"+MOCK_GUILD_NAMES[0]);

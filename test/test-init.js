@@ -202,9 +202,22 @@ const getGuildFactory = async (setup) => {
     setup.roles.root.address // multisig
   );
 
+  const cloneZeroFactory = await ethers.getContractFactory("GuildFactory");
+  const testGuildZeroFactory = await cloneZeroFactory.deploy(
+    setup.tokens.AmorTokenImplementation.address,
+    setup.tokens.AmorGuildToken.address,
+    setup.tokens.FXAMORxGuild.address,
+    setup.tokens.dAMORxGuild.address,
+    ZERO_ADDRESS,
+    controller.address,
+    setup.roles.authorizer_adaptor.address, // metaDaoController
+    setup.roles.root.address // multisig
+  );
+
   const factory = {
     controller,
-    guildFactory
+    guildFactory,
+    testGuildZeroFactory
   }
 
   setup.factory = factory;
