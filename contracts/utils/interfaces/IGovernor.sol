@@ -35,7 +35,6 @@ pragma solidity 0.8.15;
  */
 
 interface IDoinGudGovernor {
-
     enum ProposalState {
         Pending,
         Active,

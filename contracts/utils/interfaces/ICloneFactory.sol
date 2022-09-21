@@ -15,9 +15,11 @@ interface ICloneFactory {
         address owner,
         string memory _name,
         string memory _symbol
-    ) external returns (
-        address controller,
-        address avatar,
-        address governor
-    );
+    )
+        external
+        returns (
+            address controller,
+            address avatar,
+            address governor
+        );
 }

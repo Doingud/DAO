@@ -41,7 +41,6 @@ interface IAvatarxGuild {
     event ExecutionFromModuleSuccess(address indexed module);
     event ExecutionFromModuleFailure(address indexed module);
 
-
     /// @notice Initializes the AvatarxGuild module
     /// @param  initOwner the address that owns this AvatarxGuild
     /// @param  governorAddress_ the guild's governor

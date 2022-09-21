@@ -108,11 +108,14 @@ contract GuildFactory is ICloneFactory, Ownable {
         address guildOwner,
         string memory _name,
         string memory _symbol
-    ) external returns (
-        address controller,
-        address avatar,
-        address governor
-    ) {
+    )
+        external
+        returns (
+            address controller,
+            address avatar,
+            address governor
+        )
+    {
         /// Setup local scope vars
         string memory tokenName;
         string memory tokenSymbol;
@@ -162,17 +165,13 @@ contract GuildFactory is ICloneFactory, Ownable {
         if (!_initGuildControls(_name, currentGuild, guildOwner)) {
             revert Unsuccessful();
         }
-
     }
 
     /// @notice Internal function to deploy clone of an implementation contract
     /// @param  guildName name of token
     /// @param  guildSymbol symbol of token
     /// @return address of the deployed contract
-    function _deployGuildToken(
-        string memory guildName,
-        string memory guildSymbol
-    ) internal returns (address) {
+    function _deployGuildToken(string memory guildName, string memory guildSymbol) internal returns (address) {
         IAmorxGuild proxyContract = IAmorxGuild(Clones.clone(cloneTarget));
 
         if (address(proxyContract) == address(0)) {
@@ -251,7 +250,11 @@ contract GuildFactory is ICloneFactory, Ownable {
     /// @param  amorGuildToken the AmorxGuild token address for this guild
     /// @param  owner address: owner of the Guild
     /// @return success bool: indicates if contract were successfully initialized
-    function _initGuildControls(string memory name, address amorGuildToken, address owner) internal returns (bool success) {
+    function _initGuildControls(
+        string memory name,
+        address amorGuildToken,
+        address owner
+    ) internal returns (bool success) {
         /// Init the Guild Controller
         success = IGuildController(guildComponents[amorGuildToken][GuildComponents.ControllerxGuild]).init(
             owner,
@@ -263,7 +266,10 @@ contract GuildFactory is ICloneFactory, Ownable {
         );
 
         /// Init the AvatarxGuild
-        success = IAvatarxGuild(guildComponents[amorGuildToken][GuildComponents.AvatarxGuild]).init(owner, guildComponents[amorGuildToken][GuildComponents.GovernorxGuild]);
+        success = IAvatarxGuild(guildComponents[amorGuildToken][GuildComponents.AvatarxGuild]).init(
+            owner,
+            guildComponents[amorGuildToken][GuildComponents.GovernorxGuild]
+        );
 
         /// Init the AvatarxGuild
         success = IDoinGudGovernor(guildComponents[amorGuildToken][GuildComponents.GovernorxGuild]).init(
@@ -272,7 +278,5 @@ contract GuildFactory is ICloneFactory, Ownable {
             snapshot,
             guildComponents[amorGuildToken][GuildComponents.AvatarxGuild]
         );
-
     }
 }
-

@@ -228,7 +228,11 @@ contract MetaDaoController is Ownable {
         string memory name,
         string memory tokenSymbol
     ) public onlyOwner {
-        (address controller, address avatar, address governor) = ICloneFactory(guildFactory).deployGuildContracts(guildOwner, name, tokenSymbol);
+        (address controller, address avatar, address governor) = ICloneFactory(guildFactory).deployGuildContracts(
+            guildOwner,
+            name,
+            tokenSymbol
+        );
         guilds[sentinelGuilds] = controller;
         sentinelGuilds = controller;
         guilds[sentinelGuilds] = SENTINEL;
