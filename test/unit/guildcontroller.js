@@ -294,7 +294,7 @@ describe('unit - Contract: GuildController', function () {
             let amount = await metadao.guildFunds(controller.address, AMORxGuild.address);
             await controller.connect(user).gatherDonation(AMORxGuild.address);
 
-            let difference = 0; // difference -604 appears here: (decAmount * weights[impactMakers[i]]) / totalWeight
+            let difference = 0; // difference can appear here: (decAmount * weights[impactMakers[i]]) / totalWeight
             let weight = await controller.weights(impactMaker.address);
             weight = weight / totalWeight;
             let amountToSendImpactMaker = amount * weight;
