@@ -148,15 +148,15 @@ contract GuildFactory is ICloneFactory, Ownable {
         guildComponents[currentGuild][GuildComponents.DAmorxGuild] = clonedContract;
 
         /// Deploy the ControllerxGuild
-        controller = _deployGuildController(amorxGuildToken);
+        controller = _deployGuildController();
         guildComponents[currentGuild][GuildComponents.ControllerxGuild] = controller;
 
         /// Deploy the Guild Governor
-        governor = _deployGovernor(currentGuild);
+        governor = _deployGovernor();
         guildComponents[currentGuild][GuildComponents.GovernorxGuild] = governor;
 
         /// Deploy the Guild Avatar
-        avatar = _deployAvatar(currentGuild);
+        avatar = _deployAvatar();
         guildComponents[currentGuild][GuildComponents.AvatarxGuild] = avatar;
 
         if (!_initGuildControls(_name, currentGuild, guildOwner)) {
@@ -221,7 +221,7 @@ contract GuildFactory is ICloneFactory, Ownable {
 
     /// @notice Internal function to deploy the Guild Controller
     /// @return address of the deployed guild controller
-    function _deployGuildController(address amorxGuildToken) internal returns (address) {
+    function _deployGuildController() internal returns (address) {
         IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
         proxyContract.initProxy(guildComponents[amorxGuildToken][GuildComponents.ControllerxGuild]);
 
@@ -230,7 +230,7 @@ contract GuildFactory is ICloneFactory, Ownable {
 
     /// @notice Deploys the guild's AvatarxGuild contract
     /// @return address of the nemwly deployed AvatarxGuild
-    function _deployAvatar(address amorxGuildToken) internal returns (address) {
+    function _deployAvatar() internal returns (address) {
         IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
         proxyContract.initProxy(guildComponents[amorxGuildToken][GuildComponents.AvatarxGuild]);
 
@@ -239,7 +239,7 @@ contract GuildFactory is ICloneFactory, Ownable {
 
     /// @notice Deploys the GovernorxGuild contract
     /// @return address of the deployed GovernorxGuild
-    function _deployGovernor(address amorxGuildToken) internal returns (address) {
+    function _deployGovernor() internal returns (address) {
         IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
         proxyContract.initProxy(guildComponents[amorxGuildToken][GuildComponents.GovernorxGuild]);
 

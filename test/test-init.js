@@ -200,7 +200,7 @@ const getGuildFactory = async (setup) => {
     setup.roles.authorizer_adaptor.address // snapshot address
   );
 
-  const factory = guildFactory
+  const factory = guildFactory;
 
   setup.factory = factory;
 
