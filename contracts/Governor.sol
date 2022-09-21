@@ -108,18 +108,12 @@ contract DoinGudGovernor is IDoinGudGovernor {
     error CancelNotApproved();
     error UnderlyingTransactionReverted();
 
-    constructor(IVotes _token, string memory name) {
-        token = _token;
-        _name = name;
-        // person who inflicted the creation of the contract is set as the only guardian of the system
-        guardians.push(msg.sender);
-    }
-
     /// @notice Initializes the Governor contract
     /// @param  AMORxGuild_ the address of the AMORxGuild token
     /// @param  snapshotAddress_ the address of the Snapshot
     /// @param  avatarAddress_ the address of the Avatar
     function init(
+        string memory name
         address AMORxGuild_,
         address snapshotAddress_,
         address avatarAddress_
@@ -127,6 +121,11 @@ contract DoinGudGovernor is IDoinGudGovernor {
         if (_initialized) {
             revert AlreadyInitialized();
         }
+
+        token = AMORxGuild;
+        _name = name;
+        // person who inflicted the creation of the contract is set as the only guardian of the system
+        guardians.push(msg.sender);
         AMORxGuild = IERC20(AMORxGuild_);
 
         snapshotAddress = snapshotAddress_;

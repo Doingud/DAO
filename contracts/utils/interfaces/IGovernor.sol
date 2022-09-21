@@ -46,10 +46,12 @@ interface IDoinGudGovernor {
     }
 
     /// @notice Initializes the Governor contract
+    /// @param  name The unique name of the Governor
     /// @param  AMORxGuild_ the address of the AMORxGuild token
     /// @param  snapshotAddress_ the address of the Snapshot
     /// @param  avatarAddress_ the address of the Avatar
     function init(
+        string memory name
         address AMORxGuild_,
         address snapshotAddress_,
         address avatarAddress_
