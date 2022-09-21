@@ -19,7 +19,6 @@ let AMORxGuild;
 let FXAMORxGuild
 let controller;
 let metadao;
-let guildFactory;
 let USDC;
 let root;
 let authorizer_adaptor;
@@ -44,6 +43,8 @@ describe('unit - Contract: GuildController', function () {
         await init.getTokens(setup);
         await init.metadao(setup);
         await init.controller(setup);
+        await init.avatar(setup);
+        await init.governor(setup);
 
         AMOR = setup.tokens.AmorTokenImplementation;
         AMORxGuild = setup.tokens.AmorGuildToken;
@@ -52,7 +53,7 @@ describe('unit - Contract: GuildController', function () {
         metadao = setup.metadao;
         controller = setup.controller;
         guildFactory = await init.getGuildFactory(setup);
-        await metadao.init(AMOR.address, guildFactory.guildFactory.address);
+        await metadao.init(AMOR.address, setup.factory.address);
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;

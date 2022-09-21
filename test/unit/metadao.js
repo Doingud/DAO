@@ -42,6 +42,8 @@ describe("unit - MetaDao", function () {
         user2 = setup.roles.user2;
         user3 = setup.roles.user3;
         pool = setup.roles.pool;
+        await init.avatar(setup);
+        await init.governor(setup);
         /// Setup the MetaDao first
         await init.metadao(setup);
         METADAO = setup.metadao;
@@ -50,7 +52,7 @@ describe("unit - MetaDao", function () {
         CONTROLLER = setup.controller;
         ///   Setup the guild factory
         await init.getGuildFactory(setup);
-        FACTORY = setup.factory.guildFactory;
+        FACTORY = setup.factory;
 
         await METADAO.init(AMOR_TOKEN.address, FACTORY.address);
     });

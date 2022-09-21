@@ -47,7 +47,6 @@ describe("unit - Clone Factory", function () {
 
     await init.getGuildFactory(setup);
     CLONE_FACTORY = setup.factory;
-    console.log("Clone factory: "+ CLONE_FACTORY);
     CONTROLLERXGUILD = setup.controller;
     GOVERNORXGUILD = setup.governor;
     AVATARXGUILD = setup.avatars.avatar;

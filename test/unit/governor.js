@@ -1,6 +1,7 @@
 const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+const { ZERO_ADDRESS } = require("../helpers/constants.js");
 const init = require('../test-init.js');
 
 const twoWeeks = time.duration.days(14);
@@ -65,7 +66,8 @@ describe('unit - Contract: Governor', function () {
             await expect(governor.init(
                 AMORxGuild.address, //AMORxGuild
                 authorizer_adaptor.address, // Snapshot Address
-                authorizer_adaptor.address // Avatar Address
+                authorizer_adaptor.address, // Avatar Address
+                ZERO_ADDRESS
             )).to.be.revertedWith("AlreadyInitialized()");
         });
     });
