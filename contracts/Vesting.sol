@@ -91,7 +91,6 @@ contract Vesting is Ownable {
     /// @dev    Converts dAMOR to AMOR and transfers it to the beneficiary
     /// @param  amount the amount of dAMOR to convert to AMOR
     function withdrawAmor(uint256 amount) external {
-
         if (amount > tokensAvailable(msg.sender)) {
             revert InsufficientFunds();
         }
