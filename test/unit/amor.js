@@ -178,8 +178,8 @@ describe("unit - AMOR Token", function () {
       it("it fails to transfers from one user to another if not enough tokens", async function () {
         // this is the message instead of '[I]if (fromBalance < amount) { revert InvalidTransfer(); }'
         // thus '[I]if (fromBalance < amount) { revert InvalidTransfer(); } ' cannot be tested 
-        await expect(PROXY.transferFrom(user3.address, user1.address, TEST_TRANSFER)).to.be.revertedWith(
-          'InvalidAmount()'
+        await expect(PROXY.connect(user3).transfer(user1.address, TEST_TRANSFER)).to.be.revertedWith(
+          'InvalidTransfer()'
         );
       });
       it("it fails to transfers from one user to another if zero address", async function () {
