@@ -51,7 +51,7 @@ interface IDoinGudGovernor {
     /// @param  snapshotAddress_ the address of the Snapshot
     /// @param  avatarAddress_ the address of the Avatar
     function init(
-        string memory name
+        string memory name,
         address AMORxGuild_,
         address snapshotAddress_,
         address avatarAddress_
