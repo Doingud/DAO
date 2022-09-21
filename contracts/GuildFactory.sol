@@ -53,26 +53,17 @@ contract GuildFactory is ICloneFactory, Ownable {
     mapping(address => mapping(GuildComponents => address)) public guildComponents;
 
     /// The MetaDaoController address
-    address public MetaDaoController;
+    address public immutable metaDaoController;
     /// The DoinGud Multisig address
-    address public multisig;
+    address public immutable multisig;
     /// The snapshot address
-    address public snapshot;
-
+    address public immutable snapshot;
     /// The DoinGud generic proxy contract (the target)
-    address public cloneTarget;
+    address public immutable cloneTarget;
+    
     address[] public amorxGuildTokens;
-    ///mapping(address => address) public amorxGuildTokens;
-    ///address[] public fxAMORxGuildTokens;
-    mapping(address => address) public fxAMORxGuildTokens;
-    ///address[] public dAMORxGuildTokens;
-    mapping(address => address) public dAMORxGuildTokens;
-    ///address[] public guildControllers;
-    mapping(address => address) public guildControllers;
-    mapping(address => address) public guildAvatars;
-    mapping(address => address) public guildGovernors;
 
-    uint256 public defaultGuardianThreshold = 10;
+    uint256 public constant DEFAULT_GUARDIAN_THRESHOLD = 10;
 
     constructor(
         address _amorToken,
@@ -101,6 +92,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         cloneTarget = _doinGudProxy;
         MetaDaoController = _metaDaoController;
         multisig = _multisig;
+        snapshot = _snapshot;
     }
 
     /// @notice This deploys a new guild with it's associated tokens
@@ -111,11 +103,16 @@ contract GuildFactory is ICloneFactory, Ownable {
         address guildOwner,
         string memory _name,
         string memory _symbol
-    ) external returns (address controller, address avatar, address governor) {
+    ) external returns (
+        address controller,
+        address avatar,
+        address governor
+    ) {
         /// Setup local scope vars
         string memory tokenName;
         string memory tokenSymbol;
         address clonedContract;
+        uint256 currentGuildIndex;
 
         /// Deploy AMORxGuild contract
         tokenName = string.concat("AMORx", _name);
@@ -127,26 +124,26 @@ contract GuildFactory is ICloneFactory, Ownable {
         tokenName = string.concat("FXAMORx", _name);
         tokenSymbol = string.concat("FXx", _symbol);
         clonedContract = _deployTokenContracts(
-            amorxGuildTokens[amorxGuildTokens.length - 1],
+            amorxGuildTokens[currentGuildIndex],
             tokenName,
             tokenSymbol,
             guildComponents[amorxGuildToken][GuildComponents.FXAmorxGuild]
         );
-        fxAMORxGuildTokens[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
+        guildComponents[amorxGuildTokens[currentGuildIndex]][GuildComponents.FXAmorxGuild] = clonedContract;
 
         /// Deploy dAMORxGuild contract
         tokenName = string.concat("dAMORx", _name);
         tokenSymbol = string.concat("Dx", _symbol);
         clonedContract = _deployTokenContracts(
-            amorxGuildTokens[amorxGuildTokens.length - 1],
+            amorxGuildTokens[currentGuildIndex],
             tokenName,
             tokenSymbol,
             guildComponents[amorxGuildToken][GuildComponents.DXAmorxGuild]
         );
-        dAMORxGuildTokens[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
+        guildComponents[amorxGuildTokens[currentGuildIndex]][GuildComponents.DAmorxGuild] = clonedContract;
 
         /// Deploy the ControllerxGuild
-        clonedContract = _deployGuildController(
+        controller = _deployGuildController(
             guildOwner,
             amorToken,
             amorxGuildToken,
@@ -154,23 +151,20 @@ contract GuildFactory is ICloneFactory, Ownable {
             MetaDaoController,
             multisig
         );
-        guildControllers[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
-        controller = clonedContract;
+        guildComponents[amorxGuildTokens[currentGuildIndex]][GuildComponents.ControllerxGuild] = clonedContract;
 
         /// Deploy the Guild Governor
-        clonedContract = _deployGovernor(
+        governor = _deployGovernor(
             string.concat("Governorx", _name),
-            amorxGuildTokens[amorxGuildTokens.length - 1],
+            amorxGuildTokens[currentGuildIndex],
             snapshot,
             avatar
         );
-        guildGovernors[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
-        governor = clonedContract;
+        guildComponents[amorxGuildTokens[currentGuildIndex]][GuildComponents.GovernorxGuild] = clonedContract;
 
         /// Deploy the Guild Avatar
-        clonedContract = _deployAvatar(guildOwner, governor);
-        guildAvatars[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
-        avatar = clonedContract;
+        avatar = _deployAvatar(guildOwner, governor);
+        guildComponents[amorxGuildTokens[currentGuildIndex]][GuildComponents.AvatarxGuild] = clonedContract;
 
     }
 
@@ -220,7 +214,7 @@ contract GuildFactory is ICloneFactory, Ownable {
                 guildSymbol,
                 msg.sender,
                 guildTokenAddress,
-                defaultGuardianThreshold
+                DEFAULT_GUARDIAN_THRESHOLD
             );
         } else {
             /// FXAMOR uses the same `init` layout as IAMORxGuild
