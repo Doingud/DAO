@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
-import "hardhat/console.sol";
+
 /**
  * @title  DoinGud: Vesting.sol
  * @author Daoism Systems
@@ -91,14 +91,12 @@ contract Vesting is Ownable {
     /// @dev    Converts dAMOR to AMOR and transfers it to the beneficiary
     /// @param  amount the amount of dAMOR to convert to AMOR
     function withdrawAmor(uint256 amount) external {
+
         if (amount > tokensAvailable(msg.sender)) {
             revert InsufficientFunds();
         }
-        Allocation storage allocation = allocations[msg.sender];
 
-        if (allocation.cliff > block.timestamp) {
-            revert NotVested();
-        }
+        Allocation storage allocation = allocations[msg.sender];
 
         /// Update internal balances
         allocation.tokensClaimed += amount;
@@ -174,13 +172,19 @@ contract Vesting is Ownable {
         }
         /// Point to the Allocation
         Allocation storage allocation = allocations[beneficiary];
+
         /// Have all the tokens vested? If so, return the tokens allocated
         if (allocation.vestingDate <= block.timestamp) {
             return allocation.tokensAllocated - allocation.tokensClaimed;
         }
 
+        if (allocation.cliff > block.timestamp) {
+            revert NotVested();
+        }
+
         uint256 amount = (allocation.tokensAllocated * (block.timestamp - allocation.vestingStart)) /
             (allocation.vestingDate - allocation.vestingStart);
+
         return amount - allocation.tokensClaimed;
     }
 

@@ -119,7 +119,7 @@ describe("unit - Vesting", function () {
 
   context("function: tokensAvailable()", () => {
     it("Should revert withdrawAMOR if allocation.cliff > block.timestamp", async function () {
-      await VESTING.allocateVestedTokens(user1.address, AMORDeducted, VESTING_START, VESTING_START, VESTING_TIME);
+      await VESTING.allocateVestedTokens(user1.address, AMORDeducted, (VESTING_TIME*2 - 1), VESTING_START, (VESTING_TIME*2));
 
       await expect(VESTING.connect(user1).withdrawAmor(ONE_HUNDRED_ETHER)).
         to.be.revertedWith("NotVested()");
