@@ -102,11 +102,6 @@ contract Vesting is Ownable {
         tokensWithdrawn += amount;
         /// Transfer the AMOR to the caller
         amorToken.transfer(msg.sender, amount);
-
-        // we already have revert in amorToken, also there's an amount check above
-        // if (!amorToken.transfer(msg.sender, amount)) {
-        //     revert TransferUnsuccessful();
-        // }
     }
 
     /// @notice Returns the amount of vested tokens allocated to the target

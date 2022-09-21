@@ -65,7 +65,6 @@ describe("unit - Clone Factory", function () {
     });
 
     it("Should fail to deploy the Guild Token Contracts if cloneTarget = address 0", async function () {
-      console.log("await TEST_ZERO_FACTORY.cloneTarget() is %s", await TEST_ZERO_FACTORY.cloneTarget());
       await expect(TEST_ZERO_FACTORY.deployGuildContracts(user1.address, MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0])).to.be.revertedWith(
         'CreationFailed()'
       );

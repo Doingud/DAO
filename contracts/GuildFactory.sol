@@ -152,10 +152,6 @@ contract GuildFactory is ICloneFactory, Ownable {
     ) internal returns (address) {
         IAmorxGuild proxyContract = IAmorxGuild(Clones.clone(cloneTarget));
 
-        if (address(proxyContract) == address(0)) {
-            revert CreationFailed();
-        }
-
         IDoinGudProxy(address(proxyContract)).initProxy(_implementation);
         proxyContract.init(guildName, guildSymbol, amorToken, msg.sender);
 
@@ -176,9 +172,6 @@ contract GuildFactory is ICloneFactory, Ownable {
         IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
         proxyContract.initProxy(_implementation);
 
-        if (address(proxyContract) == address(0)) {
-            revert CreationFailed();
-        }
         /// Check which token contract should be deployed
         if (fxAMORxGuildTokens[guildTokenAddress] != address(0)) {
             IdAMORxGuild(address(proxyContract)).init(
