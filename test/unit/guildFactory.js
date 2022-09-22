@@ -42,7 +42,7 @@ describe("unit - Clone Factory", function () {
 
     await init.getGuildFactory(setup);
     CLONE_FACTORY = setup.factory.guildFactory;
-    CONTROLLERXGUILD = setup.factory.controller;
+    CONTROLLERXGUILD = setup.controller;
 
     TEST_ZERO_FACTORY = setup.factory.testGuildZeroFactory;
   });
@@ -60,7 +60,7 @@ describe("unit - Clone Factory", function () {
       this.guildOneDAmorXGuild = await CLONE_FACTORY.dAMORxGuildTokens(this.guildOneAmorXGuild);
       this.guildOneFXAmorXGuild = await CLONE_FACTORY.fxAMORxGuildTokens(this.guildOneAmorXGuild);
       this.guildOneControllerxGuild = await CLONE_FACTORY.guildControllers(this.guildOneAmorXGuild);
-      
+
       GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildOneAmorXGuild);
       GUILD_ONE_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(this.guildOneDAmorXGuild);
       GUILD_ONE_FXAMORXGUILD = FX_AMOR_TOKEN.attach(this.guildOneFXAmorXGuild);
