@@ -7,7 +7,9 @@ const { ONE_ADDRESS,
         FIFTY_ETHER,
         ONE_HUNDRED_ETHER,
         BASIS_POINTS,
-        TAX_RATE
+        TAX_RATE,
+        AMOR_TOKEN_NAME,
+        AMOR_TOKEN_SYMBOL
       } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
@@ -18,6 +20,8 @@ use(solidity);
   let VESTING_START
   let VESTING_TIME;
   let AMORDeducted;
+  let user1;
+  let user2;
 
 describe("unit - Vesting", function () {
 
@@ -27,10 +31,13 @@ describe("unit - Vesting", function () {
     await init.getTokens(setup);
 
     AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
-    AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
-    FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
-    DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
-    CLONE_FACTORY = await init.getGuildFactory(setup);
+    await AMOR_TOKEN.init(
+      AMOR_TOKEN_NAME, 
+      AMOR_TOKEN_SYMBOL, 
+      setup.roles.authorizer_adaptor.address, //taxController
+      TAX_RATE,
+      setup.roles.root.address 
+    );
 
     root = setup.roles.root;
     multisig = setup.roles.doingud_multisig;

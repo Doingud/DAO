@@ -121,6 +121,8 @@ const controller = async (setup) => {
     setup.tokens.AmorGuildToken.address // AMORxGuild
   );
 
+  setup.controller = controller;
+
   return controller;
 };
 
@@ -179,14 +181,6 @@ const governor = async (setup) => {
 
 const getGuildFactory = async (setup) => {
   const cloneFactory = await ethers.getContractFactory("GuildFactory");
-  
-  await setup.tokens.AmorTokenImplementation.init(
-    AMOR_TOKEN_NAME, 
-    AMOR_TOKEN_SYMBOL, 
-    setup.roles.authorizer_adaptor.address, //taxController
-    TAX_RATE,
-    setup.roles.root.address // multisig
-  );
 
   const controllerFactory = await ethers.getContractFactory("GuildController");
   const controller = await controllerFactory.deploy();
@@ -197,8 +191,8 @@ const getGuildFactory = async (setup) => {
     setup.tokens.FXAMORxGuild.address,
     setup.tokens.dAMORxGuild.address,
     setup.tokens.AmorTokenProxy.address,
-    controller.address,
-    setup.roles.authorizer_adaptor.address, // metaDaoController
+    setup.controller.address,
+    setup.metadao.address, // metaDaoController
     setup.roles.root.address // multisig
   );
 
@@ -228,8 +222,6 @@ const getGuildFactory = async (setup) => {
 const metadao = async(setup) =>{
   const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController');
   const metadao = await MetaDaoFactory.deploy(
-    setup.tokens.AmorTokenImplementation.address,
-    setup.factory.guildFactory.address,
     setup.roles.root.address
   );
 

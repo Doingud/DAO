@@ -89,7 +89,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         address guildOwner,
         string memory _name,
         string memory _symbol
-    ) external {
+    ) external returns (address) {
         if (address(cloneTarget) == address(0)) {
             revert CreationFailed();
         }
@@ -138,6 +138,8 @@ contract GuildFactory is ICloneFactory, Ownable {
             multisig
         );
         guildControllers[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
+
+        return clonedContract;
     }
 
     /// @notice Internal function to deploy clone of an implementation contract
