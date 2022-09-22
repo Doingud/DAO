@@ -1,7 +1,7 @@
 const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { FIFTY_ETHER, ONE_HUNDRED_ETHER, TWO_HUNDRED_ETHER, MOCK_GUILD_NAMES, MOCK_GUILD_SYMBOLS } = require('../helpers/constants.js');
+const { FIFTY_ETHER, ONE_HUNDRED_ETHER, TWO_HUNDRED_ETHER, MOCK_GUILD_NAMES, MOCK_GUILD_SYMBOLS, TEST_TRANSFER } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
 // const MIN_LOCK_TIME = 604800; // 1 week
@@ -323,11 +323,29 @@ describe('unit - Contract: dAMORxGuild Token', function () {
     context('» non-transferable testing', () => {
 
         it('it fails to transfer', async function () {
-            expect(await dAMORxGuild.connect(staker).transfer(root.address, 1)).to.be.false;
+            const balanceBefore = await dAMORxGuild.balanceOf(staker.address);
+            const balance2Before = await dAMORxGuild.balanceOf(root.address);
+
+            await dAMORxGuild.connect(staker).transfer(root.address, TEST_TRANSFER);
+            
+            const balanceAfter = await dAMORxGuild.balanceOf(staker.address);
+            expect(balanceBefore).to.equal(balanceAfter);
+
+            const balance2After = await dAMORxGuild.balanceOf(root.address);
+            expect(balance2Before).to.equal(balance2After);
         });
 
         it('it fails to transferFrom', async function () {
-            expect(await dAMORxGuild.connect(staker).transferFrom(staker.address, root.address, 1)).to.equal(false);
+            const balanceBefore = await dAMORxGuild.balanceOf(staker.address);
+            const balance2Before = await dAMORxGuild.balanceOf(root.address);
+
+            await dAMORxGuild.connect(staker).transferFrom(staker.address, root.address, TEST_TRANSFER);
+
+            const balanceAfter = await dAMORxGuild.balanceOf(staker.address);
+            expect(balanceBefore).to.equal(balanceAfter);
+
+            const balance2After = await dAMORxGuild.balanceOf(root.address);
+            expect(balance2Before).to.equal(balance2After);
         });
     });
 });
