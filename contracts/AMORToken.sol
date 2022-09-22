@@ -106,7 +106,6 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
     /// @param  newRate uint256 representing new tax rate, must be <= 500
     function setTaxRate(uint256 newRate) public onlyOwner {
         if (newRate > 500) {
-            // TODO: owner can update contract implementation and remove this check, so no point of having it in the first place
             revert InvalidRate();
         }
         _setTaxRate(newRate);
