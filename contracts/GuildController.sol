@@ -4,7 +4,7 @@ pragma solidity 0.8.15;
 import "./utils/interfaces/IAmorGuildToken.sol";
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IGuildController.sol";
-import "./utils/interfaces/IMetadao.sol";
+import "./utils/interfaces/IMetaDaoController.sol";
 
 /// Advanced math functions for bonding curve
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -137,11 +137,12 @@ contract GuildController is IGuildController, Ownable {
     /// and calles distribute function for the whole amount of gathered tokens
     function gatherDonation(address token) public {
         // check if token in the whitelist of the MetaDaoController
-        if (!IMetadao(MetaDaoController).isWhitelisted(token)) {
+        if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
         }
 
-        uint256 amount = IMetadao(MetaDaoController).claimDonation(token, address(this));
+        uint256 amount = IMetaDaoController(MetaDaoController).guildFunds(address(this), token);
+        IMetaDaoController(MetaDaoController).claimToken(token);
 
         // distribute those tokens
         distribute(amount, token, MetaDaoController);
@@ -157,7 +158,7 @@ contract GuildController is IGuildController, Ownable {
     // Requires the msg.sender to `approve` amount prior to calling this function
     function donate(uint256 allAmount, address token) external returns (uint256) {
         // check if token in the whitelist of the MetaDaoController
-        if (!IMetadao(MetaDaoController).isWhitelisted(token)) {
+        if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
         }
 
