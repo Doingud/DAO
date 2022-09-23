@@ -37,6 +37,7 @@ interface IdAMORxGuild {
     /// @notice Delegate your dAMORxGuild to the address `account`
     /// @param  to address to which delegate users FXAMORxGuild
     function delegate(address to) external;
+
     /// @notice Undelegate your dAMORxGuild
     function undelegate() external;
 }
