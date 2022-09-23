@@ -184,6 +184,75 @@ describe("unit - MetaDao", function () {
             expect(await METADAO.donations(USDC.address)).to.equal((ONE_HUNDRED_ETHER).toString());
             expect(await METADAO.guildFunds(GUILD_CONTROLLER_ONE.address, USDC.address)).to.equal(FIFTY_ETHER);
         });
+
+
+        it('Should fail if ', async function () {
+            let AMOR_TOKEN2;
+            let USDC2;
+            let user2;
+            let FACTORY2;
+            let METADAO2;
+            let CONTROLLER2;
+            let GUILD_CONTROLLER_ONE2;
+            let GUILD_CONTROLLER_TWO2;
+
+            const signers = await ethers.getSigners();
+            const setup = await init.initialize(signers);
+            ///   Setup token contracts
+            await init.getTokens(setup);
+            AMOR_TOKEN2 = setup.tokens.AmorTokenImplementation;
+            USDC2 = setup.tokens.ERC20Token;
+            ///   Setup signer accounts
+            root = setup.roles.root;
+            multisig = setup.roles.doingud_multisig;    
+            user2 = setup.roles.user2;
+            user3 = setup.roles.user3;
+            pool = setup.roles.pool;
+            /// Setup the MetaDao first
+            await init.metadao(setup);
+            METADAO2 = setup.metadao;
+            ///   Setup the Controller
+            await init.controller(setup);
+            CONTROLLER2 = setup.controller;
+            ///   Setup the guild factory
+            await init.getGuildFactory(setup);
+            FACTORY2 = setup.factory.guildFactory;
+
+            await METADAO2.init(AMOR_TOKEN2.address, FACTORY2.address);
+
+            /// Setup the guilds through the METADAO
+            await METADAO2.createGuild(user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
+            GUILD_CONTROLLER_ONE2 = await METADAO2.guilds(ZERO_ADDRESS);
+            GUILD_CONTROLLER_ONE2 = CONTROLLER2.attach(GUILD_CONTROLLER_ONE2);
+            GUILD_CONTROLLER_TWO2 = await METADAO2.guilds(GUILD_CONTROLLER_ONE2.address);
+            GUILD_CONTROLLER_TWO2 = CONTROLLER2.attach(GUILD_CONTROLLER_TWO2);
+    
+            await METADAO2.addWhitelist(USDC2.address);
+            await AMOR_TOKEN2.approve(METADAO2.address, ONE_HUNDRED_ETHER);
+            await USDC2.approve(METADAO2.address, ONE_HUNDRED_ETHER);
+            const abi = ethers.utils.defaultAbiCoder;
+            let encodedIndex = abi.encode(
+                ["tuple(address, uint256)"],
+                [
+                [GUILD_CONTROLLER_ONE2.address, 0]
+                ]
+            );
+            let encodedIndex2 = abi.encode(
+                ["tuple(address, uint256)"],
+                [
+                [GUILD_CONTROLLER_TWO2.address, 0]
+                ]
+            );
+    
+            await METADAO2.updateIndex([encodedIndex, encodedIndex2], 0);
+
+            let hash = await METADAO2.indexHashes(0);
+            let indexReturn = await METADAO2.indexes(hash);
+            expect(indexReturn.indexDenominator).to.equal(0);
+
+            await expect(METADAO2.donate(USDC2.address, ONE_HUNDRED_ETHER, 0)).
+                to.be.revertedWith("NoIndex()");
+        });
     });
 
     context('function: claimToken()', () => {
@@ -210,15 +279,6 @@ describe("unit - MetaDao", function () {
             let usdcMetaDaoAfter = await USDC.balanceOf(METADAO.address);
             let usdcControllerAfter = await USDC.balanceOf(GUILD_CONTROLLER_ONE.address);
             expect(usdcMetaDaoBefore - usdcMetaDaoAfter).to.equal(usdcControllerAfter - usdcControllerBefore);
-        });
-
-        it('Should revert if guild address is zero', async function () {
-            GUILD_CONTROLLER_TWO = GUILD_CONTROLLER_ONE.attach(ZERO_ADDRESS);
-
-            await expect(GUILD_CONTROLLER_ONE.gatherDonation(USDC.address)).
-                to.be.revertedWith("InvalidGuild()");
-            GUILD_CONTROLLER_TWO = GUILD_CONTROLLER_ONE.attach(GUILD_CONTROLLER_TWO);
-
         });
 
         it('Should revert if caller is InvalidGuild', async function () {
@@ -314,17 +374,6 @@ describe("unit - MetaDao", function () {
             await expect(METADAO.addIndex([newIndex0, newIndex1])).
                 to.be.revertedWith("Exists()");
         });
-
-        it('Should revert to donate if NoIndex', async function () {
-            // let index = await METADAO.indexHashes(99);
-            // index = await METADAO.indexes(index);
-            // expect(index.indexDenominator).to.equal(0);
-
-            let nonexistedIndex = 99;
-            await expect(METADAO.donate(AMOR_GUILD_TOKEN.address, ONE_HUNDRED_ETHER, nonexistedIndex)).
-                to.be.revertedWith("NoIndex()");
-        });
-
     });
 
     context("function: donate()", () => {
