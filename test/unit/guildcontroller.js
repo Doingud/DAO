@@ -519,7 +519,7 @@ describe('unit - Contract: GuildController', function () {
             await controller.connect(operator).addReport(report, v, r, s); // 9
             expect((await controller.queueReportsAuthors(9))).to.equal(operator.address);
 
-            time.increase(time.duration.days(1));
+            time.increase(time.duration.days(2));
             await controller.connect(authorizer_adaptor).startVoting();
 
             expect(await controller.trigger()).to.equal(true);
