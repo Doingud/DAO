@@ -22,9 +22,6 @@ interface IMetaDaoController {
     /// @param  amount the amount of tokens to donate
     function donate(address token, uint256 amount) external;
 
-    /// @notice Distributes both the fees and the token donations
-    ///function distributeAll() external;
-
     /// @notice Distributes the specified token
     /// @param  token address of target token
     function distributeToken(address token) external;

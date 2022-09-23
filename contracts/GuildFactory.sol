@@ -119,19 +119,17 @@ contract GuildFactory is ICloneFactory, Ownable {
         /// Setup local scope vars
         string memory tokenName;
         string memory tokenSymbol;
-        address clonedContract;
-        address currentGuild;
 
         /// Deploy AMORxGuild contract
         tokenName = string.concat("AMORx", _name);
         tokenSymbol = string.concat("Ax", _symbol);
-        currentGuild = _deployGuildToken(tokenName, tokenSymbol);
+        address currentGuild = _deployGuildToken(tokenName, tokenSymbol);
         amorxGuildTokens.push(currentGuild);
 
         /// Deploy FXAMORxGuild contract
         tokenName = string.concat("FXAMORx", _name);
         tokenSymbol = string.concat("FXx", _symbol);
-        clonedContract = _deployTokenContracts(
+        address clonedContract = _deployTokenContracts(
             currentGuild,
             tokenName,
             tokenSymbol,
