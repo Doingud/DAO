@@ -25,12 +25,12 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
         operator = setup.roles.operator;
         staker = setup.roles.staker;
 
-        /*await FXAMORxGuild.init(
+        await FXAMORxGuild.init(
             "DoinGud MetaDAO", 
             "FXAMORxGuild", 
             operator.address, //controller
             AMORxGuild.address
-        );*/
+        );
     });
 
     before('>>> setup', async function() {
