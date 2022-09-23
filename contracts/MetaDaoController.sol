@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
-
+import "hardhat/console.sol";
 /**
  * @title  DoinGud: MetaDaoController.sol
  * @author Daoism Systems
@@ -132,9 +132,11 @@ contract MetaDaoController is Ownable {
         uint256 amount,
         uint256 index
     ) external {
-        if (this.isWhitelisted(token) == false) {
-            revert NotListed();
-        }
+        this.isWhitelisted(token); // can't return false because will be reverted before return
+        // if (this.isWhitelisted(token) == false) {
+        //     revert NotListed();
+        // }
+        console.log("indexes[FEES_INDEX].indexDenominator is %s", indexes[FEES_INDEX].indexDenominator);
         if (indexes[FEES_INDEX].indexDenominator == 0) {
             revert NoIndex();
         }
@@ -177,9 +179,11 @@ contract MetaDaoController is Ownable {
         if (guilds[msg.sender] == address(0)) {
             revert InvalidGuild();
         }
-        if (whitelist[token] == address(0)) {
-            revert NotListed();
-        }
+        console.log("whitelist[token] is %s", whitelist[token]);
+        // we already have this check in gatherDonation(), from where this function is called
+        // if (whitelist[token] == address(0)) {
+        //     revert NotListed();
+        // }
         uint256 amount = guildFunds[msg.sender][token];
         if (amount == 0) {
             revert InvalidClaim();
