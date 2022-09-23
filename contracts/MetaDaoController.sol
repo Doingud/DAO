@@ -46,7 +46,7 @@ contract MetaDaoController is Ownable {
     /// Guild-related variables
     mapping(address => address) public guilds;
     address public sentinelGuilds;
-    uint256 public guildCounter;
+    uint96 public guildCounter;
     mapping(address => uint256) public guildWeight;
     /// Mapping of guild --> token --> amount
     mapping(address => mapping(address => uint256)) public guildFunds;
@@ -236,7 +236,9 @@ contract MetaDaoController is Ownable {
         guilds[sentinelGuilds] = controller;
         sentinelGuilds = controller;
         guilds[sentinelGuilds] = SENTINEL;
-        guildCounter += 1;
+        unchecked {
+            guildCounter += 1;
+        }
     }
 
     /// @notice Adds an external guild to the registry
@@ -249,7 +251,9 @@ contract MetaDaoController is Ownable {
         guilds[sentinelGuilds] = guildAddress;
         sentinelGuilds = guildAddress;
         guilds[sentinelGuilds] = SENTINEL;
-        guildCounter += 1;
+        unchecked {
+            guildCounter += 1;
+        }
     }
 
     /// @notice adds token to whitelist
@@ -282,7 +286,9 @@ contract MetaDaoController is Ownable {
         }
         guilds[endOfList] = guilds[controller];
         delete guilds[controller];
-        guildCounter -= 1;
+        unchecked {
+            guildCounter -= 1;
+        }
     }
 
     /// @notice Checks that a token is whitelisted
