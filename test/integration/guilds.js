@@ -279,6 +279,114 @@ describe("unit - MetaDao", function () {
             expect(await AMOR_TOKEN.balanceOf(GUILD_CONTROLLER_ONE.address)).to.equal((guildAmor * 0.95).toString());
         });
 
+        it("Transfer Guild’s fund from the Avatar contract", async function () {          
+            expect(await AMOR_TOKEN.balanceOf(GUILD_CONTROLLER_ONE.address)).to.equal((guildAmor * 0.95).toString());
+
+           
+            // Add a proposal in guild’s snapshot to transfer guild’s funds somewhere
+            
+            // Vote for the proposal in the snapshot
+            
+            // Execute the proposal and for the proposal with guardians
+            
+            // Execute the proposal
+
+        });
+
+        it("Donate Guild’s fund from the Avatar contract", async function () {             
+
+            
+            // Add a proposal in guild’s snapshot to donate guild’s funds to the impact makers
+            
+            // Vote for the proposal in the snapshot
+            
+            // Execute the proposal and for the proposal with guardians\
+            
+            // Execute the proposal
+
+        });
+        it("Remove guild from the MetaDAO", async function () {          
+
+            
+            // Add a proposal in Metadao’s snapshot to remove guild from the metadao
+            
+            // Vote for the proposal in the snapshot
+            
+            // Execute the proposal and for the proposal with guardians\
+            
+            // Execute the proposal
+        
+
+        });
+        it("Add report to the Guild", async function () {          
+
+
+            
+            // Gain some amount of donations
+            
+            // Prepare a report for the guild and add it using GuildController
+     
+        
+        });
+        it("Vote for the report at the Guild with FXAMOR", async function () {                    
+
+            
+            // Gain some amount of donations
+            
+            // Prepare a report for the guild and add it using GuildController
+            
+            // Support the report using FXAmor        
+        
+        });
+        it("Finalize report vote for the Guild with no reports passing", async function () {          
+
+
+            
+            // Gain some amount of donations
+            
+            // Prepare a report for the guild and add it using GuildController
+            
+            // Vote against the report using FXAmor
+            
+            // 50% of tokens used in voting should be sent to the voters
+            
+            // 50% of tokens should be saved until next report voting        
+     
+        
+        });
+        it("Finalize report vote for the Guild with part of reports passing", async function () {          
+
+
+            
+            // Gain some amount of donations
+            
+            // Prepare 3 reports for the guild and add it using GuildController
+            
+            // Vote for 2 reports using FXAmor and against 1 report
+            
+            // Finalize the voting and check that:
+            //     The tokens are distributed based on the weight
+            //     50% of the tokens goes to the people who voted for passing reports and against failed report
+            //     50% of the tokens at the failing report gets distributed between passing reports based on their weight
+            //     Remaining tokens are distributed between passed reports
+        
+        });
+        it("Finalize report vote for the Guild with all of the reports passing", async function () {          
+
+            
+            // Gain some amount of donations
+            
+            // Prepare 2 reports for the guild and add it using GuildController
+            
+            // Vote for 2 reports using FXAmor
+            
+            // Finalize the voting and check that:
+            //     The tokens are distributed based on the weight
+            //     50% of the tokens goes to the people who voted for passing reports
+            //     Remaining tokens are distributed between passed reports
+        
+
+        });
     });
 
     context('» Add guild to the MetaDAO', () => {
