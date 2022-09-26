@@ -2,11 +2,19 @@ const { ethers } = require("hardhat");
 const { use, expect } = require("chai");
 const { solidity } = require("ethereum-waffle");
 const { MOCK_GUILD_NAMES,
-        MOCK_GUILD_SYMBOLS 
+        MOCK_GUILD_SYMBOLS, 
+        TEST_TRANSFER,
+        AMOR_TOKEN_NAME,
+        AMOR_TOKEN_SYMBOL,
+        TAX_RATE
       } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
 use(solidity);
+
+let root;
+let multisig;
+let user1;
 let AMOR_TOKEN;
 let AMOR_GUILD_TOKEN;
 let CLONE_FACTORY;
@@ -47,15 +55,26 @@ const setupTests = deployments.createFixture(async () => {
   CONTROLLERXGUILD = setup.controller;
   GOVERNORXGUILD = setup.governor;
   AVATARXGUILD = setup.avatars.avatar;
+
+  /// Initializr the DoinGud Ecosystem
+  await setup.tokens.AmorTokenImplementation.init(
+    AMOR_TOKEN_NAME, 
+    AMOR_TOKEN_SYMBOL, 
+    setup.roles.authorizer_adaptor.address, //taxController
+    TAX_RATE,
+    setup.roles.root.address // the multisig address of the MetaDAO, which owns the token
+  );
 });
 
-    before('setup', async function() {
+    beforeEach('setup', async function() {
         await setupTests();
     });
 
     context("Setup the implementation contracts", () => {
         it("Should transfer AMOR between addresses", async function () {
-            
+            console.log(root.address);
+            console.log(user1.address);
+            await expect(AMOR_TOKEN.transfer(user1.address, TEST_TRANSFER)).to.emit(AMOR_TOKEN, "Transfer").withArgs(root.address, user1.address, 0);
         });
 
         it("Should accrue taxes correctly", async function () {
