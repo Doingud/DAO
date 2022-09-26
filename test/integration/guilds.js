@@ -13,7 +13,8 @@ const {
     TAX_RATE,
     AMOR_TOKEN_NAME, 
     AMOR_TOKEN_SYMBOL,
-    MOCK_TEST_AMOUNT
+    MOCK_TEST_AMOUNT,
+    TEST_TRANSFER
   } = require('../helpers/constants.js');
 const { time } = require("@openzeppelin/test-helpers");
 
@@ -145,37 +146,7 @@ describe("unit - MetaDao", function () {
         await METADAO.updateIndex([encodedIndex, encodedIndex2], 0);
     });
 
-    context('» Creation of the guild as a part of MetaDAO', () => {
-
-        it("Should ", async function () {
-            // await expect(controller.init(
-            //     root.address, // owner
-            //     AMOR.address,
-            //     AMORxGuild.address,
-            //     FXAMORxGuild.address,
-            //     root.address,
-            //     root.address
-            // )).to.be.revertedWith("AlreadyInitialized()");
-
-            // Create proposal at the snapshot to execute createGuild function in the MetaDAOController.sol
-
-            // Vote for the proposal
-
-            // Execute the proposal from the snapshot
-
-            // Proposal should go the the Governor contract
-
-            // Pass the proposal at the Governor contract
-
-            // Execute the proposal at the Governor contract, it will call createGuild through the Avatar.sol
-        
-            // await METADAO.createGuild(user3.address, MOCK_GUILD_NAMES[2], MOCK_GUILD_SYMBOLS[2]);
-            // expect(await METADAO.guilds(GUILD_CONTROLLER_TWO.address)).to.not.equal(ONE_ADDRESS);
-       
-        });
-    });
-
-    context('» Creation of the guild independently out of MetaDAO', () => {
+    context('» Tests with MetaDAO', () => {
 
         it("Creation of the guild independently out of MetaDAO", async function () {
             // Call deployGuildContracts at the GuildFactory.sol
@@ -264,24 +235,48 @@ describe("unit - MetaDao", function () {
 
             expect(await MOCK_MODULE.testValues()).to.equal(20);
             await expect(GOVERNOR.voters(firstProposalId)).to.be.reverted;
-    
+
             // Check that guild is added and functionning propperly
 
             // TODO: change moduleMock of Snapshot using or executeAfterSuccessfulVote
         });
 
         it("Gather taxes from the MetaDAO", async function () {
-         
+            const NEW_ADDRESS = METADAO.address;
+            await AMOR_TOKEN.updateController(NEW_ADDRESS);
+    
+            expect(await AMOR_TOKEN.taxController()).
+                to.equal(NEW_ADDRESS);
 
-            
             // Transfer AMOR tokens between Accounts
-            
-            // Call distribute function in the MetaDAO controller
-            
-            // Call claimFees function in one of the guilds
-            
-            // Check that guild treasury claimed the required fees
+            const taxDeducted = TEST_TRANSFER*(TAX_RATE/BASIS_POINTS);
 
+            await AMOR_TOKEN.approve(root.address, TEST_TRANSFER);
+            expect(await AMOR_TOKEN.transferFrom(root.address, user1.address, TEST_TRANSFER))
+              .to.emit(AMOR_TOKEN, "Transfer")
+                .withArgs(root.address, user1.address, (TEST_TRANSFER-taxDeducted).toString());
+
+            expect(await AMOR_TOKEN.balanceOf(user1.address)).to.equal((TEST_TRANSFER-taxDeducted).toString());
+
+            // Call distribute function in the MetaDAO controller        
+            // await AMOR_TOKEN.transfer(METADAO.address, ONE_HUNDRED_ETHER);
+            expect(await METADAO.guildFees(GUILD_CONTROLLER_ONE.address)).to.equal(0);
+            await METADAO.distributeFees();
+            expect(await METADAO.guildFees(GUILD_CONTROLLER_ONE.address)).to.equal((taxDeducted * 0.5).toString());
+
+
+            // Call claimFees function in one of the guilds
+            // await AMOR_TOKEN.transfer(METADAO.address, ONE_HUNDRED_ETHER);
+
+            await METADAO.distributeFees();
+            let guildAmor = await METADAO.guildFees(GUILD_CONTROLLER_ONE.address);
+            await expect(METADAO.claimFees(GUILD_CONTROLLER_ONE.address)).
+                to.emit(AMOR_TOKEN, "Transfer").
+                withArgs(METADAO.address, GUILD_CONTROLLER_ONE.address, (guildAmor * 0.95).toString());
+            expect(await METADAO.guildFees(GUILD_CONTROLLER_ONE.address)).to.equal(0);
+
+            // Check that guild treasury claimed the required fees
+            expect(await AMOR_TOKEN.balanceOf(GUILD_CONTROLLER_ONE.address)).to.equal((guildAmor * 0.95).toString());
         });
 
     });
