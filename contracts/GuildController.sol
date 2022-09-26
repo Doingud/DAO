@@ -50,8 +50,8 @@ contract GuildController is IGuildController, Ownable {
     uint256 public constant WEEK = 7 days; // 1 week is the time for the users to vore for the specific report
     uint256 public constant DAY = 1 days;
     uint256 public constant HOUR = 1 hours;
-    uint256 public constant FEE_DENOMINATOR = 1000;
-    uint256 public percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
+    uint256 public FEE_DENOMINATOR;
+    uint256 public percentToConvert; //10% // FEE_DENOMINATOR/100*10
 
     event Initialized(bool success, address owner, address AMORxGuild);
 
@@ -100,6 +100,8 @@ contract GuildController is IGuildController, Ownable {
         timeVoting = 0;
 
         _initialized = true;
+        FEE_DENOMINATOR = 1000;
+        percentToConvert = 100;
         emit Initialized(_initialized, initOwner, AMORxGuild_);
         return true;
     }
