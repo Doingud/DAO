@@ -1,28 +1,48 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
 
-import "./utils/interfaces/IAvatar.sol";
+/**
+ * @title   DoinGud: Governor.sol
+ * @author  Daoism Systems
+ * @notice  Governor Implementation for DoinGud Guilds
+ * @custom:security-contact arseny@daoism.systems || konstantin@daoism.systems
+ * @dev     IGovernor IERC165 Pattern
+ *
+ * Governor contract will allow to Guardians to add and vote for the proposals
+ *
+ * MIT License
+ * ===========
+ *
+ * Copyright (c) 2022 DoinGud
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *
+ */
+import "./utils/interfaces/IAvatarxGuild.sol";
+import "./utils/interfaces/IGovernor.sol";
+import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-/// @title Governor contract
-/// @author Daoism Systems Team
-/// @dev    IGovernor IERC165 Pattern
-/// @notice Governor contract will allow to add and vote for the proposals
-
-contract DoinGudGovernor {
+contract DoinGudGovernor is IDoinGudGovernor {
     using SafeCast for uint256;
-
-    enum ProposalState {
-        Pending,
-        Active,
-        Canceled,
-        Defeated,
-        Succeeded,
-        Expired
-    }
 
     struct ProposalCore {
         uint256 voteStart;
@@ -57,7 +77,7 @@ contract DoinGudGovernor {
     address public snapshotAddress;
     address public avatarAddress;
     IERC20 private AMORxGuild;
-    IVotes public immutable token;
+    IVotes public token;
 
     event Initialized(bool success, address avatarAddress, address snapshotAddress);
     event ProposalCreated(
@@ -86,19 +106,14 @@ contract DoinGudGovernor {
     error VotingTimeExpired();
     error AlreadyVoted();
     error CancelNotApproved();
-
-    constructor(IVotes _token, string memory name) {
-        token = _token;
-        _name = name;
-        // person who inflicted the creation of the contract is set as the only guardian of the system
-        guardians.push(msg.sender);
-    }
+    error UnderlyingTransactionReverted();
 
     /// @notice Initializes the Governor contract
     /// @param  AMORxGuild_ the address of the AMORxGuild token
     /// @param  snapshotAddress_ the address of the Snapshot
     /// @param  avatarAddress_ the address of the Avatar
     function init(
+        string memory name,
         address AMORxGuild_,
         address snapshotAddress_,
         address avatarAddress_
@@ -107,6 +122,10 @@ contract DoinGudGovernor {
             revert AlreadyInitialized();
         }
 
+        token = IVotes(AMORxGuild_);
+        _name = name;
+        // person who inflicted the creation of the contract is set as the only guardian of the system
+        guardians.push(msg.sender);
         AMORxGuild = IERC20(AMORxGuild_);
 
         snapshotAddress = snapshotAddress_;
@@ -310,23 +329,28 @@ contract DoinGudGovernor {
     /// @param values AMORxGuild values for proposal calls
     /// @param calldatas Calldatas for proposal calls
     function execute(
-        uint256 proposalId,
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas
     ) external returns (uint256) {
-        uint256 checkProposalId = hashProposal(targets, values, calldatas);
-
-        if (checkProposalId != proposalId) {
-            revert InvalidParameters();
-        }
+        uint256 proposalId = hashProposal(targets, values, calldatas);
 
         ProposalState status = state(proposalId);
         if (status != ProposalState.Succeeded) {
             revert InvalidState();
         }
 
-        IAvatar(avatarAddress).executeProposal(targets, values, calldatas);
+        for (uint256 i = 0; i < targets.length; ++i) {
+            bool success = IAvatarxGuild(avatarAddress).executeProposal(
+                targets[i],
+                values[i],
+                calldatas[i],
+                Enum.Operation.Call
+            );
+            if (!success) {
+                revert UnderlyingTransactionReverted();
+            }
+        }
 
         emit ProposalExecuted(proposalId);
 

@@ -7,19 +7,20 @@
 pragma solidity 0.8.15;
 
 interface IMetaDaoController {
+    function init(address amor, address factory) external;
+
     /// @notice Updates a guild's weight
     /// @param  guildArray addresses of the guilds
     /// @param  newWeights weights of the guilds, must be correspond to the order of `guildArray`
     function updateGuildWeights(address[] memory guildArray, uint256[] memory newWeights) external;
+
+    function guildFunds(address guild, address token) external returns (uint256);
 
     /// @notice Allows a user to donate a whitelisted asset
     /// @dev    `approve` must have been called on the `token` contract
     /// @param  token the address of the token to be donated
     /// @param  amount the amount of tokens to donate
     function donate(address token, uint256 amount) external;
-
-    /// @notice Distributes both the fees and the token donations
-    function distributeAll() external;
 
     /// @notice Distributes the specified token
     /// @param  token address of target token
@@ -34,7 +35,7 @@ interface IMetaDaoController {
 
     /// @notice Transfers apportioned tokens from the metadao to the guild
     /// @dev only a guild can call this funtion
-    function claim() external;
+    function claimToken(address token) external;
 
     /// @notice use this funtion to create a new guild via the guild factory
     /// @dev only admin can all this funtion

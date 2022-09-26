@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: MIT
+pragma solidity 0.8.15;
 
 /**
- * @title  DoinGud: MetaDAO Controller
+ * @title  DoinGud: MetaDaoController.sol
  * @author Daoism Systems
- * @notice MetaDAO Controller for high level guild actions
+ * @notice MetaDaoController implementation for DoinGudDAO
  * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
+ *
+ *  The MetaDAO creates new guilds and collects fees from AMOR token transfers.
+ *  The collected funds can then be distributed and claimed by guilds.
  *
  * MIT License
  * ===========
@@ -30,25 +34,29 @@
  *
  */
 
-pragma solidity 0.8.15;
-
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/interfaces/ICloneFactory.sol";
 import "./utils/interfaces/IGuildController.sol";
 import "./utils/interfaces/IMetaDaoController.sol";
 
-contract MetaDaoController is IMetaDaoController, AccessControl {
+contract MetaDaoController is Ownable {
     using SafeERC20 for IERC20;
     /// Guild-related variables
-    /// Array of addresses of Guilds
-    address[] public guilds;
+    mapping(address => address) public guilds;
+    address public sentinelGuilds;
+    uint96 public guildCounter;
     mapping(address => uint256) public guildWeight;
     /// Mapping of guild --> token --> amount
     mapping(address => mapping(address => uint256)) public guildFunds;
     /// The total weight of the guilds
     uint256 public guildsTotalWeight;
+    /// The Avatar associated with a guildController
+    /// The fees distributed will go the AvatarxGuild
+    mapping(address => address) public guildAvatar;
+    /// Keeping track of the AMOR fees apportioned to each guild
+    mapping(address => uint256) public guildFees;
 
     /// Donations variables
     mapping(address => uint256) public donations;
@@ -61,198 +69,225 @@ contract MetaDaoController is IMetaDaoController, AccessControl {
     /// Clone Factory
     address public guildFactory;
 
-    /// Access Control
-    bytes32 public GUILD_ROLE = keccak256("GUILD");
-
     /// ERC20 tokens used by metada
     IERC20 public amorToken;
 
-    error InvalidClaim();
-    error NotListed();
-    /// The guild cannot be added because it already exists
-    error Exists();
-    error InvalidGuild();
-
-    constructor(
-        address _amor,
-        address _cloneFactory,
-        address admin
-    ) {
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _setupRole(GUILD_ROLE, admin);
-        amorToken = IERC20(_amor);
-        guildFactory = _cloneFactory;
-        /// Setup the linked list
-        sentinelWhitelist = _amor;
-        whitelist[sentinelWhitelist] = SENTINEL;
-        whitelist[SENTINEL] = _amor;
+    /// Indexes
+    /// Create the Index object
+    struct Index {
+        address creator;
+        uint256 indexDenominator;
+        mapping(address => uint256) indexWeights;
     }
 
-    /// @notice Updates a guild's weight
-    /// @param  guildArray addresses of the guilds
-    /// @param  newWeights weights of the guilds, must be correspond to the order of `guildArray`
-    function updateGuildWeights(address[] memory guildArray, uint256[] memory newWeights)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        if (
-            guildArray.length != guilds.length ||
-            newWeights.length != guilds.length ||
-            keccak256(abi.encode(guildArray)) != keccak256(abi.encode(guilds))
-        ) {
-            revert InvalidGuild();
-        }
-        guildsTotalWeight = 0;
-        for (uint256 i; i < guildArray.length; i++) {
-            guildWeight[guildArray[i]] = newWeights[i];
-            guildsTotalWeight += newWeights[i];
-        }
+    /// Create an array to hold the different indexes
+    mapping(bytes32 => Index) public indexes;
+    bytes32[] public indexHashes;
+    bytes32 public constant FEES_INDEX = keccak256("FEES_INDEX");
+
+    /// Errors
+    /// The token is not whitelisted
+    error NotListed();
+    /// The guild/index cannot be added because it already exists
+    error Exists();
+    /// The guild doesn't exist
+    error InvalidGuild();
+    /// Not all guilds have weights!!
+    /// Please ensure guild weights have been updated after adding new guild
+    error IndexError();
+    /// The supplied array of index weights does not match the number of guilds
+    error InvalidArray();
+    /// The index array has not been set yet
+    error NoIndex();
+    error InvalidClaim();
+
+    constructor(address admin) {
+        _transferOwnership(admin);
+    }
+
+    function init(address amor, address cloneFactory) external onlyOwner {
+        amorToken = IERC20(amor);
+        guildFactory = cloneFactory;
+        /// Setup the linked list
+        sentinelWhitelist = amor;
+        whitelist[sentinelWhitelist] = SENTINEL;
+        whitelist[SENTINEL] = amor;
+        /// Setup the fee index
+        indexHashes.push(FEES_INDEX);
+        Index storage index = indexes[FEES_INDEX];
+        index.creator = owner();
+        /// Setup guilds linked list
+        sentinelGuilds = address(0x01);
+        guilds[sentinelGuilds] = SENTINEL;
+        guilds[SENTINEL] = sentinelGuilds;
     }
 
     /// @notice Allows a user to donate a whitelisted asset
     /// @dev    `approve` must have been called on the `token` contract
     /// @param  token the address of the token to be donated
     /// @param  amount the amount of tokens to donate
-    function donate(address token, uint256 amount) external {
-        if (whitelist[token] == address(0)) {
+    /// @param  index indicates which index to use in donation calcs
+    function donate(
+        address token,
+        uint256 amount,
+        uint256 index
+    ) external {
+        if (this.isWhitelisted(token) == false) {
             revert NotListed();
+        }
+        if (indexes[FEES_INDEX].indexDenominator == 0) {
+            revert NoIndex();
         }
         if (token == address(amorToken)) {
             uint256 amorBalance = amorToken.balanceOf(address(this));
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
             amorBalance = amorToken.balanceOf(address(this)) - amorBalance;
+            allocateByIndex(token, amorBalance, index);
             donations[token] += amorBalance;
         } else {
             donations[token] += amount;
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+            allocateByIndex(token, amount, index);
         }
     }
 
-    /// @notice Distributes both the fees and the token donations
-    function distributeAll() external {
-        /// Apportion the AMOR received from fees
-        distributeFees();
-        /// Apportion the token donations
-        distributeTokens();
+    /// @notice Allocates donated funds by the index specified
+    /// @dev    This approach allows any guild to claim their funds at any time
+    /// @param  token address of the ERC20 token to be donated
+    /// @param  amount of the specified token to be allocated
+    /// @param  index the index to be used to allocate the donation by
+    function allocateByIndex(
+        address token,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        address endOfList = SENTINEL;
+        Index storage targetIndex = indexes[indexHashes[index]];
+        while (guilds[endOfList] != SENTINEL) {
+            uint256 amountAllocated = (amount * targetIndex.indexWeights[guilds[endOfList]]) /
+                targetIndex.indexDenominator;
+            guildFunds[guilds[endOfList]][token] += amountAllocated;
+            endOfList = guilds[endOfList];
+        }
     }
 
     /// @notice Distributes the specified token
     /// @param  token address of target token
-    function distributeToken(address token) public {
+    function claimToken(address token) public {
+        if (guilds[msg.sender] == address(0)) {
+            revert InvalidGuild();
+        }
         if (whitelist[token] == address(0)) {
             revert NotListed();
         }
-        if (donations[token] != 0) {
-            uint256 trackDistributions;
-
-            /// Loop through guilds
-            for (uint256 i = 0; i < guilds.length; i++) {
-                uint256 amountToDistribute = (donations[token] * guildWeight[guilds[i]]) / guildsTotalWeight;
-                if (amountToDistribute == 0) {
-                    continue;
-                }
-                guildFunds[guilds[i]][token] += amountToDistribute;
-                /// Update the donation total for this token
-                trackDistributions += amountToDistribute;
-            }
-            /// Decrease the donations by the amount of tokens distributed
-            /// This prevents multiple calls to distribute attack vector
-            donations[token] -= trackDistributions;
+        uint256 amount = guildFunds[msg.sender][token];
+        if (amount == 0) {
+            revert InvalidClaim();
         }
-    }
-
-    /// @notice Apportions approved token donations according to guild weights
-    /// @dev    Loops through all whitelisted tokens and calls `distributeToken()` for each
-    function distributeTokens() public {
-        address endOfList = SENTINEL;
-        /// Loop through linked list
-        while (whitelist[endOfList] != SENTINEL) {
-            distributeToken(whitelist[endOfList]);
-            endOfList = whitelist[endOfList];
-        }
+        donations[token] -= amount;
+        /// Clear this guild's token balance
+        delete guildFunds[msg.sender][token];
+        IERC20(token).safeTransfer(msg.sender, amount);
     }
 
     /// @notice Apportions collected AMOR fees
     function distributeFees() public {
+        Index storage index = indexes[FEES_INDEX];
+        address endOfList = SENTINEL;
         /// Determine amount of AMOR that has been collected from fees
         uint256 feesToBeDistributed = amorToken.balanceOf(address(this)) - donations[address(amorToken)];
-        for (uint256 i = 0; i < guilds.length; i++) {
-            uint256 amountToDistribute = (feesToBeDistributed * guildWeight[guilds[i]]) / guildsTotalWeight;
+
+        while (guilds[endOfList] != SENTINEL) {
+            uint256 amountToDistribute = (feesToBeDistributed * index.indexWeights[guilds[endOfList]]) /
+                index.indexDenominator;
             if (amountToDistribute != 0) {
-                guildFunds[guilds[i]][address(amorToken)] += amountToDistribute;
+                guildFees[guilds[endOfList]] += amountToDistribute;
             }
+            endOfList = guilds[endOfList];
         }
     }
 
-    /// @notice Transfers apportioned tokens from the metadao to the guild
-    /// @dev only a guild can call this funtion
-    function claim() public onlyRole(GUILD_ROLE) {
-        /// Loop through the token linked list
-        address helper = SENTINEL;
-        while (whitelist[helper] != SENTINEL) {
-            /// Donate or transfer the token
-            IERC20(whitelist[helper]).safeTransfer(msg.sender, guildFunds[msg.sender][whitelist[helper]]);
-            /// Clear this guild's token balance
-            delete guildFunds[msg.sender][whitelist[helper]];
-            /// Advance the helper to the next link in the list
-            helper = whitelist[helper];
+    /// @notice Allows a guild to transfer fees to the Guild
+    /// @param  guild The target guild
+    function claimFees(address guild) public {
+        if (guilds[guild] == address(0)) {
+            revert InvalidGuild();
         }
+        amorToken.safeTransfer(guild, guildFees[guild]);
+        delete guildFees[guild];
     }
 
     /// @notice use this funtion to create a new guild via the guild factory
-    /// @dev only admin can all this funtion
-    /// @param guildOwner address that will control the functions of the guild
-    /// @param name the name for the guild
-    /// @param tokenSymbol the symbol for the Guild's token
+    /// @dev    only admin can all this funtion
+    /// @dev    NB: this function does not check that a guild `name` & `symbol` is unique
+    /// @param  guildOwner address that will control the functions of the guild
+    /// @param  name the name for the guild
+    /// @param  tokenSymbol the symbol for the Guild's token
     function createGuild(
         address guildOwner,
         string memory name,
         string memory tokenSymbol
-    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        ICloneFactory(guildFactory).deployGuildContracts(guildOwner, name, tokenSymbol);
-    }
-
-    /// @notice adds guild based on the controller address provided
-    /// @dev give guild role in access control to the controller for the guild
-    /// @param controller the controller address of the guild
-    function addGuild(address controller) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        for (uint256 i; i < guilds.length; i++) {
-            if (controller == guilds[i]) {
-                revert Exists();
-            }
+    ) public onlyOwner {
+        (address controller, address avatar, address governor) = ICloneFactory(guildFactory).deployGuildContracts(
+            guildOwner,
+            name,
+            tokenSymbol
+        );
+        guilds[sentinelGuilds] = controller;
+        sentinelGuilds = controller;
+        guilds[sentinelGuilds] = SENTINEL;
+        unchecked {
+            guildCounter += 1;
         }
-        grantRole(GUILD_ROLE, controller);
-        guilds.push(controller);
     }
 
-    /// @notice adds guild based on the controller address provided
-    /// @dev give guild role in access control to the controller for the guild
-    /// @param _token the controller address of the guild
-    function addWhitelist(address _token) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    /// @notice Adds an external guild to the registry
+    /// @param  guildAddress the address of the external guild's controller
+    function addExternalGuild(address guildAddress) external onlyOwner {
+        /// Add check that guild address hasn't been added yet here
+        if (guilds[guildAddress] != address(0)) {
+            revert Exists();
+        }
+        guilds[sentinelGuilds] = guildAddress;
+        sentinelGuilds = guildAddress;
+        guilds[sentinelGuilds] = SENTINEL;
+        unchecked {
+            guildCounter += 1;
+        }
+    }
+
+    /// @notice adds token to whitelist
+    /// @dev    checks if token is present in whitelist mapping
+    /// @param  _token address of the token to be whitelisted
+    function addWhitelist(address _token) external onlyOwner {
         whitelist[sentinelWhitelist] = _token;
         sentinelWhitelist = _token;
         whitelist[sentinelWhitelist] = SENTINEL;
     }
 
     /// @notice removes guild based on id
-    /// @param index the index of the guild in guilds[]
-    /// @param controller the address of the guild controller to remove
-    function removeGuild(uint256 index, address controller) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (guilds[index] == controller) {
-            /// Transfer unclaimed funds to donations
-            address endOfList = SENTINEL;
-            /// Loop through linked list
-            while (whitelist[endOfList] != SENTINEL) {
-                donations[whitelist[endOfList]] += guildFunds[guilds[index]][whitelist[endOfList]];
-                delete guildFunds[guilds[index]][whitelist[endOfList]];
-                endOfList = whitelist[endOfList];
-            }
-            guildsTotalWeight -= guildWeight[guilds[index]];
-            guilds[index] = guilds[guilds.length - 1];
-            guilds.pop();
-            revokeRole(GUILD_ROLE, controller);
-        } else {
+    /// @param  controller the address of the guild controller to remove
+    function removeGuild(address controller) external onlyOwner {
+        if (guilds[controller] == address(0)) {
             revert InvalidGuild();
+        }
+        /// Transfer unclaimed funds to donations
+        address endOfList = SENTINEL;
+        /// Loop through linked list
+        while (whitelist[endOfList] != SENTINEL) {
+            donations[whitelist[endOfList]] += guildFunds[guilds[controller]][whitelist[endOfList]];
+            delete guildFunds[guilds[controller]][whitelist[endOfList]];
+            endOfList = whitelist[endOfList];
+        }
+
+        endOfList = SENTINEL;
+        while (guilds[endOfList] != controller) {
+            endOfList = guilds[endOfList];
+        }
+        guilds[endOfList] = guilds[controller];
+        delete guilds[controller];
+        unchecked {
+            guildCounter -= 1;
         }
     }
 
@@ -264,5 +299,62 @@ contract MetaDaoController is IMetaDaoController, AccessControl {
             revert NotListed();
         }
         return true;
+    }
+
+    /// @notice Adds a new index to the `Index` array
+    /// @dev    Requires an encoded array of SORTED tuples in (address, uint256) format
+    /// @param  weights an array containing the weighting indexes for different guilds
+    /// @return index of the new index in the `Index` array
+    function addIndex(bytes[] calldata weights) external returns (uint256) {
+        /// This check becomes redundant
+        /// Using the hash of the array allows a O(1) check if that index exists already
+        bytes32 hashArray = keccak256(abi.encode(weights));
+        if (indexes[hashArray].indexDenominator != 0) {
+            revert Exists();
+        }
+        indexHashes.push(hashArray);
+        _updateIndex(weights, indexHashes[indexHashes.length - 1]);
+
+        return indexHashes.length - 1;
+    }
+
+    /// @notice Allows DoinGud to update the fee index used
+    /// @param  weights an array of the guild weights
+    function updateIndex(bytes[] calldata weights, uint256 index) external returns (uint256) {
+        if (indexes[indexHashes[index]].creator != msg.sender) {
+            revert IndexError();
+        }
+        bytes32 key = _updateIndex(weights, indexHashes[index]);
+        if (index > 0) {
+            indexHashes[index] = indexHashes[indexHashes.length - 1];
+            indexHashes.pop();
+            indexHashes.push(key);
+            return indexHashes.length;
+        }
+        return 0;
+    }
+
+    /// @notice Adds a new index to the Index mapping
+    /// @dev    Requires `weights` to be sorted prior to creating a new `Index` struct
+    /// @param  weights the encoded tuple of index values (`address`,`uint256`)
+    /// @param  arrayHash keccak256 hash of the provided array
+    /// @return bool was the index update successful
+    function _updateIndex(bytes[] calldata weights, bytes32 arrayHash) internal returns (bytes32) {
+        /// Delete the previous index
+        /// Even a small change will create a very different hash
+        if (arrayHash != FEES_INDEX) {
+            delete indexes[arrayHash];
+            arrayHash = keccak256(abi.encode(weights));
+        }
+        /// Set the storage pointer
+        Index storage index = indexes[arrayHash];
+
+        for (uint256 i; i < weights.length; i++) {
+            (address guild, uint256 weight) = abi.decode(weights[i], (address, uint256));
+            index.indexWeights[guild] = weight;
+            index.indexDenominator += weight;
+            index.creator = msg.sender;
+        }
+        return arrayHash;
     }
 }
