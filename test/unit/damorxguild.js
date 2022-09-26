@@ -313,7 +313,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             expect(withdrawedTokens).to.equal(currentAmount);
         });
 
-        it('it fails to withdraw dAMORxGuild tokens if nothung to withdraw', async function () {
+        it('it fails to withdraw dAMORxGuild tokens if nothing to withdraw', async function () {
             await expect(dAMORxGuild.connect(staker2).withdraw()).to.be.revertedWith(
                 'InvalidAmount()'
             ); 
