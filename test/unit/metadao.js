@@ -54,7 +54,7 @@ describe("unit - MetaDao", function () {
         await init.getGuildFactory(setup);
         FACTORY = setup.factory;
 
-        await METADAO.init(AMOR_TOKEN.address, FACTORY.address);
+        await METADAO.init(AMOR_TOKEN.address, FACTORY.address, setup.roles.root.address);
     });
 
     beforeEach('setup', async function() {
