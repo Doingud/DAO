@@ -101,11 +101,8 @@ contract MetaDaoController is Ownable {
     error NoIndex();
     error InvalidClaim();
 
-    constructor(address admin) {
+    function init(address amor, address cloneFactory, address admin) external {
         _transferOwnership(admin);
-    }
-
-    function init(address amor, address cloneFactory) external onlyOwner {
         amorToken = IERC20(amor);
         guildFactory = cloneFactory;
         /// Setup the linked list

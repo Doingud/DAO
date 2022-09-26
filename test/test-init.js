@@ -72,6 +72,13 @@ const getTokens = async (setup) => {
     return tokens;
 };
 
+const proxy = async () => {
+  const proxyFactory = await ethers.getContractFactory("DoinGudProxy");
+  const proxy = await proxyFactory.deploy();
+
+  return proxy;
+}
+
 const metadaoMock = async (setup) =>{
   const MetaDaoFactory = await ethers.getContractFactory('MetaDaoControllerMock');
   const metadao = await MetaDaoFactory.deploy(
@@ -209,9 +216,7 @@ const getGuildFactory = async (setup) => {
 
 const metadao = async(setup) =>{
   const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController');
-  const metadao = await MetaDaoFactory.deploy(
-    setup.roles.root.address
-  );
+  const metadao = await MetaDaoFactory.deploy();
 
   setup.metadao = metadao;
 
@@ -240,5 +245,6 @@ module.exports = {
   getGuildFactory,
   governor,
   metadao,
-  metadaoMock
+  metadaoMock,
+  proxy
 }; 
