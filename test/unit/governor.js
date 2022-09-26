@@ -124,9 +124,32 @@ describe('unit - Contract: Governor', function () {
             );
         });
 
-        it('it changes guardians limit ', async function () {
+        it('it changes guardians limit from proposal', async function () {
             expect(await governor.GUARDIANS_LIMIT()).to.equals(2);
-            await governor.connect(operator).changeGuardiansLimit(3);
+
+            targets = [governor.address];
+            values = [0];
+            calldatas = [governor.interface.encodeFunctionData("changeGuardiansLimit", [3])];
+
+            await governor.connect(authorizer_adaptor).propose(targets, values, calldatas);
+            firstProposalId = await GOVERNOR.proposals(0);
+
+            // Pass the proposal on the snapshot
+            time.increase(time.duration.days(1));
+            // Vote as a guardians to pass the proposal locally            
+            await governor.connect(staker).castVote(firstProposalId, true);
+            await governor.connect(operator).castVote(firstProposalId, true);
+            await governor.connect(user3).castVote(firstProposalId, false);
+            expect(await governor.proposalVoting(firstProposalId)).to.equals(2);
+            expect(await governor.proposalWeight(firstProposalId)).to.equals(3);
+
+            // Execute the passed proposal
+            time.increase(time.duration.days(14));
+
+            await expect(governor.connect(authorizer_adaptor).execute(targets, values, calldatas))
+                .to
+                .emit(governor, "ProposalExecuted").withArgs(firstProposalId);
+
             expect(await governor.GUARDIANS_LIMIT()).to.equals(3);
             await governor.connect(operator).changeGuardiansLimit(2);
         });
