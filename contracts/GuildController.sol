@@ -170,6 +170,8 @@ contract GuildController is IGuildController, Ownable {
         if (token != AMORxGuild && token != AMOR) {
             // recieve tokens
             amount = 0; //allAmount will be transfered later
+            // TODO: allow to mint FXAMOR tokend based on
+
             // IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
         } else if (token == AMOR) {
             // convert AMOR to AMORxGuild
