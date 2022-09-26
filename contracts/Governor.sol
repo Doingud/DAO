@@ -165,6 +165,13 @@ contract DoinGudGovernor {
         _;
     }
 
+    modifier onlyAvatar() {
+        if (msg.sender != avatarAddress) {
+            revert Unauthorized();
+        }
+        _;
+    }
+
     modifier onlyGuardian() {
         if (weights[msg.sender] == 0) {
             revert Unauthorized();
@@ -258,6 +265,8 @@ contract DoinGudGovernor {
         uint256[] memory values,
         bytes[] memory calldatas
     ) external onlySnapshot GuardianLimitReached returns (uint256) {
+    // ) external onlyAvatar GuardianLimitReached returns (uint256) {
+
         if (!(targets.length == values.length && targets.length == calldatas.length)) {
             revert InvalidParameters();
         }

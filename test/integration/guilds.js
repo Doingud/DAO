@@ -8,8 +8,14 @@ const {
     ONE_ADDRESS,
     MOCK_GUILD_NAMES,
     MOCK_GUILD_SYMBOLS,
-    ZERO_ADDRESS
+    ZERO_ADDRESS,
+    BASIS_POINTS,
+    TAX_RATE,
+    AMOR_TOKEN_NAME, 
+    AMOR_TOKEN_SYMBOL,
+    MOCK_TEST_AMOUNT
   } = require('../helpers/constants.js');
+const { time } = require("@openzeppelin/test-helpers");
 
 use(solidity);
 
@@ -19,12 +25,21 @@ let FX_AMOR_TOKEN;
 let DAMOR_GUILD_TOKEN;
 let METADAO;
 let USDC;
+
 let user1;
 let user2;
+let staker;
+let operator;
+let authorizer_adaptor;
+
 let CONTROLLER;
 let FACTORY;
+let AVATAR;
+let GOVERNOR;
 let GUILD_CONTROLLER_ONE;
 let GUILD_CONTROLLER_TWO;
+
+let MOCK_MODULE;
 
 let GUILD_ONE_AMORXGUILD;
 let GUILD_ONE_DAMORXGUILD;
@@ -34,6 +49,10 @@ let GUILD_ONE_CONTROLLERXGUILD;
 let encodedIndex;
 let encodedIndex2;
 
+let targets;
+let values;
+let calldatas;
+let firstProposalId;
 //const FEE_INDEX = ethers.utils.keccak256(toUtf8Bytes("FEE_INDEX"));
 
 describe("unit - MetaDao", function () {
@@ -56,6 +75,10 @@ describe("unit - MetaDao", function () {
         user2 = setup.roles.user2;
         user3 = setup.roles.user3;
         pool = setup.roles.pool;
+        staker = setup.roles.staker;
+        operator = setup.roles.operator;
+        authorizer_adaptor = setup.roles.authorizer_adaptor;
+
         /// Setup the MetaDao first
         await init.metadao(setup);
         METADAO = setup.metadao;
@@ -68,10 +91,32 @@ describe("unit - MetaDao", function () {
         FACTORY = setup.factory.guildFactory;
 
         await METADAO.init(AMOR_TOKEN.address, FACTORY.address);
+
+        await init.avatar(setup);
+        AVATAR = setup.avatars.avatar;
+        MOCK_MODULE = setup.avatars.module;
+
+        GOVERNOR = await init.governor(setup);
     });
 
     beforeEach('setup', async function() {
         await setupTests();
+
+        // await AMOR_TOKEN.init(
+        //     AMOR_TOKEN_NAME, 
+        //     AMOR_TOKEN_SYMBOL, 
+        //     multisig.address, 
+        //     TAX_RATE, 
+        //     root.address
+        // );
+        // await AMOR_GUILD_TOKEN.init(
+        //     MOCK_GUILD_NAMES[0],
+        //     MOCK_GUILD_SYMBOLS[0],
+        //     AMOR_TOKEN.address,
+        //     user2.address
+        // );
+        await AMOR_TOKEN.approve(AMOR_GUILD_TOKEN.address, MOCK_TEST_AMOUNT);
+
         /// Setup the guilds through the METADAO
         await METADAO.createGuild(user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
         await METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
@@ -131,12 +176,8 @@ describe("unit - MetaDao", function () {
     });
 
     context('» Creation of the guild independently out of MetaDAO', () => {
-        // it('initialized variables check', async function () {
-        //     expect(await controller.owner()).to.equals(root.address);
-        //     expect(await controller.FXAMORxGuild()).to.equals(FXAMORxGuild.address);
-        // });
 
-        it("Should deploy the Guild Token Contracts", async function () {
+        it("Creation of the guild independently out of MetaDAO", async function () {
             // Call deployGuildContracts at the GuildFactory.sol
             expect(await FACTORY.deployGuildContracts(user1.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0])).
               to.not.equal(ZERO_ADDRESS);
@@ -155,45 +196,99 @@ describe("unit - MetaDao", function () {
             GUILD_ONE_CONTROLLERXGUILD = CONTROLLER.attach(this.guildOneControllerxGuild);
         
             // Try to stake token and receive AMORxGuild
-            // ??? stake?? to recieve AMORxGuild?? not dAmor?? not FxAmor??
-
             // Stake it to receive AMORxGuild
+
+            await AMOR_GUILD_TOKEN.setTax(2000);
+            expect(await AMOR_GUILD_TOKEN.stakingTaxRate()).to.equal(2000);
+
+            expect(await AMOR_GUILD_TOKEN.stakeAmor(root.address, MOCK_TEST_AMOUNT)).
+                to.emit(AMOR_TOKEN, "Transfer").
+                withArgs(
+                    root.address, 
+                    AMOR_GUILD_TOKEN.address, 
+                    ethers.utils.parseEther((100*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString())
+                );
+
+            expect(await AMOR_TOKEN.balanceOf(root.address)).to.equal(ethers.utils.parseEther((10000000-100).toString()));
+            expect(await AMOR_GUILD_TOKEN.balanceOf(root.address)).to.be.not.null;
+            expect(await AMOR_GUILD_TOKEN.balanceOf(user2.address)).to.be.not.null;
         });
 
-        it("Should ", async function () {
+
+        it("Should Add guild to the MetaDAO", async function () {          
+            // Get a deployed guild with default AMOR token            
+            // GUILD_ONE_AMORXGUILD
+
+            await AVATAR.connect(root).setGovernor(GOVERNOR.address);
+            expect(await AVATAR.governor()).to.equals(GOVERNOR.address);
+
+            // set guardians
+            guardians = [staker.address, operator.address, user3.address];
+            await GOVERNOR.connect(authorizer_adaptor).setGuardians(guardians);
+            expect(await GOVERNOR.guardians(0)).to.equals(staker.address);
+            expect(await GOVERNOR.guardians(1)).to.equals(operator.address);
+            expect(await GOVERNOR.guardians(2)).to.equals(user3.address);
+
+            // Add a proposal on the Snapshot to add guild to the Metadao
+            // propose
+            targets = [MOCK_MODULE.address];
+            values = [0];
+            calldatas = [MOCK_MODULE.interface.encodeFunctionData("testInteraction", [20])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+
+            await expect(GOVERNOR.proposals(0)).to.be.reverted;
+            await GOVERNOR.connect(authorizer_adaptor).propose(targets, values, calldatas);
+            
+            await expect(GOVERNOR.proposals(1)).to.be.reverted;
+            firstProposalId = await GOVERNOR.proposals(0);
+            await GOVERNOR.connect(authorizer_adaptor).state(firstProposalId);
+            expect((await GOVERNOR.proposalVoting(firstProposalId)).toString()).to.equals("0");
+            expect((await GOVERNOR.proposalWeight(firstProposalId)).toString()).to.equals("0");
 
             
-            // Call deployGuildContracts at the GuildFactory.sol
+            // Pass the proposal on the snapshot
+            time.increase(time.duration.days(1));
+            // Vote as a guardians to pass the proposal locally            
+            await GOVERNOR.connect(staker).castVote(firstProposalId, true);
+            await GOVERNOR.connect(operator).castVote(firstProposalId, true);
+            await GOVERNOR.connect(user3).castVote(firstProposalId, false);
+            expect(await GOVERNOR.proposalVoting(firstProposalId)).to.equals(2);
+            expect(await GOVERNOR.proposalWeight(firstProposalId)).to.equals(3);
 
-            // Check that the guild was created with some custom(non-AMOR) token
+            // Execute the passed proposal
+            time.increase(time.duration.days(14));
+            expect(await MOCK_MODULE.testValues()).to.equal(0);
 
-            // Try to stake token and receive AMORxGuild
+            await expect(GOVERNOR.connect(authorizer_adaptor).execute(targets, values, calldatas))
+                .to
+                .emit(GOVERNOR, "ProposalExecuted").withArgs(firstProposalId);
 
-            // Stake it to receive AMORxGuild
+            expect(await MOCK_MODULE.testValues()).to.equal(20);
+            await expect(GOVERNOR.voters(firstProposalId)).to.be.reverted;
+    
+            // Check that guild is added and functionning propperly
+
+            // TODO: change moduleMock of Snapshot using or executeAfterSuccessfulVote
+        });
+
+        it("Gather taxes from the MetaDAO", async function () {
+         
+
+            
+            // Transfer AMOR tokens between Accounts
+            
+            // Call distribute function in the MetaDAO controller
+            
+            // Call claimFees function in one of the guilds
+            
+            // Check that guild treasury claimed the required fees
 
         });
+
     });
 
     context('» Add guild to the MetaDAO', () => {
 
-        it("Should deploy the Guild Token Contracts", async function () {
-         
-        });
 
-        it("Should ", async function () {          
-            
-            // Get a deployed guild with default AMOR token
-            
-            // Add a proposal on the Snapshot to add guild to the Metadao
-            
-            // Pass the proposal on the snapshot
-            
-            // Vote as a guardians to pass the proposal locally
-            
-            // Execute the passed proposal
-            
-            // Check that guild is added and functionning propperly
 
-        });
     });
 });
