@@ -49,7 +49,7 @@ describe("unit - MetaDao", function () {
         await init.controller(setup);
         CONTROLLER = setup.controller;
         ///   Setup the guild factory
-        await init.getGuildFactory(setup);
+        await init.getGuildFactory(setup, METADAO.address);
         FACTORY = setup.factory.guildFactory;
 
         await METADAO.init(AMOR_TOKEN.address, FACTORY.address);

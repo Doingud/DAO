@@ -31,6 +31,8 @@ import "./utils/interfaces/IdAMORxGuild.sol";
 import "./utils/interfaces/IGuildController.sol";
 
 contract GuildFactory is ICloneFactory, Ownable {
+    error Unauthrozied();
+
     /// The AMOR Token address
     address public amorToken;
     /// The address for the AMORxGuild Token implementation
@@ -90,6 +92,9 @@ contract GuildFactory is ICloneFactory, Ownable {
         string memory _name,
         string memory _symbol
     ) external returns (address) {
+        if (msg.sender != MetaDaoController) {
+            revert Unauthrozied();
+        }
         /// Setup local scope vars
         string memory tokenName;
         string memory tokenSymbol;
@@ -124,15 +129,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         dAMORxGuildTokens[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
 
         /// Deploy the ControllerxGuild
-        clonedContract = _deployGuildController(
-            controllerxGuild,
-            guildOwner,
-            amorToken,
-            amorxGuildToken,
-            fxAMORxGuildToken,
-            MetaDaoController,
-            multisig
-        );
+        clonedContract = _deployGuildController(guildOwner);
         guildControllers[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
 
         return clonedContract;
@@ -195,29 +192,18 @@ contract GuildFactory is ICloneFactory, Ownable {
     }
 
     /// @notice Internal function to deploy the Guild Controller
-    /// @param  _implementation the address of the implementation contract
-    /// @param  guildOwner address controlling the Guild
-    /// @param  amorxGuild the address of this guild's AMORxGuild token
-    /// @param  fxAMORxGuild the address of this guild's FXAMORxGuild token
+    /// @param guildOwner address controlling the guild
     /// @return address of the deployed guild controller
-    function _deployGuildController(
-        address _implementation,
-        address guildOwner,
-        address amor,
-        address amorxGuild,
-        address fxAMORxGuild,
-        address MetaDaoController,
-        address multisig
-    ) internal returns (address) {
+    function _deployGuildController(address guildOwner) internal returns (address) {
         IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
-        proxyContract.initProxy(_implementation);
+        proxyContract.initProxy(controllerxGuild);
 
         /// Init the Guild Controller
         IGuildController(address(proxyContract)).init(
             guildOwner,
-            amor,
-            amorxGuild,
-            fxAMORxGuild,
+            amorToken,
+            amorxGuildToken,
+            fxAMORxGuildToken,
             MetaDaoController,
             multisig
         );

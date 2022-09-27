@@ -38,6 +38,7 @@ pragma solidity 0.8.15;
 import "./Executor.sol";
 import "./utils/interfaces/IAvatarxGuild.sol";
 import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
+import "./Errors.sol";
 
 contract AvatarxGuild is Executor, IAvatarxGuild {
     event ExecutionFromGovernorSuccess(address governorAddress);
@@ -53,8 +54,6 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
     mapping(address => address) internal modules;
 
     /// Custom errors
-    /// Error if the AmorxGuild has already been initialized
-    error AlreadyInitialized();
     error NotWhitelisted();
     error NotEnabled();
     error NotDisabled();

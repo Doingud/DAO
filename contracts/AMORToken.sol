@@ -46,6 +46,7 @@ pragma solidity 0.8.15;
 import "./utils/ERC20Base.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Errors.sol";
 
 contract AMORToken is ERC20Base, Pausable, Ownable {
     //  Tax controller
@@ -58,8 +59,6 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
     error InvalidRate();
 
     error InvalidTaxCollector();
-
-    error AlreadyInitialized();
 
     event Initialized(bool success, address taxCollector, uint256 rate);
 

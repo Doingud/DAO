@@ -60,18 +60,18 @@ describe("unit - AMOR Token", function () {
 
   context("function: initProxy()", () => {
     it("initializes the proxy's logic", async function () {
-      await PROXY_CONTRACT.initProxy(IMPLEMENTATION.address,[]);
+      await expect(PROXY_CONTRACT.initProxy(IMPLEMENTATION.address)).to.emit(PROXY_CONTRACT, 'Upgraded').withArgs(IMPLEMENTATION.address);
     });
   });
 
   context("function: init()", () => {
     it("initializes the proxy's storage", async function () {
         expect(await PROXY.init(
-          AMOR_TOKEN_NAME,
-          AMOR_TOKEN_SYMBOL,
-          multisig.address,
-          TAX_RATE,
-          root.address
+            AMOR_TOKEN_NAME,
+            AMOR_TOKEN_SYMBOL,
+            multisig.address,
+            TAX_RATE,
+            root.address
           )).
            to.emit(PROXY, "Initialized")
              .withArgs(true, multisig.address, TAX_RATE);

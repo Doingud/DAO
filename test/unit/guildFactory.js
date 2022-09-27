@@ -39,7 +39,7 @@ describe("unit - Clone Factory", function () {
     multisig = setup.roles.doingud_multisig;
     user1 = setup.roles.user1;
 
-    await init.getGuildFactory(setup);
+    await init.getGuildFactory(setup, root.address);
     CLONE_FACTORY = setup.factory.guildFactory;
     CONTROLLERXGUILD = setup.controller;
   });

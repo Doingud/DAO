@@ -6,6 +6,7 @@ const MetaDAOController = 'MetaDAOController';
 const GuildController = 'GuildController';
 const taxController = 'taxController';
 const multisig = 'multisig';
+const snapshot = 'snapshot';
 
 const contractAddresses = {
     'mainnet': {
@@ -26,7 +27,7 @@ const contractAddresses = {
         [taxController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', // Dev wallet
         [multisig]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', // Dev wallet
     },
-    'rinkeby': {
+    'localhost': {
         [AMOR]: '0x9E4A13E5c30e14AA96A0bC147A106e4166248343',
         [AMORxGuild]: '', 
         [FXAMORxGuild]: '',
@@ -35,6 +36,7 @@ const contractAddresses = {
         [GuildController]: '',
         [taxController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', // Dev wallet
         [multisig]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', // Dev wallet
+        [snapshot]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', // Dev wallet
     },
 };
 

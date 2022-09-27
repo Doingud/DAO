@@ -45,6 +45,7 @@ pragma solidity 0.8.15;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/ERC20Base.sol";
+import "./Errors.sol";
 
 contract dAMORxGuild is ERC20Base, Ownable {
     using SafeERC20 for IERC20;
@@ -73,7 +74,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
     IERC20 private AMORxGuild;
 
-    error AlreadyInitialized();
     error Unauthorized();
     error EmptyArray();
     error NotDelegatedAny();
@@ -92,7 +92,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         string memory symbol,
         address initOwner,
         address _AMORxGuild,
-        uint256 amount
+        uint256 amount // TODO: useless variable should it do something?
     ) external returns (bool) {
         if (_initialized) {
             revert AlreadyInitialized();

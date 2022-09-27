@@ -39,6 +39,7 @@ import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./Errors.sol";
 
 contract DoinGudGovernor {
     using SafeCast for uint256;
@@ -98,13 +99,11 @@ contract DoinGudGovernor {
         uint256 endBlock
     );
 
-    string public _name;
     bool private _initialized;
 
     uint256 private _votingDelay;
     uint256 private _votingPeriod;
 
-    error AlreadyInitialized();
     error NotEnoughGuardians();
     error Unauthorized();
     error InvalidParameters();
@@ -116,9 +115,8 @@ contract DoinGudGovernor {
     error CancelNotApproved();
     error UnderlyingTransactionReverted();
 
-    constructor(IVotes _token, string memory name) {
+    constructor(IVotes _token) {
         token = _token;
-        _name = name;
         // person who inflicted the creation of the contract is set as the only guardian of the system
         guardians.push(msg.sender);
     }

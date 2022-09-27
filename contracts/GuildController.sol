@@ -9,6 +9,7 @@ import "./utils/interfaces/IMetaDaoController.sol";
 /// Advanced math functions for bonding curve
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./Errors.sol";
 
 /// @title GuildController contract
 /// @author Daoism Systems Team
@@ -57,7 +58,6 @@ contract GuildController is IGuildController, Ownable {
 
     bool private _initialized;
 
-    error AlreadyInitialized();
     error Unauthorized();
     error EmptyArray();
     error InvalidParameters();

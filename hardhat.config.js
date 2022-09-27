@@ -140,7 +140,7 @@ module.exports = {
         },
     },
     namedAccounts: {
-        root: 0,
+        deployer: 0,
         prime: 1,
         beneficiary: 2,
         rewardManager: 3,

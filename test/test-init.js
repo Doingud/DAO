@@ -72,20 +72,6 @@ const getTokens = async (setup) => {
     return tokens;
 };
 
-const metadaoMock = async (setup) =>{
-  const MetaDaoFactory = await ethers.getContractFactory('MetaDaoControllerMock');
-  const metadao = await MetaDaoFactory.deploy(
-    setup.tokens.AmorTokenImplementation.address,
-    setup.tokens.ERC20Token.address,
-    setup.roles.root.address, //guildFactory.address,
-    setup.roles.root.address
-  );
-
-  setup.metadao = metadao;
-
-  return metadao;
-}
-
 const controller = async (setup) => {
   const controllerFactory = await ethers.getContractFactory('GuildController');
   const controller = await controllerFactory.deploy();
@@ -165,10 +151,7 @@ const avatar = async (setup) => {
 
 const governor = async (setup) => {
   const governorFactory = await ethers.getContractFactory('DoinGudGovernor');
-  const governor = await governorFactory.deploy(
-    setup.tokens.AmorGuildToken.address,
-    "DoinGud Governor"
-  );
+  const governor = await governorFactory.deploy(setup.tokens.AmorGuildToken.address);
 
   await governor.init(    
     setup.tokens.AmorGuildToken.address, //AMORxGuild
@@ -179,7 +162,7 @@ const governor = async (setup) => {
   return governor;
 };
 
-const getGuildFactory = async (setup) => {
+const getGuildFactory = async (setup, metaDaoControllerAddress) => {
   const cloneFactory = await ethers.getContractFactory("GuildFactory");
 
   const controllerFactory = await ethers.getContractFactory("GuildController");
@@ -192,7 +175,7 @@ const getGuildFactory = async (setup) => {
     setup.tokens.dAMORxGuild.address,
     setup.tokens.AmorTokenProxy.address,
     setup.controller.address,
-    setup.metadao.address, // metaDaoController
+    metaDaoControllerAddress, // In unit tests we want this to be EOA
     setup.roles.root.address // multisig
   );
 
@@ -239,5 +222,4 @@ module.exports = {
   getGuildFactory,
   governor,
   metadao,
-  metadaoMock
 }; 

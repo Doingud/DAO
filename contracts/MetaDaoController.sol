@@ -39,10 +39,12 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/interfaces/ICloneFactory.sol";
 import "./utils/interfaces/IGuildController.sol";
-import "./utils/interfaces/IMetaDaoController.sol";
+import "./Errors.sol";
 
 contract MetaDaoController is Ownable {
     using SafeERC20 for IERC20;
+
+    bool internal initialized;
     /// Guild-related variables
     mapping(address => address) public guilds;
     address public sentinelGuilds;
@@ -85,7 +87,6 @@ contract MetaDaoController is Ownable {
     bytes32[] public indexHashes;
     bytes32 public constant FEES_INDEX = keccak256("FEES_INDEX");
 
-    /// Errors
     /// The token is not whitelisted
     error NotListed();
     /// The guild/index cannot be added because it already exists
@@ -95,8 +96,6 @@ contract MetaDaoController is Ownable {
     /// Not all guilds have weights!!
     /// Please ensure guild weights have been updated after adding new guild
     error IndexError();
-    /// The supplied array of index weights does not match the number of guilds
-    error InvalidArray();
     /// The index array has not been set yet
     error NoIndex();
     error InvalidClaim();
@@ -105,7 +104,11 @@ contract MetaDaoController is Ownable {
         _transferOwnership(admin);
     }
 
-    function init(address amor, address cloneFactory) external onlyOwner {
+    function init(address amor, address cloneFactory) external {
+        if (initialized) {
+            revert AlreadyInitialized();
+        }
+        initialized = true;
         amorToken = IERC20(amor);
         guildFactory = cloneFactory;
         /// Setup the linked list
@@ -213,8 +216,9 @@ contract MetaDaoController is Ownable {
         if (guilds[guild] == address(0)) {
             revert InvalidGuild();
         }
-        amorToken.safeTransfer(guild, guildFees[guild]);
+        uint256 feeAmount = guildFees[guild];
         delete guildFees[guild];
+        amorToken.safeTransfer(guild, feeAmount);
     }
 
     /// @notice use this funtion to create a new guild via the guild factory

@@ -57,6 +57,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./utils/ERC20Base.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
+import "./Errors.sol";
 
 contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     using ABDKMath64x64 for uint256;
@@ -81,8 +82,6 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     uint256 private constant COEFFICIENT = 10**9;
 
     /// Custom errors
-    /// Error if the AmorxGuild has already been initialized
-    error AlreadyInitialized();
     /// Error if unsufficient token amount for transfer
     error UnsufficientAmount();
     /// New rate above maximum

@@ -51,7 +51,7 @@ describe('unit - Contract: GuildController', function () {
         USDC = setup.tokens.ERC20Token;    
         metadao = setup.metadao;
         controller = setup.controller;
-        guildFactory = await init.getGuildFactory(setup);
+        guildFactory = await init.getGuildFactory(setup, metadao.address);
         await metadao.init(AMOR.address, guildFactory.guildFactory.address);
         root = setup.roles.root;
         staker = setup.roles.staker;
