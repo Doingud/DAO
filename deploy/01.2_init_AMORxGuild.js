@@ -9,18 +9,16 @@ async function main() {
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
 
-    const AMORxGuildToken = await ethers.getContractFactory("AMORxGuildToken");
-    const AMORxGuild = await AMORxGuildToken.deploy();
-    console.log("AMORxGuild address:", AMORxGuild.address);
 
-    // // deploy guild controller
-    // const GuildControllerFactory = await ethers.getContractFactory("GuildController");
-    // const GuildController = await GuildControllerFactory.deploy();
-    // console.log("GuildController address:", GuildController.address);
+    const GuildController = '0xB19bFADCca6b4AbE42d7e362B629a2632473aDBE'
 
-    // const tx = await AMORxGuild.init("AMORxGuild Token", "AMORxGuild", deployedAMOR, GuildController.address);
-    // console.log("tx is %s", tx);
-    // console.log("AMORxGuild address:", AMORxGuild.address);
+    let a  = await ethers.getContractFactory('AMORxGuildToken')
+    let b = await a.attach('0x3D0641b6f4B938af344FB81b70A2b0bE46f5feca')
+    let deployedAMORxGuild = await b.deployed();
+
+    const tx = await deployedAMORxGuild.init("AMORxGuild Token", "AMORxGuild", deployedAMOR, GuildController);
+    console.log("tx is %s", tx);
+    console.log("AMORxGuild address:", deployedAMORxGuild.address);
 
     // // deploy and init FXAMORxGuild
     // const FXAMORxGuildToken = await ethers.getContractFactory("FXAMORxGuild");
