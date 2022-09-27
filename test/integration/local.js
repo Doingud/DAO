@@ -15,6 +15,8 @@ const { MOCK_GUILD_NAMES,
       } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 const ether = require("@openzeppelin/test-helpers/src/ether.js");
+const { getSqrt } = require("../helpers/helpers.js");
+const { time } = require("@openzeppelin/test-helpers");
 
 use(solidity);
 
@@ -41,6 +43,7 @@ let AMOR_TOKEN_UPGRADE;
 
 /// The proxy for AMOR token
 let amor_proxy;
+let amor_guild_token_proxy;
 
 /// The MetaDao Proxy Tokens
 let DOINGUD_AMOR_TOKEN;
@@ -114,6 +117,7 @@ const setupTests = deployments.createFixture(async () => {
   /// For testing we need to use proxy address of the implementation contract
   setup.amor_storage = amor_proxy;
   let amor_guild_token_proxy = await init.proxy();
+  setup.amorxGuild_storage = amor_guild_token_proxy;
   let dAmor_proxy = await init.proxy();
   let fxAmor_proxy = await init.proxy();
   let controller_proxy = await init.proxy();
@@ -371,5 +375,33 @@ const setupTests = deployments.createFixture(async () => {
         await expect(DOINGUD_METADAO.claimFees(GUILD_ONE_CONTROLLERXGUILD.address)).to.emit(DOINGUD_AMOR_TOKEN, "Transfer");
       });
     })
+
+    context("Stake AMOR to receive AMORxGuild", () => {
+      it("Should allow a user to stake AMOR to receive AMORxGuild", async function () {
+        /// Transfer AMOR to user 1
+        await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
+        /// Connect User 1 and stake AMOR
+        await DOINGUD_AMOR_TOKEN.connect(user1).approve(GUILD_ONE_AMORXGUILD.address, FIFTY_ETHER);
+        await GUILD_ONE_AMORXGUILD.connect(user1).stakeAmor(user1.address, FIFTY_ETHER);
+        /// AMORxGuild = (sqrt(stakedAMOR+tobestakedAMOR) - sqrt(stakedAMOR))
+        let expectedAmorxGuild = ethers.BigNumber.from(getSqrt(ethers.BigNumber.from((FIFTY_ETHER*0.95).toString())));
+        expect(await GUILD_ONE_AMORXGUILD.balanceOf(user1.address)).to.equal(ethers.BigNumber.from(expectedAmorxGuild).mul(10**9));
+      });
+
+      it("Should allow a user to stake AMORxGuild and receive dAMORxGuild", async function () {
+        /// Transfer AMOR to user 1
+        await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
+        /// Connect User 1 and stake AMOR
+        await DOINGUD_AMOR_TOKEN.connect(user1).approve(GUILD_ONE_AMORXGUILD.address, FIFTY_ETHER);
+        await GUILD_ONE_AMORXGUILD.connect(user1).stakeAmor(user1.address, FIFTY_ETHER);
+        /// Stake AMORxONE to receive dAMORxONE
+        let amountAmorxOne = await GUILD_ONE_AMORXGUILD.balanceOf(user1.address);
+        await GUILD_ONE_AMORXGUILD.connect(user1).approve(GUILD_ONE_DAMORXGUILD.address, amountAmorxOne);
+        let oneYear = await time.duration.years(1);
+        console.log(amountAmorxOne.toString());
+        await GUILD_ONE_DAMORXGUILD.connect(user1).stake(ethers.BigNumber.from(amountAmorxOne.toString()), oneYear.toString());
+        
+      });
+    });
 
 });

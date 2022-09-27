@@ -195,6 +195,7 @@ const getGuildFactory = async (setup) => {
 
   const guildFactory = await cloneFactory.deploy(
     setup.amor_storage.address,
+    ///setup.amorxGuild_storage.address,
     setup.tokens.AmorGuildToken.address,
     setup.tokens.FXAMORxGuild.address,
     setup.tokens.dAMORxGuild.address,
