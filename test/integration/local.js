@@ -25,6 +25,8 @@ let user1;
 let user2;
 let user3; 
 let staker;
+
+/// The implementation contracts
 let AMOR_TOKEN;
 let AMOR_GUILD_TOKEN;
 let CLONE_FACTORY;
@@ -36,6 +38,9 @@ let AVATARXGUILD;
 let VESTING;
 let ERC20_TOKEN;
 let AMOR_TOKEN_UPGRADE;
+
+/// The proxy for AMOR token
+let amor_proxy;
 
 /// The MetaDao Proxy Tokens
 let DOINGUD_AMOR_TOKEN;
@@ -104,7 +109,10 @@ const setupTests = deployments.createFixture(async () => {
   METADAO = setup.metadao;
 
   ///   STEP 3: Deploy the proxies for the tokens and the control structures
-  let amor_proxy = await init.proxy();
+  ///   `amor_proxy` is declared earlier to allow upgrade testing
+  amor_proxy = await init.proxy();
+  /// For testing we need to use proxy address of the implementation contract
+  setup.amor_storage = amor_proxy;
   let amor_guild_token_proxy = await init.proxy();
   let dAmor_proxy = await init.proxy();
   let fxAmor_proxy = await init.proxy();
@@ -345,7 +353,22 @@ const setupTests = deployments.createFixture(async () => {
 
     context("Change the AMOR implementation address", () => {
       it("Should allow the owner to change the implementation address", async function () {
-        expect(await amor_proxy.upgradeImplementation(AMOR_TOKEN_UPGRADE.address)).to.emit(amor_proxy, "")
+        await expect(amor_proxy.upgradeImplementation(AMOR_TOKEN_UPGRADE.address))
+          .to.emit(amor_proxy, "Upgraded")
+            .withArgs(AMOR_TOKEN_UPGRADE.address);
+
+        /// Assert that the AMOR Token and the amor_proxy reference the same address
+        expect(await DOINGUD_AMOR_TOKEN.address).to.equal(amor_proxy.address);
+        
+        /// Let user 1 stake AMOR into AMORxOne
+        await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
+        await DOINGUD_AMOR_TOKEN.connect(user1).approve(GUILD_ONE_AMORXGUILD.address, FIFTY_ETHER);
+        await GUILD_ONE_AMORXGUILD.connect(user1).stakeAmor(user1.address, FIFTY_ETHER);
+
+        /// Let the guilds gather fees
+        expect(await DOINGUD_METADAO.guildFees(GUILD_ONE_CONTROLLERXGUILD.address)).to.be.equal(0);
+        await DOINGUD_METADAO.distributeFees();
+        await expect(DOINGUD_METADAO.claimFees(GUILD_ONE_CONTROLLERXGUILD.address)).to.emit(DOINGUD_AMOR_TOKEN, "Transfer");
       });
     })
 

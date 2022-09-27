@@ -194,7 +194,7 @@ const getGuildFactory = async (setup) => {
   const cloneFactory = await ethers.getContractFactory("GuildFactory");
 
   const guildFactory = await cloneFactory.deploy(
-    setup.tokens.AmorTokenImplementation.address,
+    setup.amor_storage.address,
     setup.tokens.AmorGuildToken.address,
     setup.tokens.FXAMORxGuild.address,
     setup.tokens.dAMORxGuild.address,
