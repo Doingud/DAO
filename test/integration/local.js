@@ -9,7 +9,9 @@ const { MOCK_GUILD_NAMES,
         TAX_RATE,
         GAURDIAN_THRESHOLD,
         BASIS_POINTS,
-        FIFTY_ETHER
+        FIFTY_ETHER,
+        ONE_ADDRESS,
+        ONE_HUNDRED_ETHER
       } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 const ether = require("@openzeppelin/test-helpers/src/ether.js");
@@ -32,6 +34,8 @@ let CONTROLLERXGUILD;
 let GOVERNORXGUILD;
 let AVATARXGUILD;
 let VESTING;
+let ERC20_TOKEN;
+let AMOR_TOKEN_UPGRADE;
 
 /// The MetaDao Proxy Tokens
 let DOINGUD_AMOR_TOKEN;
@@ -82,19 +86,18 @@ const setupTests = deployments.createFixture(async () => {
   ///   DOINGUD ECOSYSTEM DEPLOYMENT
   ///   STEP 1: Deploy token implementations
   AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
+  AMOR_TOKEN_UPGRADE = setup.tokens.AmorTokenMockUpgrade;
   AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
   FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
   DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
+  ERC20_TOKEN = setup.tokens.ERC20Token;
 
   ///   STEP 2: Deploy DoinGud Control Structures
   await init.metadao(setup);
   await init.controller(setup);
   await init.avatar(setup);
   await init.governor(setup);
-  await init.getGuildFactory(setup);
-  await init.vestingContract(setup);
 
-  CLONE_FACTORY = setup.factory;
   CONTROLLERXGUILD = setup.controller;
   GOVERNORXGUILD = setup.governor;
   AVATARXGUILD = setup.avatars.avatar;
@@ -129,6 +132,12 @@ const setupTests = deployments.createFixture(async () => {
   DOINGUD_CONTROLLER = CONTROLLERXGUILD.attach(controller_proxy.address);
   DOINGUD_GOVERNOR = GOVERNORXGUILD.attach(governor_proxy.address);
   DOINGUD_METADAO = METADAO.attach(metadao_proxy.address);
+
+  setup.metadao = DOINGUD_METADAO;
+
+  await init.getGuildFactory(setup);
+  await init.vestingContract(setup);
+  CLONE_FACTORY = setup.factory;
 
   await DOINGUD_AMOR_TOKEN.init(
     AMOR_TOKEN_NAME, 
@@ -279,14 +288,65 @@ const setupTests = deployments.createFixture(async () => {
       });
     });
 
-    context('Setup the MetaDAO Controller', () => {
+    context('Donate to the MetaDao', () => {
       it("Should allow a user to donate to the MetaDao", async function () {
-
+        await DOINGUD_METADAO.addWhitelist(ERC20_TOKEN.address);
+        await ERC20_TOKEN.approve(DOINGUD_METADAO.address, ONE_HUNDRED_ETHER);
+        await DOINGUD_METADAO.donate(ERC20_TOKEN.address, FIFTY_ETHER, 0);
+        await GUILD_ONE_CONTROLLERXGUILD.gatherDonation(ERC20_TOKEN.address);
+        expect(await ERC20_TOKEN.balanceOf(GUILD_ONE_CONTROLLERXGUILD.address)).to.equal((FIFTY_ETHER/2).toString());
       });
     });
 
-    context('Create the guild contracts', () => {
+    context('Donate with custom index', () => {
+      it("Should allow a user to set their own index", async function () {
+        const abi = ethers.utils.defaultAbiCoder;
+        let encodedIndex = abi.encode(
+            ["tuple(address, uint256)"],
+            [
+            [GUILD_ONE_CONTROLLERXGUILD.address, 50]
+            ]
+        );
+        let encodedIndex2 = abi.encode(
+            ["tuple(address, uint256)"],
+            [
+            [GUILD_TWO_CONTROLLERXGUILD.address, 100]
+            ]
+        );
+        await DOINGUD_METADAO.addIndex([encodedIndex, encodedIndex2]);
+        let newIndex = await DOINGUD_METADAO.indexHashes(1);
+        let indexDetails = await DOINGUD_METADAO.indexes(newIndex);
+        expect(indexDetails.indexDenominator).to.equal(150);
+      });
 
+      it("Should allow a user to donate ERC20 tokens according to the custom index", async function () {
+        const abi = ethers.utils.defaultAbiCoder;
+        let encodedIndex = abi.encode(
+            ["tuple(address, uint256)"],
+            [
+            [GUILD_ONE_CONTROLLERXGUILD.address, 100]
+            ]
+        );
+        let encodedIndex2 = abi.encode(
+            ["tuple(address, uint256)"],
+            [
+            [GUILD_TWO_CONTROLLERXGUILD.address, 150]
+            ]
+        );
+
+        await DOINGUD_METADAO.addWhitelist(ERC20_TOKEN.address);
+        await DOINGUD_METADAO.addIndex([encodedIndex, encodedIndex2]);
+        await ERC20_TOKEN.approve(DOINGUD_METADAO.address, ONE_HUNDRED_ETHER);
+        await DOINGUD_METADAO.donate(ERC20_TOKEN.address, FIFTY_ETHER, 1);
+        await GUILD_TWO_CONTROLLERXGUILD.gatherDonation(ERC20_TOKEN.address);
+        expect(await ERC20_TOKEN.balanceOf(GUILD_TWO_CONTROLLERXGUILD.address)).to.equal((FIFTY_ETHER*150/250).toString());
+      });
     });
+
+    context("Change the AMOR implementation address", () => {
+      it("Should allow the owner to change the implementation address", async function () {
+        expect(await amor_proxy.upgradeImplementation(AMOR_TOKEN_UPGRADE.address)).to.emit(amor_proxy, "")
+      });
+    })
 
 });
