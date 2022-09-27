@@ -32,7 +32,7 @@ const contractAddresses = {
     },
     'rinkeby': {
         [AMOR]: '0x9E4A13E5c30e14AA96A0bC147A106e4166248343',
-        [AMORxGuild]: '', 
+        [AMORxGuild]: '0xfD678C57Bd4518ff4d5F0de863724BC03759E37a', 
         [FXAMORxGuild]: '',
         [dAMORxGuild]: '',
         [MetaDAOController]: '',
