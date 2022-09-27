@@ -16,37 +16,6 @@ async function main() {
     const GuildControllerFactory = await ethers.getContractFactory("GuildController");
     const GuildController = await GuildControllerFactory.deploy();
     console.log("GuildController address:", GuildController.address);
-
-    // const AMORxGuildToken = await ethers.getContractFactory("AMORxGuildToken");
-    // const AMORxGuild = await AMORxGuildToken.deploy();
-    // console.log("AMORxGuild address:", AMORxGuild.address);
-
-    // const GuildController = '0xB19bFADCca6b4AbE42d7e362B629a2632473aDBE'
-
-    // let a  = await ethers.getContractFactory('AMORxGuildToken')
-    // let b = await a.attach('0x3D0641b6f4B938af344FB81b70A2b0bE46f5feca')
-    // let deployedAMORxGuild = await b.deployed();
-
-    // const tx = await deployedAMORxGuild.init("AMORxGuild Token", "AMORxGuild", deployedAMOR, GuildController);
-    // console.log("tx is %s", tx);
-    // console.log("AMORxGuild address:", deployedAMORxGuild.address);
-
-    // // deploy and init FXAMORxGuild
-    // const FXAMORxGuildToken = await ethers.getContractFactory("FXAMORxGuild");
-    // const FXAMORxGuild = await FXAMORxGuildToken.deploy();
-    // const tx2 = await FXAMORxGuild.init("FXAMORxGuild Token", "FXAMORxGuild", admin, AMORxGuild.address);
-    // console.log("tx2 is %s", tx2);
-    // console.log("FXAMORxGuild address:", FXAMORxGuild.address);
-
-
-    // // deploy MetaDaoController
-    // const MetaDaoControllerFactory = await ethers.getContractFactory("MetaDaoController");
-    // const MetaDaoController = await MetaDaoControllerFactory.deploy(admin);
-    // console.log("MetaDaoController address:", MetaDaoController.address);
-
-
-    // init MetaDaoController (need guildFactory)
-    // init guild controller
   }
   
   main()
