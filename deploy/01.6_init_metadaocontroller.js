@@ -1,9 +1,5 @@
-const { getAddresses } = require('../config');
-const addresses = getAddresses();
-
 async function main() {
     const [deployer] = await ethers.getSigners();
-    const admin = addresses.multisig; // 0xdd634602038eBf699581D34d6142a4FB5aa66Ff5
 
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
@@ -16,7 +12,6 @@ async function main() {
     let b = await a.attach('0xdFA7E41fc1Babea56E85F65BBA006E38cFb77925')
     let MetaDaoController = await b.deployed();
     console.log("MetaDaoController address:", MetaDaoController.address);
-
 
     const tx = await MetaDaoController.init(AMOR, GuildFactory);
     console.log("tx is %s", tx);

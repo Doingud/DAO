@@ -3,12 +3,10 @@ const addresses = getAddresses();
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    const admin = addresses.multisig; // 0xdd634602038eBf699581D34d6142a4FB5aa66Ff5
-    const deployedAMOR = addresses.AMOR; // 0x9E4A13E5c30e14AA96A0bC147A106e4166248343
+    const deployedAMOR = addresses.AMOR;
 
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
-
 
     const GuildController = '0xB19bFADCca6b4AbE42d7e362B629a2632473aDBE'
 
