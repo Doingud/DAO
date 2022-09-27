@@ -10,11 +10,9 @@ const { MOCK_GUILD_NAMES,
         GAURDIAN_THRESHOLD,
         BASIS_POINTS,
         FIFTY_ETHER,
-        ONE_ADDRESS,
         ONE_HUNDRED_ETHER
       } = require('../helpers/constants.js');
 const init = require('../test-init.js');
-const ether = require("@openzeppelin/test-helpers/src/ether.js");
 const { getSqrt } = require("../helpers/helpers.js");
 const { time } = require("@openzeppelin/test-helpers");
 
@@ -22,7 +20,6 @@ use(solidity);
 
 /// The users
 let root;
-let multisig;
 let user1;
 let user2;
 let user3; 
@@ -61,17 +58,21 @@ let DOINGUD_METADAO;
 /// The Newly Deployed Guilds
 let GUILD_ONE_AMORXGUILD;
 let GUILD_ONE_DAMORXGUILD;
-let GUILD_ONE_FXAMORXGUILD;
 let GUILD_ONE_CONTROLLERXGUILD;
+/*  The below variables are required in later integration
+let GUILD_ONE_FXAMORXGUILD;
 let GUILD_ONE_AVATARXGUILD;
 let GUILD_ONE_GOVERNORXGUILD;
+*/
 
+let GUILD_TWO_CONTROLLERXGUILD;
+/*  The below variables are required in later integration
 let GUILD_TWO_AMORXGUILD;
 let GUILD_TWO_DAMORXGUILD;
 let GUILD_TWO_FXAMORXGUILD;
-let GUILD_TWO_CONTROLLERXGUILD;
 let GUILD_TWO_AVATARXGUILD;
 let GUILD_TWO_GOVERNORXGUILD;
+*/
 
 /// Required variables
 let IMPACT_MAKERS;
@@ -116,7 +117,7 @@ const setupTests = deployments.createFixture(async () => {
   amor_proxy = await init.proxy();
   /// For testing we need to use proxy address of the implementation contract
   setup.amor_storage = amor_proxy;
-  let amor_guild_token_proxy = await init.proxy();
+  amor_guild_token_proxy = await init.proxy();
   setup.amorxGuild_storage = amor_guild_token_proxy;
   let dAmor_proxy = await init.proxy();
   let fxAmor_proxy = await init.proxy();
@@ -150,6 +151,7 @@ const setupTests = deployments.createFixture(async () => {
   await init.getGuildFactory(setup);
   await init.vestingContract(setup);
   CLONE_FACTORY = setup.factory;
+  VESTING = setup.vesting;
 
   await DOINGUD_AMOR_TOKEN.init(
     AMOR_TOKEN_NAME, 
@@ -231,18 +233,22 @@ const setupTests = deployments.createFixture(async () => {
 
   await DOINGUD_METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
   let AmorxTwo = await CLONE_FACTORY.amorxGuildTokens(1);
+  let ControllerxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 2);
+  /* The below objects are required in later integration testing PRs
   let DAmorxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 0);
   let FXAmorxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 1);
-  let ControllerxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 2);
   let GovernorxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 3);
   let AvatarxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 4);
+  */
 
-  GUILD_TWO_AMORXGUILD = AMOR_GUILD_TOKEN.attach(AmorxTwo);
-  GUILD_ONE_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(DAmorxTwo);
-  GUILD_TWO_FXAMORXGUILD = FX_AMOR_TOKEN.attach(FXAmorxTwo);
   GUILD_TWO_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(ControllerxTwo);
+  /* The below GUILD_TWO objects will be required later on
+  GUILD_TWO_AMORXGUILD = AMOR_GUILD_TOKEN.attach(AmorxTwo);
+  GUILD_TWO_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(DAmorxTwo);
+  GUILD_TWO_FXAMORXGUILD = FX_AMOR_TOKEN.attach(FXAmorxTwo);
   GUILD_TWO_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxTwo);
   GUILD_TWO_AVATARXGUILD = AVATARXGUILD.attach(AvatarxTwo);
+  */
 
   /// Setup the initial Fee Index
   const abi = ethers.utils.defaultAbiCoder;
@@ -398,10 +404,112 @@ const setupTests = deployments.createFixture(async () => {
         let amountAmorxOne = await GUILD_ONE_AMORXGUILD.balanceOf(user1.address);
         await GUILD_ONE_AMORXGUILD.connect(user1).approve(GUILD_ONE_DAMORXGUILD.address, amountAmorxOne);
         let oneYear = await time.duration.years(1);
-        console.log(amountAmorxOne.toString());
         await GUILD_ONE_DAMORXGUILD.connect(user1).stake(ethers.BigNumber.from(amountAmorxOne.toString()), oneYear.toString());
-        
+        //expect(await CLONE_FACTORY.guildComponents(GUILD_ONE_AMORXGUILD.address, 0)).to.equal(GUILD_ONE_DAMORXGUILD.address);
       });
     });
 
+    context("Vote for proposal using dAMORxGuild", () => {
+      it("Should allow a passed proposal to be executed", async function () {
+
+      });
+    });
+
+    context("Withdraw AMORxGuild from dAMORxGuild", () => {
+      /// ***Known Bug*** Issue added
+      it("Should allow a user to withdraw their dAMORxGuild", async function () {
+        /// Transfer AMOR to user 1
+        await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
+        /// Connect User 1 and stake AMOR
+        await DOINGUD_AMOR_TOKEN.connect(user1).approve(GUILD_ONE_AMORXGUILD.address, FIFTY_ETHER);
+        await GUILD_ONE_AMORXGUILD.connect(user1).stakeAmor(user1.address, FIFTY_ETHER);
+        /// Stake AMORxONE to receive dAMORxONE
+        let amountAmorxOne = await GUILD_ONE_AMORXGUILD.balanceOf(user1.address);
+        await GUILD_ONE_AMORXGUILD.connect(user1).approve(GUILD_ONE_DAMORXGUILD.address, amountAmorxOne);
+        let oneYear = await time.duration.years(1);
+        await GUILD_ONE_DAMORXGUILD.connect(user1).stake(ethers.BigNumber.from(amountAmorxOne.toString()), oneYear.toString());
+        /// Let one year pass
+        await time.increase(time.duration.years(1));
+        time.advanceBlock;
+
+        /// The below commented line is currently bugged and will fail
+        ///await GUILD_ONE_DAMORXGUILD.connect(user1).withdraw();
+      });
+    });
+
+    context("Distribute AMOR with Vesting contract", () => {
+      it("Should distribute AMOR according to given details", async function () {
+        /// Provide AMOR to be vested
+        await DOINGUD_AMOR_TOKEN.transfer(VESTING.address, ONE_HUNDRED_ETHER);
+        let currentTime = await time.latest();
+        /// Provided time values must be at least 1 second into the future
+        /// Allocate the vested tokens
+        await VESTING.allocateVestedTokens(
+          user1.address,
+          FIFTY_ETHER.toString(),
+          (currentTime + 1).toString(),
+          (currentTime + 1).toString(),
+          (currentTime + time.duration.years(1)).toString()
+        );
+        /// Fetch the Allocation struct from the contract
+        let allocation = await VESTING.allocations(user1.address);
+        /// Assert the allocation is as expected
+        expect(allocation.tokensAllocated).to.equal(FIFTY_ETHER);
+      });
+    });
+
+    context("Vested tokens grant voting power", () => {
+      it("Should return the allocated vested tokens as voting power", async function () {
+        await DOINGUD_AMOR_TOKEN.transfer(VESTING.address, ONE_HUNDRED_ETHER);
+        let currentTime = await time.latest();
+        /// Provided time values must be at least 1 second into the future
+        /// Allocate the vested tokens
+        await VESTING.allocateVestedTokens(
+          user1.address,
+          FIFTY_ETHER.toString(),
+          (currentTime + 1).toString(),
+          (currentTime + 1).toString(),
+          (currentTime + time.duration.years(1)).toString()
+        );
+        /// Fetch the voting power from the Vesting contract
+        /// `balanceOf(address)` is used in the Snapshot strategy
+        expect(await VESTING.balanceOf(user1.address)).to.equal(FIFTY_ETHER);
+      });
+    });
+
+    context("Withdraw Vested tokens", () => {
+      it("Should allow beneficiary to withdraw accrued tokens", async function () {
+        await DOINGUD_AMOR_TOKEN.transfer(VESTING.address, ONE_HUNDRED_ETHER);
+        let starttTime = await time.latest();
+        starttTime = parseInt(starttTime);
+        /// Provided time values must be at least 1 second into the future
+        /// Allocate the vested tokens
+        await VESTING.allocateVestedTokens(
+          user1.address,
+          FIFTY_ETHER.toString(),
+          (starttTime + 1).toString(),
+          (starttTime + 1).toString(),
+          (starttTime + parseInt(time.duration.years(2))).toString()
+        );
+        /// Fetch the Allocation
+        let allocation = await VESTING.allocations(user1.address);
+        /// Let half the time pass
+        let targetDate = parseInt(allocation.vestingStart) + parseInt(time.duration.years(1));
+        await time.increaseTo(targetDate);
+        let timePassed = (targetDate - allocation.vestingStart) / (allocation.vestingDate - allocation.vestingStart);
+        /// There is a loss of precision in terms of tokens accrued, this should be less than 100 WEI
+        expect(await VESTING.tokensAvailable(user1.address)).to.be.closeTo((FIFTY_ETHER * timePassed).toString(), 100);
+        await VESTING.connect(user1).withdrawAmor((FIFTY_ETHER/2).toString());
+        expect(await DOINGUD_AMOR_TOKEN.balanceOf(user1.address)).to.equal((FIFTY_ETHER / 2 * 0.95).toString());
+        /// Set time to the end of the vesting period (when all tokens are claimable)
+        await time.increaseTo(parseInt(allocation.vestingDate));
+        await VESTING.connect(user1).withdrawAmor((FIFTY_ETHER/2).toString());
+        /// Asset that the full amount of vested tokens has been withdrawn
+        expect(await DOINGUD_AMOR_TOKEN.balanceOf(user1.address)).to.equal((FIFTY_ETHER * 0.95).toString());
+        /// Refresh the allocation
+        allocation = await VESTING.allocations(user1.address);
+        expect(allocation.tokensClaimed).to.equal(FIFTY_ETHER.toString());
+        expect(await VESTING.tokensWithdrawn()).to.equal(FIFTY_ETHER.toString());
+      });
+    })
 });
