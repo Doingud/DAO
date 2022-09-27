@@ -192,10 +192,10 @@ const governor = async (setup) => {
 
 const getGuildFactory = async (setup) => {
   const cloneFactory = await ethers.getContractFactory("GuildFactory");
+  const amorStorage = setup.amor_storage ? setup.amor_storage.address : setup.tokens.AmorTokenImplementation.address;
 
   const guildFactory = await cloneFactory.deploy(
-    setup.amor_storage.address,
-    //setup.amorxGuild_storage.address,
+    amorStorage,
     setup.tokens.AmorGuildToken.address,
     setup.tokens.FXAMORxGuild.address,
     setup.tokens.dAMORxGuild.address,
@@ -227,9 +227,11 @@ const metadao = async(setup) =>{
 const vestingContract = async (setup) => {
   const vestingFactory = await ethers.getContractFactory("Vesting");
 
+  const amorStorage = setup.amor_storage ? setup.amor_storage.address : setup.tokens.AmorTokenImplementation.address;
+
   const vesting = await vestingFactory.deploy(
     setup.roles.root.address, //  This will be the MetaDAO address
-    setup.amor_storage.address
+    amorStorage
   );
 
   setup.vesting = vesting;
