@@ -17,6 +17,7 @@ const {
     MOCK_TEST_AMOUNT,
     TEST_TRANSFER
   } = require('../helpers/constants.js');
+const { getContract, impersonateAddress, increaseTime } = require('../helpers/helpers');
 const { getAddresses } = require('../../config');
 const addresses = getAddresses();
 
@@ -69,9 +70,8 @@ describe("unit - MetaDao", function () {
         let b = await a.attach(addresses.AMOR);
         AMOR_TOKEN = await b.deployed();
 
-        a  = await ethers.getContractFactory('AMORToken')
-        b = await a.attach(addresses.AMOR);
-        USDC = await b.deployed();
+        AMOR_TOKEN = await getContract('AMORToken', addresses.AMOR);
+        USDC = await getContract('ERC20Mock', addresses.USDC_MOCK);
 
         a  = await ethers.getContractFactory('AMORxGuildToken')
         b = await a.attach(addresses.AMORxGuild);
@@ -85,21 +85,9 @@ describe("unit - MetaDao", function () {
         b = await a.attach(addresses.dAMORxGuild);
         DAMOR_GUILD_TOKEN = await b.deployed();
 
-        // connect addresses
-        const MetaDao = addresses.MetaDAOController;
-        const GuildFactory = addresses.GuildFactory;
-    //     let ak = await AMOR_TOKEN.attach(addresses.AMOR);    
-    // console.log("AMOR_TOKEN.address is %s", ak.address);
-
-        // // connect MetaDaoController
-        // a  = await ethers.getContractFactory('MetaDaoController')
-        // b = await a.attach(MetaDao);
-        // let MetaDaoController = await b.deployed();
-        // console.log("MetaDaoController address:", MetaDaoController.address);
-
         ///   Setup signer accounts
         // root = setup.roles.root;
-        // multisig = setup.roles.doingud_multisig;    
+        multisig = addresses.multisig;//setup.roles.doingud_multisig;    
         // user1 = setup.roles.user1;
         // user2 = setup.roles.user2;
         // user3 = setup.roles.user3;
@@ -114,20 +102,33 @@ describe("unit - MetaDao", function () {
         b = await a.attach(addresses.MetaDAOController);
         METADAO = await b.deployed();
         console.log("METADAO.address is %s", METADAO.address);
-        TEST_ZERO_METADAO = setup.metadao;
+        // TEST_ZERO_METADAO = setup.metadao;
+
         ///   Setup the Controller
-        await init.controller(setup);
-        CONTROLLER = setup.controller;
+        // await init.controller(setup);
+        a  = await ethers.getContractFactory('GuildController')
+        b = await a.attach(addresses.GuildController);
+        CONTROLLER = await b.deployed();// setup.controller;
+
         ///   Setup the guild factory
-        await init.getGuildFactory(setup);
-        FACTORY = setup.factory.guildFactory;
+        // await init.getGuildFactory(setup);
+        a  = await ethers.getContractFactory('GuildFactory')
+        b = await a.attach(addresses.GuildFactory);
+        FACTORY = await b.deployed();// setup.factory.guildFactory;
 
-        await METADAO.init(AMOR_TOKEN.address, FACTORY.address);
+        // await METADAO.init(AMOR_TOKEN.address, FACTORY.address);
 
-        await init.avatar(setup);
+        // await init.avatar(setup);
+        a  = await ethers.getContractFactory('AvatarxGuild')
+        b = await a.attach(addresses.Avatar);
         AVATAR = setup.avatars.avatar;
+
+        a  = await ethers.getContractFactory('ModuleMock')
+        b = await a.attach(addresses.MOCK_MODULE);
         MOCK_MODULE = setup.avatars.module;
 
+        a  = await ethers.getContractFactory('DoinGudGovernor')
+        b = await a.attach(addresses.Governor);
         GOVERNOR = await init.governor(setup);
     });
 

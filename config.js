@@ -6,6 +6,7 @@ const MetaDAOController = 'MetaDAOController';
 const GuildController = 'GuildController';
 const DoinGudProxy = 'DoinGudProxy';
 const GuildFactory = 'GuildFactory';
+const Governor = 'Governor';
 const taxController = 'taxController';
 const multisig = 'multisig';
 
@@ -27,6 +28,7 @@ const contractAddresses = {
         [GuildController]: '0xB19bFADCca6b4AbE42d7e362B629a2632473aDBE',
         [DoinGudProxy]: '0x5840C0cdb9c13F14C36bc58f53f11AEB4d844138',
         [GuildFactory]: '0xc628c2Af0Af6f3E9891871b59933e2269D697270',
+        [Governor]: '',
         [taxController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', // Dev wallet
         [multisig]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', // Dev wallet
     },
@@ -48,12 +50,4 @@ module.exports = {
         const blockchainOverride = process.env.BLOCKCHAIN_FORK ? process.env.BLOCKCHAIN_FORK : hre.network.name;
         return contractAddresses[blockchainOverride] ?? [];
     },
-    multisig,
-    AMOR,
-    AMORxGuild,
-    FXAMORxGuild,
-    dAMORxGuild,
-    DoinGudProxy,
-    GuildController,
-    MetaDAOController,
 }; 
