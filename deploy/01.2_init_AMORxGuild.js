@@ -8,10 +8,11 @@ async function main() {
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
 
-    const GuildController = '0xB19bFADCca6b4AbE42d7e362B629a2632473aDBE'
+    const GuildController = addresses.GuildController;
+    const AMORxGuildToken = addresses.AMORxGuild;
 
     let a  = await ethers.getContractFactory('AMORxGuildToken')
-    let b = await a.attach('0x3D0641b6f4B938af344FB81b70A2b0bE46f5feca')
+    let b = await a.attach(AMORxGuildToken)
     let deployedAMORxGuild = await b.deployed();
 
     const tx = await deployedAMORxGuild.init("AMORxGuild Token", "AMORxGuild", deployedAMOR, GuildController);

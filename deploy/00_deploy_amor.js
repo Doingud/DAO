@@ -1,9 +1,9 @@
-const { getAddresses, multisig } = require('../../config');
+const { getAddresses } = require('../../config');
 const addresses = getAddresses();
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    const admin = addresses[multisig]; // 0xdd634602038eBf699581D34d6142a4FB5aa66Ff5
+    const admin = addresses.multisig; // 0xdd634602038eBf699581D34d6142a4FB5aa66Ff5
     const defaulTaxRate = 0;
 
     console.log("Deploying contracts with the account:", deployer.address);
