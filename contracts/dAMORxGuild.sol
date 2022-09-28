@@ -51,8 +51,10 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
     // staker => time staked for
     mapping(address => uint256) public stakesTimes;
-    // staker => all staker balance
+    // staker => all staker balance in dAMORxGuild
     mapping(address => uint256) public stakes;
+    // staker => all staker balance in AMORxGuild
+    mapping(address => uint256) public stakesAMOR;
     // those who delegated to a specific address
     mapping(address => address[]) public delegators;
     // staker => delegated to (many accounts) => amount
@@ -143,7 +145,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
         uint256 newAmount = _stake(amount, time);
 
         stakesTimes[msg.sender] = block.timestamp + time;
-        stakes[msg.sender] = newAmount;
+        stakes[msg.sender] += newAmount;
+        stakesAMOR[msg.sender] += amount;
 
         return newAmount;
     }
@@ -185,6 +188,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         //burn used dAMORxGuild tokens from staker
         _burn(msg.sender, amount);
         stakes[msg.sender] = 0;
+        stakesAMOR[msg.sender] = 0;
 
         address[] memory people = delegators[msg.sender];
         for (uint256 i = 0; i < people.length; i++) {
