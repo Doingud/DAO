@@ -1,5 +1,6 @@
 const { ethers } = require("hardhat");
 const { use, expect } = require("chai");
+const { time } = require("@openzeppelin/test-helpers");
 const { solidity } = require("ethereum-waffle");
 const init = require('../test-init.js');
 const { 
@@ -16,7 +17,8 @@ const {
     MOCK_TEST_AMOUNT,
     TEST_TRANSFER
   } = require('../helpers/constants.js');
-const { time } = require("@openzeppelin/test-helpers");
+const { getAddresses } = require('../../config');
+const addresses = getAddresses();
 
 use(solidity);
 
@@ -61,28 +63,57 @@ describe("unit - MetaDao", function () {
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(signers);
-        ///   Setup token contracts
-        await init.getTokens(setup);
-        AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
-        USDC = setup.tokens.ERC20Token;
-        AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
-        FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
-        DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
+        ///  Connect token contracts
+        // await init.getTokens(setup);
+        let a  = await ethers.getContractFactory('AMORToken')
+        let b = await a.attach(addresses.AMOR);
+        AMOR_TOKEN = await b.deployed();
+
+        a  = await ethers.getContractFactory('AMORToken')
+        b = await a.attach(addresses.AMOR);
+        USDC = await b.deployed();
+
+        a  = await ethers.getContractFactory('AMORxGuildToken')
+        b = await a.attach(addresses.AMORxGuild);
+        AMOR_GUILD_TOKEN = await b.deployed();
+
+        a  = await ethers.getContractFactory('FXAMORxGuild')
+        b = await a.attach(addresses.FXAMORxGuild);
+        FX_AMOR_TOKEN = await b.deployed();
+
+        a  = await ethers.getContractFactory('dAMORxGuild')
+        b = await a.attach(addresses.dAMORxGuild);
+        DAMOR_GUILD_TOKEN = await b.deployed();
+
+        // connect addresses
+        const MetaDao = addresses.MetaDAOController;
+        const GuildFactory = addresses.GuildFactory;
+    //     let ak = await AMOR_TOKEN.attach(addresses.AMOR);    
+    // console.log("AMOR_TOKEN.address is %s", ak.address);
+
+        // // connect MetaDaoController
+        // a  = await ethers.getContractFactory('MetaDaoController')
+        // b = await a.attach(MetaDao);
+        // let MetaDaoController = await b.deployed();
+        // console.log("MetaDaoController address:", MetaDaoController.address);
 
         ///   Setup signer accounts
-        root = setup.roles.root;
-        multisig = setup.roles.doingud_multisig;    
-        user1 = setup.roles.user1;
-        user2 = setup.roles.user2;
-        user3 = setup.roles.user3;
-        pool = setup.roles.pool;
-        staker = setup.roles.staker;
-        operator = setup.roles.operator;
-        authorizer_adaptor = setup.roles.authorizer_adaptor;
+        // root = setup.roles.root;
+        // multisig = setup.roles.doingud_multisig;    
+        // user1 = setup.roles.user1;
+        // user2 = setup.roles.user2;
+        // user3 = setup.roles.user3;
+        // pool = setup.roles.pool;
+        // staker = setup.roles.staker;
+        // operator = setup.roles.operator;
+        // authorizer_adaptor = setup.roles.authorizer_adaptor;
 
         /// Setup the MetaDao first
-        await init.metadao(setup);
-        METADAO = setup.metadao;
+        // await init.metadao(setup);
+        a  = await ethers.getContractFactory('MetaDaoController')
+        b = await a.attach(addresses.MetaDAOController);
+        METADAO = await b.deployed();
+        console.log("METADAO.address is %s", METADAO.address);
         TEST_ZERO_METADAO = setup.metadao;
         ///   Setup the Controller
         await init.controller(setup);

@@ -143,7 +143,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         uint256 newAmount = _stake(amount, time);
 
         stakesTimes[msg.sender] = block.timestamp + time;
-        stakes[msg.sender] = newAmount;
+        stakes[msg.sender] += newAmount;
 
         return newAmount;
     }

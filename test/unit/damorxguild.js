@@ -1,7 +1,7 @@
 const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { FIFTY_ETHER, ONE_HUNDRED_ETHER, TWO_HUNDRED_ETHER, MOCK_GUILD_NAMES, MOCK_GUILD_SYMBOLS, TEST_TRANSFER } = require('../helpers/constants.js');
+const { FIFTY_ETHER, ONE_HUNDRED_ETHER, TWO_HUNDRED_ETHER, MOCK_GUILD_NAMES, MOCK_GUILD_SYMBOLS } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
 // const MIN_LOCK_TIME = 604800; // 1 week
@@ -58,12 +58,11 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
         it("Should fail if called more than once", async function () {
             await expect(dAMORxGuild.init(
+                AMORxGuild.address, 
                 MOCK_GUILD_NAMES[0], 
                 MOCK_GUILD_SYMBOLS[0],
-                root.address,
-                AMORxGuild.address,
                 ONE_HUNDRED_ETHER
-            )).to.be.revertedWith("AlreadyInitialized()");
+            )).to.be.reverted;
         });
     });
     
@@ -124,6 +123,8 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             const expectedAmount = ethers.BigNumber.from(realAmount).add(ethers.BigNumber.from(newAmount.toString()));
 
             await dAMORxGuild.connect(staker).increaseStake(ONE_HUNDRED_ETHER);        
+const amountBefore = (await dAMORxGuild.balanceOf(staker.address)).toString();
+console.log("amountBefore eee is %s", amountBefore);
             const newRealAmount = await dAMORxGuild.balanceOf(staker.address);
             const roundedNewRealAmount = Math.round(newRealAmount.toString() * 100) / 100;
 
@@ -291,17 +292,47 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             await expect(dAMORxGuild.connect(staker).withdraw()).to.be.revertedWith(
                 'TimeTooSmall()'
             ); 
+        });  
+
+        it('stakes AMORxGuild tokens and mints dAMORxGuild if now withdrawed', async function () {
+const amountBefore1 = (await dAMORxGuild.balanceOf(staker.address)).toString();
+console.log("amountBefore1 is %s", amountBefore1);
+            time.increase(maxLockTime);
+const amountBefore = (await dAMORxGuild.balanceOf(staker.address)).toString();
+console.log("amountBefore is %s", amountBefore);
+            await AMORxGuild.connect(root).mint(staker.address, ONE_HUNDRED_ETHER);
+            await AMORxGuild.connect(staker).approve(dAMORxGuild.address, ONE_HUNDRED_ETHER);
+
+            koef = normalTime/MAX_LOCK_TIME;
+
+            const difference = 190;
+            const expectedAmount = COEFFICIENT* (koef*koef) *ONE_HUNDRED_ETHER; // (koef)^2 *amount | NdAMOR = f(t)^2 *nAMOR
+console.log("expectedAmount is %s",             expectedAmount);
+            const expectedAmountAfter = ethers.BigNumber.from(amountBefore)
+                .add(ethers.BigNumber.from(expectedAmount.toString()))
+                .sub(ethers.BigNumber.from(difference.toString()));
+console.log("expectedAmountAfter is %s", expectedAmountAfter);
+
+            AMORxGuildBalanceBefore = await AMORxGuild.balanceOf(dAMORxGuild.address);
+            await dAMORxGuild.connect(staker).stake(ONE_HUNDRED_ETHER, normalTime);        
+            realAmount = (await dAMORxGuild.balanceOf(staker.address)).toString();
+            const roundedRealAmount = Math.round(realAmount * 100) / 100;
+            
+            expect(roundedRealAmount.toString()).to.equal(expectedAmountAfter.toString());
+
+            AMORxGuildBalanceAfter = (await AMORxGuild.balanceOf(dAMORxGuild.address)).toString();
+            expect(AMORxGuildBalanceAfter).to.equal(AMORxGuildBalanceBefore.add(ONE_HUNDRED_ETHER));
         });
 
         it('withdraw dAMORxGuild tokens if not delegated any', async function () {
-            time.increase(maxLockTime);
+            time.increase(maxLockTime);         
             const currentAmount = (await dAMORxGuild.balanceOf(staker.address)).toString();
             await dAMORxGuild.connect(staker).withdraw();        
             const withdrawedTokens = (await AMORxGuild.balanceOf(staker.address)).toString();
             
             expect(withdrawedTokens).to.equal(currentAmount);
         });
-
+    
         it('withdraw dAMORxGuild tokens if delegated', async function () {
             time.increase(maxLockTime);
             const currentAmount = (await dAMORxGuild.balanceOf(staker2.address)).toString();
@@ -311,41 +342,6 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             const withdrawedTokens = (await AMORxGuild.balanceOf(staker2.address)).toString();
             
             expect(withdrawedTokens).to.equal(currentAmount);
-        });
-
-        it('it fails to withdraw dAMORxGuild tokens if nothung to withdraw', async function () {
-            await expect(dAMORxGuild.connect(staker2).withdraw()).to.be.revertedWith(
-                'InvalidAmount()'
-            ); 
-        });
-    });
-
-    context('» non-transferable testing', () => {
-
-        it('it fails to transfer', async function () {
-            const balanceBefore = await dAMORxGuild.balanceOf(staker.address);
-            const balance2Before = await dAMORxGuild.balanceOf(root.address);
-
-            await dAMORxGuild.connect(staker).transfer(root.address, TEST_TRANSFER);
-            
-            const balanceAfter = await dAMORxGuild.balanceOf(staker.address);
-            expect(balanceBefore).to.equal(balanceAfter);
-
-            const balance2After = await dAMORxGuild.balanceOf(root.address);
-            expect(balance2Before).to.equal(balance2After);
-        });
-
-        it('it fails to transferFrom', async function () {
-            const balanceBefore = await dAMORxGuild.balanceOf(staker.address);
-            const balance2Before = await dAMORxGuild.balanceOf(root.address);
-
-            await dAMORxGuild.connect(staker).transferFrom(staker.address, root.address, TEST_TRANSFER);
-
-            const balanceAfter = await dAMORxGuild.balanceOf(staker.address);
-            expect(balanceBefore).to.equal(balanceAfter);
-
-            const balance2After = await dAMORxGuild.balanceOf(root.address);
-            expect(balance2Before).to.equal(balance2After);
-        });
+        });         
     });
 });
