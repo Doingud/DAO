@@ -73,7 +73,7 @@ describe('unit - Contract: Governor', function () {
 
     context('» changeGuardiansLimit testing', () => {
 
-        it('it fails to change guardians limit if not the guardian', async function () {
+        it('it fails to change guardians limit if not the avatar', async function () {
             await expect(governor.connect(user2).changeGuardiansLimit(user2.address)).to.be.revertedWith(
                 'Unauthorized()'
             );
@@ -91,7 +91,6 @@ describe('unit - Contract: Governor', function () {
             await governor.connect(authorizer_adaptor).propose(targets, values, calldatas);
             firstProposalId = await governor.proposals(0);
 
-            // Pass the proposal on the snapshot
             time.increase(time.duration.days(1));
             
             // Vote as a guardians to pass the proposal locally            
