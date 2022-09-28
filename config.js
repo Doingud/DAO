@@ -6,8 +6,13 @@ const MetaDAOController = 'MetaDAOController';
 const GuildController = 'GuildController';
 const DoinGudProxy = 'DoinGudProxy';
 const GuildFactory = 'GuildFactory';
+const Governor = 'Governor';
+const Avatar = 'Avatar';
+const Vesting = 'Vesting';
 const taxController = 'taxController';
 const multisig = 'multisig';
+const MOCK_MODULE = 'MOCK_MODULE';
+const USDC_MOCK = 'USDC_MOCK';
 
 const contractAddresses = {
     'mainnet': {
@@ -27,6 +32,11 @@ const contractAddresses = {
         [GuildController]: '0xB19bFADCca6b4AbE42d7e362B629a2632473aDBE',
         [DoinGudProxy]: '0x5840C0cdb9c13F14C36bc58f53f11AEB4d844138',
         [GuildFactory]: '0xc628c2Af0Af6f3E9891871b59933e2269D697270',
+        [Governor]: '0x1f8131B611a94D4AF6fCBa8eF2b59c5cf63A4a96',
+        [Avatar]: '0x633bF84f67aD39366743E6A4d08A35bFCa5e27e7',
+        [Vesting]: '0xFf5a979261e1087df580cF9C637b5F9e0097D856',
+        [MOCK_MODULE]: '0x7C8d2666740E7b021610a4561E6674aAaCc48a80',
+        [USDC_MOCK]: '0xF9b13ff6B4C33497569f3C51D5506eC4C29cF01e',
         [taxController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', // Dev wallet
         [multisig]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', // Dev wallet
     },
@@ -48,12 +58,4 @@ module.exports = {
         const blockchainOverride = process.env.BLOCKCHAIN_FORK ? process.env.BLOCKCHAIN_FORK : hre.network.name;
         return contractAddresses[blockchainOverride] ?? [];
     },
-    multisig,
-    AMOR,
-    AMORxGuild,
-    FXAMORxGuild,
-    dAMORxGuild,
-    DoinGudProxy,
-    GuildController,
-    MetaDAOController,
 }; 
