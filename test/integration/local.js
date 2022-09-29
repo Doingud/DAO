@@ -433,7 +433,7 @@ const setupTests = deployments.createFixture(async () => {
         time.advanceBlock;
 
         /// The below commented line is currently bugged and will fail
-        ///await GUILD_ONE_DAMORXGUILD.connect(user1).withdraw();
+        await GUILD_ONE_DAMORXGUILD.connect(user1).withdraw();
       });
     });
 
