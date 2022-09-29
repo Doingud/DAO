@@ -195,7 +195,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
         amountDelegated[msg.sender] = 0;
 
-        uint256 unstakeAMORAmount = stakesAMOR[msg.sender]; 
+        uint256 unstakeAMORAmount = stakesAMOR[msg.sender];
         if (AMORxGuild.balanceOf(address(this)) < unstakeAMORAmount) {
             revert InvalidAmount();
         }
