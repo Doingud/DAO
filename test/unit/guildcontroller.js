@@ -693,7 +693,7 @@ describe('unit - Contract: GuildController', function () {
 
             // 0 2 3 4 5 6 days in a week
             // test another else-path in SUNDAY-CHECK
-            time.increase(time.duration.days(2));
+            time.increase(time.duration.days(3));
 
             await controller.connect(authorizer_adaptor).startVoting();
             expect(await controller.trigger()).to.equal(true);

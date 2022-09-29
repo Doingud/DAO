@@ -144,7 +144,7 @@ contract DoinGudGovernor {
 
         _votingDelay = 1;
         _votingPeriod = 2 weeks;
-        GUARDIANS_LIMIT = 2;
+        GUARDIANS_LIMIT = 1;
 
         emit Initialized(_initialized, avatarAddress_, snapshotAddress_);
         return true;
@@ -160,6 +160,13 @@ contract DoinGudGovernor {
 
     modifier onlySnapshot() {
         if (msg.sender != snapshotAddress) {
+            revert Unauthorized();
+        }
+        _;
+    }
+
+    modifier onlyAvatar() {
+        if (msg.sender != avatarAddress) {
             revert Unauthorized();
         }
         _;
@@ -245,8 +252,9 @@ contract DoinGudGovernor {
     }
 
     /// @notice this function changes guardians limit
+    /// Should be passed to the Avatar as a Governor contract proposal
     /// @param newLimit New limit value
-    function changeGuardiansLimit(uint256 newLimit) external onlyGuardian {
+    function changeGuardiansLimit(uint256 newLimit) external onlyAvatar {
         GUARDIANS_LIMIT = newLimit;
     }
 

@@ -136,8 +136,9 @@ contract GuildController is IGuildController, Ownable {
     /// and calles distribute function for the whole amount of gathered tokens
     function gatherDonation(address token) public {
         // check if token in the whitelist of the MetaDaoController
-        IMetaDaoController(MetaDaoController).isWhitelisted(token);
-
+        if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
+            revert NotWhitelistedToken();
+        }
         uint256 amount = IMetaDaoController(MetaDaoController).guildFunds(address(this), token);
         IMetaDaoController(MetaDaoController).claimToken(token);
 
@@ -155,8 +156,9 @@ contract GuildController is IGuildController, Ownable {
     // Requires the msg.sender to `approve` amount prior to calling this function
     function donate(uint256 allAmount, address token) external returns (uint256) {
         // check if token in the whitelist of the MetaDaoController
-        IMetaDaoController(MetaDaoController).isWhitelisted(token);
-
+        if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
+            revert NotWhitelistedToken();
+        }
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
         if (IERC20(token).balanceOf(msg.sender) < allAmount || allAmount < 10) {
             revert InvalidAmount();
@@ -168,8 +170,8 @@ contract GuildController is IGuildController, Ownable {
         // 10% of the tokens in the impact pool are getting:
         if (token != AMORxGuild && token != AMOR) {
             // recieve tokens
-            amount = 0; //allAmount will be transfered later
-            // IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+            amount = 0;
+            // TODO: allow to mint FXAMOR tokend based on
         } else if (token == AMOR) {
             // convert AMOR to AMORxGuild
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)

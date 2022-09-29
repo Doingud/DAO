@@ -132,8 +132,9 @@ contract MetaDaoController is Ownable {
         uint256 amount,
         uint256 index
     ) external {
-        this.isWhitelisted(token);
-
+        if (this.isWhitelisted(token) == false) {
+            revert NotListed();
+        }
         if (indexes[FEES_INDEX].indexDenominator == 0) {
             revert NoIndex();
         }
