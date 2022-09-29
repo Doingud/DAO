@@ -118,10 +118,7 @@ contract GuildController is IGuildController, Ownable {
     /// @notice called by donate and gatherDonation, distributes amount of tokens between
     /// all of the impact makers based on their weight.
     /// Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers
-    function distribute(
-        uint256 amount,
-        address token
-    ) internal returns (uint256) {
+    function distribute(uint256 amount, address token) internal returns (uint256) {
         // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (amount * weights[impactMakers[i]]) / totalWeight;

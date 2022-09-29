@@ -19,9 +19,7 @@ contract ModuleMock is Module {
     function setUp(bytes memory initializeParams) public override {}
 
     /// This function recreates the reality module's action once a vote has passed
-    function executeAfterSuccessfulVote(
-        Enum.Operation operation
-    ) external returns (bool success) {
+    function executeAfterSuccessfulVote(Enum.Operation operation) external returns (bool success) {
         success = IAvatar(avatar).execTransactionFromModule(avatar, 0, bytes(""), operation);
         return success;
     }
