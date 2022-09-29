@@ -421,7 +421,7 @@ describe("unit - MetaDao", function () {
 
             let index = await METADAO.indexHashes(0);
             index = await METADAO.indexes(index);
-            expect(index.indexDenominator).to.equal(850);
+            expect(index.indexDenominator).to.equal(650);
         });
 
         it('Should updateIndex if index > 0', async function () {
@@ -438,8 +438,13 @@ describe("unit - MetaDao", function () {
                 [GUILD_CONTROLLER_TWO.address, 200]
                 ]
             );
-
-            await METADAO.addIndex([newIndex0, newIndex1]);
+            let newIndex2 = abi.encode(
+                ["tuple(address, uint256)"],
+                [
+                [METADAO.address, 1000]
+                ]
+            );
+            await METADAO.addIndex([newIndex0, newIndex1, newIndex2]);
             await METADAO.updateIndex([newIndex0, newIndex1], 1);
 
             let index = await METADAO.indexHashes(1);

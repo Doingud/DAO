@@ -337,6 +337,7 @@ contract MetaDaoController is Ownable {
 
         for (uint256 i; i < weights.length; i++) {
             (address guild, uint256 weight) = abi.decode(weights[i], (address, uint256));
+            index.indexDenominator -= index.indexWeights[guild];
             index.indexWeights[guild] = weight;
             index.indexDenominator += weight;
             index.creator = msg.sender;
