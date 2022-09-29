@@ -20,9 +20,6 @@ contract ModuleMock is Module {
 
     /// This function recreates the reality module's action once a vote has passed
     function executeAfterSuccessfulVote(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] calldata data,
         Enum.Operation operation
     ) external returns (bool success) {
         success = IAvatar(avatar).execTransactionFromModule(avatar, 0, bytes(""), operation);
