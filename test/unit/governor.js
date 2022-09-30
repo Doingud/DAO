@@ -63,6 +63,7 @@ describe('unit - Contract: Governor', function () {
 
         it("Should fail if called more than once", async function () {
             await expect(governor.init(
+                "newName",
                 AMORxGuild.address, //AMORxGuild
                 authorizer_adaptor.address, // Snapshot Address
                 authorizer_adaptor.address // Avatar Address
