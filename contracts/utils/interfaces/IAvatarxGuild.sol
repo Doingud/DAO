@@ -1,7 +1,37 @@
-// SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.15;
 
-/// @title Zodiac Avatar - A contract that manages modules that can execute transactions via this contract.
-pragma solidity >=0.7.0 <0.9.0;
+/**
+ * @title  DoinGud: IAvatarxGuild.sol
+ * @author Daoism Systems
+ * @notice Avatar interface for DoinGudDAO
+ * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
+ *
+ *  The IAvatarxGuild follows the IAvatar.sol structure, but is initializable.
+ *
+ * MIT License
+ * ===========
+ *
+ * Copyright (c) 2022 DoinGud
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *
+ */
 
 import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
@@ -10,6 +40,12 @@ interface IAvatarxGuild {
     event DisabledModule(address module);
     event ExecutionFromModuleSuccess(address indexed module);
     event ExecutionFromModuleFailure(address indexed module);
+
+    /// @notice Initializes the AvatarxGuild module
+    /// @param  initOwner the address that owns this AvatarxGuild
+    /// @param  governorAddress_ the guild's governor
+    /// @return bool was the init call successfull
+    function init(address initOwner, address governorAddress_) external returns (bool);
 
     /// @dev Enables a module on the avatar.
     /// @notice Can only be called by the avatar.

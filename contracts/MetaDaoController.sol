@@ -46,7 +46,7 @@ contract MetaDaoController is Ownable {
     /// Guild-related variables
     mapping(address => address) public guilds;
     address public sentinelGuilds;
-    uint256 public guildCounter;
+    uint32 public guildCounter;
     mapping(address => uint256) public guildWeight;
     /// Mapping of guild --> token --> amount
     mapping(address => mapping(address => uint256)) public guildFunds;
@@ -101,11 +101,12 @@ contract MetaDaoController is Ownable {
     error NoIndex();
     error InvalidClaim();
 
-    constructor(address admin) {
+    function init(
+        address amor,
+        address cloneFactory,
+        address admin
+    ) external {
         _transferOwnership(admin);
-    }
-
-    function init(address amor, address cloneFactory) external onlyOwner {
         amorToken = IERC20(amor);
         guildFactory = cloneFactory;
         /// Setup the linked list
@@ -224,11 +225,17 @@ contract MetaDaoController is Ownable {
         string memory name,
         string memory tokenSymbol
     ) public onlyOwner {
-        address controller = ICloneFactory(guildFactory).deployGuildContracts(guildOwner, name, tokenSymbol);
+        (address controller, address avatar, address governor) = ICloneFactory(guildFactory).deployGuildContracts(
+            guildOwner,
+            name,
+            tokenSymbol
+        );
         guilds[sentinelGuilds] = controller;
         sentinelGuilds = controller;
         guilds[sentinelGuilds] = SENTINEL;
-        guildCounter += 1;
+        unchecked {
+            guildCounter += 1;
+        }
     }
 
     /// @notice Adds an external guild to the registry
@@ -241,7 +248,9 @@ contract MetaDaoController is Ownable {
         guilds[sentinelGuilds] = guildAddress;
         sentinelGuilds = guildAddress;
         guilds[sentinelGuilds] = SENTINEL;
-        guildCounter += 1;
+        unchecked {
+            guildCounter += 1;
+        }
     }
 
     /// @notice adds token to whitelist
@@ -274,7 +283,9 @@ contract MetaDaoController is Ownable {
         }
         guilds[endOfList] = guilds[controller];
         delete guilds[controller];
-        guildCounter -= 1;
+        unchecked {
+            guildCounter -= 1;
+        }
     }
 
     /// @notice Checks that a token is whitelisted

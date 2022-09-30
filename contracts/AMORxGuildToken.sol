@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-
+import "hardhat/console.sol";
 pragma solidity 0.8.15;
 
 /**
@@ -76,7 +76,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     /// It allows fine-grained control over the tax rate
     /// 1 basis point change == 0.01% change in the tax rate
     /// Here it is the denominator for tax-related calculations
-    uint256 public BASIS_POINTS = 10000;
+    uint256 public constant BASIS_POINTS = 10000;
     /// Co-efficient
     uint256 private constant COEFFICIENT = 10**9;
 
@@ -107,6 +107,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         _setTokenDetail(name, symbol);
         guildController = controller;
         _initialized = true;
+        /// Proxy storage requires BASIS_POINTS and COEFFICIENT to be initialized in the init function
         emit Initialized(name, symbol, amorAddress);
     }
 
@@ -126,6 +127,8 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     /// @param  amount uint256 amount of AMOR to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
     function stakeAmor(address to, uint256 amount) external override whenNotPaused returns (uint256) {
+        console.log("tokenAmor.balanceOf(msg.sender) is %s", tokenAmor.balanceOf(msg.sender));
+        console.log("amount is %s", amount);
         if (tokenAmor.balanceOf(msg.sender) < amount) {
             revert UnsufficientAmount();
         }
