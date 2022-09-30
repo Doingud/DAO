@@ -46,7 +46,7 @@ contract MetaDaoController is Ownable {
     /// Guild-related variables
     mapping(address => address) public guilds;
     address public sentinelGuilds;
-    uint96 public guildCounter;
+    uint32 public guildCounter;
     mapping(address => uint256) public guildWeight;
     /// Mapping of guild --> token --> amount
     mapping(address => mapping(address => uint256)) public guildFunds;

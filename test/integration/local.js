@@ -78,7 +78,7 @@ let GUILD_TWO_GOVERNORXGUILD;
 let IMPACT_MAKERS;
 let IMPACT_MAKERS_WEIGHTS;
 
-describe("Integration Tests", function () {
+describe("Integration: DoinGud token ecosystem", function () {
 
 const setupTests = deployments.createFixture(async () => {
   const signers = await ethers.getSigners();
