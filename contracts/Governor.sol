@@ -109,6 +109,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     error UnderlyingTransactionReverted();
 
     /// @notice Initializes the Governor contract
+    /// @param  name name of the guild linked to this Governor
     /// @param  AMORxGuild_ the address of the AMORxGuild token
     /// @param  snapshotAddress_ the address of the Snapshot
     /// @param  avatarAddress_ the address of the Avatar
