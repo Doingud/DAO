@@ -150,7 +150,7 @@ const setupTests = deployments.createFixture(async () => {
 
   await init.getGuildFactory(setup);
   await init.vestingContract(setup);
-  CLONE_FACTORY = setup.factory.guildFactory;
+  CLONE_FACTORY = setup.factory;
   VESTING = setup.vesting;
 
   await DOINGUD_AMOR_TOKEN.init(
