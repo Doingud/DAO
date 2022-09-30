@@ -179,6 +179,10 @@ contract dAMORxGuild is ERC20Base, Ownable {
             revert TimeTooSmall();
         }
 
+        uint256 unstakeAMORAmount = stakesAMOR[msg.sender];
+        if (AMORxGuild.balanceOf(address(this)) < unstakeAMORAmount) {
+            revert InvalidAmount();
+        }
         uint256 amount = stakes[msg.sender];
         if (amount <= 0) {
             revert InvalidAmount();
@@ -187,7 +191,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
         //burn used dAMORxGuild tokens from staker
         _burn(msg.sender, amount);
         stakes[msg.sender] = 0;
-        stakesAMOR[msg.sender] = 0;
 
         address[] memory people = delegators[msg.sender];
         for (uint256 i = 0; i < people.length; i++) {
@@ -195,12 +198,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
         amountDelegated[msg.sender] = 0;
 
-        uint256 unstakeAMORAmount = stakesAMOR[msg.sender];
-        if (AMORxGuild.balanceOf(address(this)) < unstakeAMORAmount) {
-            revert InvalidAmount();
-        }
-
         AMORxGuild.safeTransfer(msg.sender, unstakeAMORAmount);
+        stakesAMOR[msg.sender] = 0;
 
         if (delegation[msg.sender].length != 0) {
             undelegateAll();
