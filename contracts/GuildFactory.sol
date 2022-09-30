@@ -156,9 +156,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         avatar = _deployAvatar();
         guildComponents[currentGuild][GuildComponents.AvatarxGuild] = avatar;
 
-        if (!_initGuildControls(_name, currentGuild, guildOwner)) {
-            revert Unsuccessful();
-        }
+        _initGuildControls(_name, currentGuild, guildOwner);
     }
 
     /// @notice Internal function to deploy clone of an implementation contract
@@ -243,14 +241,13 @@ contract GuildFactory is ICloneFactory, Ownable {
     /// @param  name string: name of the guild being deployed
     /// @param  amorGuildToken the AmorxGuild token address for this guild
     /// @param  owner address: owner of the Guild
-    /// @return success bool: indicates if contract were successfully initialized
     function _initGuildControls(
         string memory name,
         address amorGuildToken,
         address owner
-    ) internal returns (bool success) {
+    ) internal {
         /// Init the Guild Controller
-        success = IGuildController(guildComponents[amorGuildToken][GuildComponents.ControllerxGuild]).init(
+        IGuildController(guildComponents[amorGuildToken][GuildComponents.ControllerxGuild]).init(
             owner,
             amorToken,
             amorGuildToken,
@@ -259,13 +256,13 @@ contract GuildFactory is ICloneFactory, Ownable {
         );
 
         /// Init the AvatarxGuild
-        success = IAvatarxGuild(guildComponents[amorGuildToken][GuildComponents.AvatarxGuild]).init(
+        IAvatarxGuild(guildComponents[amorGuildToken][GuildComponents.AvatarxGuild]).init(
             owner,
             guildComponents[amorGuildToken][GuildComponents.GovernorxGuild]
         );
 
         /// Init the AvatarxGuild
-        success = IDoinGudGovernor(guildComponents[amorGuildToken][GuildComponents.GovernorxGuild]).init(
+        IDoinGudGovernor(guildComponents[amorGuildToken][GuildComponents.GovernorxGuild]).init(
             string.concat("Governorx", name),
             amorGuildToken,
             snapshot,
