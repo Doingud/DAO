@@ -49,8 +49,6 @@ contract GuildFactory is ICloneFactory, Ownable {
     address public amorxGuildToken;
     /// The MetaDaoController address
     address public immutable metaDaoController;
-    /// The DoinGud Multisig address
-    address public immutable multisig;
     /// The snapshot address
     address public immutable snapshot;
     /// The DoinGud generic proxy contract (the target)
@@ -80,7 +78,6 @@ contract GuildFactory is ICloneFactory, Ownable {
         address _governor,
         address _avatarxGuild,
         address _metaDaoController,
-        address _multisig,
         address _snapshot
     ) {
         /// The AMOR Token address
@@ -96,7 +93,6 @@ contract GuildFactory is ICloneFactory, Ownable {
         /// `_cloneTarget` refers to the DoinGud Proxy
         cloneTarget = _doinGudProxy;
         metaDaoController = _metaDaoController;
-        multisig = _multisig;
         snapshot = _snapshot;
     }
 
@@ -259,8 +255,7 @@ contract GuildFactory is ICloneFactory, Ownable {
             amorToken,
             amorGuildToken,
             guildComponents[amorGuildToken][GuildComponents.FXAmorxGuild],
-            metaDaoController,
-            multisig
+            metaDaoController
         );
 
         /// Init the AvatarxGuild

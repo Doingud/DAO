@@ -80,7 +80,6 @@ describe('unit - Contract: GuildController', function () {
                 AMOR.address,
                 AMORxGuild.address,
                 FXAMORxGuild.address,
-                root.address,
                 root.address
             )).to.be.revertedWith("AlreadyInitialized()");
         });
@@ -174,7 +173,7 @@ describe('unit - Contract: GuildController', function () {
 
         it('it fails to donate if token not in the whitelist', async function () {
             await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER, root.address)).to.be.revertedWith(
-                'NotListed()'
+                'NotWhitelistedToken()'
             );
         });
 
@@ -227,7 +226,7 @@ describe('unit - Contract: GuildController', function () {
         it('it fails to gatherDonation if token not in the whitelist', async function () {
             // gatherDonation --> distribute
             await expect(controller.connect(operator).gatherDonation(root.address)).to.be.revertedWith(
-                'NotListed()'
+                'NotWhitelistedToken()'
             );
         });
 

@@ -39,7 +39,6 @@ contract GuildController is IGuildController, Ownable {
     address public dAMORxGuild;
     address public FXAMORxGuild;
     address public MetaDaoController;
-    address public multisig;
 
     // uint256 public triggerCounter;
     bool public trigger; // set true for a week if previous week were added >= 10 reports; users can vote only if trigger == true
@@ -79,8 +78,7 @@ contract GuildController is IGuildController, Ownable {
         address AMOR_,
         address AMORxGuild_,
         address FXAMORxGuild_,
-        address MetaDaoController_,
-        address multisig_ // the multisig address of the MetaDAO, which owns the token
+        address MetaDaoController_
     ) external returns (bool) {
         if (_initialized) {
             revert AlreadyInitialized();
@@ -93,7 +91,6 @@ contract GuildController is IGuildController, Ownable {
         FXGFXAMORxGuild = IFXAMORxGuild(FXAMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
         MetaDaoController = MetaDaoController_;
-        multisig = multisig_;
         ADDITIONAL_VOTING_TIME = 0;
 
         trigger = false;
