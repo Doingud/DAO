@@ -295,10 +295,7 @@ contract MetaDaoController is Ownable {
     /// @param  token address of the ERC20 token being checked
     /// @return bool true if token whitelisted, false if not whitelisted
     function isWhitelisted(address token) external view returns (bool) {
-        if (whitelist[token] == address(0)) {
-            revert NotListed();
-        }
-        return true;
+        return whitelist[token] != address(0);
     }
 
     /// @notice Adds a new index to the `Index` array
