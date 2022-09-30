@@ -99,6 +99,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     error InvalidArray();
     /// The index array has not been set yet
     error NoIndex();
+    /// The guild has 0 funds to claim
     error InvalidClaim();
 
     constructor(address admin) {
