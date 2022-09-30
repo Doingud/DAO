@@ -6,7 +6,6 @@ async function main() {
   
     const AMORToken = await ethers.getContractFactory("AMORToken");
     const AMOR = await AMORToken.deploy();
-
     console.log("AMOR address:", AMOR.address);
   }
   

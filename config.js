@@ -31,7 +31,7 @@ const contractAddresses = {
         [AMORxGuild]: '0xD0686831834bD5740990C4415cb7cE35F655BAd3', 
         [FXAMORxGuild]: '0x65a49f25A28a64deac243E203A48e1A041863689',
         [dAMORxGuild]: '0x444C197FEB1A9546dE8fEBFa5EeAff0B8CdC77ce',
-        [MetaDAOController]: '0x55EE48675E9519D59b57e752A9C09bB12e6D932D',
+        [MetaDAOController]: '0xb4613d4C59d1c23248C5764a0C25f13916A90E02',
         [GuildController]: '0x441f2b9Ff9ce4a41Ea99bDBCCA53B37bF1430Fcd',
         [DoinGudProxy]: '0x1a9b486C29951b6D941155984AbEf29b8Eaa1Bf0',
         [GuildFactory]: '0x2f29AD6f5850d04D7696cB0DC3D22d72A29ECE78',

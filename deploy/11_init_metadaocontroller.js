@@ -3,6 +3,7 @@ const addresses = getAddresses();
 
 async function main() {
     const [deployer] = await ethers.getSigners();
+    const AvatarxGuild = addresses.Avatar;
 
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
@@ -17,7 +18,11 @@ async function main() {
     let MetaDaoController = await b.deployed();
     console.log("MetaDaoController address:", MetaDaoController.address);
 
-    const tx = await MetaDaoController.init(AMORToken, GuildFactory);
+    let tx = await MetaDaoController.init(AMORToken, GuildFactory);
+    console.log("tx is %s", tx);
+  
+    // MetaDAO is owned by Avatar
+    tx = await MetaDaoController.transferOwnership(AvatarxGuild);
     console.log("tx is %s", tx);
     console.log("MetaDaoController address:", MetaDaoController.address);
   }
