@@ -41,7 +41,7 @@ import "./utils/interfaces/ICloneFactory.sol";
 import "./utils/interfaces/IGuildController.sol";
 import "./utils/interfaces/IMetaDaoController.sol";
 
-contract MetaDaoController is Ownable {
+contract MetaDaoController is IMetaDaoController, Ownable {
     using SafeERC20 for IERC20;
     /// Guild-related variables
     mapping(address => address) public guilds;
@@ -228,11 +228,7 @@ contract MetaDaoController is Ownable {
         string memory name,
         string memory tokenSymbol
     ) public onlyOwner {
-        (address controller, address avatar, address governor) = ICloneFactory(guildFactory).deployGuildContracts(
-            guildOwner,
-            name,
-            tokenSymbol
-        );
+        (address controller, , ) = ICloneFactory(guildFactory).deployGuildContracts(guildOwner, name, tokenSymbol);
         guilds[sentinelGuilds] = controller;
         sentinelGuilds = controller;
         guilds[sentinelGuilds] = SENTINEL;
