@@ -12,7 +12,7 @@ async function main() {
     console.log("Account balance:", (await deployer.getBalance()).toString());
 
     // connect AMOR
-    let a  = await ethers.getContractFactory('MetaDaoController')
+    let a  = await ethers.getContractFactory('AMORToken')
     let b = await a.attach(AMOR_)
     let AMORToken = await b.deployed();
     console.log("AMORToken address:", AMORToken.address);
