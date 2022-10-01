@@ -443,55 +443,81 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         });
 
         it("Gather taxes from the MetaDAO", async function () {
-            const NEW_ADDRESS = DOINGUD_METADAO.address;//METADAO.address;
-            await AMOR_TOKEN.updateController(NEW_ADDRESS);
-    
-            expect(await AMOR_TOKEN.taxController()).
-                to.equal(NEW_ADDRESS);
-
             // Transfer AMOR tokens between Accounts
             const taxDeducted = TEST_TRANSFER*(TAX_RATE/BASIS_POINTS);
 
-            await AMOR_TOKEN.approve(root.address, TEST_TRANSFER);
-            expect(await AMOR_TOKEN.transferFrom(root.address, user1.address, TEST_TRANSFER))
-              .to.emit(AMOR_TOKEN, "Transfer")
+            await DOINGUD_AMOR_TOKEN.approve(root.address, TEST_TRANSFER);
+            expect(await DOINGUD_AMOR_TOKEN.transferFrom(root.address, user1.address, TEST_TRANSFER))
+              .to.emit(DOINGUD_AMOR_TOKEN, "Transfer")
                 .withArgs(root.address, user1.address, (TEST_TRANSFER-taxDeducted).toString());
 
-            expect(await AMOR_TOKEN.balanceOf(user1.address)).to.equal((TEST_TRANSFER-taxDeducted).toString());
+            expect(await DOINGUD_AMOR_TOKEN.balanceOf(user1.address)).to.equal((TEST_TRANSFER-taxDeducted).toString());
 
             // Call distribute function in the MetaDAO controller        
             // await AMOR_TOKEN.transfer(METADAO.address, ONE_HUNDRED_ETHER);
-            expect(await METADAO.guildFees(GUILD_CONTROLLER_ONE.address)).to.equal(0);
-            await METADAO.distributeFees();
-            expect(await METADAO.guildFees(GUILD_CONTROLLER_ONE.address)).to.equal((taxDeducted * 0.5).toString());
-
+            expect(await DOINGUD_METADAO.guildFees(GUILD_ONE_CONTROLLERXGUILD.address)).to.equal(0);
+            await DOINGUD_METADAO.distributeFees();
+            expect(await DOINGUD_METADAO.guildFees(GUILD_ONE_CONTROLLERXGUILD.address)).to.equal((taxDeducted * 0.5).toString());
 
             // Call claimFees function in one of the guilds
-            // await AMOR_TOKEN.transfer(METADAO.address, ONE_HUNDRED_ETHER);
-
-            await METADAO.distributeFees();
-            let guildAmor = await METADAO.guildFees(GUILD_CONTROLLER_ONE.address);
-            await expect(METADAO.claimFees(GUILD_CONTROLLER_ONE.address)).
-                to.emit(AMOR_TOKEN, "Transfer").
-                withArgs(METADAO.address, GUILD_CONTROLLER_ONE.address, (guildAmor * 0.95).toString());
-            expect(await METADAO.guildFees(GUILD_CONTROLLER_ONE.address)).to.equal(0);
+            await DOINGUD_METADAO.distributeFees();
+            let guildAmor = await DOINGUD_METADAO.guildFees(GUILD_ONE_CONTROLLERXGUILD.address);
+            await expect(DOINGUD_METADAO.claimFees(GUILD_ONE_CONTROLLERXGUILD.address)).
+                to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
+                withArgs(DOINGUD_METADAO.address, GUILD_ONE_CONTROLLERXGUILD.address, (guildAmor * 0.95).toString());
+            expect(await DOINGUD_METADAO.guildFees(GUILD_ONE_CONTROLLERXGUILD.address)).to.equal(0);
 
             // Check that guild treasury claimed the required fees
-            expect(await AMOR_TOKEN.balanceOf(GUILD_CONTROLLER_ONE.address)).to.equal((guildAmor * 0.95).toString());
+            expect(await DOINGUD_AMOR_TOKEN.balanceOf(GUILD_ONE_CONTROLLERXGUILD.address)).to.equal((guildAmor * 0.95).toString());
         });
 
         it("Transfer Guild’s fund from the Avatar contract", async function () {          
-            expect(await AMOR_TOKEN.balanceOf(GUILD_CONTROLLER_ONE.address)).to.equal((guildAmor * 0.95).toString());
-
+            await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
            
-            // Add a proposal in guild’s snapshot to transfer guild’s funds somewhere
-            
-            // Vote for the proposal in the snapshot
-            
-            // Execute the proposal and for the proposal with guardians
-            
-            // Execute the proposal
+            guardians = [staker.address, operator.address, user3.address];
+            await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).setGuardians(guardians);
 
+            // Add a proposal in guild’s snapshot to transfer guild’s funds somewhere
+            // propose
+            targets = [DOINGUD_AMOR_TOKEN.address];
+            values = [0];
+            calldatas = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('transfer', [user3.address, 20])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+
+            await expect(GUILD_ONE_GOVERNORXGUILD.proposals(0)).to.be.reverted;
+            await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).propose(targets, values, calldatas);
+            await expect(GUILD_ONE_GOVERNORXGUILD.proposals(1)).to.be.reverted;
+
+            const oldProposalId = firstProposalId;
+            firstProposalId = await GUILD_ONE_GOVERNORXGUILD.proposals(0);
+            expect(oldProposalId).to.not.equal(firstProposalId);
+
+            expect((await GUILD_ONE_GOVERNORXGUILD.proposalVoting(firstProposalId)).toString()).to.equals("0");
+            expect((await GUILD_ONE_GOVERNORXGUILD.proposalWeight(firstProposalId)).toString()).to.equals("0");
+            
+            // Pass the proposal on the snapshot
+            time.increase(time.duration.days(1));
+            // Vote for the proposal in the snapshot
+            // TODO: add SNAPSHOT INTERACTION HERE
+            // old(current-to-change): Vote as a guardians to pass the proposal locally            
+            await GUILD_ONE_GOVERNORXGUILD.connect(staker).castVote(firstProposalId, true);
+            await GUILD_ONE_GOVERNORXGUILD.connect(operator).castVote(firstProposalId, true);
+            await GUILD_ONE_GOVERNORXGUILD.connect(user3).castVote(firstProposalId, false);
+            expect(await GUILD_ONE_GOVERNORXGUILD.proposalVoting(firstProposalId)).to.equals(2);
+            expect(await GUILD_ONE_GOVERNORXGUILD.proposalWeight(firstProposalId)).to.equals(3);
+
+
+            // Execute the proposal and for the proposal with guardians
+            time.increase(time.duration.days(14));
+            const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(user3.address);
+
+            await expect(GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).execute(targets, values, calldatas))
+                .to
+                .emit(GUILD_ONE_GOVERNORXGUILD, "ProposalExecuted").withArgs(firstProposalId);
+
+            const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(user3.address);
+            expect(balanceAfter).to.be.gt(balanceBefore);
+
+            await expect(GUILD_ONE_GOVERNORXGUILD.voters(firstProposalId)).to.be.reverted;    
         });
 
         it("Donate Guild’s fund from the Avatar contract", async function () {             
