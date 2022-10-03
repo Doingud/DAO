@@ -8,6 +8,15 @@ async function main() {
     const DoinGudProxyFactory = await ethers.getContractFactory("DoinGudProxy");
     const DoinGudProxy = await DoinGudProxyFactory.deploy();
     console.log("DoinGudProxy address:", DoinGudProxy.address);
+
+    await execute('DoinGudProxy', {
+      from: deployer,
+      gasLimit: process.env.GAS_LIMIT,
+      log: true,
+  }, 'initProxy', amor.address) 
+
+
+
   }
   
   main()

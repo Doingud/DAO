@@ -1,3 +1,6 @@
+const { getAddresses } = require('../config');
+const addresses = getAddresses();
+
 async function main() {
     const [deployer] = await ethers.getSigners();
 
@@ -7,6 +10,15 @@ async function main() {
     const AMORToken = await ethers.getContractFactory("AMORToken");
     const AMOR = await AMORToken.deploy();
     console.log("AMOR address:", AMOR.address);
+
+    // connect DoinGudProxy
+    let a  = await ethers.getContractFactory('DoinGudProxy')
+    let b = await a.attach(addresses.DoinGudProxy)
+    let DoinGudProxy = await b.deployed();
+    console.log("DoinGudProxy address:", addresses.DoinGudProxy);
+
+    let tx = await DoinGudProxy.initProxy(AMOR.address);
+    console.log("tx is %s", tx);
   }
   
   main()
