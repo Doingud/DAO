@@ -1,6 +1,3 @@
-const { getAddresses } = require('../config');
-const addresses = getAddresses();
-
 async function main() {
     const [deployer] = await ethers.getSigners();
 
