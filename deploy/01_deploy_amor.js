@@ -12,12 +12,20 @@ async function main() {
     console.log("AMOR address:", AMOR.address);
 
     // connect DoinGudProxy
+    // v1
+    let a  = await ethers.getContractFactory('DoinGudProxy')
+    let proxy = await a.deploy();
+
+
+
+    // v2
     let a  = await ethers.getContractFactory('DoinGudProxy')
     let b = await a.attach(addresses.DoinGudProxy)
-    let DoinGudProxy = await b.deployed();
-    console.log("DoinGudProxy address:", addresses.DoinGudProxy);
+    let proxy = await b.deployed();
 
-    let tx = await DoinGudProxy.initProxy(AMOR.address);
+    console.log("proxy address:", proxy.address);
+
+    let tx = await proxy.initProxy(AMOR.address);
     console.log("tx is %s", tx);
   }
   
