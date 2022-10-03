@@ -8,6 +8,13 @@ async function main() {
     const AvatarxGuild = await AvatarxGuildFactory.deploy();
 
     console.log("AvatarxGuild address:", AvatarxGuild.address);
+
+    let a  = await ethers.getContractFactory('DoinGudProxy')
+    let proxy = await a.deploy();
+    console.log("proxy address:", proxy.address);
+
+    let tx = await proxy.initProxy(AvatarxGuild.address);
+    console.log("tx is %s", tx);
   }
   
   main()

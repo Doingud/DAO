@@ -11,18 +11,8 @@ async function main() {
     const AMOR = await AMORToken.deploy();
     console.log("AMOR address:", AMOR.address);
 
-    // connect DoinGudProxy
-    // v1
     let a  = await ethers.getContractFactory('DoinGudProxy')
     let proxy = await a.deploy();
-
-
-
-    // v2
-    let a  = await ethers.getContractFactory('DoinGudProxy')
-    let b = await a.attach(addresses.DoinGudProxy)
-    let proxy = await b.deployed();
-
     console.log("proxy address:", proxy.address);
 
     let tx = await proxy.initProxy(AMOR.address);

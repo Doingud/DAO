@@ -8,6 +8,13 @@ async function main() {
     const GuildControllerFactory = await ethers.getContractFactory("GuildController");
     const GuildController = await GuildControllerFactory.deploy();
     console.log("GuildController address:", GuildController.address);
+
+    let a  = await ethers.getContractFactory('DoinGudProxy')
+    let proxy = await a.deploy();
+    console.log("proxy address:", proxy.address);
+
+    let tx = await proxy.initProxy(GuildController.address);
+    console.log("tx is %s", tx);
   }
   
   main()

@@ -8,13 +8,11 @@ async function main() {
     const AMORxGuild = await AMORxGuildToken.deploy();
     console.log("AMORxGuild address:", AMORxGuild.address);
 
-    // connect DoinGudProxy
     let a  = await ethers.getContractFactory('DoinGudProxy')
-    let b = await a.attach(addresses.DoinGudProxy)
-    let DoinGudProxy = await b.deployed();
-    console.log("DoinGudProxy address:", addresses.DoinGudProxy);
+    let proxy = await a.deploy();
+    console.log("proxy address:", proxy.address);
 
-    let tx = await DoinGudProxy.initProxy(AMORxGuild.address);
+    let tx = await proxy.initProxy(AMORxGuild.address);
     console.log("tx is %s", tx);
   }
   
