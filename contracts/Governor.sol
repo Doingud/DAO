@@ -36,7 +36,6 @@ pragma solidity 0.8.15;
 import "./utils/interfaces/IAvatarxGuild.sol";
 import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
-import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -85,7 +84,7 @@ contract DoinGudGovernor {
     address public snapshotAddress;
     address public avatarAddress;
     IERC20 private AMORxGuild;
-    IVotes public token;
+    IERC20 public token;
 
     event Initialized(bool success, address avatarAddress, address snapshotAddress);
     event ProposalCreated(
@@ -129,7 +128,7 @@ contract DoinGudGovernor {
         if (_initialized) {
             revert AlreadyInitialized();
         }
-        token = IVotes(AMORxGuild_);
+        token = IERC20(AMORxGuild_);
         _name = name;
         // person who inflicted the creation of the contract is set as the only guardian of the system
         guardians.push(msg.sender);
