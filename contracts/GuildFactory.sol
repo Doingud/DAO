@@ -265,6 +265,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         IDoinGudGovernor(guildComponents[amorGuildToken][GuildComponents.GovernorxGuild]).init(
             string.concat("Governorx", name),
             amorGuildToken,
+            snapshot,
             guildComponents[amorGuildToken][GuildComponents.AvatarxGuild]
         );
     }
