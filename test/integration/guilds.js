@@ -16,8 +16,9 @@ const {
     AMOR_TOKEN_SYMBOL,
     MOCK_TEST_AMOUNT,
     TEST_TRANSFER
-  } = require('../helpers/constants.js');
+} = require('../helpers/constants.js');
 const { time } = require("@openzeppelin/test-helpers");
+const TEST_TRANSFER_SMALLER = 80;
 
 use(solidity);
 
@@ -203,12 +204,12 @@ describe("Integration: DoinGud guilds ecosystem", function () {
     GAURDIAN_THRESHOLD
   );
 
-  await DOINGUD_FXAMOR.init(
-    "DoinGud FXAMOR", 
-    "FXAMOR", 
-    DOINGUD_CONTROLLER.address, //controller
-    DOINGUD_AMOR_GUILD_TOKEN.address
-  );
+//   await DOINGUD_FXAMOR.init(
+//     "DoinGud FXAMOR", 
+//     "FXAMOR", 
+//     DOINGUD_CONTROLLER.address, //controller
+//     DOINGUD_AMOR_GUILD_TOKEN.address
+//   );
 
   await DOINGUD_CONTROLLER.init(
     setup.roles.root.address, // owner
@@ -640,16 +641,133 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         });
         it("Add report to the Guild", async function () {          
 
-
-            
             // Gain some amount of donations
-            
+            await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
+            await DOINGUD_AMOR_TOKEN.transfer(user2.address, ONE_HUNDRED_ETHER);
+
+            await DOINGUD_AMOR_TOKEN.connect(user2).approve(DOINGUD_CONTROLLER.address, FIFTY_ETHER);
+            await DOINGUD_AMOR_TOKEN.connect(user1).approve(GUILD_ONE_CONTROLLERXGUILD.address, FIFTY_ETHER);
+
+            // await GUILD_ONE_FXAMORXGUILD.transferOwnership(GUILD_ONE_CONTROLLERXGUILD.address);
+
+console.log("await GUILD_ONE_CONTROLLERXGUILD.AMORxGuild() is %s", await GUILD_ONE_CONTROLLERXGUILD.AMORxGuild());
+console.log("GUILD_ONE_AMORXGUILD.address is %s", GUILD_ONE_AMORXGUILD.address);
+// await DOINGUD_AMOR_TOKEN.transfer(user1.address, TEST_TRANSFER);
+// await DOINGUD_AMOR_TOKEN.connect(user1).approve(DOINGUD_CONTROLLER.address, TEST_TRANSFER);
+
+await expect(DOINGUD_CONTROLLER.connect(user2).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
+  to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
+    to.emit(DOINGUD_FXAMOR, "Transfer");
+
+await expect(DOINGUD_CONTROLLER.connect(user1).claim(user1.address, [DOINGUD_AMOR_TOKEN.address])).
+  to.emit(DOINGUD_AMOR_TOKEN, "Transfer");
+
+expect(await DOINGUD_AMOR_TOKEN.balanceOf(user1.address)).to.equal((FIFTY_ETHER * 0.9 * 0.2 * 0.95).toString());
+
+
+
+
+
+            // await DOINGUD_AMOR_TOKEN.connect(root).transfer(GUILD_ONE_CONTROLLERXGUILD.address, TEST_TRANSFER);
+            // await DOINGUD_AMOR_TOKEN.connect(root).transfer(operator.address, TEST_TRANSFER);
+            // await DOINGUD_AMOR_TOKEN.connect(operator).approve(GUILD_ONE_AMORXGUILD.address, TEST_TRANSFER);
+            // let AMORDeducted = ethers.BigNumber.from((TEST_TRANSFER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
+            // let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
+            // await GUILD_ONE_AMORXGUILD.connect(operator).stakeAmor(operator.address, nextAMORDeducted);
+            // await GUILD_ONE_AMORXGUILD.connect(operator).approve(GUILD_ONE_CONTROLLERXGUILD.address, nextAMORDeducted);
+            // await GUILD_ONE_CONTROLLERXGUILD.connect(operator).donate(TEST_TRANSFER_SMALLER, GUILD_ONE_AMORXGUILD.address);        
+
+
+
+            // await GUILD_ONE_CONTROLLERXGUILD.connect(user1).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address);
+            // also same error when: await DOINGUD_CONTROLLER.connect(user3).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address);
+            // Error: VM Exception while processing transaction: reverted with custom error 'Unauthorized()'
+            //     at FXAMORxGuild.onlyAddress (contracts/FXAMORxGuildToken.sol:120)
+            //     at FXAMORxGuild.stake (contracts/FXAMORxGuildToken.sol:134)
+
+
             // Prepare a report for the guild and add it using GuildController
+            // await AMORxGuild.connect(operator).approve(controller.address, TEST_TRANSFER);
+
+            const timestamp = Date.now();
+
+            // building hash has to come from system address
+            // 32 bytes of data
+            let messageHash = ethers.utils.solidityKeccak256(
+                ["address", "uint", "string"],
+                [operator.address, timestamp, "report info"]
+            );
+
+            // 32 bytes of data in Uint8Array
+            let messageHashBinary = ethers.utils.arrayify(messageHash);
+            
+            // To sign the 32 bytes of data, make sure you pass in the data
+            let signature = await operator.signMessage(messageHashBinary);
+
+            // split signature
+            r = signature.slice(0, 66);
+            s = "0x" + signature.slice(66, 130);
+            v = parseInt(signature.slice(130, 132), 16);
+                    
+            report = messageHash;
+
+            await GUILD_ONE_CONTROLLERXGUILD.connect(root).addReport(report, v, r, s);
+            // await controller.connect(operator).addReport(report, v, r, s); 
+
+
+
+
+            // expect(await GUILD_ONE_CONTROLLERXGUILD.AMOR()).to.equal(DOINGUD_AMOR_TOKEN.address);
+
+            // Add a proposal in Metadao’s snapshot to remove guild from the metadao
+            // propose
+            // ???
+            // targets = [DOINGUD_METADAO.address];
+            // values = [0];
+            // calldatas = [DOINGUD_METADAO.interface.encodeFunctionData('removeGuild', [GUILD_ONE_GOVERNORXGUILD.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+
+            // await expect(GUILD_ONE_GOVERNORXGUILD.proposals(0)).to.be.reverted;
+            // await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).propose(targets, values, calldatas);
+            // await expect(GUILD_ONE_GOVERNORXGUILD.proposals(1)).to.be.reverted;
+
+            // const oldProposalId = firstProposalId;
+            // firstProposalId = await GUILD_ONE_GOVERNORXGUILD.proposals(0);
+            // expect(oldProposalId).to.not.equal(firstProposalId);
+
+            // expect((await GUILD_ONE_GOVERNORXGUILD.proposalVoting(firstProposalId)).toString()).to.equals("0");
+            // expect((await GUILD_ONE_GOVERNORXGUILD.proposalWeight(firstProposalId)).toString()).to.equals("0");
+            
+            // // Pass the proposal on the snapshot
+            // time.increase(time.duration.days(1));
+            // // Vote for the proposal in the snapshot
+            // // TODO: add SNAPSHOT INTERACTION HERE
+            // // old(current-to-change): Vote as a guardians to pass the proposal locally            
+            // await GUILD_ONE_GOVERNORXGUILD.connect(staker).castVote(firstProposalId, true);
+            // await GUILD_ONE_GOVERNORXGUILD.connect(operator).castVote(firstProposalId, true);
+            // await GUILD_ONE_GOVERNORXGUILD.connect(user3).castVote(firstProposalId, false);
+            // expect(await GUILD_ONE_GOVERNORXGUILD.proposalVoting(firstProposalId)).to.equals(2);
+            // expect(await GUILD_ONE_GOVERNORXGUILD.proposalWeight(firstProposalId)).to.equals(3);
+
+
+            // // Execute the proposal and for the proposal with guardians
+            // time.increase(time.duration.days(14));
+            // // const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(operator.address);
+
+            // await expect(GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).execute(targets, values, calldatas))
+            //     .to
+            //     .emit(GUILD_ONE_GOVERNORXGUILD, "ProposalExecuted").withArgs(firstProposalId);
+
+            // // const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(operator.address);
+            // // expect(balanceAfter).to.be.gt(balanceBefore);
+
+            // await expect(GUILD_ONE_GOVERNORXGUILD.voters(firstProposalId)).to.be.reverted;
+        
+            
+            
      
         
         });
         it("Vote for the report at the Guild with FXAMOR", async function () {                    
-
             
             // Gain some amount of donations
             
@@ -657,11 +775,31 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             
             // Support the report using FXAmor        
         
+
+            await AMOR.connect(root).transfer(controller.address, TEST_TRANSFER);
+            await AMOR.connect(root).transfer(operator.address, TEST_TRANSFER);
+            await AMOR.connect(operator).approve(AMORxGuild.address, TEST_TRANSFER);
+            let AMORDeducted = ethers.BigNumber.from((TEST_TRANSFER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
+            let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
+            await AMORxGuild.connect(operator).stakeAmor(operator.address, nextAMORDeducted);
+            await AMORxGuild.connect(operator).approve(GUILD_ONE_CONTROLLERXGUILD.address, nextAMORDeducted);
+            await GUILD_ONE_CONTROLLERXGUILD.connect(operator).donate(TEST_TRANSFER_SMALLER, AMORxGuild.address);        
+
+            const id = 0;
+            const amount = 2;
+            const sign = true;
+            await GUILD_ONE_CONTROLLERXGUILD.connect(user).voteForReport(id, amount, sign);
+            expect(await GUILD_ONE_CONTROLLERXGUILD.reportsVoting(0)).to.equals(2);
+            expect(await GUILD_ONE_CONTROLLERXGUILD.reportsWeight(0)).to.equals(2);
+
+            time.increase(time.duration.days(1));
+            await GUILD_ONE_CONTROLLERXGUILD.connect(operator).voteForReport(id, 1, false);
+            expect(await GUILD_ONE_CONTROLLERXGUILD.reportsVoting(0)).to.equals(1);
+            expect(await GUILD_ONE_CONTROLLERXGUILD.reportsWeight(0)).to.equals(3);
+        
         });
         it("Finalize report vote for the Guild with no reports passing", async function () {          
 
-
-            
             // Gain some amount of donations
             
             // Prepare a report for the guild and add it using GuildController
@@ -671,8 +809,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             // 50% of tokens used in voting should be sent to the voters
             
             // 50% of tokens should be saved until next report voting        
-     
-        
+
         });
         it("Finalize report vote for the Guild with part of reports passing", async function () {          
 
