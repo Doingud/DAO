@@ -257,8 +257,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
         uint256[] memory values,
         bytes[] memory calldatas
     ) external onlySnapshot GuardianLimitReached returns (uint256) {
-    // ) external onlyAvatar GuardianLimitReached returns (uint256) {
-
         if (!(targets.length == values.length && targets.length == calldatas.length)) {
             revert InvalidParameters();
         }
