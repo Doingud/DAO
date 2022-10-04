@@ -248,7 +248,7 @@ contract GuildFactory is ICloneFactory, Ownable {
     ) internal {
         /// Init the Guild Controller
         IGuildController(guildComponents[amorGuildToken][GuildComponents.ControllerxGuild]).init(
-            owner,
+            guildComponents[amorGuildToken][GuildComponents.AvatarxGuild],
             amorToken,
             amorGuildToken,
             guildComponents[amorGuildToken][GuildComponents.FXAmorxGuild],
@@ -265,7 +265,6 @@ contract GuildFactory is ICloneFactory, Ownable {
         IDoinGudGovernor(guildComponents[amorGuildToken][GuildComponents.GovernorxGuild]).init(
             string.concat("Governorx", name),
             amorGuildToken,
-            snapshot,
             guildComponents[amorGuildToken][GuildComponents.AvatarxGuild]
         );
     }
