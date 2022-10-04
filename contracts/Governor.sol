@@ -388,8 +388,6 @@ contract DoinGudGovernor {
             return ProposalState.Pending;
         }
 
-        uint256 deadline = _proposals[proposalId].voteEnd;
-
         if (proposal.voteEnd >= block.timestamp) {
             return ProposalState.Active;
         }
@@ -410,7 +408,6 @@ contract DoinGudGovernor {
     /// Proposal should achieve at least 20% approval of guardians, to be cancelled
     /// @param proposalId ID of the proposal
     function castVoteForCancelling(uint256 proposalId) external onlyGuardian {
-        ProposalCore storage proposal = _proposals[proposalId];
         ProposalState state = state(proposalId);
 
         if (state != ProposalState.Active) {
