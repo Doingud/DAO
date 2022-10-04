@@ -22,11 +22,11 @@ const TEST_TRANSFER_SMALLER = 80;
 
 use(solidity);
 
+
 let AMOR_TOKEN;
 let AMOR_GUILD_TOKEN;
 let FX_AMOR_TOKEN;
 let DAMOR_GUILD_TOKEN;
-let METADAO;
 let USDC;
 
 let user1;
@@ -44,13 +44,6 @@ let GUILD_CONTROLLER_ONE;
 let GUILD_CONTROLLER_TWO;
 
 let MOCK_MODULE;
-
-let GUILD_ONE_AMORXGUILD;
-let GUILD_ONE_DAMORXGUILD;
-let GUILD_ONE_FXAMORXGUILD;
-let GUILD_ONE_CONTROLLERXGUILD;
-let GUILD_ONE_GOVERNORXGUILD;
-let GUILD_ONE_AVATARXGUILD;
 
 let encodedIndex;
 let encodedIndex2;
@@ -80,10 +73,19 @@ let DOINGUD_DAMOR;
 let DOINGUD_FXAMOR;
 
 /// The MetaDao Control Structures
+let METADAO;
 let DOINGUD_CONTROLLER;
 let DOINGUD_GOVERNOR;
 let DOINGUD_AVATAR;
 let DOINGUD_METADAO;
+
+
+let GUILD_ONE_AMORXGUILD;
+let GUILD_ONE_DAMORXGUILD;
+let GUILD_ONE_FXAMORXGUILD;
+let GUILD_ONE_CONTROLLERXGUILD;
+let GUILD_ONE_GOVERNORXGUILD;
+let GUILD_ONE_AVATARXGUILD;
 
 
 let GUILD_TWO_CONTROLLERXGUILD;
@@ -106,15 +108,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         const setup = await init.initialize(signers);
         ///   Setup token contracts
         await init.getTokens(setup);
-        ///   DOINGUD ECOSYSTEM DEPLOYMENT
-        ///   STEP 1: Deploy token implementations
-        AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
-        AMOR_TOKEN_UPGRADE = setup.tokens.AmorTokenMockUpgrade;
-        AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
-        FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
-        DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
-        ERC20_TOKEN = setup.tokens.ERC20Token;
-        USDC = setup.tokens.ERC20Token;
 
         ///   Setup signer accounts
         root = setup.roles.root;
@@ -127,6 +120,16 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         operator = setup.roles.operator;
         authorizer_adaptor = setup.roles.authorizer_adaptor;
 
+        ///   DOINGUD ECOSYSTEM DEPLOYMENT
+        ///   STEP 1: Deploy token implementations
+        AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
+        AMOR_TOKEN_UPGRADE = setup.tokens.AmorTokenMockUpgrade;
+        AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
+        FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
+        DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
+        ERC20_TOKEN = setup.tokens.ERC20Token;
+        USDC = setup.tokens.ERC20Token;
+
         ///   STEP 2: Deploy DoinGud Control Structures
         await init.metadao(setup);
         await init.controller(setup);
@@ -136,8 +139,12 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         CONTROLLER = setup.controller;
         GOVERNOR = setup.governor;
         AVATAR = setup.avatars.avatar;
-        METADAO = setup.metadao;
 
+        CONTROLLERXGUILD = setup.controller;
+        GOVERNORXGUILD = setup.governor;
+        AVATARXGUILD = setup.avatars.avatar;
+        METADAO = setup.metadao;
+      
         MOCK_MODULE = setup.avatars.module;
 
 ///   STEP 3: Deploy the proxies for the tokens and the control structures
@@ -169,9 +176,9 @@ describe("Integration: DoinGud guilds ecosystem", function () {
   DOINGUD_AMOR_GUILD_TOKEN = AMOR_GUILD_TOKEN.attach(amor_guild_token_proxy.address);
   DOINGUD_DAMOR = DAMOR_GUILD_TOKEN.attach(dAmor_proxy.address);
   DOINGUD_FXAMOR = FX_AMOR_TOKEN.attach(fxAmor_proxy.address);
-  DOINGUD_AVATAR = AVATAR.attach(avatar_proxy.address);
-  DOINGUD_CONTROLLER = CONTROLLER.attach(controller_proxy.address);
-  DOINGUD_GOVERNOR = GOVERNOR.attach(governor_proxy.address);
+  DOINGUD_AVATAR = AVATARXGUILD.attach(avatar_proxy.address);
+  DOINGUD_CONTROLLER = CONTROLLERXGUILD.attach(controller_proxy.address);
+  DOINGUD_GOVERNOR = GOVERNORXGUILD.attach(governor_proxy.address);
   DOINGUD_METADAO = METADAO.attach(metadao_proxy.address);
 
   setup.metadao = DOINGUD_METADAO;
@@ -204,12 +211,12 @@ describe("Integration: DoinGud guilds ecosystem", function () {
     GAURDIAN_THRESHOLD
   );
 
-//   await DOINGUD_FXAMOR.init(
-//     "DoinGud FXAMOR", 
-//     "FXAMOR", 
-//     DOINGUD_CONTROLLER.address, //controller
-//     DOINGUD_AMOR_GUILD_TOKEN.address
-//   );
+  await DOINGUD_FXAMOR.init(
+    "DoinGud FXAMOR", 
+    "FXAMOR", 
+    DOINGUD_CONTROLLER.address, //controller
+    DOINGUD_AMOR_GUILD_TOKEN.address
+  );
 
   await DOINGUD_CONTROLLER.init(
     setup.roles.root.address, // owner
@@ -255,9 +262,9 @@ describe("Integration: DoinGud guilds ecosystem", function () {
   GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(AmorxOne);
   GUILD_ONE_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(DAmorxOne);
   GUILD_ONE_FXAMORXGUILD = FX_AMOR_TOKEN.attach(FXAmorxOne);
-  GUILD_ONE_CONTROLLERXGUILD = CONTROLLER.attach(ControllerxOne);
-  GUILD_ONE_GOVERNORXGUILD = GOVERNOR.attach(GovernorxOne);
-  GUILD_ONE_AVATARXGUILD = AVATAR.attach(AvatarxOne);
+  GUILD_ONE_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(ControllerxOne);
+  GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxOne);
+  GUILD_ONE_AVATARXGUILD = AVATARXGUILD.attach(AvatarxOne);
 
   await DOINGUD_METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
   let AmorxTwo = await CLONE_FACTORY.amorxGuildTokens(1);
@@ -646,44 +653,15 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             await DOINGUD_AMOR_TOKEN.transfer(user2.address, ONE_HUNDRED_ETHER);
 
             await DOINGUD_AMOR_TOKEN.connect(user2).approve(DOINGUD_CONTROLLER.address, FIFTY_ETHER);
-            await DOINGUD_AMOR_TOKEN.connect(user1).approve(GUILD_ONE_CONTROLLERXGUILD.address, FIFTY_ETHER);
+            await DOINGUD_AMOR_TOKEN.connect(user1).approve(DOINGUD_CONTROLLER.address, FIFTY_ETHER);
 
-            // await GUILD_ONE_FXAMORXGUILD.transferOwnership(GUILD_ONE_CONTROLLERXGUILD.address);
+            await expect(DOINGUD_CONTROLLER.connect(user2).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
+            to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
+                to.emit(DOINGUD_FXAMOR, "Transfer");
 
-console.log("await GUILD_ONE_CONTROLLERXGUILD.AMORxGuild() is %s", await GUILD_ONE_CONTROLLERXGUILD.AMORxGuild());
-console.log("GUILD_ONE_AMORXGUILD.address is %s", GUILD_ONE_AMORXGUILD.address);
-// await DOINGUD_AMOR_TOKEN.transfer(user1.address, TEST_TRANSFER);
-// await DOINGUD_AMOR_TOKEN.connect(user1).approve(DOINGUD_CONTROLLER.address, TEST_TRANSFER);
-
-await expect(DOINGUD_CONTROLLER.connect(user2).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
-  to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
-    to.emit(DOINGUD_FXAMOR, "Transfer");
-
-await expect(DOINGUD_CONTROLLER.connect(user1).claim(user1.address, [DOINGUD_AMOR_TOKEN.address])).
-  to.emit(DOINGUD_AMOR_TOKEN, "Transfer");
-
-expect(await DOINGUD_AMOR_TOKEN.balanceOf(user1.address)).to.equal((FIFTY_ETHER * 0.9 * 0.2 * 0.95).toString());
-
-
-
-
-
-            // await DOINGUD_AMOR_TOKEN.connect(root).transfer(GUILD_ONE_CONTROLLERXGUILD.address, TEST_TRANSFER);
-            // await DOINGUD_AMOR_TOKEN.connect(root).transfer(operator.address, TEST_TRANSFER);
-            // await DOINGUD_AMOR_TOKEN.connect(operator).approve(GUILD_ONE_AMORXGUILD.address, TEST_TRANSFER);
-            // let AMORDeducted = ethers.BigNumber.from((TEST_TRANSFER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
-            // let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
-            // await GUILD_ONE_AMORXGUILD.connect(operator).stakeAmor(operator.address, nextAMORDeducted);
-            // await GUILD_ONE_AMORXGUILD.connect(operator).approve(GUILD_ONE_CONTROLLERXGUILD.address, nextAMORDeducted);
-            // await GUILD_ONE_CONTROLLERXGUILD.connect(operator).donate(TEST_TRANSFER_SMALLER, GUILD_ONE_AMORXGUILD.address);        
-
-
-
-            // await GUILD_ONE_CONTROLLERXGUILD.connect(user1).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address);
-            // also same error when: await DOINGUD_CONTROLLER.connect(user3).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address);
-            // Error: VM Exception while processing transaction: reverted with custom error 'Unauthorized()'
-            //     at FXAMORxGuild.onlyAddress (contracts/FXAMORxGuildToken.sol:120)
-            //     at FXAMORxGuild.stake (contracts/FXAMORxGuildToken.sol:134)
+            await expect(DOINGUD_CONTROLLER.connect(user1).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
+            to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
+                to.emit(DOINGUD_FXAMOR, "Transfer");
 
 
             // Prepare a report for the guild and add it using GuildController
@@ -711,105 +689,116 @@ expect(await DOINGUD_AMOR_TOKEN.balanceOf(user1.address)).to.equal((FIFTY_ETHER 
                     
             report = messageHash;
 
-            await GUILD_ONE_CONTROLLERXGUILD.connect(root).addReport(report, v, r, s);
-            // await controller.connect(operator).addReport(report, v, r, s); 
-
-
-
-
-            // expect(await GUILD_ONE_CONTROLLERXGUILD.AMOR()).to.equal(DOINGUD_AMOR_TOKEN.address);
-
-            // Add a proposal in Metadao’s snapshot to remove guild from the metadao
-            // propose
-            // ???
-            // targets = [DOINGUD_METADAO.address];
-            // values = [0];
-            // calldatas = [DOINGUD_METADAO.interface.encodeFunctionData('removeGuild', [GUILD_ONE_GOVERNORXGUILD.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
-
-            // await expect(GUILD_ONE_GOVERNORXGUILD.proposals(0)).to.be.reverted;
-            // await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).propose(targets, values, calldatas);
-            // await expect(GUILD_ONE_GOVERNORXGUILD.proposals(1)).to.be.reverted;
-
-            // const oldProposalId = firstProposalId;
-            // firstProposalId = await GUILD_ONE_GOVERNORXGUILD.proposals(0);
-            // expect(oldProposalId).to.not.equal(firstProposalId);
-
-            // expect((await GUILD_ONE_GOVERNORXGUILD.proposalVoting(firstProposalId)).toString()).to.equals("0");
-            // expect((await GUILD_ONE_GOVERNORXGUILD.proposalWeight(firstProposalId)).toString()).to.equals("0");
-            
-            // // Pass the proposal on the snapshot
-            // time.increase(time.duration.days(1));
-            // // Vote for the proposal in the snapshot
-            // // TODO: add SNAPSHOT INTERACTION HERE
-            // // old(current-to-change): Vote as a guardians to pass the proposal locally            
-            // await GUILD_ONE_GOVERNORXGUILD.connect(staker).castVote(firstProposalId, true);
-            // await GUILD_ONE_GOVERNORXGUILD.connect(operator).castVote(firstProposalId, true);
-            // await GUILD_ONE_GOVERNORXGUILD.connect(user3).castVote(firstProposalId, false);
-            // expect(await GUILD_ONE_GOVERNORXGUILD.proposalVoting(firstProposalId)).to.equals(2);
-            // expect(await GUILD_ONE_GOVERNORXGUILD.proposalWeight(firstProposalId)).to.equals(3);
-
-
-            // // Execute the proposal and for the proposal with guardians
-            // time.increase(time.duration.days(14));
-            // // const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(operator.address);
-
-            // await expect(GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).execute(targets, values, calldatas))
-            //     .to
-            //     .emit(GUILD_ONE_GOVERNORXGUILD, "ProposalExecuted").withArgs(firstProposalId);
-
-            // // const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(operator.address);
-            // // expect(balanceAfter).to.be.gt(balanceBefore);
-
-            // await expect(GUILD_ONE_GOVERNORXGUILD.voters(firstProposalId)).to.be.reverted;
-        
-            
-            
-     
-        
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s);
+            expect((await DOINGUD_CONTROLLER.queueReportsAuthors(0))).to.equal(operator.address);
         });
         it("Vote for the report at the Guild with FXAMOR", async function () {                    
             
             // Gain some amount of donations
+            await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
+            await DOINGUD_AMOR_TOKEN.transfer(user2.address, ONE_HUNDRED_ETHER);
+
+            await DOINGUD_AMOR_TOKEN.connect(user2).approve(DOINGUD_CONTROLLER.address, FIFTY_ETHER);
+            await DOINGUD_AMOR_TOKEN.connect(user1).approve(DOINGUD_CONTROLLER.address, FIFTY_ETHER);
+
+            await expect(DOINGUD_CONTROLLER.connect(user2).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
+            to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
+                to.emit(DOINGUD_FXAMOR, "Transfer");
+
+            await expect(DOINGUD_CONTROLLER.connect(user1).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
+            to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
+                to.emit(DOINGUD_FXAMOR, "Transfer");
             
             // Prepare a report for the guild and add it using GuildController
-            
-            // Support the report using FXAmor        
-        
+                    
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s);
 
-            await AMOR.connect(root).transfer(controller.address, TEST_TRANSFER);
-            await AMOR.connect(root).transfer(operator.address, TEST_TRANSFER);
-            await AMOR.connect(operator).approve(AMORxGuild.address, TEST_TRANSFER);
-            let AMORDeducted = ethers.BigNumber.from((TEST_TRANSFER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
-            let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
-            await AMORxGuild.connect(operator).stakeAmor(operator.address, nextAMORDeducted);
-            await AMORxGuild.connect(operator).approve(GUILD_ONE_CONTROLLERXGUILD.address, nextAMORDeducted);
-            await GUILD_ONE_CONTROLLERXGUILD.connect(operator).donate(TEST_TRANSFER_SMALLER, AMORxGuild.address);        
+            // add 9 more reports
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 1
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 2
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 3
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 4
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 5
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 6
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 7
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 8
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 9
 
+            time.increase(time.duration.days(2));
+            await DOINGUD_CONTROLLER.connect(root).startVoting();
+            expect(await DOINGUD_CONTROLLER.trigger()).to.equal(true);
+
+            // Support the report using FXAmor 
             const id = 0;
             const amount = 2;
-            const sign = true;
-            await GUILD_ONE_CONTROLLERXGUILD.connect(user).voteForReport(id, amount, sign);
-            expect(await GUILD_ONE_CONTROLLERXGUILD.reportsVoting(0)).to.equals(2);
-            expect(await GUILD_ONE_CONTROLLERXGUILD.reportsWeight(0)).to.equals(2);
 
             time.increase(time.duration.days(1));
-            await GUILD_ONE_CONTROLLERXGUILD.connect(operator).voteForReport(id, 1, false);
-            expect(await GUILD_ONE_CONTROLLERXGUILD.reportsVoting(0)).to.equals(1);
-            expect(await GUILD_ONE_CONTROLLERXGUILD.reportsWeight(0)).to.equals(3);
-        
+
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user1).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, 1, false);
+            expect(await DOINGUD_CONTROLLER.reportsVoting(0)).to.equals(3);
+            expect(await DOINGUD_CONTROLLER.reportsWeight(0)).to.equals(5);
         });
         it("Finalize report vote for the Guild with no reports passing", async function () {          
-
             // Gain some amount of donations
-            
+            await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
+            await DOINGUD_AMOR_TOKEN.transfer(user2.address, ONE_HUNDRED_ETHER);
+
+            await DOINGUD_AMOR_TOKEN.connect(user2).approve(DOINGUD_CONTROLLER.address, FIFTY_ETHER);
+            await DOINGUD_AMOR_TOKEN.connect(user1).approve(DOINGUD_CONTROLLER.address, FIFTY_ETHER);
+
+            await expect(DOINGUD_CONTROLLER.connect(user2).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
+            to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
+                to.emit(DOINGUD_FXAMOR, "Transfer");
+
+            await expect(DOINGUD_CONTROLLER.connect(user1).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
+            to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
+                to.emit(DOINGUD_FXAMOR, "Transfer");
+
             // Prepare a report for the guild and add it using GuildController
-            
-            // Vote against the report using FXAmor
-            
+                    
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s);
+
+            // add 9 more reports
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 1
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 2
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 3
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 4
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 5
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 6
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 7
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 8
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 9
+
+            time.increase(time.duration.days(2));
+            await DOINGUD_CONTROLLER.connect(root).startVoting();
+            expect(await DOINGUD_CONTROLLER.trigger()).to.equal(true);
+
+            // Support the report using FXAmor 
+            const id = 0;
+            const amount = 2;
+
+            time.increase(time.duration.days(1));
+
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, false);
+            await DOINGUD_CONTROLLER.connect(user1).voteForReport(id, amount, false);
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, false);
+            expect(await DOINGUD_CONTROLLER.reportsVoting(0)).to.equals(-6);
+            expect(await DOINGUD_CONTROLLER.reportsWeight(0)).to.equals(6);
+
+
+
             // 50% of tokens used in voting should be sent to the voters
             
             // 50% of tokens should be saved until next report voting        
 
+            const balanceBefore = await DOINGUD_AMOR_GUILD_TOKEN.balanceOf(user1.address);
+            time.increase(time.duration.days(14));
+            await DOINGUD_CONTROLLER.connect(operator).finalizeVoting();
+            const balanceAfter = balanceBefore.add(1);
+            expect((await DOINGUD_AMOR_GUILD_TOKEN.balanceOf(user1.address)).toString()).to.equal(balanceAfter.toString());
+        
         });
         it("Finalize report vote for the Guild with part of reports passing", async function () {          
 
@@ -845,4 +834,20 @@ expect(await DOINGUD_AMOR_TOKEN.balanceOf(user1.address)).to.equal((FIFTY_ETHER 
 
         });
     });
+
+
+    // context("Donate AMOR to the Guild", () => {
+    //     it("Should allow a user to donate AMOR to the GuildController", async function () {
+    //       await DOINGUD_AMOR_TOKEN.transfer(user1.address, TEST_TRANSFER);
+    //       await DOINGUD_AMOR_TOKEN.connect(user1).approve(DOINGUD_CONTROLLER.address, TEST_TRANSFER);
+    //       await expect(DOINGUD_CONTROLLER.connect(user1).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
+    //         to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
+    //           to.emit(DOINGUD_FXAMOR, "Transfer");
+  
+    //       await expect(DOINGUD_CONTROLLER.connect(user2).claim(user2.address, [DOINGUD_AMOR_TOKEN.address])).
+    //         to.emit(DOINGUD_AMOR_TOKEN, "Transfer");
+  
+    //       expect(await DOINGUD_AMOR_TOKEN.balanceOf(user2.address)).to.equal((FIFTY_ETHER * 0.9 * 0.2 * 0.95).toString());
+    //     });
+    //   });
 });
