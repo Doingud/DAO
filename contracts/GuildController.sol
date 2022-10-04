@@ -115,11 +115,7 @@ contract GuildController is IGuildController, Ownable {
     /// @notice called by donate and gatherDonation, distributes amount of tokens between
     /// all of the impact makers based on their weight.
     /// Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers
-    function distribute(
-        uint256 amount,
-        address token,
-        address sender
-    ) internal returns (uint256) {
+    function distribute(uint256 amount, address token) internal returns (uint256) {
         // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (amount * weights[impactMakers[i]]) / totalWeight;
@@ -142,7 +138,7 @@ contract GuildController is IGuildController, Ownable {
         IMetaDaoController(MetaDaoController).claimToken(token);
 
         // distribute those tokens
-        distribute(amount, token, MetaDaoController);
+        distribute(amount, token);
     }
 
     /// @notice allows to donate AMORxGuild tokens to the Guild
@@ -202,7 +198,7 @@ contract GuildController is IGuildController, Ownable {
 
         IERC20(token).safeTransferFrom(msg.sender, address(this), decAmount);
 
-        distribute(decAmount, token, msg.sender); // distribute other 90%
+        distribute(decAmount, token); // distribute other 90%
 
         return amorxguildAmount;
     }

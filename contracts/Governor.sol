@@ -299,7 +299,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @param proposalId ID of the proposal
     /// @param support Boolean value: true (for) or false (against) user is voting
     function castVote(uint256 proposalId, bool support) external onlyGuardian {
-        ProposalCore storage proposal = _proposals[proposalId];
         if (state(proposalId) != ProposalState.Active) {
             revert InvalidState();
         }
@@ -378,8 +377,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
             return ProposalState.Pending;
         }
 
-        uint256 deadline = _proposals[proposalId].voteEnd;
-
         if (proposal.voteEnd >= block.timestamp) {
             return ProposalState.Active;
         }
@@ -400,7 +397,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// Proposal should achieve at least 20% approval of guardians, to be cancelled
     /// @param proposalId ID of the proposal
     function castVoteForCancelling(uint256 proposalId) external onlyGuardian {
-        ProposalCore storage proposal = _proposals[proposalId];
         ProposalState state = state(proposalId);
 
         if (state != ProposalState.Active) {

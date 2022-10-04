@@ -82,7 +82,7 @@ contract MetaDaoControllerMock is IMetadao, AccessControl {
     /// @notice Checks that a token is whitelisted
     /// @param  token address of the ERC20 token being checked
     /// @return bool true if token whitelisted, false if not whitelisted
-    function isWhitelisted(address token) external returns (bool) {
+    function isWhitelisted(address token) external view returns (bool) {
         if (whitelist[token] == 0) {
             revert NotListed();
         }
@@ -102,7 +102,7 @@ contract MetaDaoControllerMock is IMetadao, AccessControl {
         return amount;
     }
 
-    function getGuildFunds(address token, address controller) external returns (uint256) {
+    function getGuildFunds(address token, address controller) external view returns (uint256) {
         return guildFunds[controller][token];
     }
 }
