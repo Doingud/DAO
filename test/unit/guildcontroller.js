@@ -647,7 +647,7 @@ describe('unit - Contract: GuildController', function () {
         it('it sets new voting period', async function () {
             let newTime = 60 * 60 *24 * 2;
             await controller.connect(root).setVotingPeriod(newTime);
-            expect((await controller.ADDITIONAL_VOTING_TIME())).to.equal(newTime);
+            expect((await controller.additionalVotingTime())).to.equal(newTime);
         });
     });
 

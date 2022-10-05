@@ -45,7 +45,7 @@ contract GuildController is IGuildController, Ownable {
     uint256[] public reportsQueue;
     mapping(uint256 => address) public queueReportsAuthors;
 
-    uint256 public ADDITIONAL_VOTING_TIME;
+    uint256 public additionalVotingTime;
     uint256 public constant WEEK = 7 days; // 1 week is the time for the users to vore for the specific report
     uint256 public constant DAY = 1 days;
     uint256 public constant HOUR = 1 hours;
@@ -91,10 +91,6 @@ contract GuildController is IGuildController, Ownable {
         FXGFXAMORxGuild = IFXAMORxGuild(FXAMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
         MetaDaoController = MetaDaoController_;
-        ADDITIONAL_VOTING_TIME = 0;
-
-        trigger = false;
-        timeVoting = 0;
 
         _initialized = true;
         emit Initialized(_initialized, initOwner, AMORxGuild_);
@@ -105,7 +101,7 @@ contract GuildController is IGuildController, Ownable {
         if (newTime < 2 days) {
             revert InvalidAmount();
         }
-        ADDITIONAL_VOTING_TIME = newTime;
+        additionalVotingTime = newTime;
     }
 
     function setPercentToConvert(uint256 newPercentToConvert) external onlyOwner {
@@ -262,7 +258,7 @@ contract GuildController is IGuildController, Ownable {
         }
 
         //check if the week has passed - can vote only a week from first vote
-        if (block.timestamp > (timeVoting + ADDITIONAL_VOTING_TIME)) {
+        if (block.timestamp > (timeVoting + additionalVotingTime)) {
             revert VotingTimeExpired();
         }
 
@@ -292,7 +288,7 @@ contract GuildController is IGuildController, Ownable {
             revert ReportNotExists();
         }
 
-        if (block.timestamp < (timeVoting + ADDITIONAL_VOTING_TIME)) {
+        if (block.timestamp < (timeVoting + additionalVotingTime)) {
             revert VotingTimeNotFinished();
         }
 
@@ -358,7 +354,7 @@ contract GuildController is IGuildController, Ownable {
     function startVoting() external {
         // nothing to finalize
         // startVoting will not start voting if there is another voting in progress
-        if (block.timestamp < (timeVoting + ADDITIONAL_VOTING_TIME)) {
+        if (block.timestamp < (timeVoting + additionalVotingTime)) {
             revert VotingTimeNotFinished();
         }
 
@@ -369,7 +365,7 @@ contract GuildController is IGuildController, Ownable {
 
         // if the voting time is over, then startVoting will first call finalizeVoting and then start it's own functional
         // if timeVoting == 0 then skip call finalizeVoting for the first start
-        if (block.timestamp >= (timeVoting + ADDITIONAL_VOTING_TIME) && timeVoting != 0) {
+        if (block.timestamp >= (timeVoting + additionalVotingTime) && timeVoting != 0) {
             finalizeVoting();
         }
 
