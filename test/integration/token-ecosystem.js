@@ -231,7 +231,7 @@ const setupTests = deployments.createFixture(async () => {
   GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxOne);
   GUILD_ONE_AVATARXGUILD = AVATARXGUILD.attach(AvatarxOne);
 
-  await DOINGUD_METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
+  await DOINGUD_METADAO.createGuild(root.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
   let AmorxTwo = await CLONE_FACTORY.amorxGuildTokens(1);
   let ControllerxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 2);
   /* The below objects are required in later integration testing PRs
@@ -242,6 +242,7 @@ const setupTests = deployments.createFixture(async () => {
   */
 
   GUILD_TWO_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(ControllerxTwo);
+  await GUILD_TWO_CONTROLLERXGUILD.setImpactMakers(IMPACT_MAKERS, IMPACT_MAKERS_WEIGHTS);
   /* The below GUILD_TWO objects will be required later on
   GUILD_TWO_AMORXGUILD = AMOR_GUILD_TOKEN.attach(AmorxTwo);
   GUILD_TWO_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(DAmorxTwo);
@@ -358,6 +359,7 @@ const setupTests = deployments.createFixture(async () => {
         await DOINGUD_METADAO.donate(ERC20_TOKEN.address, FIFTY_ETHER, 1);
         await GUILD_TWO_CONTROLLERXGUILD.gatherDonation(ERC20_TOKEN.address);
         expect(await ERC20_TOKEN.balanceOf(GUILD_TWO_CONTROLLERXGUILD.address)).to.equal((FIFTY_ETHER*150/250).toString());
+        expect(await GUILD_TWO_CONTROLLERXGUILD.claimableTokens(user2.address, ERC20_TOKEN.address)).to.equal((FIFTY_ETHER * (0.9) / 5).toString());
       });
     });
 
@@ -405,13 +407,6 @@ const setupTests = deployments.createFixture(async () => {
         await GUILD_ONE_AMORXGUILD.connect(user1).approve(GUILD_ONE_DAMORXGUILD.address, amountAmorxOne);
         let oneYear = await time.duration.years(1);
         await GUILD_ONE_DAMORXGUILD.connect(user1).stake(ethers.BigNumber.from(amountAmorxOne.toString()), oneYear.toString());
-        //expect(await CLONE_FACTORY.guildComponents(GUILD_ONE_AMORXGUILD.address, 0)).to.equal(GUILD_ONE_DAMORXGUILD.address);
-      });
-    });
-
-    context("Vote for proposal using dAMORxGuild", () => {
-      it("Should allow a passed proposal to be executed", async function () {
-
       });
     });
 
