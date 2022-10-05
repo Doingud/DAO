@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
-
+import "hardhat/console.sol";
 /**
  * @title   DoinGud: Governor.sol
  * @author  Daoism Systems
@@ -264,7 +264,9 @@ contract DoinGudGovernor is IDoinGudGovernor {
         if (targets.length == 0) {
             revert InvalidParameters();
         }
-
+proposalMaxOperations = 10;
+console.log("proposalMaxOperations is %s", proposalMaxOperations);
+console.log("targets.length is %s", targets.length);
         if (targets.length > proposalMaxOperations) {
             revert InvalidParameters();
         }
@@ -343,7 +345,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
         if (status != ProposalState.Succeeded) {
             revert InvalidState();
         }
-
+console.log("msg.sender is %s", msg.sender);
+console.log("governor address(this) is %s", address(this));
         for (uint256 i = 0; i < targets.length; ++i) {
             bool success = IAvatarxGuild(avatarAddress).executeProposal(
                 targets[i],

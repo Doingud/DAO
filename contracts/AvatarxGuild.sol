@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity 0.8.15;
-
+import "hardhat/console.sol";
 /**
  * @title  DoinGud: AvatarxGuild.sol
  * @author Daoism Systems
@@ -200,6 +200,9 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         bytes memory proposal,
         Enum.Operation operation
     ) public onlyGovernor returns (bool) {
+        console.log("avatar msg.sender is %s", msg.sender);
+        console.log("target is %s", target);
+        console.log("uint8(operation) is %s", uint8(operation));
         bool success;
         if (uint8(operation) == 1) (success, ) = target.delegatecall(proposal);
         else (success, ) = target.call{value: value}(proposal);

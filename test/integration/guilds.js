@@ -463,10 +463,10 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         });
 
         it("Donate Guild’s fund from the Avatar contract: VOTE IN SNAPSHOT", async function () {      
-            await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
+            await DOINGUD_AMOR_TOKEN.transfer(authorizer_adaptor.address, ONE_HUNDRED_ETHER);
             console.log("GUILD_ONE_AVATARXGUILD.address is %s", GUILD_ONE_AVATARXGUILD.address);
             // TODO: NEED TO APPROVE FROM AVATAR TO CONTROLLER because safeTransferFrom from donate() is not working
-            // await DOINGUD_AMOR_TOKEN.connect(GUILD_ONE_AVATARXGUILD).approve(GUILD_ONE_CONTROLLERXGUILD.address, TEST_TRANSFER);
+            await DOINGUD_AMOR_TOKEN.connect(authorizer_adaptor).approve(GUILD_ONE_CONTROLLERXGUILD.address, TEST_TRANSFER);
 
             guardians = [staker.address, operator.address, user3.address];
             await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).setGuardians(guardians);
@@ -476,9 +476,31 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             // Add a proposal in guild’s snapshot to donate guild’s funds to the impact makers
             // propose
             // ???
+            console.log("authorizer_adaptor.address is %s", authorizer_adaptor.address);
+            console.log("GUILD_ONE_CONTROLLERXGUILD.address is %s", GUILD_ONE_CONTROLLERXGUILD.address);
+            calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+            // failed
+
+            targets = [DOINGUD_AMOR_TOKEN.address, GUILD_ONE_CONTROLLERXGUILD.address];
+            values = [0, 0];
+            calldatas = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('approve', [GUILD_ONE_CONTROLLERXGUILD.address, FIFTY_ETHER]), GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+            // failed
+
             targets = [GUILD_ONE_CONTROLLERXGUILD.address];
             values = [0];
-            calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+            calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('gatherDonation', [DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+            // failed
+   
+            await DOINGUD_AMOR_TOKEN.transfer(user2.address, ONE_HUNDRED_ETHER);
+            await DOINGUD_METADAO.addWhitelist(DOINGUD_AMOR_TOKEN.address);
+            await DOINGUD_AMOR_TOKEN.approve(DOINGUD_METADAO.address, ONE_HUNDRED_ETHER);
+            await DOINGUD_METADAO.donate(DOINGUD_AMOR_TOKEN.address, FIFTY_ETHER, 0); //      Error: VM Exception while processing transaction: reverted with an unrecognized custom error
+            await DOINGUD_METADAO.connect(user2).donate(DOINGUD_AMOR_TOKEN.address, FIFTY_ETHER, 0);
+
+            targets = [GUILD_ONE_CONTROLLERXGUILD.address];
+            values = [0];
+            calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('gatherDonation', [DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+            // failed
 
             await expect(GUILD_ONE_GOVERNORXGUILD.proposals(0)).to.be.reverted;
             await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).propose(targets, values, calldatas);
@@ -494,7 +516,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             // Pass the proposal on the snapshot
             time.increase(time.duration.days(1));
             // Vote for the proposal in the snapshot
-            // TODO: add SNAPSHOT INTERACTION HERE
+            // TODO: change to SNAPSHOT INTERACTION HERE
             // old(current-to-change): Vote as a guardians to pass the proposal locally            
             await GUILD_ONE_GOVERNORXGUILD.connect(staker).castVote(firstProposalId, true);
             await GUILD_ONE_GOVERNORXGUILD.connect(operator).castVote(firstProposalId, true);
@@ -512,7 +534,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
                 .emit(GUILD_ONE_GOVERNORXGUILD, "ProposalExecuted").withArgs(firstProposalId);
 
             const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(operator.address);
-            expect(balanceAfter).to.be.gt(balanceBefore);
+            expect(balanceAfter).to.be.gt(balanceBefore.toString());
 
             await expect(GUILD_ONE_GOVERNORXGUILD.voters(firstProposalId)).to.be.reverted;
         });

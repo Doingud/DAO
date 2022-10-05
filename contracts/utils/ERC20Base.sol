@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-
+import "hardhat/console.sol";
 pragma solidity 0.8.15;
 
 /**
@@ -116,6 +116,8 @@ abstract contract ERC20Base is Context, IERC20 {
      */
     function transfer(address to, uint256 amount) public virtual override returns (bool) {
         address owner = _msgSender();
+        // console.log("to is %s", to);
+        // console.log("owner is %s", owner);
         _transfer(owner, to, amount);
         return true;
     }

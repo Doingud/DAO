@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
-
+import "hardhat/console.sol";
 import "./utils/interfaces/IAmorGuildToken.sol";
 import "./utils/interfaces/IFXAMORxGuild.sol";
 import "./utils/interfaces/IGuildController.sol";
@@ -124,6 +124,7 @@ contract GuildController is IGuildController, Ownable {
         address token,
         address sender
     ) internal returns (uint256) {
+        console.log("22 is %s", 22);
         // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (amount * weights[impactMakers[i]]) / totalWeight;
@@ -136,12 +137,14 @@ contract GuildController is IGuildController, Ownable {
     /// @notice gathers donation from MetaDaoController in specific token
     /// and calles distribute function for the whole amount of gathered tokens
     function gatherDonation(address token) public {
+        console.log("called is %s");
         // check if token in the whitelist of the MetaDaoController
         IMetaDaoController(MetaDaoController).isWhitelisted(token);
-
+console.log("11 is %s", 11);
         uint256 amount = IMetaDaoController(MetaDaoController).guildFunds(address(this), token);
+console.log("111 is %s", 111);
         IMetaDaoController(MetaDaoController).claimToken(token);
-
+console.log("1 is %s", 1);
         // distribute those tokens
         distribute(amount, token, MetaDaoController);
     }
