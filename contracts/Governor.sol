@@ -97,6 +97,7 @@ contract DoinGudGovernor {
         uint256 startBlock,
         uint256 endBlock
     );
+    event ChangedGuardiansLimit(uint256 newLimit);
 
     string public _name;
     bool private _initialized;
@@ -256,6 +257,7 @@ contract DoinGudGovernor {
     /// @param newLimit New limit value
     function changeGuardiansLimit(uint256 newLimit) external onlyAvatar {
         GUARDIANS_LIMIT = newLimit;
+        emit ChangedGuardiansLimit(newLimit);
     }
 
     /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote.

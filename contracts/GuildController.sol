@@ -203,7 +203,7 @@ contract GuildController is IGuildController, Ownable {
 
         uint256 decTaxCorrectedAmount = IERC20(token).balanceOf(address(this)) - tokenBefore;
 
-        distribute(decAmount, token); // distribute other 90%
+        distribute(decTaxCorrectedAmount, token); // distribute other 90%
 
         return amorxguildAmount;
     }
