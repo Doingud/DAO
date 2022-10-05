@@ -923,8 +923,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             const balanceBefore2 = await DOINGUD_AMOR_GUILD_TOKEN.balanceOf(user2.address);
             const balanceBefore3 = await DOINGUD_AMOR_GUILD_TOKEN.balanceOf(operator.address);
 
-            const allAmount = amount * 3 * 10; // voters = 3; voted reports = 10
-console.log("allAmount is %s", allAmount);
             // 18 = 3 * 6, where 6 = 4 negative + 2 positive; 3 = amount of non passed reports
             let amountToController = 3 * 4; // 4 negative; 3 = amount of non passed reports
 
@@ -943,25 +941,145 @@ console.log("allAmount is %s", allAmount);
         
             // Remaining tokens are distributed between passed reports
             const fiftyToCreator = amount * 3 * 7 / 2;
-            console.log("fiftyToCreator is %s", fiftyToCreator);
-            const balanceAfter3 = balanceBefore3.add(fiftyToCreator);//.add(amount * 7 / 2);
+            const balanceAfter3 = balanceBefore3.add(fiftyToCreator);
             expect((await DOINGUD_AMOR_GUILD_TOKEN.balanceOf(operator.address)).toString()).to.equal(balanceAfter3.toString());
         });
         it("Finalize report vote for the Guild with all of the reports passing", async function () {          
-
-            
             // Gain some amount of donations
-            
-            // Prepare 2 reports for the guild and add it using GuildController
-            
-            // Vote for 2 reports using FXAmor
-            
+            await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
+            await DOINGUD_AMOR_TOKEN.transfer(user2.address, ONE_HUNDRED_ETHER);
+
+            await DOINGUD_AMOR_TOKEN.connect(user2).approve(DOINGUD_CONTROLLER.address, FIFTY_ETHER);
+            await DOINGUD_AMOR_TOKEN.connect(user1).approve(DOINGUD_CONTROLLER.address, FIFTY_ETHER);
+
+            await expect(DOINGUD_CONTROLLER.connect(user2).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
+            to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
+                to.emit(DOINGUD_FXAMOR, "Transfer");
+
+            await expect(DOINGUD_CONTROLLER.connect(user1).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
+            to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
+                to.emit(DOINGUD_FXAMOR, "Transfer");
+
+            // Prepare reports for the guild and add it using GuildController
+                    
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s);
+
+            // add 9 more reports
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 1
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 2
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 3
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 4
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 5
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 6
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 7
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 8
+            await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s); // 9
+
+            time.increase(time.duration.days(2));
+            await DOINGUD_CONTROLLER.connect(root).startVoting();
+            expect(await DOINGUD_CONTROLLER.trigger()).to.equal(true);
+
+            // Vote for 2 reports using FXAmor and against 1 report
+
+            // Support the report using FXAmor 
+            let id = 0;
+            const amount = 2; // all amount for each report = 6
+
+            time.increase(time.duration.days(1));
+
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user1).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            expect(await DOINGUD_CONTROLLER.reportsVoting(id)).to.equals(6);
+            expect(await DOINGUD_CONTROLLER.reportsWeight(id)).to.equals(6);
+
+            id = 1;
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user1).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            expect(await DOINGUD_CONTROLLER.reportsVoting(id)).to.equals(6);
+            expect(await DOINGUD_CONTROLLER.reportsWeight(id)).to.equals(6);
+
+            id = 2;
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user1).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            expect(await DOINGUD_CONTROLLER.reportsVoting(id)).to.equals(6);
+            expect(await DOINGUD_CONTROLLER.reportsWeight(id)).to.equals(6);
+
+            id = 3;
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user1).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            expect(await DOINGUD_CONTROLLER.reportsVoting(id)).to.equals(6);
+            expect(await DOINGUD_CONTROLLER.reportsWeight(id)).to.equals(6);
+
+            id = 4;
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user1).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            expect(await DOINGUD_CONTROLLER.reportsVoting(id)).to.equals(6);
+            expect(await DOINGUD_CONTROLLER.reportsWeight(id)).to.equals(6);
+
+            id = 5;
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user1).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            expect(await DOINGUD_CONTROLLER.reportsVoting(id)).to.equals(6);
+            expect(await DOINGUD_CONTROLLER.reportsWeight(id)).to.equals(6);
+
+            id = 6;
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user1).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            expect(await DOINGUD_CONTROLLER.reportsVoting(id)).to.equals(6);
+            expect(await DOINGUD_CONTROLLER.reportsWeight(id)).to.equals(6);
+
+            id = 7;
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user1).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            expect(await DOINGUD_CONTROLLER.reportsVoting(id)).to.equals(6);
+            expect(await DOINGUD_CONTROLLER.reportsWeight(id)).to.equals(6);
+
+            id = 8;
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user1).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            expect(await DOINGUD_CONTROLLER.reportsVoting(id)).to.equals(6);
+            expect(await DOINGUD_CONTROLLER.reportsWeight(id)).to.equals(6);
+
+            id = 9;
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user1).voteForReport(id, amount, true);
+            await DOINGUD_CONTROLLER.connect(user2).voteForReport(id, amount, true);
+            expect(await DOINGUD_CONTROLLER.reportsVoting(id)).to.equals(6);
+            expect(await DOINGUD_CONTROLLER.reportsWeight(id)).to.equals(6);
+
             // Finalize the voting and check that:
             //     The tokens are distributed based on the weight
             //     50% of the tokens goes to the people who voted for passing reports
             //     Remaining tokens are distributed between passed reports
-        
 
+            const balanceBefore1 = await DOINGUD_AMOR_GUILD_TOKEN.balanceOf(user1.address);
+            const balanceBefore2 = await DOINGUD_AMOR_GUILD_TOKEN.balanceOf(user2.address);
+            const balanceBefore3 = await DOINGUD_AMOR_GUILD_TOKEN.balanceOf(operator.address);
+
+            let allAmount = 2 * 3 * 10;
+            let amountToVoter = allAmount / 2 / 3;
+            time.increase(time.duration.days(14));
+            await DOINGUD_CONTROLLER.connect(operator).finalizeVoting();
+
+            // 50% of the tokens goes to the people who voted for passing reports
+            const balanceAfter1 = balanceBefore1.add(amountToVoter);
+            const balanceAfter2 = balanceBefore2.add(amountToVoter * 2);
+            expect((await DOINGUD_AMOR_GUILD_TOKEN.balanceOf(user1.address)).toString()).to.equal(balanceAfter1.toString());
+            expect((await DOINGUD_AMOR_GUILD_TOKEN.balanceOf(user2.address)).toString()).to.equal(balanceAfter2.toString());
+        
+            // Remaining tokens are distributed between passed reports
+            const fiftyToCreator = allAmount / 2;
+            const balanceAfter3 = balanceBefore3.add(fiftyToCreator);
+            expect((await DOINGUD_AMOR_GUILD_TOKEN.balanceOf(operator.address)).toString()).to.equal(balanceAfter3.toString());       
         });
     });
 });
