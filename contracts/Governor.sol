@@ -44,8 +44,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
     using SafeCast for uint256;
 
     struct ProposalCore {
-        uint256 voteStart;
-        uint256 voteEnd;
+        uint96 voteStart;
+        uint96 voteEnd;
         bool executed;
         bool canceled;
     }
@@ -91,8 +91,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
     string public _name;
     bool private _initialized;
 
-    uint256 private _votingDelay;
-    uint256 private _votingPeriod;
+    uint96 private _votingDelay;
+    uint96 private _votingPeriod;
 
     error AlreadyInitialized();
     error NotEnoughGuardians();
@@ -266,8 +266,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert InvalidState();
         }
 
-        uint256 snapshot = block.timestamp + _votingDelay;
-        uint256 deadline = snapshot + _votingPeriod;
+        uint96 snapshot = uint96(block.timestamp + _votingDelay);
+        uint96 deadline = snapshot + _votingPeriod;
 
         proposal.voteStart = snapshot;
         proposal.voteEnd = deadline;
