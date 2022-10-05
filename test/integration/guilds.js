@@ -508,13 +508,21 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             // calldatas = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('approve', [GUILD_ONE_CONTROLLERXGUILD.address, FIFTY_ETHER]), GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
             // failed
 
-            await DOINGUD_AMOR_TOKEN.transfer(DOINGUD_AVATAR.address, ONE_HUNDRED_ETHER);
+            // await DOINGUD_AMOR_TOKEN.transfer(DOINGUD_AVATAR.address, ONE_HUNDRED_ETHER);
 
-            targets = [GUILD_ONE_CONTROLLERXGUILD.address];
-            values = [0];
-            calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+            // targets = [GUILD_ONE_CONTROLLERXGUILD.address];
+            // values = [0];
+            // calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
             // failed
 
+            await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
+
+            targets = [GUILD_ONE_AVATARXGUILD.address];
+            values = [0];
+            // calldatas = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('transfer', user3.address, 20)]; // Error: types/values length mismatch (count={"types":2,"values":42}, value={"types":[{" ...
+            calldatas = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('transfer', [user3.address, 20])];
+            // failed
+   
             
             await expect(GUILD_ONE_GOVERNORXGUILD.proposals(0)).to.be.reverted;
             await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).propose(targets, values, calldatas);
