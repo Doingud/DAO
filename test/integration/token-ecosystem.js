@@ -339,17 +339,21 @@ const setupTests = deployments.createFixture(async () => {
       });
 
       it("Should allow a user to donate ERC20 tokens according to the custom index", async function () {
+        const guildOneWeight = 100;
+        const guildTwoWeight = 150;
+        const totalWeight = guildOneWeight + guildTwoWeight;
+
         const abi = ethers.utils.defaultAbiCoder;
         let encodedIndex = abi.encode(
             ["tuple(address, uint256)"],
             [
-            [GUILD_ONE_CONTROLLERXGUILD.address, 100]
+            [GUILD_ONE_CONTROLLERXGUILD.address, guildOneWeight]
             ]
         );
         let encodedIndex2 = abi.encode(
             ["tuple(address, uint256)"],
             [
-            [GUILD_TWO_CONTROLLERXGUILD.address, 150]
+            [GUILD_TWO_CONTROLLERXGUILD.address, guildTwoWeight]
             ]
         );
 
@@ -358,8 +362,9 @@ const setupTests = deployments.createFixture(async () => {
         await ERC20_TOKEN.approve(DOINGUD_METADAO.address, ONE_HUNDRED_ETHER);
         await DOINGUD_METADAO.donate(ERC20_TOKEN.address, FIFTY_ETHER, 1);
         await GUILD_TWO_CONTROLLERXGUILD.gatherDonation(ERC20_TOKEN.address);
-        expect(await ERC20_TOKEN.balanceOf(GUILD_TWO_CONTROLLERXGUILD.address)).to.equal((FIFTY_ETHER*150/250).toString());
-        expect(await GUILD_TWO_CONTROLLERXGUILD.claimableTokens(user2.address, ERC20_TOKEN.address)).to.equal((FIFTY_ETHER * (0.9) / 5).toString());
+        let expectedAmount = FIFTY_ETHER * guildTwoWeight / totalWeight;
+        expect(await ERC20_TOKEN.balanceOf(GUILD_TWO_CONTROLLERXGUILD.address)).to.equal((expectedAmount).toString());
+        expect(await GUILD_TWO_CONTROLLERXGUILD.claimableTokens(user2.address, ERC20_TOKEN.address)).to.equal(((expectedAmount / 5).toString()));
       });
     });
 
