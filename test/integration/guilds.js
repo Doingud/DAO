@@ -77,8 +77,8 @@ let DOINGUD_METADAO;
 
 
 let GUILD_ONE_AMORXGUILD;
-// let GUILD_ONE_DAMORXGUILD;
-// let GUILD_ONE_FXAMORXGUILD;
+let GUILD_ONE_DAMORXGUILD;
+let GUILD_ONE_FXAMORXGUILD;
 let GUILD_ONE_CONTROLLERXGUILD;
 let GUILD_ONE_GOVERNORXGUILD;
 let GUILD_ONE_AVATARXGUILD;
@@ -546,7 +546,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             // Pass the proposal on the snapshot
             time.increase(time.duration.days(1));
             // Vote for the proposal in the snapshot
-            // TODO: change to SNAPSHOT INTERACTION HERE
+            // TODO: change to SNAPSHOT INTERACTION HERE: CONNECT TO ZODIAC MODULE (CLONE REPO AND RUN HERE)
             // old(current-to-change): Vote as a guardians to pass the proposal locally            
             await GUILD_ONE_GOVERNORXGUILD.connect(staker).castVote(approveProposalId, true);
             await GUILD_ONE_GOVERNORXGUILD.connect(operator).castVote(approveProposalId, true);
