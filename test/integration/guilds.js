@@ -562,7 +562,8 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
             // Execute the proposal and for the proposal with guardians
             time.increase(time.duration.days(14));
-            const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(user3.address);
+            const balanceBeforeAvatar = await DOINGUD_AMOR_TOKEN.balanceOf(GUILD_ONE_AVATARXGUILD.address);
+            const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(GUILD_ONE_CONTROLLERXGUILD.address);
 
             await expect(GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).execute(targets_approve, values_approve, calldatas_approve))
                 .to
@@ -574,11 +575,15 @@ describe("Integration: DoinGud guilds ecosystem", function () {
                 .emit(GUILD_ONE_GOVERNORXGUILD, "ProposalExecuted").withArgs(transferProposalId);
             console.log("   passed transfer");
 
-            const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(user3.address);
-            expect(balanceAfter).to.be.gt(balanceBefore.toString());
+            const balanceAfterAvatar = await DOINGUD_AMOR_TOKEN.balanceOf(GUILD_ONE_AVATARXGUILD.address);
+            const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(GUILD_ONE_CONTROLLERXGUILD.address);
+
+            expect(balanceAfterAvatar).to.be.lt(balanceBeforeAvatar);
+            expect(balanceAfter).to.be.gt(balanceBefore);
 
             firstProposalId = approveProposalId;
-            await expect(GUILD_ONE_GOVERNORXGUILD.voters(firstProposalId)).to.be.reverted;
+            await expect(GUILD_ONE_GOVERNORXGUILD.voters(approveProposalId)).to.be.reverted;
+            await expect(GUILD_ONE_GOVERNORXGUILD.voters(transferProposalId)).to.be.reverted;
         });
     
         it("Remove guild from the MetaDAO: VOTE IN SNAPSHOT", async function () {          
