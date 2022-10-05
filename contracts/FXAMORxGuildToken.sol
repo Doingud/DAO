@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity 0.8.15;
-
+import "hardhat/console.sol";
 /**
  * @title  DoinGud: FXAMORxGuild.sol
  * @author Daoism Systems
@@ -131,19 +131,25 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     /// @param  to Address where FXAMORxGuild must be minted to
     /// @param  amount uint256 amount of AMORxGuild to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
-    function stake(address to, uint256 amount) external onlyAddress(_owner) returns (uint256) {
+    function stake(address to, uint256 amount) external /*onlyAddress(_owner)*/ returns (uint256) {
+        console.log("   fx 01 is %s", 11);
+
         if (to == msg.sender) {
             revert InvalidSender();
         }
         if (to == address(0)) {
             revert AddressZero();
         }
-
+        console.log("   fx 02 is %s", 12);
+console.log("   AMORxGuild.balanceOf(msg.sender) is %s", AMORxGuild.balanceOf(msg.sender));
+console.log("   amount is %s", amount);
         if (AMORxGuild.balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }
+        console.log("   fx 1 is %s", 1);
         // send to FXAMORxGuild contract to stake
         AMORxGuild.safeTransferFrom(msg.sender, address(this), amount);
+        console.log("   fx 2 is %s", 2);
 
         // mint FXAMORxGuild tokens to staker
         // Tokens are minted 1:1.

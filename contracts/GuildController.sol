@@ -155,17 +155,18 @@ contract GuildController is IGuildController, Ownable {
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     // Requires the msg.sender to `approve` amount prior to calling this function
     function donate(uint256 allAmount, address token) external returns (uint256) {
+console.log("0 is %s", 0);
         // check if token in the whitelist of the MetaDaoController
         IMetaDaoController(MetaDaoController).isWhitelisted(token);
-
+console.log("1 is %s", 1);
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
         if (IERC20(token).balanceOf(msg.sender) < allAmount || allAmount < 10) {
             revert InvalidAmount();
         }
-
+console.log("2 is %s", 2);
         uint256 amount = (allAmount * percentToConvert) / FEE_DENOMINATOR; // 10% of tokens
         uint256 amorxguildAmount = amount;
-
+console.log("3 is %s", 3);
         // 10% of the tokens in the impact pool are getting:
         if (token != AMORxGuild && token != AMOR) {
             // recieve tokens
@@ -191,23 +192,26 @@ contract GuildController is IGuildController, Ownable {
             // token == AMORxGuild
             ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amorxguildAmount);
         }
-
+console.log("4 is %s", 4);
         if (token == AMORxGuild || token == AMOR) {
             // 3.Staked in the FXAMORxGuild tokens,
             // which are going to be owned by the user.
             ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);
+console.log("4.1 is %s", 41);
+console.log("FXGFXAMORxGuild is %s", address(FXGFXAMORxGuild));
             FXGFXAMORxGuild.stake(msg.sender, amorxguildAmount); // from address(this)
+console.log("4.2 is %s", 42);
         }
         uint256 decAmount = allAmount - amount; //decreased amount: other 90%
 
         uint256 tokenBefore = IERC20(token).balanceOf(address(this));
-
+console.log("5 is %s", 5);
         IERC20(token).safeTransferFrom(msg.sender, address(this), decAmount);
 
         uint256 decTaxCorrectedAmount = IERC20(token).balanceOf(address(this)) - tokenBefore;
-
+console.log("6 is %s", 6);
         distribute(decTaxCorrectedAmount, token, msg.sender); // distribute other 90%
-
+console.log("7 is %s", 7);
         return amorxguildAmount;
     }
 

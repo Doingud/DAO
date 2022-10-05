@@ -464,7 +464,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
         it("Donate Guild’s fund from the Avatar contract: VOTE IN SNAPSHOT", async function () {      
             await DOINGUD_AMOR_TOKEN.transfer(authorizer_adaptor.address, ONE_HUNDRED_ETHER);
-            console.log("GUILD_ONE_AVATARXGUILD.address is %s", GUILD_ONE_AVATARXGUILD.address);
             // TODO: NEED TO APPROVE FROM AVATAR TO CONTROLLER because safeTransferFrom from donate() is not working
             await DOINGUD_AMOR_TOKEN.connect(authorizer_adaptor).approve(GUILD_ONE_CONTROLLERXGUILD.address, TEST_TRANSFER);
 
@@ -477,13 +476,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             // propose
             // ???
             // calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
-            // failed
-
-            targets_approve = [DOINGUD_AMOR_TOKEN.address];
-            values_approve = [0];
-            // calldatas_approve = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('approve', [GUILD_ONE_AVATARXGUILD.address, FIFTY_ETHER])];
-            calldatas_approve = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('approve', [GUILD_ONE_CONTROLLERXGUILD.address, FIFTY_ETHER])];
-
             // failed
 
             // targets = [GUILD_ONE_CONTROLLERXGUILD.address];
@@ -516,17 +508,26 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             // values = [0];
             // calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
             // failed
+
+            console.log("GUILD_ONE_AVATARXGUILD.address is %s", GUILD_ONE_AVATARXGUILD.address);
             console.log("DOINGUD_AMOR_TOKEN.address is %s", DOINGUD_AMOR_TOKEN.address);
+            console.log("GUILD_ONE_CONTROLLERXGUILD.address is %s", GUILD_ONE_CONTROLLERXGUILD.address);
             await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
 
-            targets = [GUILD_ONE_AVATARXGUILD.address];
+            targets_approve = [DOINGUD_AMOR_TOKEN.address];
+            values_approve = [0];
+            // calldatas_approve = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('approve', [GUILD_ONE_AVATARXGUILD.address, FIFTY_ETHER])];
+            calldatas_approve = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('approve', [GUILD_ONE_CONTROLLERXGUILD.address, FIFTY_ETHER])];
+
+
+            targets = [GUILD_ONE_CONTROLLERXGUILD.address];
             values = [0];
             // calldatas = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('transfer', user3.address, 20)]; // Error: types/values length mismatch (count={"types":2,"values":42}, value={"types":[{" ...
             // calldatas = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('transfer', [user3.address, 20])];
             calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
             // failed
-   
-            
+
+
             await expect(GUILD_ONE_GOVERNORXGUILD.proposals(0)).to.be.reverted;
             await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).propose(targets_approve, values_approve, calldatas_approve);
             await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).propose(targets, values, calldatas);
@@ -561,7 +562,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
             // Execute the proposal and for the proposal with guardians
             time.increase(time.duration.days(14));
-            const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(operator.address);
+            const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(user3.address);
 
             await expect(GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).execute(targets_approve, values_approve, calldatas_approve))
                 .to
@@ -573,7 +574,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
                 .emit(GUILD_ONE_GOVERNORXGUILD, "ProposalExecuted").withArgs(transferProposalId);
             console.log("   passed transfer");
 
-            const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(operator.address);
+            const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(user3.address);
             expect(balanceAfter).to.be.gt(balanceBefore.toString());
 
             firstProposalId = approveProposalId;
@@ -581,6 +582,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         });
     
         it("Remove guild from the MetaDAO: VOTE IN SNAPSHOT", async function () {          
+            console.log("GUILD_ONE_FXAMORXGUILD.address is %s", GUILD_ONE_FXAMORXGUILD.address);
             // await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
             // console.log("GUILD_ONE_AVATARXGUILD.address is %s", GUILD_ONE_AVATARXGUILD.address);
 
