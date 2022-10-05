@@ -476,18 +476,20 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             // Add a proposal in guild’s snapshot to donate guild’s funds to the impact makers
             // propose
             // ???
-            calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+            // calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
             // failed
 
-            targets = [DOINGUD_AMOR_TOKEN.address, GUILD_ONE_CONTROLLERXGUILD.address];
-            values = [0, 0];
-            calldatas = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('approve', [GUILD_ONE_CONTROLLERXGUILD.address, FIFTY_ETHER]), GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+            targets_approve = [DOINGUD_AMOR_TOKEN.address];
+            values_approve = [0];
+            // calldatas_approve = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('approve', [GUILD_ONE_AVATARXGUILD.address, FIFTY_ETHER])];
+            calldatas_approve = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('approve', [GUILD_ONE_CONTROLLERXGUILD.address, FIFTY_ETHER])];
+
             // failed
 
-            targets = [GUILD_ONE_CONTROLLERXGUILD.address];
-            values = [0];
-            calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('gatherDonation', [DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
-            // failed
+            // targets = [GUILD_ONE_CONTROLLERXGUILD.address];
+            // values = [0];
+            // calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('gatherDonation', [DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+            // // failed
    
             // await DOINGUD_AMOR_TOKEN.transfer(user2.address, ONE_HUNDRED_ETHER);
             // await DOINGUD_METADAO.addWhitelist(DOINGUD_AMOR_TOKEN.address);
@@ -514,50 +516,67 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             // values = [0];
             // calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
             // failed
-
+            console.log("DOINGUD_AMOR_TOKEN.address is %s", DOINGUD_AMOR_TOKEN.address);
             await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
 
             targets = [GUILD_ONE_AVATARXGUILD.address];
             values = [0];
             // calldatas = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('transfer', user3.address, 20)]; // Error: types/values length mismatch (count={"types":2,"values":42}, value={"types":[{" ...
-            calldatas = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('transfer', [user3.address, 20])];
+            // calldatas = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('transfer', [user3.address, 20])];
+            calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
             // failed
    
             
             await expect(GUILD_ONE_GOVERNORXGUILD.proposals(0)).to.be.reverted;
+            await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).propose(targets_approve, values_approve, calldatas_approve);
             await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).propose(targets, values, calldatas);
-            await expect(GUILD_ONE_GOVERNORXGUILD.proposals(1)).to.be.reverted;
+
+            await expect(GUILD_ONE_GOVERNORXGUILD.proposals(2)).to.be.reverted;
 
             const oldProposalId = firstProposalId;
-            firstProposalId = await GUILD_ONE_GOVERNORXGUILD.proposals(0);
-            expect(oldProposalId).to.not.equal(firstProposalId);
+            approveProposalId = await GUILD_ONE_GOVERNORXGUILD.proposals(0);
+            transferProposalId = await GUILD_ONE_GOVERNORXGUILD.proposals(1);
 
-            expect((await GUILD_ONE_GOVERNORXGUILD.proposalVoting(firstProposalId)).toString()).to.equals("0");
-            expect((await GUILD_ONE_GOVERNORXGUILD.proposalWeight(firstProposalId)).toString()).to.equals("0");
+            expect(oldProposalId).to.not.equal(approveProposalId);
+
+            expect((await GUILD_ONE_GOVERNORXGUILD.proposalVoting(approveProposalId)).toString()).to.equals("0");
+            expect((await GUILD_ONE_GOVERNORXGUILD.proposalWeight(approveProposalId)).toString()).to.equals("0");
             
             // Pass the proposal on the snapshot
             time.increase(time.duration.days(1));
             // Vote for the proposal in the snapshot
             // TODO: change to SNAPSHOT INTERACTION HERE
             // old(current-to-change): Vote as a guardians to pass the proposal locally            
-            await GUILD_ONE_GOVERNORXGUILD.connect(staker).castVote(firstProposalId, true);
-            await GUILD_ONE_GOVERNORXGUILD.connect(operator).castVote(firstProposalId, true);
-            await GUILD_ONE_GOVERNORXGUILD.connect(user3).castVote(firstProposalId, false);
-            expect(await GUILD_ONE_GOVERNORXGUILD.proposalVoting(firstProposalId)).to.equals(2);
-            expect(await GUILD_ONE_GOVERNORXGUILD.proposalWeight(firstProposalId)).to.equals(3);
+            await GUILD_ONE_GOVERNORXGUILD.connect(staker).castVote(approveProposalId, true);
+            await GUILD_ONE_GOVERNORXGUILD.connect(operator).castVote(approveProposalId, true);
+            await GUILD_ONE_GOVERNORXGUILD.connect(user3).castVote(approveProposalId, false);
+            expect(await GUILD_ONE_GOVERNORXGUILD.proposalVoting(approveProposalId)).to.equals(2);
+            expect(await GUILD_ONE_GOVERNORXGUILD.proposalWeight(approveProposalId)).to.equals(3);
 
+            await GUILD_ONE_GOVERNORXGUILD.connect(staker).castVote(transferProposalId, true);
+            await GUILD_ONE_GOVERNORXGUILD.connect(operator).castVote(transferProposalId, true);
+            await GUILD_ONE_GOVERNORXGUILD.connect(user3).castVote(transferProposalId, false);
+            expect(await GUILD_ONE_GOVERNORXGUILD.proposalVoting(transferProposalId)).to.equals(2);
+            expect(await GUILD_ONE_GOVERNORXGUILD.proposalWeight(transferProposalId)).to.equals(3);
 
             // Execute the proposal and for the proposal with guardians
             time.increase(time.duration.days(14));
             const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(operator.address);
 
+            await expect(GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).execute(targets_approve, values_approve, calldatas_approve))
+                .to
+                .emit(GUILD_ONE_GOVERNORXGUILD, "ProposalExecuted").withArgs(approveProposalId);
+
+            console.log("   passed approval");
             await expect(GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).execute(targets, values, calldatas))
                 .to
-                .emit(GUILD_ONE_GOVERNORXGUILD, "ProposalExecuted").withArgs(firstProposalId);
+                .emit(GUILD_ONE_GOVERNORXGUILD, "ProposalExecuted").withArgs(transferProposalId);
+            console.log("   passed transfer");
 
             const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(operator.address);
             expect(balanceAfter).to.be.gt(balanceBefore.toString());
 
+            firstProposalId = approveProposalId;
             await expect(GUILD_ONE_GOVERNORXGUILD.voters(firstProposalId)).to.be.reverted;
         });
     
