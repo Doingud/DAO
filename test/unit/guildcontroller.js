@@ -245,7 +245,7 @@ describe('unit - Contract: GuildController', function () {
             sum = 0;
             let weight = await controller.weights(impactMaker.address);
             let amountToSendImpactMaker = Math.ceil((AMORDeducted * weight) / totalWeight);
-            sum += amountToSendImpactMaker
+            sum += amountToSendImpactMaker;
             expect((await FXAMORxGuild.balanceOf(user.address)).toString()).to.equal(fxamorStart.toString());
             expect((await controller.claimableTokens(impactMaker.address, AMOR.address)).toString()).to.equal(amountToSendImpactMaker.toString());            
 
@@ -259,7 +259,7 @@ describe('unit - Contract: GuildController', function () {
             sum += amountToSendImpactMaker;
             expect((await controller.claimableTokens(operator.address, AMOR.address)).toString()).to.equal(amountToSendImpactMaker.toString());
         
-            difference = 1; // rounding error
+            const difference = 1; // rounding error
             sum += difference;
 
             let expectedAMORBalance = ethers.BigNumber.from(startBalance.toString())
