@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
-import "hardhat/console.sol";
+
 /**
  * @title   DoinGud: Governor.sol
  * @author  Daoism Systems
@@ -54,7 +54,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     event ProposalCanceled(uint256 proposalId);
     event ProposalExecuted(uint256 proposalId);
 
-    uint256 public proposalMaxOperations = 10;
+    uint256 public proposalMaxOperations;
     mapping(uint256 => ProposalCore) private _proposals;
     mapping(uint256 => int256) public proposalCancelApproval;
     mapping(uint256 => address[]) public cancellers; // cancellers mapping(uint proposal => address [] voters)
@@ -137,6 +137,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         _votingDelay = 1;
         _votingPeriod = 2 weeks;
         GUARDIANS_LIMIT = 2;
+        proposalMaxOperations = 10;
 
         emit Initialized(_initialized, avatarAddress_, snapshotAddress_);
         return true;
@@ -264,9 +265,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
         if (targets.length == 0) {
             revert InvalidParameters();
         }
-proposalMaxOperations = 10;
-console.log("proposalMaxOperations is %s", proposalMaxOperations);
-console.log("targets.length is %s", targets.length);
         if (targets.length > proposalMaxOperations) {
             revert InvalidParameters();
         }
@@ -345,8 +343,7 @@ console.log("targets.length is %s", targets.length);
         if (status != ProposalState.Succeeded) {
             revert InvalidState();
         }
-console.log("msg.sender is %s", msg.sender);
-console.log("governor address(this) is %s", address(this));
+
         for (uint256 i = 0; i < targets.length; ++i) {
             bool success = IAvatarxGuild(avatarAddress).executeProposal(
                 targets[i],

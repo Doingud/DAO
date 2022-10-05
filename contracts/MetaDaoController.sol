@@ -174,12 +174,10 @@ contract MetaDaoController is Ownable {
     /// @notice Distributes the specified token
     /// @param  token address of target token
     function claimToken(address token) public {
-        console.log("metadao 1 is %s", 1);
         if (guilds[msg.sender] == address(0)) {
             revert InvalidGuild();
         }
         uint256 amount = guildFunds[msg.sender][token];
-        console.log("metadao 2 is %s", 2);
         console.log("amount is %s", amount);
         if (amount == 0) {
             revert InvalidClaim();
@@ -189,7 +187,6 @@ contract MetaDaoController is Ownable {
         /// Clear this guild's token balance
         delete guildFunds[msg.sender][token];
         IERC20(token).safeTransfer(msg.sender, amount);
-        console.log("metadao 4 is %s", 4);
     }
 
     /// @notice Apportions collected AMOR fees
