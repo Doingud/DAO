@@ -476,8 +476,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             // Add a proposal in guild’s snapshot to donate guild’s funds to the impact makers
             // propose
             // ???
-            console.log("authorizer_adaptor.address is %s", authorizer_adaptor.address);
-            console.log("GUILD_ONE_CONTROLLERXGUILD.address is %s", GUILD_ONE_CONTROLLERXGUILD.address);
             calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
             // failed
 
@@ -491,17 +489,33 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('gatherDonation', [DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
             // failed
    
-            await DOINGUD_AMOR_TOKEN.transfer(user2.address, ONE_HUNDRED_ETHER);
-            await DOINGUD_METADAO.addWhitelist(DOINGUD_AMOR_TOKEN.address);
-            await DOINGUD_AMOR_TOKEN.approve(DOINGUD_METADAO.address, ONE_HUNDRED_ETHER);
-            await DOINGUD_METADAO.donate(DOINGUD_AMOR_TOKEN.address, FIFTY_ETHER, 0); //      Error: VM Exception while processing transaction: reverted with an unrecognized custom error
-            await DOINGUD_METADAO.connect(user2).donate(DOINGUD_AMOR_TOKEN.address, FIFTY_ETHER, 0);
+            // await DOINGUD_AMOR_TOKEN.transfer(user2.address, ONE_HUNDRED_ETHER);
+            // await DOINGUD_METADAO.addWhitelist(DOINGUD_AMOR_TOKEN.address);
+            // await DOINGUD_AMOR_TOKEN.approve(DOINGUD_METADAO.address, ONE_HUNDRED_ETHER);
+            // await DOINGUD_METADAO.donate(DOINGUD_AMOR_TOKEN.address, FIFTY_ETHER, 0); //      Error: VM Exception while processing transaction: reverted with an unrecognized custom error
+            // await DOINGUD_METADAO.connect(user2).donate(DOINGUD_AMOR_TOKEN.address, FIFTY_ETHER, 0);
+
+            // targets = [GUILD_ONE_CONTROLLERXGUILD.address];
+            // values = [0];
+            // calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('gatherDonation', [DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+            // failed
+
+            // version with AVATAR transfer first
+            // await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
+
+            // targets = [DOINGUD_AMOR_TOKEN.address, GUILD_ONE_CONTROLLERXGUILD.address];
+            // values = [0, 0];
+            // calldatas = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('approve', [GUILD_ONE_CONTROLLERXGUILD.address, FIFTY_ETHER]), GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+            // failed
+
+            await DOINGUD_AMOR_TOKEN.transfer(DOINGUD_AVATAR.address, ONE_HUNDRED_ETHER);
 
             targets = [GUILD_ONE_CONTROLLERXGUILD.address];
             values = [0];
-            calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('gatherDonation', [DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+            calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
             // failed
 
+            
             await expect(GUILD_ONE_GOVERNORXGUILD.proposals(0)).to.be.reverted;
             await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).propose(targets, values, calldatas);
             await expect(GUILD_ONE_GOVERNORXGUILD.proposals(1)).to.be.reverted;
