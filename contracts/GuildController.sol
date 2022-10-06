@@ -198,6 +198,7 @@ console.log("4 is %s", 4);
             // which are going to be owned by the user.
             ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);
 console.log("4.1 is %s", 41);
+console.log("address(this) is %s", address(this));
 console.log("FXGFXAMORxGuild is %s", address(FXGFXAMORxGuild));
             FXGFXAMORxGuild.stake(msg.sender, amorxguildAmount); // from address(this)
 console.log("4.2 is %s", 42);
