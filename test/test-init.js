@@ -198,8 +198,7 @@ const getGuildFactory = async (setup) => {
     setup.governor.address,
     setup.avatars.avatar.address,
     setup.metadao.address, // metaDaoController
-    setup.roles.root.address, // multisig
-    setup.roles.authorizer_adaptor.address // snapshot address
+    setup.roles.root.address // multisig
   );
 
   const factory = guildFactory;

@@ -198,9 +198,7 @@ const setupTests = deployments.createFixture(async () => {
   );
 
   await DOINGUD_GOVERNOR.init(
-    "DoinGud Governor",
     DOINGUD_AMOR_GUILD_TOKEN.address, //AMORxGuild
-    setup.roles.authorizer_adaptor.address, // Snapshot Address
     DOINGUD_AVATAR.address // Avatar Address
   );
 
