@@ -84,7 +84,6 @@ contract DoinGudGovernor {
     address public snapshotAddress;
     address public avatarAddress;
     IERC20 private AMORxGuild;
-    IERC20 public token;
 
     event Initialized(bool success, address avatarAddress, address snapshotAddress);
     event ProposalCreated(
@@ -128,7 +127,6 @@ contract DoinGudGovernor {
         if (_initialized) {
             revert AlreadyInitialized();
         }
-        token = IERC20(AMORxGuild_);
         _name = name;
         // person who inflicted the creation of the contract is set as the only guardian of the system
         guardians.push(msg.sender);
