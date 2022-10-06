@@ -14,6 +14,9 @@ async function main() {
 
     let tx = await proxy.initProxy(AMOR.address);
     console.log("tx is %s", tx);
+
+    const UPDATED_AMOR = AMOR.attach(proxy.address);
+    console.log("UPDATED_AMOR address is %s", UPDATED_AMOR.address);
   }
   
   main()

@@ -15,6 +15,9 @@ async function main() {
 
     let tx = await proxy.initProxy(FXAMORxGuild.address);
     console.log("tx is %s", tx);
+
+    const UPDATED_FXAMORxGuild = FXAMORxGuild.attach(proxy.address);
+    console.log("UPDATED_FXAMORxGuild address is %s", UPDATED_FXAMORxGuild.address);
   }
   
   main()
