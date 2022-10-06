@@ -591,7 +591,6 @@ console.log("oracle.address is %s", oracle.address);
             // const oracle = await hre.ethers.getContractAt("MockContract" /*"RealitioV3ERC20"*/, mock.address);
 console.log("0 is %s", 0);
             const Module = await hre.ethers.getContractFactory("RealityModuleERC20");
-
             // constructor(
             //     address _owner,
             //     address _avatar,
@@ -604,8 +603,6 @@ console.log("0 is %s", 0);
             //     uint256 templateId,
             //     address arbitrator
             // )
-
-
             const module = await Module.deploy(
                 root.address,
                 root.address,
@@ -616,8 +613,13 @@ console.log("0 is %s", 0);
                 0,
                 0,
                 1337,
-                root.address
+                root.address,
+                {
+                    gasLimit: 300000, // 279668, //      InvalidInputError: Transaction requires at least 279668 gas but got 100000
+                }
             );
+
+
 console.log("Module.address is %s", Module.address);
 
 console.log("1 is %s", 1);            

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity >=0.8.0;
-
+import "hardhat/console.sol";
 import "@gnosis.pm/zodiac/contracts/core/Module.sol";
 import "./RealitioV3.sol";
 
@@ -111,7 +111,9 @@ abstract contract RealityModule is Module {
                     address
                 )
             );
+        console.log("MODULE 1 is %s", 1);
         __Ownable_init();
+        console.log("MODULE 2 is %s", 2);
         require(_avatar != address(0), "Avatar can not be zero address");
         require(_target != address(0), "Target can not be zero address");
         require(timeout > 0, "Timeout has to be greater 0");
