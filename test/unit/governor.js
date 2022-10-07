@@ -48,7 +48,7 @@ describe('unit - Contract: Governor', function () {
         user2 = setup.roles.user2;
     });
 
-    before('>>> setup', async function() {
+    before('>>> setup', async function () {
         await setupTests();
     });
 
@@ -82,7 +82,7 @@ describe('unit - Contract: Governor', function () {
         it('it changes guardians limit from proposal', async function () {
             guardians = [staker.address, operator.address, user.address];
             await governor.connect(authorizer_adaptor).setGuardians(guardians);
-            expect(await governor.GUARDIANS_LIMIT()).to.equals(1);
+            expect(await governor.guardiansLimit()).to.equals(1);
 
             targets = [governor.address];
             values = [0];
@@ -92,7 +92,7 @@ describe('unit - Contract: Governor', function () {
             firstProposalId = await governor.proposals(0);
 
             time.increase(time.duration.days(1));
-            
+
             // Vote as a guardians to pass the proposal locally            
             await governor.connect(staker).castVote(firstProposalId, true);
             await governor.connect(operator).castVote(firstProposalId, true);
@@ -108,14 +108,14 @@ describe('unit - Contract: Governor', function () {
                 .to
                 .emit(governor, "ProposalExecuted").withArgs(firstProposalId);
 
-            expect(await governor.GUARDIANS_LIMIT()).to.equals(4);
+            expect(await governor.guardiansLimit()).to.equals(4);
         });
 
         it('it fails to propose if Guardian Limit not Reached', async function () {
             guardians = [staker.address, operator.address];
             await governor.connect(authorizer_adaptor).setGuardians(guardians);
 
-            expect(await governor.GUARDIANS_LIMIT()).to.equals(4);
+            expect(await governor.guardiansLimit()).to.equals(4);
 
             targets = [mockModule.address];
             values = [0];
@@ -132,7 +132,7 @@ describe('unit - Contract: Governor', function () {
     });
 
     context('» setGuardians testing', () => {
-        
+
         it('it fails to set guardians if not the snapshot', async function () {
             guardians = [staker.address, operator.address, user.address];
             await expect(governor.connect(user).setGuardians(guardians)).to.be.revertedWith(
@@ -220,11 +220,11 @@ describe('unit - Contract: Governor', function () {
                 'Unauthorized()'
             );
         });
-        
+
         it('it proposes', async function () {
             await expect(governor.proposals(1)).to.be.reverted;
             await governor.connect(authorizer_adaptor).propose(targets, values, calldatas);
-            
+
             await expect(governor.proposals(2)).to.be.reverted;
             firstProposalId = await governor.proposals(1);
             await governor.connect(authorizer_adaptor).state(firstProposalId);
@@ -261,7 +261,7 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to propose if too many actions', async function () {
             let tooManyTargets = [
-                root.address, root.address, root.address, 
+                root.address, root.address, root.address,
                 root.address, root.address, root.address,
                 root.address, root.address, root.address,
                 root.address, root.address
@@ -303,7 +303,7 @@ describe('unit - Contract: Governor', function () {
         it('it fails to castVote if unknown proposal id', async function () {
             let invalidId = 999;
             await expect(governor.connect(root).castVote(invalidId, true)).to.be.revertedWith(
-                'Governor: unknown proposal id'
+                'InvalidProposalId()'
             );
         });
 
@@ -331,7 +331,7 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to execute if unknown proposal id', async function () {
             await expect(governor.connect(root).execute([user.address], values, calldatas)).to.be.revertedWith(
-                'Governor: unknown proposal id'
+                'InvalidProposalId()'
             );
         });
 
@@ -352,10 +352,10 @@ describe('unit - Contract: Governor', function () {
 
             await expect(governor.connect(authorizer_adaptor).execute(unSTargets, unSValues, unSCalldatas))
                 .to.be.revertedWith(
-                'UnderlyingTransactionReverted()'
-            );
+                    'UnderlyingTransactionReverted()'
+                );
         });
-    
+
         it('it executes proposal', async function () {
             expect(await mockModule.testValues()).to.equal(0);
 
@@ -384,7 +384,7 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to castVote second time to the proposal with the same id', async function () {
             await expect(governor.connect(root).castVote(firstProposalId, 1)).to.be.revertedWith(
-                'Governor: unknown proposal id'
+                'InvalidProposalId()'
             );
         });
     });
@@ -404,7 +404,7 @@ describe('unit - Contract: Governor', function () {
         it('it fails to castVoteForCancelling if unknown proposal id', async function () {
             let invalidId = 999;
             await expect(governor.connect(user).castVoteForCancelling(invalidId)).to.be.revertedWith(
-                'Governor: unknown proposal id'
+                'InvalidProposalId()'
             );
         });
 
@@ -432,7 +432,7 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to execute cancelled proposal', async function () {
             await expect(governor.connect(root).execute([staker.address], values, calldatas)).to.be.revertedWith(
-                'Governor: unknown proposal id'
+                'InvalidProposalId()'
             );
         });
 
@@ -459,7 +459,7 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to cancel if unknown proposal id', async function () {
             await expect(governor.connect(root).cancel(11)).to.be.revertedWith(
-                'Governor: unknown proposal id'
+                'InvalidProposalId()'
             );
         });
     });

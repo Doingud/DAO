@@ -90,10 +90,6 @@ contract GuildFactory is ICloneFactory, Ownable {
         string memory _name,
         string memory _symbol
     ) external returns (address) {
-        if (address(cloneTarget) == address(0)) {
-            revert CreationFailed();
-        }
-
         /// Setup local scope vars
         string memory tokenName;
         string memory tokenSymbol;
