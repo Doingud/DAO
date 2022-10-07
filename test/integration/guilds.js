@@ -579,7 +579,77 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             await expect(GUILD_ONE_GOVERNORXGUILD.voters(approveProposalId)).to.be.reverted;
             await expect(GUILD_ONE_GOVERNORXGUILD.voters(transferProposalId)).to.be.reverted;
         });
-    
+        it("should deploy new reality module proxy", async () => {
+            const saltNonce = "0xfa";
+            const timeout = 60;
+  const cooldown = 60;
+  const expiration = 120;
+  const bond = ethers.BigNumber.from(10000);
+  const templateId = ethers.BigNumber.from(1);
+  const FIRST_ADDRESS = "0x0000000000000000000000000000000000000001";
+  const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+  const Factory = await hre.ethers.getContractFactory("ModuleProxyFactory");
+  const RealityModuleETH = await hre.ethers.getContractFactory("RealityModuleETH");
+  const factory = await Factory.deploy();
+
+  const masterCopy = await RealityModuleETH.deploy(
+    FIRST_ADDRESS,
+    FIRST_ADDRESS,
+    FIRST_ADDRESS,
+    ZERO_ADDRESS,
+    1,
+    0,
+    60,
+    0,
+    0,
+    ZERO_ADDRESS,
+    {
+        gasLimit: 3000000 // 279668, // InvalidInputError: Transaction requires at least 279668 gas but got 100000
+    }
+  );
+
+console.log("22424 is %s", 22424);
+
+            // const { factory, masterCopy } = await baseSetup();
+            const [safe, oracle] = await ethers.getSigners();
+            const paramsValues = [
+              safe.address,
+              safe.address,
+              safe.address,
+              oracle.address,
+              timeout,
+              cooldown,
+              expiration,
+              bond,
+              templateId,
+              oracle.address,
+            ];
+            const encodedParams = [new AbiCoder().encode(paramsTypes, paramsValues)];
+            const initParams = masterCopy.interface.encodeFunctionData(
+              "setUp",
+              encodedParams
+            );
+            const receipt = await factory
+              .deployModule(masterCopy.address, initParams, saltNonce)
+            //   .then((tx: any) => tx.wait());
+        
+            // // retrieve new address from event
+            // const {
+            //   args: [newProxyAddress],
+            // } = receipt.events.find(
+            //   ({ event }: { event: string }) => event === "ModuleProxyCreation"
+            // );
+        
+            // const newProxy = await hre.ethers.getContractAt(
+            //   "RealityModuleETH",
+            //   newProxyAddress
+            // );
+            expect(await newProxy.questionTimeout()).to.be.eq(timeout);
+            expect(await newProxy.questionCooldown()).to.be.eq(cooldown);
+            expect(await newProxy.answerExpiration()).to.be.eq(expiration);
+            expect(await newProxy.minimumBond()).to.be.eq(BigNumber.from(bond));
+            expect(await newProxy.template()).to.be.eq(BigNumber.from(templateId));
+          });
         it("Remove guild from the MetaDAO: VOTE IN SNAPSHOT", async function () {          
             
             const Avatar = await ethers.getContractFactory("TestAvatar");
@@ -590,7 +660,34 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 console.log("oracle.address is %s", oracle.address);
             // const oracle = await hre.ethers.getContractAt("MockContract" /*"RealitioV3ERC20"*/, mock.address);
 console.log("0 is %s", 0);
-            const Module = await hre.ethers.getContractFactory("RealityModuleERC20");
+
+            const Module = await ethers.getContractFactory("RealityModuleERC20")
+            console.log("3 is %s", 33);
+            const module = await Module.deploy(
+                root.address, user1.address, user1.address, user1.address, 1, 10, 0, 0, 0, user1.address,
+                {
+                    from: root.address,
+                    gasLimit: 3000000, // 279668, // InvalidInputError: Transaction requires at least 279668 gas but got 100000
+                }
+            )
+            await module.deployTransaction.wait()
+            console.log("Module deployed to:", module.address);
+
+
+            // await module.deployed()
+            // await expect(module.deployTransaction)
+            //     .to.emit(module, "RealityModuleSetup").
+            //     withArgs(root.address, user1.address, user1.address, user1.address)
+        
+
+            // let Module = await ethers.getContractFactory("RealityModuleERC20");
+
+            // let module_proxy = await init.proxy();
+            // await module_proxy.initProxy(Module.address);
+            // Module = Module.attach(module_proxy.address);
+            
+            // const instance = await upgrades.deployProxy(YourContract, ['your initializer arguments']);
+
             // constructor(
             //     address _owner,
             //     address _avatar,
@@ -603,22 +700,28 @@ console.log("0 is %s", 0);
             //     uint256 templateId,
             //     address arbitrator
             // )
-            const module = await Module.deploy(
-                root.address,
-                root.address,
-                root.address,
-                root.address,
-                42,
-                23,
-                0,
-                0,
-                1337,
-                root.address,
-                {
-                    gasLimit: 300000, // 279668, //      InvalidInputError: Transaction requires at least 279668 gas but got 100000
-                }
-            );
+            // const YourContract= await ethers.getContractFactory("YourContract");
+            let module_proxy = await init.proxy();
+            console.log("9 is %s", 9);         
 
+            // const module = await Module.deploy(
+            //     avatar.address,
+            //     avatar.address,
+            //     avatar.address,
+            //     root.address,
+            //     42,
+            //     23,
+            //     0,
+            //     0,
+            //     1337,
+            //     root.address,
+            //     {
+            //         gasLimit: 300000, // 279668, // InvalidInputError: Transaction requires at least 279668 gas but got 100000
+            //     }
+            // );
+            await module_proxy.initProxy(module.address);
+            console.log("8 is %s", 8);
+            console.log("module_proxy.address is %s", module_proxy.address);
 
 console.log("Module.address is %s", Module.address);
 
