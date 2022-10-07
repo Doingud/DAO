@@ -172,16 +172,10 @@ const avatar = async (setup) => {
 
 const governor = async (setup) => {
   const governorFactory = await ethers.getContractFactory('DoinGudGovernor');
-  /*const governor = await governorFactory.deploy(
-    setup.tokens.AmorGuildToken.address,
-    "DoinGud Governor"
-  );*/
   const governor = await governorFactory.deploy();
 
   await governor.init(
-    "DoinGud Governor",
     setup.tokens.AmorGuildToken.address, //AMORxGuild
-    setup.roles.authorizer_adaptor.address, // Snapshot Address
     setup.avatars.avatar.address // Avatar Address
   );
 
@@ -204,8 +198,7 @@ const getGuildFactory = async (setup) => {
     setup.governor.address,
     setup.avatars.avatar.address,
     setup.metadao.address, // metaDaoController
-    setup.roles.root.address, // multisig
-    setup.roles.authorizer_adaptor.address // snapshot address
+    setup.roles.root.address // multisig
   );
 
   const factory = guildFactory;

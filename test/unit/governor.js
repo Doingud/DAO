@@ -1,7 +1,6 @@
 const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { ZERO_ADDRESS } = require("../helpers/constants.js");
 const init = require('../test-init.js');
 
 const twoWeeks = time.duration.days(14);
@@ -11,6 +10,7 @@ let AMORxGuild; // need for testing propose() function
 let avatar;
 let governor;
 let mockModule;
+//let mockReality; To be used with MockModuleFactory
 
 let root;
 let authorizer_adaptor;
@@ -23,6 +23,7 @@ let guardians;
 let targets;
 let values;
 let calldatas;
+let newcalldatas;
 let firstProposalId;
 let secondProposalId;
 let thirdProposalId;
@@ -54,7 +55,7 @@ describe('unit - Contract: Governor', function () {
 
     context('» init testing', () => {
         it('initialized variables check', async function () {
-            expect(await governor.snapshotAddress()).to.equals(authorizer_adaptor.address);
+            //expect(await governor.snapshotAddress()).to.equals(authorizer_adaptor.address);
             expect(await governor.avatarAddress()).to.equals(avatar.address);
             expect(await governor.guardians(0)).to.equals(root.address);
             expect((await governor.votingDelay())).to.equals(1);
@@ -65,9 +66,7 @@ describe('unit - Contract: Governor', function () {
         it("Should fail if called more than once", async function () {
             await expect(governor.init(
                 AMORxGuild.address, //AMORxGuild
-                authorizer_adaptor.address, // Snapshot Address
                 authorizer_adaptor.address, // Avatar Address
-                ZERO_ADDRESS
             )).to.be.revertedWith("AlreadyInitialized()");
         });
     });
@@ -81,13 +80,16 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it fails to set guardians if no addresses in array', async function () {
-            await expect(governor.connect(authorizer_adaptor).setGuardians([])).to.be.revertedWith(
-                'InvalidParameters()'
-            );
+            //  *** Low level calls do not revert in testing ***
+            await avatar.enableModule(authorizer_adaptor.address);
+            let transactionData = governor.interface.encodeFunctionData("setGuardians", [[]]);
+            await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0)).
+                to.emit(avatar, 'ExecutionFromModuleSuccess');
         });
 
         it('it sets guardians', async function () {
-            await governor.connect(authorizer_adaptor).setGuardians(guardians);
+            let transactionData = governor.interface.encodeFunctionData("setGuardians", [guardians]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
             expect(await governor.guardians(0)).to.equals(staker.address);
             expect(await governor.guardians(1)).to.equals(operator.address);
             expect(await governor.guardians(2)).to.equals(user.address);
@@ -96,40 +98,44 @@ describe('unit - Contract: Governor', function () {
 
     context('» addGuardian testing', () => {
 
-        it('it fails to add guardian if not the snapshot', async function () {
+        it('it fails to add guardian if not the avatar', async function () {
             await expect(governor.connect(user).addGuardian(user2.address)).to.be.revertedWith(
                 'Unauthorized()'
             );
         });
 
         it('it adds guardian', async function () {
-            await governor.connect(authorizer_adaptor).addGuardian(user2.address);
+            let transactionData = governor.interface.encodeFunctionData("addGuardian", [user2.address]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
             expect(await governor.guardians(3)).to.equals(user2.address);
         });
 
         it('it fails to add guardian with the same address', async function () {
-            await expect(governor.connect(authorizer_adaptor).addGuardian(user2.address)).to.be.revertedWith(
-                'InvalidParameters()'
-            );
+            let transactionData = governor.interface.encodeFunctionData("addGuardian", [user2.address]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
+            /// Because the above does not revert need to check with an alternative method that it hadn't been successful
+            /// This is repeated in any test using `execTransactionFromModule`
+            await expect(governor.guardians(4)).to.be.reverted;
         });
     });
 
     context('» changeGuardian testing', () => {
 
-        it('it fails to change guardian if not the snapshot', async function () {
+        it('it fails to change guardian if not the avatar', async function () {
             await expect(governor.connect(user).changeGuardian(1, user2.address)).to.be.revertedWith(
                 'Unauthorized()'
             );
         });
 
         it('it fails to change guardian if already have guardian with the same address', async function () {
-            await expect(governor.connect(authorizer_adaptor).changeGuardian(1, user2.address)).to.be.revertedWith(
-                'InvalidParameters()'
-            );
+            let transactionData = governor.interface.encodeFunctionData("changeGuardian", [1, user2.address]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
+            expect(await governor.guardians(1)).to.not.equal(user2.address);
         });
 
         it('it changes guardian', async function () {
-            await governor.connect(authorizer_adaptor).changeGuardian(1, root.address);
+            let transactionData = governor.interface.encodeFunctionData("changeGuardian", [1, root.address]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
             expect(await governor.guardians(1)).to.equals(root.address);
         });
     });
@@ -148,7 +154,8 @@ describe('unit - Contract: Governor', function () {
         
         it('it proposes', async function () {
             await expect(governor.proposals(0)).to.be.reverted;
-            await governor.connect(authorizer_adaptor).propose(targets, values, calldatas);
+            let transactionData = governor.interface.encodeFunctionData("propose", [targets, values, calldatas]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
             
             await expect(governor.proposals(1)).to.be.reverted;
             firstProposalId = await governor.proposals(0);
@@ -162,26 +169,28 @@ describe('unit - Contract: Governor', function () {
             );
             newcalldatas = [newMessageHash];
 
-            await governor.connect(authorizer_adaptor).propose(targets, values, newcalldatas);
+            transactionData = governor.interface.encodeFunctionData("propose", [targets, values, newcalldatas]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
             secondProposalId = await governor.proposals(1);
         });
 
         it('it fails to propose if proposal already exists', async function () {
-            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas)).to.be.revertedWith(
-                'InvalidState()'
-            );
+            await expect(governor.proposals(2)).to.be.reverted;
+            let transactionData = governor.interface.encodeFunctionData("propose", [targets, values, calldatas]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
+            await expect(governor.proposals(2)).to.be.reverted;
         });
 
         it('it fails to propose if proposal function information arity mismatch', async function () {
-            await expect(governor.connect(authorizer_adaptor).propose(targets, [1, 2, 3], calldatas)).to.be.revertedWith(
-                'InvalidParameters()'
-            );
+            let transactionData = governor.interface.encodeFunctionData("propose", [targets, [1, 2, 3], calldatas]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
+            await expect(governor.proposals(2)).to.be.reverted;
         });
 
         it('it fails to propose if empty proposal', async function () {
-            await expect(governor.connect(authorizer_adaptor).propose([], [], [])).to.be.revertedWith(
-                'InvalidParameters()'
-            );
+            let transactionData = governor.interface.encodeFunctionData("propose", [[], [], []]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
+            await expect(governor.proposals(2)).to.be.reverted;
         });
 
         it('it fails to propose if too many actions', async function () {
@@ -203,16 +212,17 @@ describe('unit - Contract: Governor', function () {
                 messageHash, messageHash
             ];
 
-            await expect(governor.connect(authorizer_adaptor).propose(tooManyTargets, tooManyValues, tooManyCalldatas)).to.be.revertedWith(
-                'InvalidParameters()'
-            );
-
+            let transactionData = governor.interface.encodeFunctionData("propose", [tooManyTargets, tooManyValues, tooManyCalldatas]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
+            await expect(governor.proposals(2)).to.be.reverted;
 
             let unSTargets = [mockModule.address];
             let unSValues = [20];
             let unSCalldatas = [mockModule.interface.encodeFunctionData("testInteraction", [20])];
+            transactionData = governor.interface.encodeFunctionData("propose", [unSTargets, unSValues, unSCalldatas]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
 
-            await governor.connect(authorizer_adaptor).propose(unSTargets, unSValues, unSCalldatas);
+            await expect(governor.proposals(2)).to.not.be.reverted;
             thirdProposalId = await governor.proposals(2);
         });
     });
@@ -325,7 +335,9 @@ describe('unit - Contract: Governor', function () {
 
         it('it removes guardian', async function () {
             expect(await governor.guardians(3)).to.equals(user2.address);
-            await governor.connect(authorizer_adaptor).removeGuardian(root.address);
+            let transactionData = governor.interface.encodeFunctionData("removeGuardian", [root.address]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
+
             expect(await governor.guardians(1)).to.equals(user2.address);
             await expect(governor.guardians(3)).to.be.reverted;
         });
@@ -335,7 +347,9 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to castVoteForCancelling if not the guardian', async function () {
             targets = [staker.address];
-            await governor.connect(authorizer_adaptor).propose(targets, values, calldatas);
+            let transactionData = governor.interface.encodeFunctionData("propose", [targets, values, calldatas]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
+            //await governor.connect(authorizer_adaptor).propose(targets, values, calldatas);
             secondProposalId = await governor.proposals(3);
 
             await expect(governor.connect(authorizer_adaptor).castVoteForCancelling(secondProposalId)).to.be.revertedWith(
@@ -373,7 +387,8 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it fails to cast vote for cancelling if vote is not active', async function () {
-            await governor.connect(authorizer_adaptor).propose(targets, values, newcalldatas);
+            let transactionData = governor.interface.encodeFunctionData("propose", [targets, values, calldatas]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
             secondProposalId = await governor.proposals(2);
 
             time.increase(time.duration.days(1));
