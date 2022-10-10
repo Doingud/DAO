@@ -16,6 +16,7 @@ const {
     TEST_TRANSFER
 } = require('../helpers/constants.js');
 const { time } = require("@openzeppelin/test-helpers");
+const { getFutureTimestamp } = require("../helpers/helpers.js");
 
 use(solidity);
 
@@ -663,10 +664,10 @@ console.log("oracle.address is %s", oracle.address);
             // const oracle = await hre.ethers.getContractAt("MockContract" /*"RealitioV3ERC20"*/, mock.address);
 console.log("0 is %s", 0);
 
-            const Module = await ethers.getContractFactory("RealityModuleERC20")
+            let Module = await ethers.getContractFactory("RealityModuleERC20")
 console.log("3 is %s", 33);
             const module = await Module.deploy(
-                root.address, user1.address, user1.address, user1.address, 1, 10, 0, 0, 0, user1.address,
+                avatar.address, avatar.address, user1.address, oracle.address, 1, 10, 0, 0, 0, authorizer_adaptor.address,
                 {
                     gasLimit: 10000000, // 279668, // InvalidInputError: Transaction requires at least 279668 gas but got 100000
                 }
@@ -674,20 +675,10 @@ console.log("3 is %s", 33);
             await module.deployTransaction.wait()
             console.log("Module deployed to:", module.address);
 
-
-            // await module.deployed()
-            // await expect(module.deployTransaction)
-            //     .to.emit(module, "RealityModuleSetup").
-            //     withArgs(root.address, user1.address, user1.address, user1.address)
-        
-
-            // let Module = await ethers.getContractFactory("RealityModuleERC20");
-
-            // let module_proxy = await init.proxy();
-            // await module_proxy.initProxy(Module.address);
-            // Module = Module.attach(module_proxy.address);
-            
-            // const instance = await upgrades.deployProxy(YourContract, ['your initializer arguments']);
+            let module_proxy = await init.proxy();
+            await module_proxy.initProxy(module.address);
+            Module = Module.attach(module_proxy.address);
+console.log("Module.address is %s", Module.address);
 
             // constructor(
             //     address _owner,
@@ -701,9 +692,6 @@ console.log("3 is %s", 33);
             //     uint256 templateId,
             //     address arbitrator
             // )
-            // const YourContract= await ethers.getContractFactory("YourContract");
-            let module_proxy = await init.proxy();
-            console.log("9 is %s", 9);         
 
             // const module = await Module.deploy(
             //     avatar.address,
@@ -720,18 +708,15 @@ console.log("3 is %s", 33);
             //         gasLimit: 300000, // 279668, // InvalidInputError: Transaction requires at least 279668 gas but got 100000
             //     }
             // );
-            await module_proxy.initProxy(module.address);
-            console.log("8 is %s", 8);
-            console.log("module_proxy.address is %s", module_proxy.address);
-
-console.log("1 is %s", 1);            
+console.log("module_proxy.address is %s", module_proxy.address);
             // Add a proposal in Metadao’s snapshot to remove guild from the metadao
             // propose
             // targets = [root.address]; //DOINGUD_METADAO.address];
             // calldatas = [DOINGUD_METADAO.interface.encodeFunctionData('removeGuild', [GUILD_TWO_CONTROLLERXGUILD.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
-            const id = "some_random_id";
+            const id = 1;//"some_random_id";
             // const txHash = ethers.utils.solidityKeccak256(["string"], ["some_tx_data"]);
-            const tx = { to: root.address, value: 0, data: DOINGUD_METADAO.interface.encodeFunctionData('removeGuild', [GUILD_TWO_CONTROLLERXGUILD.address]), operation: 0, nonce: 0 }
+            const tx = { to: DOINGUD_METADAO.address, value: 0, data: DOINGUD_METADAO.interface.encodeFunctionData('removeGuild', [GUILD_TWO_CONTROLLERXGUILD.address]), operation: 0, nonce: 0 }
+            // const tx = { to: user1.address, value: 0, data: "0xbaddad", operation: 0, nonce: 0 }
             const txHash = await module.getTransactionHash(tx.to, tx.value, tx.data, tx.operation, tx.nonce)
 console.log("2 is %s", 2);
 
@@ -748,13 +733,14 @@ console.log("4 is %s", 4);
             await avatar.exec(module.address, 0, setMinimumBond)
             await avatar.setModule(module.address)
 console.log("5 is %s", 5);
-            // const block = await ethers.provider.getBlock("latest")
+            const block = await ethers.provider.getBlock("latest")
             await mock.reset()
             await mock.givenMethodReturnUint(oracle.interface.getSighash("getBond"), 7331)
             await mock.givenMethodReturnBool(oracle.interface.getSighash("resultFor"), true)
             await mock.givenMethodReturnUint(oracle.interface.getSighash("getFinalizeTS"), block.timestamp)
 console.log("6 is %s", 6);
-            // await nextBlockTime(hre, block.timestamp + 24)
+            await getFutureTimestamp(24); // await nextBlockTime(hre, block.timestamp + 24) // ts
+
             time.increase(time.duration.days(24));
 
             await module.executeProposal(id, [txHash], tx.to, tx.value, tx.data, tx.operation);
