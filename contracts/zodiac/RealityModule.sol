@@ -335,6 +335,7 @@ abstract contract RealityModule is Module {
         Enum.Operation operation,
         uint256 txIndex
     ) public {
+        console.log("go is %s");
         // We use the hash of the question to check the execution state, as the other parameters might change, but the question not
         bytes32 questionHash = keccak256(
             bytes(buildQuestion(proposalId, txHashes))
@@ -356,6 +357,7 @@ abstract contract RealityModule is Module {
             txIndex
         );
         require(txHashes[txIndex] == txHash, "Unexpected transaction hash");
+        console.log("go 2 is %s");
 
         // Check that the result of the question is 1 (true)
         require(
@@ -395,6 +397,8 @@ abstract contract RealityModule is Module {
         // Mark transaction as executed
         executedProposalTransactions[questionHash][txHash] = true;
         // Execute the transaction via the target.
+        console.log("go 3 is %s");
+
         require(exec(to, value, data, operation), "Module transaction failed");
     }
 

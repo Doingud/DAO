@@ -581,82 +581,82 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             await expect(GUILD_ONE_GOVERNORXGUILD.voters(approveProposalId)).to.be.reverted;
             await expect(GUILD_ONE_GOVERNORXGUILD.voters(transferProposalId)).to.be.reverted;
         });
-        it("should deploy new reality module proxy", async () => {
-            const saltNonce = "0xfa";
-            const timeout = 60;
-  const cooldown = 60;
-  const expiration = 120;
-  const bond = ethers.BigNumber.from(10000);
-  const templateId = ethers.BigNumber.from(1);
-  const FIRST_ADDRESS = "0x0000000000000000000000000000000000000001";
-  const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-  const Factory = await hre.ethers.getContractFactory("ModuleProxyFactory");
-  const RealityModuleETH = await hre.ethers.getContractFactory("RealityModuleETH", { from: root });
-  const factory = await Factory.deploy();
+//         it("should deploy new reality module proxy", async () => {
+//             const saltNonce = "0xfa";
+//             const timeout = 60;
+//   const cooldown = 60;
+//   const expiration = 120;
+//   const bond = ethers.BigNumber.from(10000);
+//   const templateId = ethers.BigNumber.from(1);
+//   const FIRST_ADDRESS = "0x0000000000000000000000000000000000000001";
+//   const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+//   const Factory = await hre.ethers.getContractFactory("ModuleProxyFactory");
+//   const RealityModuleETH = await hre.ethers.getContractFactory("RealityModuleETH", { from: root });
+//   const factory = await Factory.deploy();
 
 
-  const masterCopy = await RealityModuleETH.deploy(
-    root.address,
-    FIRST_ADDRESS,
-    FIRST_ADDRESS,
-    ZERO_ADDRESS,
-    1,
-    0,
-    60,
-    0,
-    0,
-    ZERO_ADDRESS,
-    {
-        gasLimit: 10000000 // 279668, // InvalidInputError: Transaction requires at least 279668 gas but got 100000
-    }
-  );
+//   const masterCopy = await RealityModuleETH.deploy(
+//     root.address,
+//     FIRST_ADDRESS,
+//     FIRST_ADDRESS,
+//     ZERO_ADDRESS,
+//     1,
+//     0,
+//     60,
+//     0,
+//     0,
+//     ZERO_ADDRESS,
+//     {
+//         gasLimit: 10000000 // 279668, // InvalidInputError: Transaction requires at least 279668 gas but got 100000
+//     }
+//   );
 
-console.log("22424 is %s", 22424);
+// console.log("22424 is %s", 22424);
 
-            // const { factory, masterCopy } = await baseSetup();
-            // const [safe, oracle] = await ethers.getSigners();
-            // const paramsValues = [
-            //   safe.address,
-            //   safe.address,
-            //   safe.address,
-            //   oracle.address,
-            //   timeout,
-            //   cooldown,
-            //   expiration,
-            //   bond,
-            //   templateId,
-            //   oracle.address,
-            // ];
-            // const encodedParams = [new AbiCoder().encode(paramsTypes, paramsValues)];
-            // const initParams = masterCopy.interface.encodeFunctionData(
-            //   "setUp",
-            //   encodedParams
-            // );
-            // const receipt = await factory
-            //   .deployModule(masterCopy.address, initParams, saltNonce)
-            //   .then((tx: any) => tx.wait());
+//             // const { factory, masterCopy } = await baseSetup();
+//             // const [safe, oracle] = await ethers.getSigners();
+//             // const paramsValues = [
+//             //   safe.address,
+//             //   safe.address,
+//             //   safe.address,
+//             //   oracle.address,
+//             //   timeout,
+//             //   cooldown,
+//             //   expiration,
+//             //   bond,
+//             //   templateId,
+//             //   oracle.address,
+//             // ];
+//             // const encodedParams = [new AbiCoder().encode(paramsTypes, paramsValues)];
+//             // const initParams = masterCopy.interface.encodeFunctionData(
+//             //   "setUp",
+//             //   encodedParams
+//             // );
+//             // const receipt = await factory
+//             //   .deployModule(masterCopy.address, initParams, saltNonce)
+//             //   .then((tx: any) => tx.wait());
         
-            // // retrieve new address from event
-            // const {
-            //   args: [newProxyAddress],
-            // } = receipt.events.find(
-            //   ({ event }: { event: string }) => event === "ModuleProxyCreation"
-            // );
+//             // // retrieve new address from event
+//             // const {
+//             //   args: [newProxyAddress],
+//             // } = receipt.events.find(
+//             //   ({ event }: { event: string }) => event === "ModuleProxyCreation"
+//             // );
         
-            // const newProxy = await hre.ethers.getContractAt(
-            //   "RealityModuleETH",
-            //   newProxyAddress
-            // );
-            // expect(await newProxy.questionTimeout()).to.be.eq(timeout);
-            // expect(await newProxy.questionCooldown()).to.be.eq(cooldown);
-            // expect(await newProxy.answerExpiration()).to.be.eq(expiration);
-            // expect(await newProxy.minimumBond()).to.be.eq(BigNumber.from(bond));
-            // expect(await newProxy.template()).to.be.eq(BigNumber.from(templateId));
-          });
+//             // const newProxy = await hre.ethers.getContractAt(
+//             //   "RealityModuleETH",
+//             //   newProxyAddress
+//             // );
+//             // expect(await newProxy.questionTimeout()).to.be.eq(timeout);
+//             // expect(await newProxy.questionCooldown()).to.be.eq(cooldown);
+//             // expect(await newProxy.answerExpiration()).to.be.eq(expiration);
+//             // expect(await newProxy.minimumBond()).to.be.eq(BigNumber.from(bond));
+//             // expect(await newProxy.template()).to.be.eq(BigNumber.from(templateId));
+//           });
         it("Remove guild from the MetaDAO: VOTE IN SNAPSHOT", async function () {          
             
-            const Avatar = await ethers.getContractFactory("TestAvatar");
-            const avatar = await Avatar.deploy();
+            // const Avatar = await ethers.getContractFactory("TestAvatar");
+            // const avatar = await Avatar.deploy();
             const Mock = await ethers.getContractFactory("MockContract");
             const mock = await Mock.deploy();
             const oracle = await hre.ethers.getContractAt("RealitioV3ERC20", mock.address);
@@ -667,7 +667,12 @@ console.log("0 is %s", 0);
             let Module = await ethers.getContractFactory("RealityModuleERC20")
 console.log("3 is %s", 33);
             const module = await Module.deploy(
-                avatar.address, avatar.address, user1.address, oracle.address, 1, 10, 0, 0, 0, authorizer_adaptor.address,
+                DOINGUD_AVATAR.address,
+                DOINGUD_AVATAR.address,
+                DOINGUD_AVATAR.address,
+                oracle.address,
+                1, 10, 0, 0, 0,
+                authorizer_adaptor.address,
                 {
                     gasLimit: 10000000, // 279668, // InvalidInputError: Transaction requires at least 279668 gas but got 100000
                 }
@@ -693,27 +698,12 @@ console.log("Module.address is %s", Module.address);
             //     address arbitrator
             // )
 
-            // const module = await Module.deploy(
-            //     avatar.address,
-            //     avatar.address,
-            //     avatar.address,
-            //     root.address,
-            //     42,
-            //     23,
-            //     0,
-            //     0,
-            //     1337,
-            //     root.address,
-            //     {
-            //         gasLimit: 300000, // 279668, // InvalidInputError: Transaction requires at least 279668 gas but got 100000
-            //     }
-            // );
 console.log("module_proxy.address is %s", module_proxy.address);
             // Add a proposal in Metadao’s snapshot to remove guild from the metadao
             // propose
             // targets = [root.address]; //DOINGUD_METADAO.address];
             // calldatas = [DOINGUD_METADAO.interface.encodeFunctionData('removeGuild', [GUILD_TWO_CONTROLLERXGUILD.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
-            const id = 1;//"some_random_id";
+            const id = "some_random_id";
             // const txHash = ethers.utils.solidityKeccak256(["string"], ["some_tx_data"]);
             const tx = { to: DOINGUD_METADAO.address, value: 0, data: DOINGUD_METADAO.interface.encodeFunctionData('removeGuild', [GUILD_TWO_CONTROLLERXGUILD.address]), operation: 0, nonce: 0 }
             // const tx = { to: user1.address, value: 0, data: "0xbaddad", operation: 0, nonce: 0 }
@@ -730,8 +720,10 @@ console.log("4 is %s", 4);
                 "setMinimumBond",
                 [7331]
             )
-            await avatar.exec(module.address, 0, setMinimumBond)
-            await avatar.setModule(module.address)
+            console.log("DOINGUD_METADAO.address is %s", DOINGUD_METADAO.address);
+            console.log("DOINGUD_AVATAR.address is %s", DOINGUD_AVATAR.address);
+            // await GUILD_ONE_AVATARXGUILD.exec(module.address, 0, setMinimumBond)
+            await DOINGUD_AVATAR.enableModule(module.address)
 console.log("5 is %s", 5);
             const block = await ethers.provider.getBlock("latest")
             await mock.reset()
@@ -748,6 +740,8 @@ console.log("7 is %s", 7);
             expect(
                 await module.executedProposalTransactions(ethers.utils.solidityKeccak256(["string"], [question]), txHash)
             ).to.be.equals(true)
+
+            expect(await DOINGUD_METADAO.guilds(GUILD_TWO_CONTROLLERXGUILD.address)).to.equal(ZERO_ADDRESS);  
 
             // const question = await module.buildQuestion(id, [txHash]);
             // const questionId = await module.getQuestionId(question, 0);
@@ -802,7 +796,6 @@ console.log("7 is %s", 7);
             // expect(balanceAfter).to.be.gt(balanceBefore);
 
         
-            expect(await DOINGUD_METADAO.guilds(GUILD_TWO_CONTROLLERXGUILD.address)).to.equal(ONE_ADDRESS);  
 
             // Add a proposal in Metadao’s snapshot to remove guild from the metadao
             

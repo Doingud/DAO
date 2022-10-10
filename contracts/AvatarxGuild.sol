@@ -143,6 +143,7 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         bytes calldata data,
         Enum.Operation operation
     ) external returns (bool success) {
+        console.log("       to is %s", to);
         // Only whitelisted modules are allowed.
         if (msg.sender == SENTINEL_MODULES || modules[msg.sender] == address(0)) {
             revert NotWhitelisted();
@@ -150,6 +151,7 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         emit ExecutionFromModuleSuccess(msg.sender);
         /// Enum resolves to 0 or 1
         /// 0: call; 1: delegatecall
+        console.log("       before call to is %s", to);
         if (uint8(operation) == 1) (success, ) = to.delegatecall(data);
         else (success, ) = to.call{value: value}(data);
 
