@@ -74,11 +74,17 @@ describe("unit - Vesting", function () {
 
   context("function: allocateVestedTokens()", () => {
     it("Should allocate vested tokens to a beneficiary", async function () {
+      expect(await VESTING.beneficiaries(user1.address)).equal(ZERO_ADDRESS);
+
       await VESTING.allocateVestedTokens(user1.address, AMORDeducted, VESTING_START, VESTING_START, VESTING_TIME);
       expect(await VESTING.balanceOf(user1.address)).to.equal(AMORDeducted);
       expect(await VESTING.unallocatedAMOR()).to.equal(0);
       expect(await VESTING.beneficiaries(user1.address)).equal(ONE_ADDRESS);
       expect(await VESTING.SENTINELOwner()).to.equal(user1.address);
+
+      // check path when beneficiary exists in the linked list
+      await VESTING.allocateVestedTokens(user1.address, 0, VESTING_START, VESTING_START, VESTING_TIME);
+      expect(await VESTING.beneficiaries(user1.address)).equal(ONE_ADDRESS);
     });
 
     it("Should fail if unsufficient unallocated AMOR", async function () {
@@ -93,6 +99,9 @@ describe("unit - Vesting", function () {
         to.be.revertedWith("InvalidDate()");
       /// Fails when the cliff > vestingDate, cliff must be <= vestingDate
       await expect(VESTING.allocateVestedTokens(user1.address, AMORDeducted, (VESTING_TIME + 1), VESTING_START, VESTING_TIME)).
+        to.be.revertedWith("InvalidDate()");
+      /// Fails when the vestingStart < block.timestamp, vestingStart must be >= block.timestamp
+      await expect(VESTING.allocateVestedTokens(user1.address, AMORDeducted, VESTING_TIME, 0, VESTING_TIME)).
         to.be.revertedWith("InvalidDate()");
     });
   });
@@ -116,6 +125,13 @@ describe("unit - Vesting", function () {
   });
 
   context("function: tokensAvailable()", () => {
+    it("Should revert withdrawAMOR if allocation.cliff > block.timestamp", async function () {
+      await VESTING.allocateVestedTokens(user1.address, AMORDeducted, (VESTING_TIME*2 - 1), VESTING_START, (VESTING_TIME*2));
+
+      await expect(VESTING.connect(user1).withdrawAmor(ONE_HUNDRED_ETHER)).
+        to.be.revertedWith("NotVested()");
+    });
+
     it("Should calculate the correct amount of tokens for time passed", async function () {
       await VESTING.allocateVestedTokens(user1.address, AMORDeducted, VESTING_START, VESTING_START, VESTING_TIME);
       let userInfo = await VESTING.allocations(user1.address);

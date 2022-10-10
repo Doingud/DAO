@@ -122,7 +122,6 @@ contract GuildController is IGuildController, Ownable {
         // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (amount * weights[impactMakers[i]]) / totalWeight;
-
             claimableTokens[impactMakers[i]][token] += amountToSendVoter;
         }
 
@@ -136,7 +135,6 @@ contract GuildController is IGuildController, Ownable {
         if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
         }
-
         uint256 amount = IMetaDaoController(MetaDaoController).guildFunds(address(this), token);
         IMetaDaoController(MetaDaoController).claimToken(token);
 
@@ -157,7 +155,6 @@ contract GuildController is IGuildController, Ownable {
         if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
         }
-
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
         if (IERC20(token).balanceOf(msg.sender) < allAmount || allAmount < 10) {
             revert InvalidAmount();
@@ -167,10 +164,7 @@ contract GuildController is IGuildController, Ownable {
         uint256 amorxguildAmount = amount;
 
         // 10% of the tokens in the impact pool are getting:
-        if (token != AMORxGuild && token != AMOR) {
-            // recieve tokens
-            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
-        } else if (token == AMOR) {
+        if (token == AMOR) {
             // convert AMOR to AMORxGuild
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
 
@@ -186,9 +180,13 @@ contract GuildController is IGuildController, Ownable {
             IERC20(token).approve(AMORxGuild, taxCorrectedAmount);
 
             amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(address(this), taxCorrectedAmount);
-        } else {
-            // token == AMORxGuild
+        } else if (token == AMORxGuild) {
             ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amorxguildAmount);
+        } else {
+            // if token != AMORxGuild && token != AMOR
+            // recieve tokens
+            amount = 0;
+            // TODO: allow to mint FXAMOR tokend based on
         }
 
         if (token == AMORxGuild || token == AMOR) {
@@ -199,9 +197,13 @@ contract GuildController is IGuildController, Ownable {
         }
         uint256 decAmount = allAmount - amount; //decreased amount: other 90%
 
+        uint256 tokenBefore = IERC20(token).balanceOf(address(this));
+
         IERC20(token).safeTransferFrom(msg.sender, address(this), decAmount);
 
-        distribute(decAmount, token); // distribute other 90%
+        uint256 decTaxCorrectedAmount = IERC20(token).balanceOf(address(this)) - tokenBefore;
+
+        distribute(decTaxCorrectedAmount, token); // distribute other 90%
 
         return amorxguildAmount;
     }

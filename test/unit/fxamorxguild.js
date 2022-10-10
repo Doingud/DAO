@@ -47,10 +47,11 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
 
         it("Should fail if called more than once", async function () {
             await expect(FXAMORxGuild.init(
-                AMORxGuild.address, 
                 MOCK_GUILD_NAMES[0], 
-                MOCK_GUILD_SYMBOLS[0]
-            )).to.be.reverted;
+                MOCK_GUILD_SYMBOLS[0],
+                operator.address,
+                AMORxGuild.address
+            )).to.be.revertedWith("AlreadyInitialized()");
         });
     });
     
@@ -90,6 +91,11 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
 
         it('sets controller address', async function () {
             await FXAMORxGuild.connect(operator).setController(authorizer_adaptor.address);        
+            expect(await FXAMORxGuild.controller()).to.equal(authorizer_adaptor.address);
+        });
+
+        it('fails to set controller address if address zero', async function () {
+            await expect(FXAMORxGuild.connect(operator).setController(ZERO_ADDRESS)).to.be.revertedWith('AddressZero()');
             expect(await FXAMORxGuild.controller()).to.equal(authorizer_adaptor.address);
         });
     });
