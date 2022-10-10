@@ -16,6 +16,10 @@ const Snapshot = 'Snapshot';
 const MOCK_MODULE = 'MOCK_MODULE';
 const USDC_MOCK = 'USDC_MOCK';
 
+const Avatar_MetaDAOController = 'Avatar_MetaDAOController';
+const Governor_MetaDAOController = 'Governor_MetaDAOController';
+const dAMOR_MetaDAOController = 'dAMOR_MetaDAOController';
+
 const contractAddresses = {
     'mainnet': {
         [AMOR]: "",
@@ -31,6 +35,9 @@ const contractAddresses = {
         [AMORxGuild]: '0xe10fC431454E3A5c6eCD82c4d11104c306866304', 
         [FXAMORxGuild]: '0xc6d88F090d42978BED640DD77a5F14Bab7fcF846',
         [dAMORxGuild]: '0xa38f976f6F945F864b0ad70eEc4ce310569c0894',
+        [Avatar_MetaDAOController]: '0x607A08A91231c4644CE8DDeaf2cEb6d1E8FE682B', 
+        [Governor_MetaDAOController]: '0x02Cce7Da8029E87a4837a6fE1B667B38aD96D5E3',
+        [dAMOR_MetaDAOController]: '0xc592816025AC92a1f008e7B8F6b4720505Cb487B',
         [MetaDAOController]: '0x67dD9643C074dEF78b6E525E8C458aB506cA48E9',
         [GuildController]: '0x3F830Bb209D99219ff8990a478e306b806977cA5',
         [DoinGudProxy]: '0xcef62a378519E2Bf8e9343f6d04b09F86E6F06CD',
