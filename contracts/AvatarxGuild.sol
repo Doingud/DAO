@@ -202,9 +202,9 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         bytes memory proposal,
         Enum.Operation operation
     ) public onlyGovernor returns (bool) {
-        console.log("avatar msg.sender is %s", msg.sender);
-        console.log("target is %s", target);
-        console.log("uint8(operation) is %s", uint8(operation));
+        console.log("executeProposal: avatar msg.sender is %s", msg.sender);
+        console.log("executeProposal: target is %s", target);
+        console.log("executeProposal: uint8(operation) is %s", uint8(operation));
         bool success;
         if (uint8(operation) == 1) (success, ) = target.delegatecall(proposal);
         else (success, ) = target.call{value: value}(proposal);

@@ -155,10 +155,13 @@ contract GuildController is IGuildController, Ownable {
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     // Requires the msg.sender to `approve` amount prior to calling this function
     function donate(uint256 allAmount, address token) external returns (uint256) {
+        console.log("msg.sender is %s", msg.sender);
 console.log("0 is %s", 0);
         // check if token in the whitelist of the MetaDaoController
         IMetaDaoController(MetaDaoController).isWhitelisted(token);
 console.log("1 is %s", 1);
+console.log("IERC20(token).balanceOf(msg.sender) is %s", IERC20(token).balanceOf(msg.sender));
+console.log("allAmount is %s", allAmount);
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
         if (IERC20(token).balanceOf(msg.sender) < allAmount || allAmount < 10) {
             revert InvalidAmount();

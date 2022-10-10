@@ -1,5 +1,6 @@
 const { ethers } = require("hardhat");
 const { use, expect } = require("chai");
+const { _TypedDataEncoder } =require('@ethersproject/hash');
 const { solidity } = require("ethereum-waffle");
 const init = require('../test-init.js');
 const { 
@@ -17,6 +18,31 @@ const {
 } = require('../helpers/constants.js');
 const { time } = require("@openzeppelin/test-helpers");
 const { getFutureTimestamp } = require("../helpers/helpers.js");
+const EIP712_TYPES = {
+    Transaction: [
+      {
+        name: 'to',
+        type: 'address',
+      },
+      {
+        name: 'value',
+        type: 'uint256',
+      },
+      {
+        name: 'data',
+        type: 'bytes',
+      },
+      {
+        name: 'operation',
+        type: 'uint8',
+      },
+      {
+        name: 'nonce',
+        type: 'uint256',
+      },
+    ],
+};
+
 
 use(solidity);
 
@@ -99,10 +125,21 @@ let GUILD_TWO_GOVERNORXGUILD;
 let IMPACT_MAKERS;
 let IMPACT_MAKERS_WEIGHTS;
 
+let zodiacModule;
+let safe;
+let safeSigner;
+
+let domain;
+let starknetCoreAddress = '0x0000000000000000000000000000000000000001'
+let spaceAddress = BigInt(0);
+let zodiacRelayerAddress = BigInt(0);
+
 describe("Integration: DoinGud guilds ecosystem", function () {
 
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
+        // ({ zodiacModule, safe, safeSigner } = await safeWithZodiacSetup());
+
         const setup = await init.initialize(signers);
         ///   Setup token contracts
         await init.getTokens(setup);
@@ -464,7 +501,51 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             await expect(GUILD_ONE_GOVERNORXGUILD.voters(firstProposalId)).to.be.reverted;    
         });
 
-        it("Donate Guild’s fund from the Avatar contract: VOTE IN SNAPSHOT", async function () {      
+        it("Donate Guild’s fund from the Avatar contract: VOTE IN SNAPSHOT", async function () {  
+            const wallets = await ethers.getSigners();
+            const safeSigner = wallets[0]; // One 1 signer on the safe
+          
+            const GnosisSafeL2 = await ethers.getContractFactory(
+              '@gnosis.pm/safe-contracts/contracts/GnosisSafeL2.sol:GnosisSafeL2'
+            );
+            const FactoryContract = await ethers.getContractFactory(
+              '@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol:GnosisSafeProxyFactory'
+            );
+            const singleton = await GnosisSafeL2.deploy();
+            const factory = await FactoryContract.deploy();
+          
+            const template = await factory.callStatic.createProxy(singleton.address, '0x');
+            await factory.createProxy(singleton.address, '0x');
+          
+            const safe = GnosisSafeL2.attach(template);
+            safe.setup([safeSigner.address], 1, ZERO_ADDRESS, '0x', ZERO_ADDRESS, ZERO_ADDRESS, 0, ZERO_ADDRESS);
+          
+            const SnapshotXContract = await ethers.getContractFactory('SnapshotXL1Executor');
+          
+            //deploying singleton master contract
+            const masterzodiacModule = await SnapshotXContract.deploy(
+              GUILD_ONE_AVATARXGUILD.address,
+              GUILD_ONE_AVATARXGUILD.address,
+              GUILD_ONE_AVATARXGUILD.address,
+              GUILD_ONE_AVATARXGUILD.address,
+              1,
+              []
+            );
+
+            zodiacModule = masterzodiacModule;
+          
+            domain = {
+                chainId: ethers.BigNumber.from(network.config.chainId),
+                verifyingContract: zodiacModule.address,
+            };
+
+            await GUILD_ONE_AVATARXGUILD.enableModule(zodiacModule.address);
+
+            expect(await zodiacModule.avatar()).to.equal(GUILD_ONE_AVATARXGUILD.address);
+            expect(await zodiacModule.owner()).to.equal(GUILD_ONE_AVATARXGUILD.address);
+            expect(await zodiacModule.target()).to.equal(GUILD_ONE_AVATARXGUILD.address);
+            expect(await zodiacModule.proposalIndex()).to.equal(0);
+
             await DOINGUD_AMOR_TOKEN.transfer(authorizer_adaptor.address, ONE_HUNDRED_ETHER);
             await DOINGUD_AMOR_TOKEN.connect(authorizer_adaptor).approve(GUILD_ONE_CONTROLLERXGUILD.address, TEST_TRANSFER);
 
@@ -473,199 +554,72 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
             expect(await GUILD_ONE_CONTROLLERXGUILD.AMOR()).to.equal(DOINGUD_AMOR_TOKEN.address);
 
-            // Add a proposal in guild’s snapshot to donate guild’s funds to the impact makers
-            // propose
-            // ???
-            // calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
-            // failed
-
-            // targets = [GUILD_ONE_CONTROLLERXGUILD.address];
-            // values = [0];
-            // calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('gatherDonation', [DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
-            // // failed
-   
-            // await DOINGUD_AMOR_TOKEN.transfer(user2.address, ONE_HUNDRED_ETHER);
-            // await DOINGUD_METADAO.addWhitelist(DOINGUD_AMOR_TOKEN.address);
-            // await DOINGUD_AMOR_TOKEN.approve(DOINGUD_METADAO.address, ONE_HUNDRED_ETHER);
-            // await DOINGUD_METADAO.donate(DOINGUD_AMOR_TOKEN.address, FIFTY_ETHER, 0); //      Error: VM Exception while processing transaction: reverted with an unrecognized custom error
-            // await DOINGUD_METADAO.connect(user2).donate(DOINGUD_AMOR_TOKEN.address, FIFTY_ETHER, 0);
-
-            // targets = [GUILD_ONE_CONTROLLERXGUILD.address];
-            // values = [0];
-            // calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('gatherDonation', [DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
-            // failed
-
-            // version with AVATAR transfer first
-            // await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
-
-            // targets = [DOINGUD_AMOR_TOKEN.address, GUILD_ONE_CONTROLLERXGUILD.address];
-            // values = [0, 0];
-            // calldatas = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('approve', [GUILD_ONE_CONTROLLERXGUILD.address, FIFTY_ETHER]), GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
-            // failed
-
-            // await DOINGUD_AMOR_TOKEN.transfer(DOINGUD_AVATAR.address, ONE_HUNDRED_ETHER);
-
-            // targets = [GUILD_ONE_CONTROLLERXGUILD.address];
-            // values = [0];
-            // calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
-            // failed
             console.log("GUILD_ONE_FXAMORXGUILD.address is %s", GUILD_ONE_FXAMORXGUILD.address);
             console.log("GUILD_ONE_AVATARXGUILD.address is %s", GUILD_ONE_AVATARXGUILD.address);
             console.log("DOINGUD_AMOR_TOKEN.address is %s", DOINGUD_AMOR_TOKEN.address);
             console.log("GUILD_ONE_CONTROLLERXGUILD.address is %s", GUILD_ONE_CONTROLLERXGUILD.address);
             await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
 
-            // NEED TO APPROVE FROM AVATAR TO CONTROLLER because safeTransferFrom from donate() is not working
-            targets_approve = [DOINGUD_AMOR_TOKEN.address];
-            values_approve = [0];
-            calldatas_approve = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('approve', [GUILD_ONE_CONTROLLERXGUILD.address, FIFTY_ETHER])];
+            tx1 = {
+                to: DOINGUD_AMOR_TOKEN.address,
+                value: 0,
+                data: DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('approve', [GUILD_ONE_CONTROLLERXGUILD.address, FIFTY_ETHER]),
+                operation: 0,
+                nonce: 0,
+            };
+            tx2 = {
+                to: GUILD_ONE_CONTROLLERXGUILD.address,
+                value: 0,
+                data: GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address]),
+                operation: 0,
+                nonce: 0,
+            };
 
-            targets = [GUILD_ONE_CONTROLLERXGUILD.address];
-            values = [0];
-            calldatas = [GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
 
+            //2 transactions in proposal
+            const txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, tx1);
+            const txHash2 = _TypedDataEncoder.hash(domain, EIP712_TYPES, tx2);
 
-            await expect(GUILD_ONE_GOVERNORXGUILD.proposals(0)).to.be.reverted;
-            await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).propose(targets_approve, values_approve, calldatas_approve);
-            await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).propose(targets, values, calldatas);
-            await expect(GUILD_ONE_GOVERNORXGUILD.proposals(2)).to.be.reverted;
+            const abiCoder = new ethers.utils.AbiCoder();
+            const executionHash = ethers.utils.keccak256(
+                abiCoder.encode(['bytes32[]'], [[txHash1, txHash2]])
+            );
+            const proposal_outcome = 1;
 
-            const oldProposalId = firstProposalId;
-            approveProposalId = await GUILD_ONE_GOVERNORXGUILD.proposals(0);
-            transferProposalId = await GUILD_ONE_GOVERNORXGUILD.proposals(1);
+            // Add a proposal in guild’s snapshot to donate guild’s funds to the impact makers
+            await zodiacModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+                txHash1,
+                txHash2,
+            ]);
 
-            expect(oldProposalId).to.not.equal(approveProposalId);
-
-            expect((await GUILD_ONE_GOVERNORXGUILD.proposalVoting(approveProposalId)).toString()).to.equals("0");
-            expect((await GUILD_ONE_GOVERNORXGUILD.proposalWeight(approveProposalId)).toString()).to.equals("0");
-            
-            // Pass the proposal on the snapshot
-            time.increase(time.duration.days(1));
-            // Vote for the proposal in the snapshot
-            // TODO: change to SNAPSHOT INTERACTION HERE: CONNECT TO ZODIAC MODULE (CLONE REPO AND RUN HERE)
-            // old(current-to-change): Vote as a guardians to pass the proposal locally            
-            await GUILD_ONE_GOVERNORXGUILD.connect(staker).castVote(approveProposalId, true);
-            await GUILD_ONE_GOVERNORXGUILD.connect(operator).castVote(approveProposalId, true);
-            await GUILD_ONE_GOVERNORXGUILD.connect(user3).castVote(approveProposalId, false);
-            expect(await GUILD_ONE_GOVERNORXGUILD.proposalVoting(approveProposalId)).to.equals(2);
-            expect(await GUILD_ONE_GOVERNORXGUILD.proposalWeight(approveProposalId)).to.equals(3);
-
-            await GUILD_ONE_GOVERNORXGUILD.connect(staker).castVote(transferProposalId, true);
-            await GUILD_ONE_GOVERNORXGUILD.connect(operator).castVote(transferProposalId, true);
-            await GUILD_ONE_GOVERNORXGUILD.connect(user3).castVote(transferProposalId, false);
-            expect(await GUILD_ONE_GOVERNORXGUILD.proposalVoting(transferProposalId)).to.equals(2);
-            expect(await GUILD_ONE_GOVERNORXGUILD.proposalWeight(transferProposalId)).to.equals(3);
-
-            // Execute the proposal and for the proposal with guardians
-            time.increase(time.duration.days(14));
+            expect(await zodiacModule.getNumOfTxInProposal(0)).to.equal(2);
+         
             const balanceBeforeAvatar = await DOINGUD_AMOR_TOKEN.balanceOf(GUILD_ONE_AVATARXGUILD.address);
             const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(GUILD_ONE_CONTROLLERXGUILD.address);
 
-            await expect(GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).execute(targets_approve, values_approve, calldatas_approve))
-                .to
-                .emit(GUILD_ONE_GOVERNORXGUILD, "ProposalExecuted").withArgs(approveProposalId);
-
-            console.log("   passed approval");
-            await expect(GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).execute(targets, values, calldatas))
-                .to
-                .emit(GUILD_ONE_GOVERNORXGUILD, "ProposalExecuted").withArgs(transferProposalId);
-            console.log("   passed transfer");
+            await zodiacModule.executeProposalTxBatch(
+                0,
+                [tx1.to, tx2.to],
+                [tx1.value, tx2.value],
+                [tx1.data, tx2.data],
+                [tx1.operation, tx1.operation]
+            );
 
             const balanceAfterAvatar = await DOINGUD_AMOR_TOKEN.balanceOf(GUILD_ONE_AVATARXGUILD.address);
             const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(GUILD_ONE_CONTROLLERXGUILD.address);
 
             expect(balanceAfterAvatar).to.be.lt(balanceBeforeAvatar);
             expect(balanceAfter).to.be.gt(balanceBefore);
-
-            firstProposalId = approveProposalId;
-            await expect(GUILD_ONE_GOVERNORXGUILD.voters(approveProposalId)).to.be.reverted;
-            await expect(GUILD_ONE_GOVERNORXGUILD.voters(transferProposalId)).to.be.reverted;
         });
-//         it("should deploy new reality module proxy", async () => {
-//             const saltNonce = "0xfa";
-//             const timeout = 60;
-//   const cooldown = 60;
-//   const expiration = 120;
-//   const bond = ethers.BigNumber.from(10000);
-//   const templateId = ethers.BigNumber.from(1);
-//   const FIRST_ADDRESS = "0x0000000000000000000000000000000000000001";
-//   const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-//   const Factory = await hre.ethers.getContractFactory("ModuleProxyFactory");
-//   const RealityModuleETH = await hre.ethers.getContractFactory("RealityModuleETH", { from: root });
-//   const factory = await Factory.deploy();
 
-
-//   const masterCopy = await RealityModuleETH.deploy(
-//     root.address,
-//     FIRST_ADDRESS,
-//     FIRST_ADDRESS,
-//     ZERO_ADDRESS,
-//     1,
-//     0,
-//     60,
-//     0,
-//     0,
-//     ZERO_ADDRESS,
-//     {
-//         gasLimit: 10000000 // 279668, // InvalidInputError: Transaction requires at least 279668 gas but got 100000
-//     }
-//   );
-
-// console.log("22424 is %s", 22424);
-
-//             // const { factory, masterCopy } = await baseSetup();
-//             // const [safe, oracle] = await ethers.getSigners();
-//             // const paramsValues = [
-//             //   safe.address,
-//             //   safe.address,
-//             //   safe.address,
-//             //   oracle.address,
-//             //   timeout,
-//             //   cooldown,
-//             //   expiration,
-//             //   bond,
-//             //   templateId,
-//             //   oracle.address,
-//             // ];
-//             // const encodedParams = [new AbiCoder().encode(paramsTypes, paramsValues)];
-//             // const initParams = masterCopy.interface.encodeFunctionData(
-//             //   "setUp",
-//             //   encodedParams
-//             // );
-//             // const receipt = await factory
-//             //   .deployModule(masterCopy.address, initParams, saltNonce)
-//             //   .then((tx: any) => tx.wait());
-        
-//             // // retrieve new address from event
-//             // const {
-//             //   args: [newProxyAddress],
-//             // } = receipt.events.find(
-//             //   ({ event }: { event: string }) => event === "ModuleProxyCreation"
-//             // );
-        
-//             // const newProxy = await hre.ethers.getContractAt(
-//             //   "RealityModuleETH",
-//             //   newProxyAddress
-//             // );
-//             // expect(await newProxy.questionTimeout()).to.be.eq(timeout);
-//             // expect(await newProxy.questionCooldown()).to.be.eq(cooldown);
-//             // expect(await newProxy.answerExpiration()).to.be.eq(expiration);
-//             // expect(await newProxy.minimumBond()).to.be.eq(BigNumber.from(bond));
-//             // expect(await newProxy.template()).to.be.eq(BigNumber.from(templateId));
-//           });
         it("Remove guild from the MetaDAO: VOTE IN SNAPSHOT", async function () {          
-            
-            // const Avatar = await ethers.getContractFactory("TestAvatar");
-            // const avatar = await Avatar.deploy();
+
             const Mock = await ethers.getContractFactory("MockContract");
             const mock = await Mock.deploy();
             const oracle = await hre.ethers.getContractAt("RealitioV3ERC20", mock.address);
-console.log("oracle.address is %s", oracle.address);
-            // const oracle = await hre.ethers.getContractAt("MockContract" /*"RealitioV3ERC20"*/, mock.address);
-console.log("0 is %s", 0);
+            console.log("oracle address is %s", oracle.address);
 
             let Module = await ethers.getContractFactory("RealityModuleERC20")
-console.log("3 is %s", 33);
             const module = await Module.deploy(
                 DOINGUD_AVATAR.address,
                 DOINGUD_AVATAR.address,
@@ -674,7 +628,7 @@ console.log("3 is %s", 33);
                 1, 10, 0, 0, 0,
                 authorizer_adaptor.address,
                 {
-                    gasLimit: 10000000, // 279668, // InvalidInputError: Transaction requires at least 279668 gas but got 100000
+                    gasLimit: 10000000, // InvalidInputError: Transaction requires at least 279668 gas but got 100000
                 }
             )
             await module.deployTransaction.wait()
@@ -683,39 +637,19 @@ console.log("3 is %s", 33);
             let module_proxy = await init.proxy();
             await module_proxy.initProxy(module.address);
             Module = Module.attach(module_proxy.address);
-console.log("Module.address is %s", Module.address);
 
-            // constructor(
-            //     address _owner,
-            //     address _avatar,
-            //     address _target,
-            //     RealitioV3 _oracle,
-            //     uint32 timeout,
-            //     uint32 cooldown,
-            //     uint32 expiration,
-            //     uint256 bond,
-            //     uint256 templateId,
-            //     address arbitrator
-            // )
-
-console.log("module_proxy.address is %s", module_proxy.address);
             // Add a proposal in Metadao’s snapshot to remove guild from the metadao
-            // propose
-            // targets = [root.address]; //DOINGUD_METADAO.address];
-            // calldatas = [DOINGUD_METADAO.interface.encodeFunctionData('removeGuild', [GUILD_TWO_CONTROLLERXGUILD.address])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+
             const id = "some_random_id";
             // const txHash = ethers.utils.solidityKeccak256(["string"], ["some_tx_data"]);
             const tx = { to: DOINGUD_METADAO.address, value: 0, data: DOINGUD_METADAO.interface.encodeFunctionData('removeGuild', [GUILD_TWO_CONTROLLERXGUILD.address]), operation: 0, nonce: 0 }
             // const tx = { to: user1.address, value: 0, data: "0xbaddad", operation: 0, nonce: 0 }
             const txHash = await module.getTransactionHash(tx.to, tx.value, tx.data, tx.operation, tx.nonce)
-console.log("2 is %s", 2);
 
             const question = await module.buildQuestion(id, [txHash]);
             const questionId = await module.getQuestionId(question, 0)
-console.log("3 is %s", 3);
             await mock.givenMethodReturnUint(oracle.interface.getSighash("askQuestionWithMinBondERC20"), questionId)
             await module.addProposal(id, [txHash])
-console.log("4 is %s", 4);
             const setMinimumBond = module.interface.encodeFunctionData(
                 "setMinimumBond",
                 [7331]
@@ -724,19 +658,16 @@ console.log("4 is %s", 4);
             console.log("DOINGUD_AVATAR.address is %s", DOINGUD_AVATAR.address);
             // await GUILD_ONE_AVATARXGUILD.exec(module.address, 0, setMinimumBond)
             await DOINGUD_AVATAR.enableModule(module.address)
-console.log("5 is %s", 5);
             const block = await ethers.provider.getBlock("latest")
             await mock.reset()
             await mock.givenMethodReturnUint(oracle.interface.getSighash("getBond"), 7331)
             await mock.givenMethodReturnBool(oracle.interface.getSighash("resultFor"), true)
             await mock.givenMethodReturnUint(oracle.interface.getSighash("getFinalizeTS"), block.timestamp)
-console.log("6 is %s", 6);
             await getFutureTimestamp(24); // await nextBlockTime(hre, block.timestamp + 24) // ts
 
             time.increase(time.duration.days(24));
 
             await module.executeProposal(id, [txHash], tx.to, tx.value, tx.data, tx.operation);
-console.log("7 is %s", 7);
             expect(
                 await module.executedProposalTransactions(ethers.utils.solidityKeccak256(["string"], [question]), txHash)
             ).to.be.equals(true)
