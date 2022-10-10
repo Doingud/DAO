@@ -242,7 +242,8 @@ contract MetaDaoController is Ownable {
 
     /// @notice Adds an external guild to the registry
     /// @param  guildAddress the address of the external guild's controller
-    function addExternalGuild(address guildAddress) external {//onlyOwner {
+    function addExternalGuild(address guildAddress) external {
+        //onlyOwner {
         /// Add check that guild address hasn't been added yet here
         if (guilds[guildAddress] != address(0)) {
             revert Exists();

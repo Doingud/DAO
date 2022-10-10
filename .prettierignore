@@ -9,6 +9,8 @@ node_modules/
 contracts/test
 deploy/
 deployments/
+contracts/zodiac/
+contracts/snapshot/ethereum/
 
 # files
 coverage.json
