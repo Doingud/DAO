@@ -5,8 +5,7 @@ const { ethers } = require('hardhat');
 const { TAX_RATE,
         AMOR_TOKEN_NAME, 
         AMOR_TOKEN_SYMBOL,
-        ZERO_ADDRESS,
-        ONE_ADDRESS
+        ZERO_ADDRESS
       } = require('./helpers/constants.js');
 
 const initialize = async (accounts) => {

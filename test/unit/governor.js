@@ -81,7 +81,9 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to set guardians if no addresses in array', async function () {
             //  *** Low level calls do not revert in testing ***
-            await avatar.enableModule(authorizer_adaptor.address);
+            let transactionCallData = avatar.interface.encodeFunctionData("enableModule", [authorizer_adaptor.address]);
+            await avatar.execTransactionFromModule(avatar.address, 0, transactionCallData, 0);
+
             let transactionData = governor.interface.encodeFunctionData("setGuardians", [[]]);
             await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0)).
                 to.emit(avatar, 'ExecutionFromModuleSuccess');
@@ -285,7 +287,9 @@ describe('unit - Contract: Governor', function () {
             let unSValues = [20];
             let unSCalldatas = [mockModule.interface.encodeFunctionData("testInteraction", [20])];
 
-            await avatar.connect(root).setGovernor(governor.address);
+            let transactionCallData = avatar.interface.encodeFunctionData("setGovernor", [governor.address]);
+            await avatar.execTransactionFromModule(avatar.address, 0, transactionCallData, 0);
+
             await expect(governor.connect(authorizer_adaptor).execute(unSTargets, unSValues, unSCalldatas))
                 .to.be.revertedWith(
                 'UnderlyingTransactionReverted()'
