@@ -15,6 +15,9 @@ async function main() {
 
     let tx = await proxy.initProxy(GuildController.address);
     console.log("tx is %s", tx);
+
+    const UPDATED_GuildController = GuildController.attach(proxy.address);
+    console.log("UPDATED_GuildController address is %s", UPDATED_GuildController.address);
   }
   
   main()

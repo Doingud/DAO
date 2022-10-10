@@ -57,13 +57,13 @@ describe("unit - Clone Factory", function () {
       this.guildOneDAmorXGuild = await CLONE_FACTORY.dAMORxGuildTokens(this.guildOneAmorXGuild);
       this.guildOneFXAmorXGuild = await CLONE_FACTORY.fxAMORxGuildTokens(this.guildOneAmorXGuild);
       this.guildOneControllerxGuild = await CLONE_FACTORY.guildControllers(this.guildOneAmorXGuild);
-      
+
       GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildOneAmorXGuild);
       GUILD_ONE_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(this.guildOneDAmorXGuild);
       GUILD_ONE_FXAMORXGUILD = FX_AMOR_TOKEN.attach(this.guildOneFXAmorXGuild);
       GUILD_ONE_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(this.guildOneControllerxGuild);
     });
-
+  
     it("Should have set the tokens' paramaters correctly", async function () {
       expect(await GUILD_ONE_AMORXGUILD.name()).to.equal("AMORx"+MOCK_GUILD_NAMES[0]);
       expect(await GUILD_ONE_DAMORXGUILD.name()).to.equal("dAMORx"+MOCK_GUILD_NAMES[0]);

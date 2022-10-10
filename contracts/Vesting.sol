@@ -94,19 +94,14 @@ contract Vesting is Ownable {
         if (amount > tokensAvailable(msg.sender)) {
             revert InsufficientFunds();
         }
-        Allocation storage allocation = allocations[msg.sender];
 
-        if (allocation.cliff > block.timestamp) {
-            revert NotVested();
-        }
+        Allocation storage allocation = allocations[msg.sender];
 
         /// Update internal balances
         allocation.tokensClaimed += amount;
         tokensWithdrawn += amount;
         /// Transfer the AMOR to the caller
-        if (!amorToken.transfer(msg.sender, amount)) {
-            revert TransferUnsuccessful();
-        }
+        amorToken.transfer(msg.sender, amount);
     }
 
     /// @notice Returns the amount of vested tokens allocated to the target
@@ -171,13 +166,19 @@ contract Vesting is Ownable {
         }
         /// Point to the Allocation
         Allocation storage allocation = allocations[beneficiary];
+
         /// Have all the tokens vested? If so, return the tokens allocated
         if (allocation.vestingDate <= block.timestamp) {
             return allocation.tokensAllocated - allocation.tokensClaimed;
         }
 
+        if (allocation.cliff > block.timestamp) {
+            revert NotVested();
+        }
+
         uint256 amount = (allocation.tokensAllocated * (block.timestamp - allocation.vestingStart)) /
             (allocation.vestingDate - allocation.vestingStart);
+
         return amount - allocation.tokensClaimed;
     }
 
