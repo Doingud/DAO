@@ -5,7 +5,8 @@ const { ethers } = require('hardhat');
 const { TAX_RATE,
         AMOR_TOKEN_NAME, 
         AMOR_TOKEN_SYMBOL,
-        ZERO_ADDRESS
+        ZERO_ADDRESS,
+        ONE_ADDRESS
       } = require('./helpers/constants.js');
 
 const initialize = async (accounts) => {
@@ -144,6 +145,8 @@ const avatar = async (setup) => {
     setup.roles.root.address, // owner
     setup.roles.authorizer_adaptor.address // governor Address
   );
+  let modules = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
+  console.log("In init: " + modules);
 
   const tx = {
     to: avatar.address,

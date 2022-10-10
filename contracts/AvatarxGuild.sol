@@ -44,7 +44,7 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
     event ExecutionFromGovernorFailure(address governorAddress);
     event Initialized(bool success, address owner, address governorAddress);
 
-    address public owner;
+    //address public owner;
     address public governor;
 
     address internal constant SENTINEL_MODULES = address(0x1);
@@ -68,26 +68,39 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         _;
     }
 
-    modifier onlyOwner() {
+    /*modifier onlyOwner() {
         if (msg.sender != owner) {
+            revert Unauthorized();
+        }
+        _;
+    }*/
+
+    modifier onlySelf() {
+        if (msg.sender != address(this)) {
             revert Unauthorized();
         }
         _;
     }
 
-    function init(address initOwner, address governorAddress_) external returns (bool) {
+    /// @notice Initializes the Avatar contract
+    /// @param  initModule the address of the module which can execute transactions after Snaphsot
+    /// @param  governorAddress_ the address of the GovernorxGuild
+    /// @return bool initialization successful/unsuccessful
+    function init(address initModule, address governorAddress_) external returns (bool) {
         if (_initialized) {
             revert AlreadyInitialized();
         }
         governor = governorAddress_;
-        owner = initOwner;
-        modules[SENTINEL_MODULES] = address(0x2);
+        //modules[SENTINEL_MODULES] = address(0x2);
         _initialized = true;
-        emit Initialized(_initialized, initOwner, governorAddress_);
+        /// Setup the first module provided by the MetaDAO
+        modules[initModule] = SENTINEL_MODULES;
+        modules[SENTINEL_MODULES] = initModule;
+        emit Initialized(_initialized, initModule, governorAddress_);
         return true;
     }
 
-    function setGovernor(address newGovernor) external onlyOwner {
+    function setGovernor(address newGovernor) external onlySelf {
         if (newGovernor == governor) {
             revert AlreadyInitialized();
         }
@@ -99,7 +112,7 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
     ///      This can only be done via a Safe transaction.
     /// @notice Enables the module `module` for the Safe.
     /// @param module Module to be whitelisted.
-    function enableModule(address module) public {
+    function enableModule(address module) public onlySelf {
         // Module address cannot be null or sentinel.
         if (module == address(0) || module == SENTINEL_MODULES) {
             revert NotEnabled();
@@ -118,7 +131,7 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
     /// @notice Disables the module `module` for the Safe.
     /// @param prevModule Module that pointed to the module to be removed in the linked list
     /// @param module Module to be removed.
-    function disableModule(address prevModule, address module) public {
+    function disableModule(address prevModule, address module) public onlySelf {
         // Validate module address and check that it corresponds to module index.
         if (module == address(0) || module == SENTINEL_MODULES) {
             revert NotDisabled();
