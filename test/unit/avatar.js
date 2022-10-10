@@ -139,20 +139,21 @@ describe('unit - Contract: Avatar', function () {
             expect(await avatar.isModuleEnabled(root.address)).to.equals(true);
 
             let encodedFail = "0x";
-            expect(await avatar.execTransactionFromModuleReturnData(avatar.address, 0, encodedFail, 0))
+            await expect(avatar.execTransactionFromModuleReturnData(avatar.address, 0, encodedFail, 0))
                 .to.emit(avatar, "ExecutionFromModuleFailure").withArgs(root.address);
         });
 
         it('it emits success in execTransactionFromModuleReturnData', async function () {
-            expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
-            let transactionCallData = avatar.interface.encodeFunctionData("enableModule", [operator.address]);
-            expect(await avatar.execTransactionFromModuleReturnData(avatar.address, 0, transactionCallData, 0))
-                .to.emit(avatar, "ExecutionFromModuleSuccess").withArgs(operator.address);
+            let transactionCallData = avatar.interface.encodeFunctionData("disableModule", [ONE_ADDRESS, operator.address]);
+            await expect(avatar.execTransactionFromModuleReturnData(avatar.address, 0, transactionCallData, 0))
+                .to.emit(avatar, "ExecutionFromModuleSuccess").withArgs(root.address);
         });
     });
 
     context('» getModulesPaginated testing', () => {
         it("returns array of enabled modules", async () => {
+            let transactionCallData = avatar.interface.encodeFunctionData("enableModule", [operator.address]);
+            await avatar.execTransactionFromModuleReturnData(avatar.address, 0, transactionCallData, 0)
             let array;
             [array, ] = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
             expect(array).to.contain(operator.address);

@@ -145,8 +145,6 @@ const avatar = async (setup) => {
     setup.roles.root.address, // owner
     setup.roles.authorizer_adaptor.address // governor Address
   );
-  let modules = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
-  console.log("In init: " + modules);
 
   const tx = {
     to: avatar.address,
