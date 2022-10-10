@@ -68,16 +68,13 @@ let GOVERNOR;
 // let GUILD_CONTROLLER_TWO;
 
 // let MOCK_MODULE;
-
 // let encodedIndex;
 // let encodedIndex2;
-
-let targets;
-let values;
-let calldatas;
-let firstProposalId;
+// let targets;
+// let values;
+// let calldatas;
+// let firstProposalId;
 //const FEE_INDEX = ethers.utils.keccak256(toUtf8Bytes("FEE_INDEX"));
-
 
 let CONTROLLERXGUILD;
 let GOVERNORXGUILD;
@@ -336,6 +333,45 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         );
 
         await DOINGUD_METADAO.updateIndex([encodedIndex, encodedIndex2], 0);
+
+
+        // setup Snapshot
+        const wallets = await ethers.getSigners();
+        const safeSigner = wallets[0]; // One 1 signer on the safe
+      
+        const GnosisSafeL2 = await ethers.getContractFactory(
+          '@gnosis.pm/safe-contracts/contracts/GnosisSafeL2.sol:GnosisSafeL2'
+        );
+        const FactoryContract = await ethers.getContractFactory(
+          '@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol:GnosisSafeProxyFactory'
+        );
+        const singleton = await GnosisSafeL2.deploy();
+        const factory = await FactoryContract.deploy();
+      
+        const template = await factory.callStatic.createProxy(singleton.address, '0x');
+        await factory.createProxy(singleton.address, '0x');
+      
+        const safe = GnosisSafeL2.attach(template);
+        safe.setup([safeSigner.address], 1, ZERO_ADDRESS, '0x', ZERO_ADDRESS, ZERO_ADDRESS, 0, ZERO_ADDRESS);
+      
+        const SnapshotXContract = await ethers.getContractFactory('SnapshotXL1Executor');
+      
+        //deploying singleton master contract
+        const masterzodiacModule = await SnapshotXContract.deploy(
+          GUILD_ONE_AVATARXGUILD.address,
+          GUILD_ONE_AVATARXGUILD.address,
+          GUILD_ONE_AVATARXGUILD.address,
+          GUILD_ONE_AVATARXGUILD.address,
+          1,
+          []
+        );
+
+        zodiacModule = masterzodiacModule;
+      
+        domain = {
+            chainId: ethers.BigNumber.from(network.config.chainId),
+            verifyingContract: zodiacModule.address,
+        };
     });
 
     beforeEach('setup', async function() {
@@ -367,45 +403,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
     context('» Add guild to the MetaDAO', () => {
 
         it("Should Add guild to the MetaDAO: ADD A PROPOSAL IN SNAPSHOT", async function () {       
-            const wallets = await ethers.getSigners();
-            const safeSigner = wallets[0]; // One 1 signer on the safe
-          
-            const GnosisSafeL2 = await ethers.getContractFactory(
-              '@gnosis.pm/safe-contracts/contracts/GnosisSafeL2.sol:GnosisSafeL2'
-            );
-            const FactoryContract = await ethers.getContractFactory(
-              '@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol:GnosisSafeProxyFactory'
-            );
-            const singleton = await GnosisSafeL2.deploy();
-            const factory = await FactoryContract.deploy();
-          
-            const template = await factory.callStatic.createProxy(singleton.address, '0x');
-            await factory.createProxy(singleton.address, '0x');
-          
-            const safe = GnosisSafeL2.attach(template);
-            safe.setup([safeSigner.address], 1, ZERO_ADDRESS, '0x', ZERO_ADDRESS, ZERO_ADDRESS, 0, ZERO_ADDRESS);
-          
-            const SnapshotXContract = await ethers.getContractFactory('SnapshotXL1Executor');
-          
-            //deploying singleton master contract
-            const masterzodiacModule = await SnapshotXContract.deploy(
-              GUILD_ONE_AVATARXGUILD.address,
-              GUILD_ONE_AVATARXGUILD.address,
-              GUILD_ONE_AVATARXGUILD.address,
-              GUILD_ONE_AVATARXGUILD.address,
-              1,
-              []
-            );
-
-            zodiacModule = masterzodiacModule;
-          
-            domain = {
-                chainId: ethers.BigNumber.from(network.config.chainId),
-                verifyingContract: zodiacModule.address,
-            };
-
-            await GUILD_ONE_AVATARXGUILD.enableModule(zodiacModule.address);
-    
+            await GUILD_ONE_AVATARXGUILD.enableModule(zodiacModule.address);    
             
             // Get a deployed guild with default AMOR token            
             expect(await GUILD_ONE_CONTROLLERXGUILD.AMOR()).to.equals(DOINGUD_AMOR_TOKEN.address);
@@ -493,100 +491,84 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         });
 
         it("Transfer Guild’s fund from the Avatar contract: VOTE IN SNAPSHOT", async function () {
-            
-            console.log("GUILD_ONE_FXAMORXGUILD.address is %s", GUILD_ONE_FXAMORXGUILD.address);
-            console.log("GUILD_ONE_AVATARXGUILD.address is %s", GUILD_ONE_AVATARXGUILD.address);
-            console.log("DOINGUD_AMOR_TOKEN.address is %s", DOINGUD_AMOR_TOKEN.address);
-            console.log("GUILD_ONE_CONTROLLERXGUILD.address is %s", GUILD_ONE_CONTROLLERXGUILD.address);
-            console.log("DOINGUD_METADAO.address is %s", DOINGUD_METADAO.address);
-            
-            
+            await GUILD_ONE_AVATARXGUILD.enableModule(zodiacModule.address);
             await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
-           
-            guardians = [staker.address, operator.address, user3.address];
-            await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).setGuardians(guardians);
+
+            tx1 = { to: DOINGUD_AMOR_TOKEN.address,value: 0, data: DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('transfer', [user3.address, 20]), operation: 0, nonce: 0 }
+
+            const txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, tx1);
+
+            const abiCoder = new ethers.utils.AbiCoder();
+            const executionHash = ethers.utils.keccak256(
+                abiCoder.encode(['bytes32[]'], [[txHash1]])
+            );
+            const proposal_outcome = 1;
 
             // Add a proposal in guild’s snapshot to transfer guild’s funds somewhere
-            // propose
-            targets = [DOINGUD_AMOR_TOKEN.address];
-            values = [0];
-            calldatas = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('transfer', [user3.address, 20])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+            await zodiacModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+                txHash1,
+            ]);
 
-            await expect(GUILD_ONE_GOVERNORXGUILD.proposals(0)).to.be.reverted;
-            await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).propose(targets, values, calldatas);
-            await expect(GUILD_ONE_GOVERNORXGUILD.proposals(1)).to.be.reverted;
+            expect(await zodiacModule.getNumOfTxInProposal(0)).to.equal(1);
 
-            // const oldProposalId = firstProposalId;
-            firstProposalId = await GUILD_ONE_GOVERNORXGUILD.proposals(0);
-            // expect(oldProposalId).to.not.equal(firstProposalId);
-
-            expect((await GUILD_ONE_GOVERNORXGUILD.proposalVoting(firstProposalId)).toString()).to.equals("0");
-            expect((await GUILD_ONE_GOVERNORXGUILD.proposalWeight(firstProposalId)).toString()).to.equals("0");
-            
-            // Pass the proposal on the snapshot
-            time.increase(time.duration.days(1));
-            // Vote for the proposal in the snapshot
-            // TODO: add SNAPSHOT INTERACTION HERE
-            // old(current-to-change): Vote as a guardians to pass the proposal locally            
-            await GUILD_ONE_GOVERNORXGUILD.connect(staker).castVote(firstProposalId, true);
-            await GUILD_ONE_GOVERNORXGUILD.connect(operator).castVote(firstProposalId, true);
-            await GUILD_ONE_GOVERNORXGUILD.connect(user3).castVote(firstProposalId, false);
-            expect(await GUILD_ONE_GOVERNORXGUILD.proposalVoting(firstProposalId)).to.equals(2);
-            expect(await GUILD_ONE_GOVERNORXGUILD.proposalWeight(firstProposalId)).to.equals(3);
-
-
-            // Execute the proposal and for the proposal with guardians
-            time.increase(time.duration.days(14));
             const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(user3.address);
 
-            await expect(GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).execute(targets, values, calldatas))
-                .to
-                .emit(GUILD_ONE_GOVERNORXGUILD, "ProposalExecuted").withArgs(firstProposalId);
+            // Execute the proposal
+            await zodiacModule.executeProposalTx(0, tx1.to, tx1.value, tx1.data, tx1.operation);
 
             const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(user3.address);
             expect(balanceAfter).to.be.gt(balanceBefore);
 
-            await expect(GUILD_ONE_GOVERNORXGUILD.voters(firstProposalId)).to.be.reverted;    
+            
+            // await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
+           
+            // guardians = [staker.address, operator.address, user3.address];
+            // await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).setGuardians(guardians);
+
+            // // Add a proposal in guild’s snapshot to transfer guild’s funds somewhere
+            // // propose
+            // targets = [DOINGUD_AMOR_TOKEN.address];
+            // values = [0];
+            // calldatas = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('transfer', [user3.address, 20])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
+
+            // await expect(GUILD_ONE_GOVERNORXGUILD.proposals(0)).to.be.reverted;
+            // await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).propose(targets, values, calldatas);
+            // await expect(GUILD_ONE_GOVERNORXGUILD.proposals(1)).to.be.reverted;
+
+            // // const oldProposalId = firstProposalId;
+            // firstProposalId = await GUILD_ONE_GOVERNORXGUILD.proposals(0);
+            // // expect(oldProposalId).to.not.equal(firstProposalId);
+
+            // expect((await GUILD_ONE_GOVERNORXGUILD.proposalVoting(firstProposalId)).toString()).to.equals("0");
+            // expect((await GUILD_ONE_GOVERNORXGUILD.proposalWeight(firstProposalId)).toString()).to.equals("0");
+            
+            // // Pass the proposal on the snapshot
+            // time.increase(time.duration.days(1));
+            // // Vote for the proposal in the snapshot
+            // // TODO: add SNAPSHOT INTERACTION HERE
+            // // old(current-to-change): Vote as a guardians to pass the proposal locally            
+            // await GUILD_ONE_GOVERNORXGUILD.connect(staker).castVote(firstProposalId, true);
+            // await GUILD_ONE_GOVERNORXGUILD.connect(operator).castVote(firstProposalId, true);
+            // await GUILD_ONE_GOVERNORXGUILD.connect(user3).castVote(firstProposalId, false);
+            // expect(await GUILD_ONE_GOVERNORXGUILD.proposalVoting(firstProposalId)).to.equals(2);
+            // expect(await GUILD_ONE_GOVERNORXGUILD.proposalWeight(firstProposalId)).to.equals(3);
+
+
+            // // Execute the proposal and for the proposal with guardians
+            // time.increase(time.duration.days(14));
+            // const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(user3.address);
+
+            // await expect(GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).execute(targets, values, calldatas))
+            //     .to
+            //     .emit(GUILD_ONE_GOVERNORXGUILD, "ProposalExecuted").withArgs(firstProposalId);
+
+            // const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(user3.address);
+            // expect(balanceAfter).to.be.gt(balanceBefore);
+
+            // await expect(GUILD_ONE_GOVERNORXGUILD.voters(firstProposalId)).to.be.reverted;    
         });
 
         it("Donate Guild’s fund from the Avatar contract: VOTE IN SNAPSHOT", async function () {  
-            const wallets = await ethers.getSigners();
-            const safeSigner = wallets[0]; // One 1 signer on the safe
-          
-            const GnosisSafeL2 = await ethers.getContractFactory(
-              '@gnosis.pm/safe-contracts/contracts/GnosisSafeL2.sol:GnosisSafeL2'
-            );
-            const FactoryContract = await ethers.getContractFactory(
-              '@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol:GnosisSafeProxyFactory'
-            );
-            const singleton = await GnosisSafeL2.deploy();
-            const factory = await FactoryContract.deploy();
-          
-            const template = await factory.callStatic.createProxy(singleton.address, '0x');
-            await factory.createProxy(singleton.address, '0x');
-          
-            const safe = GnosisSafeL2.attach(template);
-            safe.setup([safeSigner.address], 1, ZERO_ADDRESS, '0x', ZERO_ADDRESS, ZERO_ADDRESS, 0, ZERO_ADDRESS);
-          
-            const SnapshotXContract = await ethers.getContractFactory('SnapshotXL1Executor');
-          
-            //deploying singleton master contract
-            const masterzodiacModule = await SnapshotXContract.deploy(
-              GUILD_ONE_AVATARXGUILD.address,
-              GUILD_ONE_AVATARXGUILD.address,
-              GUILD_ONE_AVATARXGUILD.address,
-              GUILD_ONE_AVATARXGUILD.address,
-              1,
-              []
-            );
-
-            zodiacModule = masterzodiacModule;
-          
-            domain = {
-                chainId: ethers.BigNumber.from(network.config.chainId),
-                verifyingContract: zodiacModule.address,
-            };
-
             await GUILD_ONE_AVATARXGUILD.enableModule(zodiacModule.address);
 
             expect(await zodiacModule.avatar()).to.equal(GUILD_ONE_AVATARXGUILD.address);
@@ -662,6 +644,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
         it("Remove guild from the MetaDAO: VOTE IN SNAPSHOT", async function () {          
 
+            // USED ZODIAC RealityModuleERC20
             const Mock = await ethers.getContractFactory("MockContract");
             const mock = await Mock.deploy();
             const oracle = await hre.ethers.getContractAt("RealitioV3ERC20", mock.address);
@@ -940,7 +923,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             const balanceAfter3 = amount * 3 / 2;
             expect((await DOINGUD_AMOR_GUILD_TOKEN.balanceOf(DOINGUD_CONTROLLER.address)).toString()).to.equal(balanceAfter3.toString());
         });
-
         it("Finalize report vote for the Guild with part of reports passing", async function () {          
             // Gain some amount of donations
             await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
