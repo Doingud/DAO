@@ -1,13 +1,11 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { ZERO_ADDRESS, ONE_ADDRESS, TWO_ADDRESS } = require("../helpers/constants.js");
+const { ZERO_ADDRESS, ONE_ADDRESS } = require("../helpers/constants.js");
 const init = require('../test-init.js');
 
 let avatar;
-let governor;
 let authorizer_adaptor;
 let operator;
-let user;
 let mockModule;
 
 let iface;
@@ -24,12 +22,11 @@ describe('unit - Contract: Avatar', function () {
         avatar = setup.avatars.avatar;
         mockModule = setup.avatars.module;
         await init.governor(setup);
-        governor = await init.governor(setup);
+        await init.governor(setup);
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;
         authorizer_adaptor = setup.roles.authorizer_adaptor;
-        user = setup.roles.user3;
         user2 = setup.roles.user2;
     });
 
@@ -156,8 +153,8 @@ describe('unit - Contract: Avatar', function () {
 
     context('» getModulesPaginated testing', () => {
         it("returns array of enabled modules", async () => {
-            let array, next;
-            [array, next] = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
+            let array;
+            [array, ] = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
             expect(array).to.contain(operator.address);
             expect(array).to.contain(root.address);
             expect(array.length).to.equal(2);
