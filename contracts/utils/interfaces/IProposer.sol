@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.15;
 
+import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
+
 interface IProposer {
-    /// The Reality module from the Community Safe
-    address public reality;
 
     function setUp(bytes memory initializeParams) external;
 

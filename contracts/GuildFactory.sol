@@ -100,6 +100,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         cloneTarget = _doinGudProxy;
         metaDaoController = _metaDaoController;
         multisig = _multisig;
+        proposerModule = _proposer;
     }
 
     /// @notice This deploys a new guild with it's associated tokens
@@ -252,26 +253,27 @@ contract GuildFactory is ICloneFactory, Ownable {
     /// @notice Deploys the Proposer Module for the guild
     /// @dev    This module is linked to a specific Reality.eth module
     /// @return address of the deployed module
-    function _deployProposer() returns (address) {
+    function _deployProposer() internal returns (address) {
         IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
         proxyContract.initProxy(guildComponents[amorxGuildToken][GuildComponents.ProposerxGuild]);
     }
 
     /// @notice Initializes the Guild Control Structures
     /// @param  amorGuildToken the AmorxGuild token address for this guild
-    /// @param  owner address: owner of the Guild
+    /// @param  module address: owner of the Guild
     /// @return success bool: indicates if contract were successfully initialized
     function _initGuildControls(
         address amorGuildToken,
-        address module,
+        address module
     ) internal returns (bool success) {
         /// Init the Proposer
-        bytes initParams = abi.encode(
+        bytes memory initParams = abi.encode(
             guildComponents[amorGuildToken][GuildComponents.AvatarxGuild],
             guildComponents[amorGuildToken][GuildComponents.GovernorxGuild],
             module
         );
-        success = IProposer(guildComponents[amorGuildToken][GuildComponents.ProposerxGuild]).setUp(initParams);
+        
+        IProposer(guildComponents[amorGuildToken][GuildComponents.ProposerxGuild]).setUp(initParams);
         /// Init the Guild Controller
         success = IGuildController(guildComponents[amorGuildToken][GuildComponents.ControllerxGuild]).init(
             /// Currently here, trying to make sure Avatar is the Owner of Controller

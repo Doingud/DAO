@@ -3,10 +3,11 @@
 pragma solidity 0.8.15;
 
 import "@gnosis.pm/zodiac/contracts/core/Module.sol";
+import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/interfaces/IGovernor.sol";
 
-contract Proposer is Module, Ownable {
+contract Proposer is Module {
     /// The Reality module from the Community Safe
     address public reality;
 
@@ -24,9 +25,9 @@ contract Proposer is Module, Ownable {
         bytes[] calldata data,
         Enum.Operation operation
     ) external returns (bool) {
-        bytes proposeFunctionSelector = bytes4(keccak256("propose(address[], uint256[], bytes[]"));
-        bytes arguments = abi.encode(targets, values, data);
-        bytes proposal = abi.encodeWithSelector(proposeFunctionSelector, arguments);
+        bytes4 proposeFunctionSelector = bytes4(keccak256("propose(address[], uint256[], bytes[]"));
+        bytes memory arguments = abi.encode(targets, values, data);
+        bytes memory proposal = abi.encodeWithSelector(proposeFunctionSelector, arguments);
         return exec(target, 0, proposal, operation);
     }
 }
