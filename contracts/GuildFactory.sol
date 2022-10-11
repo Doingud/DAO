@@ -190,9 +190,6 @@ contract GuildFactory is ICloneFactory, Ownable {
         IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
         proxyContract.initProxy(_implementation);
 
-        if (address(proxyContract) == address(0)) {
-            revert CreationFailed();
-        }
         /// Check which token contract should be deployed
         if (guildComponents[guildTokenAddress][GuildComponents.FXAmorxGuild] != address(0)) {
             IdAMORxGuild(address(proxyContract)).init(

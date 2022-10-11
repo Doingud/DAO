@@ -178,9 +178,6 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         if (guilds[msg.sender] == address(0)) {
             revert InvalidGuild();
         }
-        if (whitelist[token] == address(0)) {
-            revert NotListed();
-        }
         uint256 amount = guildFunds[msg.sender][token];
         if (amount == 0) {
             revert InvalidClaim();
@@ -345,6 +342,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
 
         for (uint256 i; i < weights.length; i++) {
             (address guild, uint256 weight) = abi.decode(weights[i], (address, uint256));
+            index.indexDenominator -= index.indexWeights[guild];
             index.indexWeights[guild] = weight;
             index.indexDenominator += weight;
             index.creator = msg.sender;

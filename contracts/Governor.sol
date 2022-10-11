@@ -68,7 +68,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     mapping(uint256 => int256) public proposalVoting;
     mapping(uint256 => int256) public proposalWeight;
 
-    uint256 public GUARDIANS_LIMIT; // amount of guardians for contract to function propperly,
+    uint256 public guardiansLimit; // amount of guardians for contract to function propperly,
     // until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.
 
     address[] public guardians; // this is an array guardians who are allowed to vote for the proposals.
@@ -89,6 +89,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         uint256 startBlock,
         uint256 endBlock
     );
+    event ChangedGuardiansLimit(uint256 newLimit);
 
     string public _name;
     bool private _initialized;
@@ -96,6 +97,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     uint256 private _votingDelay;
     uint256 private _votingPeriod;
 
+    error InvalidProposalId();
     error AlreadyInitialized();
     error NotEnoughGuardians();
     error Unauthorized();
@@ -135,6 +137,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
         _votingDelay = 1;
         _votingPeriod = 2 weeks;
+        guardiansLimit = 1;
 
         emit Initialized(_initialized, avatarAddress_, snapshotAddress_);
         return true;
@@ -142,7 +145,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
     /// @notice this modifier is needed to validate that amount of the Guardians is sufficient to vote and approve the “Many” decision
     modifier GuardianLimitReached() {
-        if (guardians.length < GUARDIANS_LIMIT) {
+        if (guardians.length < guardiansLimit) {
             revert NotEnoughGuardians();
         }
         _;
@@ -241,6 +244,14 @@ contract DoinGudGovernor is IDoinGudGovernor {
         weights[newGuardian] = 1;
     }
 
+    /// @notice this function changes guardians limit
+    /// Should be passed to the Avatar as a Governor contract proposal
+    /// @param newLimit New limit value
+    function changeGuardiansLimit(uint256 newLimit) external onlyAvatar {
+        guardiansLimit = newLimit;
+        emit ChangedGuardiansLimit(newLimit);
+    }
+
     /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote.
     /// Only Avatar(as a result of the Snapshot) contract can add a proposal for voting.
     /// Proposal execution will happen throught the Avatar contract
@@ -248,7 +259,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas
-    ) external onlySnapshot returns (uint256) {
+    ) external onlySnapshot GuardianLimitReached returns (uint256) {
         if (!(targets.length == values.length && targets.length == calldatas.length)) {
             revert InvalidParameters();
         }
@@ -298,13 +309,9 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @dev Internal vote casting mechanism: Check that the vote is pending, that it has not been cast yet
     /// @param proposalId ID of the proposal
     /// @param support Boolean value: true (for) or false (against) user is voting
-    function castVote(uint256 proposalId, bool support) external onlyGuardian {
+    function castVote(uint256 proposalId, bool support) external onlyGuardian GuardianLimitReached {
         if (state(proposalId) != ProposalState.Active) {
             revert InvalidState();
-        }
-
-        if (AMORxGuild.balanceOf(msg.sender) > 0) {
-            revert InvalidAmount();
         }
 
         for (uint256 i = 0; i < voters[proposalId].length; i++) {
@@ -331,7 +338,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas
-    ) external returns (uint256) {
+    ) external GuardianLimitReached returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas);
 
         ProposalState status = state(proposalId);
@@ -367,10 +374,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         ProposalCore storage proposal = _proposals[proposalId];
 
         if (proposal.voteStart == 0) {
-            revert("Governor: unknown proposal id");
-        }
-        if (proposal.canceled) {
-            return ProposalState.Canceled;
+            revert InvalidProposalId();
         }
 
         if (proposal.voteStart >= block.timestamp) {
@@ -401,10 +405,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
         if (state != ProposalState.Active) {
             revert InvalidState();
-        }
-
-        if (AMORxGuild.balanceOf(msg.sender) > 0) {
-            revert InvalidAmount();
         }
 
         for (uint256 i = 0; i < cancellers[proposalId].length; i++) {

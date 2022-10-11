@@ -61,12 +61,13 @@ describe("unit - Clone Factory", function () {
       expect(await CLONE_FACTORY.deployGuildContracts(user1.address, MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0])).to.not.be.null;
 
       this.guildOneAmorXGuild = await CLONE_FACTORY.amorxGuildTokens(0);
+
       this.guildOneDAmorXGuild = await CLONE_FACTORY.guildComponents(this.guildOneAmorXGuild, 0);
       this.guildOneFXAmorXGuild = await CLONE_FACTORY.guildComponents(this.guildOneAmorXGuild, 1);
       this.guildOneControllerxGuild = await CLONE_FACTORY.guildComponents(this.guildOneAmorXGuild, 2);
       this.guildOneGovernorxGuild = await CLONE_FACTORY.guildComponents(this.guildOneAmorXGuild, 3);
       this.guildOneAvatarxGuild = await CLONE_FACTORY.guildComponents(this.guildOneAmorXGuild, 4);
-      
+
       GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(this.guildOneAmorXGuild);
       GUILD_ONE_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(this.guildOneDAmorXGuild);
       GUILD_ONE_FXAMORXGUILD = FX_AMOR_TOKEN.attach(this.guildOneFXAmorXGuild);
@@ -74,7 +75,7 @@ describe("unit - Clone Factory", function () {
       GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(this.guildOneGovernorxGuild);
       GUILD_ONE_AVATARXGUILD = AVATARXGUILD.attach(this.guildOneAvatarxGuild);
     });
-
+  
     it("Should have set the tokens' paramaters correctly", async function () {
       expect(await GUILD_ONE_AMORXGUILD.name()).to.equal("AMORx"+MOCK_GUILD_NAMES[0]);
       expect(await GUILD_ONE_DAMORXGUILD.name()).to.equal("dAMORx"+MOCK_GUILD_NAMES[0]);
