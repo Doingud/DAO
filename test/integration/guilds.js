@@ -103,7 +103,7 @@ let DOINGUD_METADAO;
 
 let GUILD_ONE_AMORXGUILD;
 // let GUILD_ONE_DAMORXGUILD;
-let GUILD_ONE_FXAMORXGUILD;
+// let GUILD_ONE_FXAMORXGUILD;
 let GUILD_ONE_CONTROLLERXGUILD;
 let GUILD_ONE_GOVERNORXGUILD;
 let GUILD_ONE_AVATARXGUILD;
@@ -172,7 +172,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         CONTROLLER = setup.controller;
         GOVERNOR = setup.governor;
         AVATAR = setup.avatars.avatar;
-
         CONTROLLERXGUILD = setup.controller;
         GOVERNORXGUILD = setup.governor;
         AVATARXGUILD = setup.avatars.avatar;
@@ -266,9 +265,9 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         );
 
         await DOINGUD_GOVERNOR.init(
-            "DoinGud Governor",
+            // "DoinGud Governor",
             DOINGUD_AMOR_GUILD_TOKEN.address, //AMORxGuild
-            setup.roles.authorizer_adaptor.address, // Snapshot Address
+            // setup.roles.authorizer_adaptor.address, // Snapshot Address
             DOINGUD_AVATAR.address // Avatar Address
         );
 
@@ -282,7 +281,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         IMPACT_MAKERS = [user2.address, user3.address, staker.address];
         IMPACT_MAKERS_WEIGHTS = [20, 20, 60];
         await DOINGUD_CONTROLLER.setImpactMakers(IMPACT_MAKERS, IMPACT_MAKERS_WEIGHTS);
-
         /// Setup the first two Guilds
         await DOINGUD_METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
         let AmorxOne = await CLONE_FACTORY.amorxGuildTokens(0);
@@ -291,7 +289,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         let ControllerxOne = await CLONE_FACTORY.guildComponents(AmorxOne, 2);
         let GovernorxOne = await CLONE_FACTORY.guildComponents(AmorxOne, 3);
         let AvatarxOne = await CLONE_FACTORY.guildComponents(AmorxOne, 4);
-
         GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(AmorxOne);
         GUILD_ONE_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(DAmorxOne);
         GUILD_ONE_FXAMORXGUILD = FX_AMOR_TOKEN.attach(FXAmorxOne);
@@ -409,22 +406,18 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             expect(await GUILD_ONE_CONTROLLERXGUILD.AMOR()).to.equals(DOINGUD_AMOR_TOKEN.address);
             expect(await GUILD_ONE_CONTROLLERXGUILD.AMORxGuild()).to.equals(GUILD_ONE_AMORXGUILD.address);
             expect(await GUILD_ONE_GOVERNORXGUILD.avatarAddress()).to.equals(GUILD_ONE_AVATARXGUILD.address);
-            expect(await GUILD_ONE_GOVERNORXGUILD.token()).to.equals(GUILD_ONE_AMORXGUILD.address);
 
             expect(await GUILD_ONE_AVATARXGUILD.governor()).to.equals(GUILD_ONE_GOVERNORXGUILD.address);
 
             // set guardians
             guardians = [staker.address, operator.address, user3.address];
-            await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).setGuardians(guardians);
-            expect(await GUILD_ONE_GOVERNORXGUILD.guardians(0)).to.equals(staker.address);
-            expect(await GUILD_ONE_GOVERNORXGUILD.guardians(1)).to.equals(operator.address);
-            expect(await GUILD_ONE_GOVERNORXGUILD.guardians(2)).to.equals(user3.address);
+            // await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).setGuardians(guardians);
+            await GUILD_ONE_AVATARXGUILD.enableModule(authorizer_adaptor.address);
+            let transactionData = GUILD_ONE_GOVERNORXGUILD.interface.encodeFunctionData("setGuardians", [guardians]);
+            await GUILD_ONE_AVATARXGUILD.connect(authorizer_adaptor).execTransactionFromModule(GUILD_ONE_GOVERNORXGUILD.address, 0, transactionData, 0);
 
             // Add a proposal on the Snapshot to add guild to the Metadao
             await DOINGUD_AMOR_TOKEN.connect(authorizer_adaptor).approve(GUILD_ONE_CONTROLLERXGUILD.address, TEST_TRANSFER);
-
-            guardians = [staker.address, operator.address, user3.address];
-            await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).setGuardians(guardians);
 
             expect(await GUILD_ONE_CONTROLLERXGUILD.AMOR()).to.equal(DOINGUD_AMOR_TOKEN.address);
             await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
@@ -579,15 +572,15 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             await DOINGUD_AMOR_TOKEN.transfer(authorizer_adaptor.address, ONE_HUNDRED_ETHER);
             await DOINGUD_AMOR_TOKEN.connect(authorizer_adaptor).approve(GUILD_ONE_CONTROLLERXGUILD.address, TEST_TRANSFER);
 
+            // set guardians
             guardians = [staker.address, operator.address, user3.address];
-            await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).setGuardians(guardians);
+            await GUILD_ONE_AVATARXGUILD.enableModule(authorizer_adaptor.address);
+
+            let transactionData = GUILD_ONE_GOVERNORXGUILD.interface.encodeFunctionData("setGuardians", [guardians]);
+            await GUILD_ONE_AVATARXGUILD.connect(authorizer_adaptor).execTransactionFromModule(GUILD_ONE_GOVERNORXGUILD.address, 0, transactionData, 0);
 
             expect(await GUILD_ONE_CONTROLLERXGUILD.AMOR()).to.equal(DOINGUD_AMOR_TOKEN.address);
 
-            console.log("GUILD_ONE_FXAMORXGUILD.address is %s", GUILD_ONE_FXAMORXGUILD.address);
-            console.log("GUILD_ONE_AVATARXGUILD.address is %s", GUILD_ONE_AVATARXGUILD.address);
-            console.log("DOINGUD_AMOR_TOKEN.address is %s", DOINGUD_AMOR_TOKEN.address);
-            console.log("GUILD_ONE_CONTROLLERXGUILD.address is %s", GUILD_ONE_CONTROLLERXGUILD.address);
             await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
 
             tx1 = {
@@ -648,7 +641,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             const Mock = await ethers.getContractFactory("MockContract");
             const mock = await Mock.deploy();
             const oracle = await hre.ethers.getContractAt("RealitioV3ERC20", mock.address);
-            console.log("oracle address is %s", oracle.address);
+            console.log("Oracle address is %s", oracle.address);
 
             let Module = await ethers.getContractFactory("RealityModuleERC20")
             const module = await Module.deploy(
@@ -681,9 +674,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             const questionId = await module.getQuestionId(question, 0)
             await mock.givenMethodReturnUint(oracle.interface.getSighash("askQuestionWithMinBondERC20"), questionId)
             await module.addProposal(id, [txHash])
-
-            console.log("DOINGUD_METADAO.address is %s", DOINGUD_METADAO.address);
-            console.log("DOINGUD_AVATAR.address is %s", DOINGUD_AVATAR.address);
 
             await DOINGUD_AVATAR.enableModule(module.address)
             const block = await ethers.provider.getBlock("latest")
