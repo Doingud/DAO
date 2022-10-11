@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
-import "hardhat/console.sol";
+
 /**
  * @title  Daoism Systems: ERC20Base.sol
  * @author Daoism Systems
@@ -137,10 +137,7 @@ abstract contract ERC20Base is Context, IERC20 {
      * - `spender` cannot be the zero address.
      */
     function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        console.log("       AMOR spender is %s", spender);
-        console.log("       AMOR amount is %s", amount);
         address owner = _msgSender();
-        console.log("       AMOR owner is %s", owner);
         _approve(owner, spender, amount);
         return true;
     }

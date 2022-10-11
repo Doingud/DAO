@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-import "hardhat/console.sol";
+
 pragma solidity 0.8.15;
 
 /**
@@ -127,8 +127,6 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     /// @param  amount uint256 amount of AMOR to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
     function stakeAmor(address to, uint256 amount) external override whenNotPaused returns (uint256) {
-        console.log("tokenAmor.balanceOf(msg.sender) is %s", tokenAmor.balanceOf(msg.sender));
-        console.log("amount is %s", amount);
         if (tokenAmor.balanceOf(msg.sender) < amount) {
             revert UnsufficientAmount();
         }

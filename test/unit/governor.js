@@ -1,6 +1,7 @@
 const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+const { ZERO_ADDRESS } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
 const twoWeeks = time.duration.days(14);
@@ -77,9 +78,11 @@ describe('unit - Contract: Governor', function () {
             values = [0];
             calldatas = [mockModule.interface.encodeFunctionData("testInteraction", [20])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
 
-            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas)).to.be.revertedWith(
-                'NotEnoughGuardians()'
-            );
+            await avatar.connect(root).enableModule(root.address);
+            await expect(governor.proposals(0)).to.be.reverted;
+            let transactionData = governor.interface.encodeFunctionData("propose", [targets, values, calldatas]);
+            await avatar.connect(root).execTransactionFromModule(governor.address, 0, transactionData, 0);
+            await expect(governor.proposals(0)).to.be.reverted;
         });
         
         it('it fails to set guardians if not the snapshot', async function () {
@@ -108,14 +111,19 @@ describe('unit - Contract: Governor', function () {
         it('it sets guardians when list of the new guardians is less than before', async function () {
             guardians = [operator.address, staker.address];
 
-            await governor.connect(authorizer_adaptor).setGuardians(guardians);
+            let transactionData = governor.interface.encodeFunctionData("setGuardians", [guardians]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
+
+            // await governor.connect(authorizer_adaptor).setGuardians(guardians);
             expect(await governor.guardians(0)).to.equals(operator.address);
             expect(await governor.guardians(1)).to.equals(staker.address);
             expect(await governor.guardians(2)).to.equals(ZERO_ADDRESS);
 
             // return previous user and guardians variables back            
             guardians = [staker.address, operator.address, user.address];
-            await governor.connect(authorizer_adaptor).setGuardians(guardians);
+            // await governor.connect(authorizer_adaptor).setGuardians(guardians);
+            transactionData = governor.interface.encodeFunctionData("setGuardians", [guardians]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
         });
     });
 

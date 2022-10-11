@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity 0.8.15;
-import "hardhat/console.sol";
+
 /**
  * @title  DoinGud: AvatarxGuild.sol
  * @author Daoism Systems
@@ -143,7 +143,6 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         bytes calldata data,
         Enum.Operation operation
     ) external returns (bool success) {
-        console.log("       to is %s", to);
         // Only whitelisted modules are allowed.
         if (msg.sender == SENTINEL_MODULES || modules[msg.sender] == address(0)) {
             revert NotWhitelisted();
@@ -151,7 +150,6 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         emit ExecutionFromModuleSuccess(msg.sender);
         /// Enum resolves to 0 or 1
         /// 0: call; 1: delegatecall
-        console.log("       before call to is %s", to);
         if (uint8(operation) == 1) (success, ) = to.delegatecall(data);
         else (success, ) = to.call{value: value}(data);
 
@@ -202,9 +200,6 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         bytes memory proposal,
         Enum.Operation operation
     ) public onlyGovernor returns (bool) {
-        console.log("executeProposal: avatar msg.sender is %s", msg.sender);
-        console.log("executeProposal: target is %s", target);
-        console.log("executeProposal: uint8(operation) is %s", uint8(operation));
         bool success;
         if (uint8(operation) == 1) (success, ) = target.delegatecall(proposal);
         else (success, ) = target.call{value: value}(proposal);

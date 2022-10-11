@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity >=0.8.0;
-import "hardhat/console.sol";
+
 import "@gnosis.pm/zodiac/contracts/core/Module.sol";
 import "./RealitioV3.sol";
 
@@ -111,9 +111,7 @@ abstract contract RealityModule is Module {
                     address
                 )
             );
-        console.log("MODULE 1 is %s", 1);
         __Ownable_init();
-        console.log("MODULE 2 is %s", 2);
         require(_avatar != address(0), "Avatar can not be zero address");
         require(_target != address(0), "Target can not be zero address");
         require(timeout > 0, "Timeout has to be greater 0");
@@ -335,7 +333,6 @@ abstract contract RealityModule is Module {
         Enum.Operation operation,
         uint256 txIndex
     ) public {
-        console.log("go is %s");
         // We use the hash of the question to check the execution state, as the other parameters might change, but the question not
         bytes32 questionHash = keccak256(
             bytes(buildQuestion(proposalId, txHashes))
@@ -357,7 +354,6 @@ abstract contract RealityModule is Module {
             txIndex
         );
         require(txHashes[txIndex] == txHash, "Unexpected transaction hash");
-        console.log("go 2 is %s");
 
         // Check that the result of the question is 1 (true)
         require(
@@ -397,7 +393,6 @@ abstract contract RealityModule is Module {
         // Mark transaction as executed
         executedProposalTransactions[questionHash][txHash] = true;
         // Execute the transaction via the target.
-        console.log("go 3 is %s");
 
         require(exec(to, value, data, operation), "Module transaction failed");
     }

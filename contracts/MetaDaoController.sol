@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
-import "hardhat/console.sol";
+
 /**
  * @title  DoinGud: MetaDaoController.sol
  * @author Daoism Systems
@@ -178,11 +178,9 @@ contract MetaDaoController is Ownable {
             revert InvalidGuild();
         }
         uint256 amount = guildFunds[msg.sender][token];
-        console.log("amount is %s", amount);
         if (amount == 0) {
             revert InvalidClaim();
         }
-        console.log("metadao 3 is %s", 3);
         donations[token] -= amount;
         /// Clear this guild's token balance
         delete guildFunds[msg.sender][token];
@@ -268,7 +266,6 @@ contract MetaDaoController is Ownable {
     /// @notice removes guild based on id
     /// @param  controller the address of the guild controller to remove
     function removeGuild(address controller) external {
-        console.log("   eee is %s");
         if (guilds[controller] == address(0)) {
             revert InvalidGuild();
         }

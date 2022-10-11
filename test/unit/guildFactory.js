@@ -22,7 +22,6 @@ use(solidity);
   let GUILD_ONE_DAMORXGUILD;
   let GUILD_ONE_FXAMORXGUILD;
   let GUILD_ONE_CONTROLLERXGUILD;
-  let TEST_ZERO_FACTORY;
   let GUILD_ONE_AVATARXGUILD;
   let GUILD_ONE_GOVERNORXGUILD;
 
@@ -47,10 +46,9 @@ describe("unit - Clone Factory", function () {
     user1 = setup.roles.user1;
 
     await init.getGuildFactory(setup);
-    CLONE_FACTORY = setup.factory;
+    CLONE_FACTORY = setup.factory.guildFactory;
     CONTROLLERXGUILD = setup.controller;
 
-    TEST_ZERO_FACTORY = setup.factory.testGuildZeroFactory;
     GOVERNORXGUILD = setup.governor;
     AVATARXGUILD = setup.avatars.avatar;
   });
@@ -76,12 +74,6 @@ describe("unit - Clone Factory", function () {
       GUILD_ONE_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(this.guildOneControllerxGuild);
       GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(this.guildOneGovernorxGuild);
       GUILD_ONE_AVATARXGUILD = AVATARXGUILD.attach(this.guildOneAvatarxGuild);
-    });
-
-    it("Should fail to deploy the Guild Token Contracts if cloneTarget = address 0", async function () {
-      await expect(TEST_ZERO_FACTORY.deployGuildContracts(user1.address, MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0])).to.be.revertedWith(
-        'CreationFailed()'
-      );
     });
   
     it("Should have set the tokens' paramaters correctly", async function () {

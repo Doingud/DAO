@@ -57,7 +57,7 @@ describe("unit - MetaDao", function () {
         CONTROLLER = setup.controller;
         ///   Setup the guild factory
         await init.getGuildFactory(setup);
-        FACTORY = setup.factory;
+        FACTORY = setup.factory.guildFactory;
 
         await METADAO.init(AMOR_TOKEN.address, FACTORY.address, setup.roles.root.address);
     });
@@ -136,11 +136,6 @@ describe("unit - MetaDao", function () {
     });
 
     context('function: removeGuild()', () => {
-        it('Should fail to remove guilds if not an admin address', async function () {
-            await expect(METADAO.connect(user1).removeGuild(GUILD_CONTROLLER_ONE.address)).
-                to.be.revertedWith('Ownable');
-        });
-
         it('Should fail to remove guilds if InvalidGuild', async function () {
             await expect(METADAO.removeGuild(METADAO.address)).
                 to.be.revertedWith('InvalidGuild');
@@ -210,6 +205,8 @@ describe("unit - MetaDao", function () {
             user2 = setup.roles.user2;
             user3 = setup.roles.user3;
             pool = setup.roles.pool;
+            await init.avatar(setup);
+            await init.governor(setup);
             /// Setup the MetaDao first
             await init.metadao(setup);
             METADAO2 = setup.metadao;
@@ -220,7 +217,7 @@ describe("unit - MetaDao", function () {
             await init.getGuildFactory(setup);
             FACTORY2 = setup.factory.guildFactory;
 
-            await METADAO2.init(AMOR_TOKEN2.address, FACTORY2.address);
+            await METADAO2.init(AMOR_TOKEN2.address, FACTORY2.address, root.address);
 
             /// Setup the guilds through the METADAO
             await METADAO2.createGuild(user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);

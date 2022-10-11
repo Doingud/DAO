@@ -125,7 +125,9 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             const newAmount = COEFFICIENT* (koef*koef) *ONE_HUNDRED_ETHER; // (koef)^2 *amount | NdAMOR = f(t)^2 *nAMOR
             const expectedAmount = ethers.BigNumber.from(realAmount).add(ethers.BigNumber.from(newAmount.toString()));
 
-            await dAMORxGuild.connect(staker).increaseStake(ONE_HUNDRED_ETHER);     
+            await dAMORxGuild.connect(staker).increaseStake(ONE_HUNDRED_ETHER);    
+            staked = ethers.BigNumber.from(staked).add(ethers.BigNumber.from(ONE_HUNDRED_ETHER.toString()));
+
             const newRealAmount = await dAMORxGuild.balanceOf(staker.address);
             const roundedNewRealAmount = Math.round(newRealAmount.toString() * 100) / 100;
 
@@ -296,11 +298,8 @@ describe('unit - Contract: dAMORxGuild Token', function () {
         });  
 
         it('stakes AMORxGuild tokens and mints dAMORxGuild if now withdrawed', async function () {
-const amountBefore1 = (await dAMORxGuild.balanceOf(staker.address)).toString();
-console.log("amountBefore1 is %s", amountBefore1);
             time.increase(maxLockTime);
-const amountBefore = (await dAMORxGuild.balanceOf(staker.address)).toString();
-console.log("amountBefore is %s", amountBefore);
+            const amountBefore = (await dAMORxGuild.balanceOf(staker.address)).toString();
             await AMORxGuild.connect(root).mint(staker.address, ONE_HUNDRED_ETHER);
             await AMORxGuild.connect(staker).approve(dAMORxGuild.address, ONE_HUNDRED_ETHER);
 
@@ -308,11 +307,9 @@ console.log("amountBefore is %s", amountBefore);
 
             const difference = 190;
             const expectedAmount = COEFFICIENT* (koef*koef) *ONE_HUNDRED_ETHER; // (koef)^2 *amount | NdAMOR = f(t)^2 *nAMOR
-console.log("expectedAmount is %s",             expectedAmount);
             const expectedAmountAfter = ethers.BigNumber.from(amountBefore)
                 .add(ethers.BigNumber.from(expectedAmount.toString()))
                 .sub(ethers.BigNumber.from(difference.toString()));
-console.log("expectedAmountAfter is %s", expectedAmountAfter);
 
             AMORxGuildBalanceBefore = await AMORxGuild.balanceOf(dAMORxGuild.address);
             await dAMORxGuild.connect(staker).stake(ONE_HUNDRED_ETHER, normalTime);        
