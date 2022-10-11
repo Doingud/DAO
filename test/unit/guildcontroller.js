@@ -274,7 +274,7 @@ describe('unit - Contract: GuildController', function () {
 
         it('it fails to donate if NotWhitelistedToken', async function () {
             await expect(controller.connect(user).donate(TEST_TRANSFER_SMALLER, USDC.address)).to.be.revertedWith(
-                'NotListed()'
+                'NotWhitelistedToken()'
             );
         });
     });

@@ -188,7 +188,7 @@ describe("unit - MetaDao", function () {
         });
 
 
-        it('Should fail if ', async function () {
+        it('Should fail if no index', async function () {
             let AMOR_TOKEN2;
             let USDC2;
             let user2;
@@ -206,7 +206,7 @@ describe("unit - MetaDao", function () {
             USDC2 = setup.tokens.ERC20Token;
             ///   Setup signer accounts
             root = setup.roles.root;
-            multisig = setup.roles.doingud_multisig;    
+            multisig = setup.roles.doingud_multisig;
             user2 = setup.roles.user2;
             user3 = setup.roles.user3;
             pool = setup.roles.pool;
@@ -215,10 +215,12 @@ describe("unit - MetaDao", function () {
             METADAO2 = setup.metadao;
             ///   Setup the Controller
             await init.controller(setup);
+            await init.avatar(setup);
+            await init.governor(setup);
             CONTROLLER2 = setup.controller;
             ///   Setup the guild factory
             await init.getGuildFactory(setup);
-            FACTORY2 = setup.factory.guildFactory;
+            FACTORY2 = setup.factory;
 
             await METADAO2.init(AMOR_TOKEN2.address, FACTORY2.address);
 
@@ -290,12 +292,12 @@ describe("unit - MetaDao", function () {
 
         it('Should revert to claim NotListed token', async function () {
             await expect(GUILD_CONTROLLER_ONE.gatherDonation(GUILD_CONTROLLER_TWO.address)).
-                to.be.revertedWith("NotListed()");
+                to.be.revertedWith("NotWhitelistedToken()");
         });
 
         it('Should revert if called not listed token', async function () {
             await expect(GUILD_CONTROLLER_ONE.gatherDonation(GUILD_CONTROLLER_ONE.address)).
-                to.be.revertedWith("NotListed()");
+                to.be.revertedWith("NotWhitelistedToken()");
         });
 
         it('Should revert if called with no tokens allocated', async function () {
