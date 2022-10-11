@@ -17,7 +17,7 @@ async function main() {
     let Governor = await b.deployed();
     console.log("Governor address:", Governor.address);
 
-    let tx = await Governor.init(AMOR, Snapshot, Avatar);
+    let tx = await Governor.init('Governor', AMOR, Snapshot, Avatar);
     console.log("tx is %s", tx);
     console.log("DoinGudProxy address:", Governor.address);
 }

@@ -16,6 +16,7 @@ async function main() {
     let b = await a.attach(AMOR_)
     let AMORToken = await b.deployed();
     console.log("AMORToken address:", AMORToken.address);
+    console.log("AMORToken owner is %s", await AMORToken.owner());
 
     const tx = await AMORToken.init("AMOR Token", "AMOR", taxCollector, defaulTaxRate, admin);
     console.log("tx is %s", tx);

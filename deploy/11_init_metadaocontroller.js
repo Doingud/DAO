@@ -17,6 +17,7 @@ async function main() {
     let b = await a.attach(MetaDao)
     let MetaDaoController = await b.deployed();
     console.log("MetaDaoController address:", MetaDaoController.address);
+    console.log("MetaDaoController owner is %s", await MetaDaoController.owner());
 
     let tx = await MetaDaoController.init(AMORToken, GuildFactory);
     console.log("tx is %s", tx);
