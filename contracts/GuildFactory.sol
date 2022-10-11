@@ -31,6 +31,7 @@ import "./utils/interfaces/IdAMORxGuild.sol";
 import "./utils/interfaces/IGuildController.sol";
 import "./utils/interfaces/IAvatarxGuild.sol";
 import "./utils/interfaces/IGovernor.sol";
+import "./utils/interfaces/IProposer.sol";
 
 contract GuildFactory is ICloneFactory, Ownable {
     /// The various Guild Components
@@ -40,7 +41,8 @@ contract GuildFactory is ICloneFactory, Ownable {
         FXAmorxGuild,
         ControllerxGuild,
         GovernorxGuild,
-        AvatarxGuild
+        AvatarxGuild,
+        ProposerxGuild
     }
 
     /// The AMOR Token address
@@ -51,6 +53,8 @@ contract GuildFactory is ICloneFactory, Ownable {
     address public immutable metaDaoController;
     /// The DoinGud Multisig address
     address public immutable multisig;
+    /// The Proposer module
+    address public immutable proposerModule;
     /// The DoinGud generic proxy contract (the target)
     address public immutable cloneTarget;
 
@@ -78,7 +82,8 @@ contract GuildFactory is ICloneFactory, Ownable {
         address _governor,
         address _avatarxGuild,
         address _metaDaoController,
-        address _multisig
+        address _multisig,
+        address _proposer
     ) {
         /// The AMOR Token address
         amorToken = _amorToken;
@@ -89,6 +94,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         guildComponents[amorxGuildToken][GuildComponents.ControllerxGuild] = _controllerxGuild;
         guildComponents[amorxGuildToken][GuildComponents.GovernorxGuild] = _governor;
         guildComponents[amorxGuildToken][GuildComponents.AvatarxGuild] = _avatarxGuild;
+        guildComponents[amorxGuildToken][GuildComponents.ProposerxGuild] = _proposer;
 
         /// `_cloneTarget` refers to the DoinGud Proxy
         cloneTarget = _doinGudProxy;
@@ -98,10 +104,11 @@ contract GuildFactory is ICloneFactory, Ownable {
 
     /// @notice This deploys a new guild with it's associated tokens
     /// @dev    Takes the names and symbols and associates it to a guild
+    /// @param  module The address of the Reality.eth module linked to this guild's snapshot
     /// @param  _name The name of the Guild without the prefix "AMORx"
     /// @param  _symbol The symbol of the Guild
     function deployGuildContracts(
-        address guildOwner,
+        address module,
         string memory _name,
         string memory _symbol
     )
@@ -156,7 +163,10 @@ contract GuildFactory is ICloneFactory, Ownable {
         avatar = _deployAvatar();
         guildComponents[currentGuild][GuildComponents.AvatarxGuild] = avatar;
 
-        if (!_initGuildControls(_name, currentGuild, guildOwner)) {
+        /// Deploy the Proposer Module
+        guildComponents[currentGuild][GuildComponents.ProposerxGuild] = _deployProposer();
+
+        if (!_initGuildControls(currentGuild, module)) {
             revert Unsuccessful();
         }
     }
@@ -239,19 +249,33 @@ contract GuildFactory is ICloneFactory, Ownable {
         return address(proxyContract);
     }
 
+    /// @notice Deploys the Proposer Module for the guild
+    /// @dev    This module is linked to a specific Reality.eth module
+    /// @return address of the deployed module
+    function _deployProposer() returns (address) {
+        IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
+        proxyContract.initProxy(guildComponents[amorxGuildToken][GuildComponents.ProposerxGuild]);
+    }
+
     /// @notice Initializes the Guild Control Structures
-    /// @param  name string: name of the guild being deployed
     /// @param  amorGuildToken the AmorxGuild token address for this guild
     /// @param  owner address: owner of the Guild
     /// @return success bool: indicates if contract were successfully initialized
     function _initGuildControls(
-        string memory name,
         address amorGuildToken,
-        address owner
+        address module,
     ) internal returns (bool success) {
+        /// Init the Proposer
+        bytes initParams = abi.encode(
+            guildComponents[amorGuildToken][GuildComponents.AvatarxGuild],
+            guildComponents[amorGuildToken][GuildComponents.GovernorxGuild],
+            module
+        );
+        success = IProposer(guildComponents[amorGuildToken][GuildComponents.ProposerxGuild]).setUp(initParams);
         /// Init the Guild Controller
         success = IGuildController(guildComponents[amorGuildToken][GuildComponents.ControllerxGuild]).init(
-            owner,
+            /// Currently here, trying to make sure Avatar is the Owner of Controller
+            guildComponents[amorGuildToken][GuildComponents.AvatarxGuild],
             amorToken,
             amorGuildToken,
             guildComponents[amorGuildToken][GuildComponents.FXAmorxGuild],
@@ -261,7 +285,7 @@ contract GuildFactory is ICloneFactory, Ownable {
 
         /// Init the AvatarxGuild
         success = IAvatarxGuild(guildComponents[amorGuildToken][GuildComponents.AvatarxGuild]).init(
-            owner,
+            module,
             guildComponents[amorGuildToken][GuildComponents.GovernorxGuild]
         );
 
