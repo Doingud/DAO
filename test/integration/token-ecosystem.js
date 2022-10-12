@@ -104,8 +104,8 @@ const setupTests = deployments.createFixture(async () => {
 
   ///   STEP 2: Deploy DoinGud Control Structures
   await init.metadao(setup);
-  await init.controller(setup);
   await init.avatar(setup);
+  await init.controller(setup);
   await init.governor(setup);
   await init.proposer(setup);
 

@@ -63,7 +63,7 @@ contract GuildFactory is ICloneFactory, Ownable {
     /// All the deployed AMORxGuild Tokens
     address[] public amorxGuildTokens;
 
-    /// CONSTANTS
+    /// Constants
     uint256 public constant DEFAULT_GUARDIAN_THRESHOLD = 10;
 
     /// ERRORS

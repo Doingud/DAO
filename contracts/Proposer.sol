@@ -11,6 +11,12 @@ contract Proposer is Module {
     /// The Reality module from the Community Safe
     address public reality;
 
+    /// Errors
+    /// The calling address is not the `Reality` module
+    error Unauthorized();
+
+    /// @notice Initializes the Module
+    /// @param  intializeParams Encoded initializing parameters passed from the GuildFactory
     function setUp(bytes memory initializeParams) public override {
         (address _avatar, address _target, address _reality) = abi.decode(initializeParams, (address, address, address));
         target = _target;
@@ -19,12 +25,23 @@ contract Proposer is Module {
         _transferOwnership(avatar);
     }
 
+    /// @notice Allows for on-chain execution of off-chain vote
+    /// @dev    Links to a `Reality`/`SnapSafe` module
+    /// @param  targets An array of proposed targets for proposed transactions
+    /// @param  values An array of values corresponding to proposed transactions
+    /// @param  data An array of encoded function calls with parameters corresponding to proposals
+    /// @param  operation A specifying enum corresponding to the type of low-level call to use (`delegateCall` or `Call`)
+    /// @return bool Was the proposal successfully proposed to the GovernorxGuild
     function proposeAfterVote(
         address[] memory targets,
         uint256[] memory values,
         bytes[] calldata data,
         Enum.Operation operation
     ) external returns (bool) {
+        if (msg.sender != reality) {
+            revert Unauthorized();
+        }
+
         bytes4 proposeFunctionSelector = bytes4(keccak256("propose(address[], uint256[], bytes[]"));
         bytes memory arguments = abi.encode(targets, values, data);
         bytes memory proposal = abi.encodeWithSelector(proposeFunctionSelector, arguments);
