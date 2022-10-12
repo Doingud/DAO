@@ -122,31 +122,33 @@ contract GuildFactory is ICloneFactory, Ownable {
         address currentGuild = _deployGuildToken(tokenName, tokenSymbol);
         amorxGuildTokens.push(currentGuild);
 
-        /// Deploy FXAMORxGuild contract
-        tokenName = string.concat("FXAMORx", _name);
-        tokenSymbol = string.concat("FXx", _symbol);
+        /// Deploy dAMORxGuild contract
+        tokenName = string.concat("dAMORx", _name);
+        tokenSymbol = string.concat("Dx", _symbol);
         address clonedContract = _deployTokenContracts(
             currentGuild,
             tokenName,
             tokenSymbol,
-            guildComponents[amorxGuildToken][GuildComponents.FXAmorxGuild]
-        );
-        guildComponents[currentGuild][GuildComponents.FXAmorxGuild] = clonedContract;
-
-        /// Deploy dAMORxGuild contract
-        tokenName = string.concat("dAMORx", _name);
-        tokenSymbol = string.concat("Dx", _symbol);
-        clonedContract = _deployTokenContracts(
-            currentGuild,
-            tokenName,
-            tokenSymbol,
-            guildComponents[amorxGuildToken][GuildComponents.DAmorxGuild]
+            guildComponents[amorxGuildToken][GuildComponents.DAmorxGuild],
+            msg.sender
         );
         guildComponents[currentGuild][GuildComponents.DAmorxGuild] = clonedContract;
 
         /// Deploy the ControllerxGuild
         controller = _deployGuildController();
         guildComponents[currentGuild][GuildComponents.ControllerxGuild] = controller;
+
+        /// Deploy FXAMORxGuild contract
+        tokenName = string.concat("FXAMORx", _name);
+        tokenSymbol = string.concat("FXx", _symbol);
+        clonedContract = _deployTokenContracts(
+            currentGuild,
+            tokenName,
+            tokenSymbol,
+            guildComponents[amorxGuildToken][GuildComponents.FXAmorxGuild],
+            controller
+        );
+        guildComponents[currentGuild][GuildComponents.FXAmorxGuild] = clonedContract;
 
         /// Deploy the Guild Governor
         governor = _deployGovernor();
@@ -187,23 +189,24 @@ contract GuildFactory is ICloneFactory, Ownable {
         address guildTokenAddress,
         string memory guildName,
         string memory guildSymbol,
-        address _implementation
+        address _implementation,
+        address futureOwner
     ) internal returns (address) {
         IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
         proxyContract.initProxy(_implementation);
 
         /// Check which token contract should be deployed
-        if (guildComponents[guildTokenAddress][GuildComponents.FXAmorxGuild] != address(0)) {
+        if (guildComponents[guildTokenAddress][GuildComponents.DAmorxGuild] == address(0)) {
             IdAMORxGuild(address(proxyContract)).init(
                 guildName,
                 guildSymbol,
-                msg.sender,
+                futureOwner,
                 guildTokenAddress,
                 DEFAULT_GUARDIAN_THRESHOLD
             );
         } else {
             /// FXAMOR uses the same `init` layout as IAMORxGuild
-            IAmorxGuild(address(proxyContract)).init(guildName, guildSymbol, msg.sender, guildTokenAddress);
+            IAmorxGuild(address(proxyContract)).init(guildName, guildSymbol, futureOwner, guildTokenAddress);
         }
 
         return address(proxyContract);
