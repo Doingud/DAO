@@ -76,7 +76,7 @@ contract GuildFactory is ICloneFactory, Ownable {
     /// Sentinal
     address constant SENTINEL_GUILDS = address(1);
     /// Create a mapping of AvatarxGuild GuildComponents
-    mapping(address => GuildComponents) guilds;
+    mapping(address => GuildComponents) public guilds;
     mapping(address => address) public guildsList;
 
     /// A mapping of the AmorxGuild address => the related GuildComponent's address
