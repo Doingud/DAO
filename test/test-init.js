@@ -198,7 +198,7 @@ const getGuildFactory = async (setup) => {
     setup.governor.address,
     setup.avatars.avatar.address,
     setup.metadao.address, // metaDaoController
-    setup.roles.root.address // multisig
+    setup.proposer.address // multisig
   );
 
   const factory = guildFactory;
@@ -208,7 +208,7 @@ const getGuildFactory = async (setup) => {
   return factory;
 }
 
-const metadao = async(setup) =>{
+const metadao = async(setup) => {
   const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController');
   const metadao = await MetaDaoFactory.deploy();
 
@@ -232,6 +232,15 @@ const vestingContract = async (setup) => {
   return vesting;
 }
 
+const proposer = async(setup) => {
+  const proposerFactory = await ethers.getContractFactory("Proposer");
+  const proposer = await proposerFactory.deploy();
+
+  setup.proposer = proposer;
+
+  return proposer;
+}
+
 module.exports = {
   controller,
   getTokens,
@@ -242,5 +251,6 @@ module.exports = {
   governor,
   metadao,
   metadaoMock,
-  proxy
+  proxy,
+  proposer
 }; 

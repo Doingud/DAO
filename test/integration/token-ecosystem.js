@@ -37,6 +37,7 @@ let AVATARXGUILD;
 let VESTING;
 let ERC20_TOKEN;
 let AMOR_TOKEN_UPGRADE;
+let PROPOSER;
 
 /// The proxy for AMOR token
 let amor_proxy;
@@ -106,11 +107,13 @@ const setupTests = deployments.createFixture(async () => {
   await init.controller(setup);
   await init.avatar(setup);
   await init.governor(setup);
+  await init.proposer(setup);
 
   CONTROLLERXGUILD = setup.controller;
   GOVERNORXGUILD = setup.governor;
   AVATARXGUILD = setup.avatars.avatar;
   METADAO = setup.metadao;
+  PROPOSER = setup.proposer;
 
   ///   STEP 3: Deploy the proxies for the tokens and the control structures
   ///   `amor_proxy` is declared earlier to allow upgrade testing
