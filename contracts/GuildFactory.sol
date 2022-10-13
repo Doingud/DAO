@@ -54,6 +54,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         address GovernorxGuild;
     }
 
+    /// The Mastercopy/Implementation Addresses
     /// The AMOR Token address
     address public immutable amorToken;
     /// The address for the AMORxGuild Token implementation
@@ -64,27 +65,17 @@ contract GuildFactory is ICloneFactory, Ownable {
     address public immutable snapshot;
     /// The DoinGud generic proxy contract (the target)
     address public immutable cloneTarget;
-
-    /// ***FOR GAS TESTING PURPOSES***
-    /// Additional variables
-    address public avatarxGuild;
-    address public dAmorxGuild;
-    address public fXAmorxGuild;
-    address public controllerxGuild;
-    address public governorxGuild;
+    address public immutable avatarxGuild;
+    address public immutable dAmorxGuild;
+    address public immutable fXAmorxGuild;
+    address public immutable controllerxGuild;
+    address public immutable governorxGuild;
 
     /// Sentinal
-    address constant SENTINEL_GUILDS = address(1);
+    address private constant SENTINEL_GUILDS = address(1);
     /// Create a mapping of AvatarxGuild GuildComponents
     mapping(address => GuildComponents) public guilds;
     mapping(address => address) public guildsList;
-
-    /// A mapping of the AmorxGuild address => the related GuildComponent's address
-    /// Note Guild Components implementations = guildComponents[amorxGuildToken][GuildComponent]
-    //mapping(address => mapping(GuildComponents => address)) public guildComponents;
-
-    /// All the deployed AMORxGuild Tokens
-    //address[] public amorxGuildTokens;
 
     /// CONSTANTS
     uint256 public constant DEFAULT_GUARDIAN_THRESHOLD = 10;
@@ -109,13 +100,6 @@ contract GuildFactory is ICloneFactory, Ownable {
         amorToken = _amorToken;
         /// Set the implementation addresses
         amorxGuildToken = _amorxGuildToken;
-        /*
-        guildComponents[amorxGuildToken][GuildComponents.FXAmorxGuild] = _fxAMORxGuildToken;
-        guildComponents[amorxGuildToken][GuildComponents.DAmorxGuild] = _dAMORxGuildToken;
-        guildComponents[amorxGuildToken][GuildComponents.ControllerxGuild] = _controllerxGuild;
-        guildComponents[amorxGuildToken][GuildComponents.GovernorxGuild] = _governor;
-        guildComponents[amorxGuildToken][GuildComponents.AvatarxGuild] = _avatarxGuild;
-        */
         fXAmorxGuild = _fxAMORxGuildToken;
         dAmorxGuild = _dAMORxGuildToken;
         controllerxGuild = _controllerxGuild;
@@ -149,7 +133,6 @@ contract GuildFactory is ICloneFactory, Ownable {
 
         /// Deploy the Guild Avatar
         avatar = _deployAvatar();
-        //guildComponents[currentGuild][GuildComponents.AvatarxGuild] = avatar;
         /// Add the Avatar to the linked list
         guildsList[avatar] = guildsList[SENTINEL_GUILDS];
         guildsList[SENTINEL_GUILDS] = avatar;
@@ -161,39 +144,26 @@ contract GuildFactory is ICloneFactory, Ownable {
         tokenName = string.concat("AMORx", _name);
         tokenSymbol = string.concat("Ax", _symbol);
         guild.AmorGuildToken = _deployGuildToken(tokenName, tokenSymbol);
-        //amorxGuildTokens.push(currentGuild);
 
         /// Deploy FXAMORxGuild contract
         tokenName = string.concat("FXAMORx", _name);
         tokenSymbol = string.concat("FXx", _symbol);
-        guild.FXAmorxGuild = _deployTokenContracts(
-            avatar,
-            tokenName,
-            tokenSymbol,
-            fXAmorxGuild
-        );
-        //guildComponents[currentGuild][GuildComponents.FXAmorxGuild] = clonedContract;
+        guild.FXAmorxGuild = _deployTokenContracts(avatar, tokenName, tokenSymbol, fXAmorxGuild);
 
         /// Deploy dAMORxGuild contract
         tokenName = string.concat("dAMORx", _name);
         tokenSymbol = string.concat("Dx", _symbol);
-        guild.DAmorxGuild = _deployTokenContracts(
-            avatar,
-            tokenName,
-            tokenSymbol,
-            dAmorxGuild
-        );
-        //guildComponents[currentGuild][GuildComponents.DAmorxGuild] = clonedContract;
+        guild.DAmorxGuild = _deployTokenContracts(avatar, tokenName, tokenSymbol, dAmorxGuild);
 
         /// Deploy the ControllerxGuild
         guild.ControllerxGuild = _deployGuildController();
-        //guildComponents[currentGuild][GuildComponents.ControllerxGuild] = controller;
 
         /// Deploy the Guild Governor
         guild.GovernorxGuild = _deployGovernor();
-        //guildComponents[currentGuild][GuildComponents.GovernorxGuild] = governor;
 
         _initGuildControls(_name, avatar, guildOwner);
+
+        return (guild.ControllerxGuild, guild.GovernorxGuild, avatar);
     }
 
     /// @notice Internal function to deploy clone of an implementation contract
@@ -290,10 +260,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         );
 
         /// Init the AvatarxGuild
-        IAvatarxGuild(avatar).init(
-            owner,
-            guilds[avatar].GovernorxGuild
-        );
+        IAvatarxGuild(avatar).init(owner, guilds[avatar].GovernorxGuild);
 
         /// Init the AvatarxGuild
         IDoinGudGovernor(guilds[avatar].GovernorxGuild).init(
