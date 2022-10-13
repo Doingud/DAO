@@ -59,7 +59,7 @@ contract GuildFactory is ICloneFactory, Ownable {
 
     uint256 public defaultGuardianThreshold = 10;
 
-    event TokensAndControllerCreated(
+    event GuildCreated(
         address amorxGuildToken,
         address dAMORxGuildToken,
         address fxAMORxGuildToken,
@@ -142,7 +142,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         );
         guildControllers[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
 
-        emit TokensAndControllerCreated(
+        emit GuildCreated(
             amorxGuildTokens[amorxGuildTokens.length - 1],
             dAMORxGuildTokens[amorxGuildTokens[amorxGuildTokens.length - 1]],
             fxAMORxGuildTokens[amorxGuildTokens[amorxGuildTokens.length - 1]],
