@@ -238,7 +238,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         if (targets.length > PROPOSAL_MAX_OPERATIONS) {
             revert InvalidParameters();
         }
-        /// Submit proposals uniquely identified by a proposalId and an array of txHashes, 
+        /// Submit proposals uniquely identified by a proposalId and an array of txHashes,
         /// to create a Reality.eth question that validates the execution of the connected transactions
         uint256 proposalId = hashProposal(targets, values, calldatas);
 
