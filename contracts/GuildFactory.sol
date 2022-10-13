@@ -33,18 +33,7 @@ import "./utils/interfaces/IAvatarxGuild.sol";
 import "./utils/interfaces/IGovernor.sol";
 
 contract GuildFactory is ICloneFactory, Ownable {
-    /// The various Guild Components
-    /// Note AmorxGuild is excluded
-    /*
-    enum GuildComponents {
-        DAmorxGuild,
-        FXAmorxGuild,
-        ControllerxGuild,
-        GovernorxGuild,
-        AvatarxGuild
-    }
-    */
-
+    /// The various guild components
     struct GuildComponents {
         //address AvatarxGuild;
         address AmorGuildToken;
