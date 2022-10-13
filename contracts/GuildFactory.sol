@@ -60,8 +60,6 @@ contract GuildFactory is ICloneFactory, Ownable {
     address public immutable controllerxGuild;
     address public immutable governorxGuild;
 
-    /// Sentinal
-    address private constant SENTINEL_GUILDS = address(1);
     /// Create a mapping of AvatarxGuild GuildComponents
     mapping(address => GuildComponents) public guilds;
 
