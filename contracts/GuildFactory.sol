@@ -20,7 +20,7 @@ pragma solidity 0.8.15;
  *  that use the ERC20Base.sol contracts developed for DoinGud.
  *
  */
-import "hardhat/console.sol";
+
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
