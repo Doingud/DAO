@@ -50,16 +50,6 @@ async function main() {
     const MetaDaoControllerFactory = await ethers.getContractFactory("MetaDaoController");
     const MetaDaoController = await MetaDaoControllerFactory.deploy(admin);
     console.log("MetaDaoController address:", MetaDaoController.address);
-
-    // no proxy for MetaDaoController because await MetaDaoController.owner() is 0x0000000000000000000000000000000000000001 --> can't transferOwnership
-    // a  = await ethers.getContractFactory('DoinGudProxy')
-    // proxy = await a.deploy();
-    // console.log("proxy address:", proxy.address);
-    // tx = await proxy.initProxy(MetaDaoController.address);
-    // console.log("tx is %s", tx);
-
-    // const UPDATED_MetaDaoController = MetaDaoController.attach(proxy.address);
-    // console.log("UPDATED_MetaDaoController address is %s", UPDATED_MetaDaoController.address);
   }
   
   main()
