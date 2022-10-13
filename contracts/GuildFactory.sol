@@ -20,7 +20,7 @@ pragma solidity 0.8.15;
  *  that use the ERC20Base.sol contracts developed for DoinGud.
  *
  */
-
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -59,10 +59,12 @@ contract GuildFactory is ICloneFactory, Ownable {
 
     uint256 public defaultGuardianThreshold = 10;
 
-    event AmorxGuildCreated(address token);
-    event DamorxGuildCreated(address token);
-    event FXamorxGuildCreated(address token);
-    event ControllerxGuildCreated(address token);
+    event TokensAndControllerCreated(
+        address amorxGuildToken,
+        address dAMORxGuildToken,
+        address fxAMORxGuildToken,
+        address controllerxGuild
+    );
 
     constructor(
         address _amorToken,
@@ -105,7 +107,6 @@ contract GuildFactory is ICloneFactory, Ownable {
         tokenSymbol = string.concat("Ax", _symbol);
         clonedContract = _deployGuildToken(tokenName, tokenSymbol, amorxGuildToken);
         amorxGuildTokens.push(clonedContract);
-        emit AmorxGuildCreated(clonedContract);
 
         /// Deploy FXAMORxGuild contract
         tokenName = string.concat("FXAMORx", _name);
@@ -117,7 +118,6 @@ contract GuildFactory is ICloneFactory, Ownable {
             fxAMORxGuildToken
         );
         fxAMORxGuildTokens[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
-        emit FXamorxGuildCreated(clonedContract);
 
         /// Deploy dAMORxGuild contract
         tokenName = string.concat("dAMORx", _name);
@@ -129,7 +129,6 @@ contract GuildFactory is ICloneFactory, Ownable {
             dAMORxGuildToken
         );
         dAMORxGuildTokens[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
-        emit DamorxGuildCreated(clonedContract);
 
         /// Deploy the ControllerxGuild
         clonedContract = _deployGuildController(
@@ -142,7 +141,13 @@ contract GuildFactory is ICloneFactory, Ownable {
             multisig
         );
         guildControllers[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
-        emit ControllerxGuildCreated(clonedContract);
+
+        emit TokensAndControllerCreated(
+            amorxGuildTokens[amorxGuildTokens.length - 1],
+            dAMORxGuildTokens[amorxGuildTokens[amorxGuildTokens.length - 1]],
+            fxAMORxGuildTokens[amorxGuildTokens[amorxGuildTokens.length - 1]],
+            guildControllers[amorxGuildTokens[amorxGuildTokens.length - 1]]
+        );
 
         return clonedContract;
     }

@@ -51,7 +51,7 @@ describe("unit - Clone Factory", function () {
   context("function: deployGuildContracts", () => {
     it("Should deploy the Guild Token Contracts", async function () {
       expect(await CLONE_FACTORY.deployGuildContracts(user1.address, MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0])).
-        to.emit(CLONE_FACTORY, "AmorxGuildCreated", "DamorxGuildCreated", "FXamorxGuildCreated", "ControllerxGuildCreated");
+        to.emit(CLONE_FACTORY, "TokensAndControllerCreated");
 
       this.guildOneAmorXGuild = await CLONE_FACTORY.amorxGuildTokens(0);
       this.guildOneDAmorXGuild = await CLONE_FACTORY.dAMORxGuildTokens(this.guildOneAmorXGuild);
