@@ -59,6 +59,11 @@ contract GuildFactory is ICloneFactory, Ownable {
 
     uint256 public defaultGuardianThreshold = 10;
 
+    event AmorxGuildCreated(address token);
+    event DamorxGuildCreated(address token);
+    event FXamorxGuildCreated(address token);
+    event ControllerxGuildCreated(address token);
+
     constructor(
         address _amorToken,
         address _amorxGuildToken,
@@ -100,6 +105,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         tokenSymbol = string.concat("Ax", _symbol);
         clonedContract = _deployGuildToken(tokenName, tokenSymbol, amorxGuildToken);
         amorxGuildTokens.push(clonedContract);
+        emit AmorxGuildCreated(clonedContract);
 
         /// Deploy FXAMORxGuild contract
         tokenName = string.concat("FXAMORx", _name);
@@ -111,6 +117,7 @@ contract GuildFactory is ICloneFactory, Ownable {
             fxAMORxGuildToken
         );
         fxAMORxGuildTokens[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
+        emit FXamorxGuildCreated(clonedContract);
 
         /// Deploy dAMORxGuild contract
         tokenName = string.concat("dAMORx", _name);
@@ -122,6 +129,7 @@ contract GuildFactory is ICloneFactory, Ownable {
             dAMORxGuildToken
         );
         dAMORxGuildTokens[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
+        emit DamorxGuildCreated(clonedContract);
 
         /// Deploy the ControllerxGuild
         clonedContract = _deployGuildController(
@@ -134,6 +142,7 @@ contract GuildFactory is ICloneFactory, Ownable {
             multisig
         );
         guildControllers[amorxGuildTokens[amorxGuildTokens.length - 1]] = clonedContract;
+        emit ControllerxGuildCreated(clonedContract);
 
         return clonedContract;
     }
