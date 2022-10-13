@@ -39,7 +39,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         address AmorGuildToken;
         address DAmorxGuild;
         address FXAmorxGuild;
-        address ControllerxGuild;
+        address AvatarxGuild;
         address GovernorxGuild;
     }
 
@@ -64,7 +64,6 @@ contract GuildFactory is ICloneFactory, Ownable {
     address private constant SENTINEL_GUILDS = address(1);
     /// Create a mapping of AvatarxGuild GuildComponents
     mapping(address => GuildComponents) public guilds;
-    mapping(address => address) public guildsList;
 
     /// CONSTANTS
     uint256 public constant DEFAULT_GUARDIAN_THRESHOLD = 10;
@@ -121,13 +120,10 @@ contract GuildFactory is ICloneFactory, Ownable {
         string memory tokenSymbol;
 
         /// Deploy the Guild Avatar
-        avatar = _deployAvatar();
-        /// Add the Avatar to the linked list
-        guildsList[avatar] = guildsList[SENTINEL_GUILDS];
-        guildsList[SENTINEL_GUILDS] = avatar;
+        controller = _deployGuildController();
 
         /// Create a link to the new GuildComponents struct
-        GuildComponents storage guild = guilds[avatar];
+        GuildComponents storage guild = guilds[controller];
 
         /// Deploy AMORxGuild contract
         tokenName = string.concat("AMORx", _name);
@@ -137,22 +133,22 @@ contract GuildFactory is ICloneFactory, Ownable {
         /// Deploy FXAMORxGuild contract
         tokenName = string.concat("FXAMORx", _name);
         tokenSymbol = string.concat("FXx", _symbol);
-        guild.FXAmorxGuild = _deployTokenContracts(avatar, tokenName, tokenSymbol, fXAmorxGuild);
+        guild.FXAmorxGuild = _deployTokenContracts(controller, tokenName, tokenSymbol, fXAmorxGuild);
 
         /// Deploy dAMORxGuild contract
         tokenName = string.concat("dAMORx", _name);
         tokenSymbol = string.concat("Dx", _symbol);
-        guild.DAmorxGuild = _deployTokenContracts(avatar, tokenName, tokenSymbol, dAmorxGuild);
+        guild.DAmorxGuild = _deployTokenContracts(controller, tokenName, tokenSymbol, dAmorxGuild);
 
         /// Deploy the ControllerxGuild
-        guild.ControllerxGuild = _deployGuildController();
+        guild.AvatarxGuild = _deployAvatar();
 
         /// Deploy the Guild Governor
         guild.GovernorxGuild = _deployGovernor();
 
-        _initGuildControls(_name, avatar, guildOwner);
+        _initGuildControls(_name, controller, guildOwner);
 
-        return (guild.ControllerxGuild, guild.GovernorxGuild, avatar);
+        return (controller, guild.GovernorxGuild, guild.AvatarxGuild);
     }
 
     /// @notice Internal function to deploy clone of an implementation contract
@@ -232,31 +228,31 @@ contract GuildFactory is ICloneFactory, Ownable {
 
     /// @notice Initializes the Guild Control Structures
     /// @param  name string: name of the guild being deployed
-    /// @param  avatar the avatar token address for this guild
+    /// @param  controller the avatar token address for this guild
     /// @param  owner address: owner of the Guild
     function _initGuildControls(
         string memory name,
-        address avatar,
+        address controller,
         address owner
     ) internal {
         /// Init the Guild Controller
-        IGuildController(guilds[avatar].ControllerxGuild).init(
-            avatar,
+        IGuildController(controller).init(
+            guilds[controller].AvatarxGuild,
             amorToken,
-            guilds[avatar].AmorGuildToken,
-            guilds[avatar].FXAmorxGuild,
+            guilds[controller].AmorGuildToken,
+            guilds[controller].FXAmorxGuild,
             metaDaoController
         );
 
         /// Init the AvatarxGuild
-        IAvatarxGuild(avatar).init(owner, guilds[avatar].GovernorxGuild);
+        IAvatarxGuild(guilds[controller].AvatarxGuild).init(owner, guilds[controller].GovernorxGuild);
 
         /// Init the AvatarxGuild
-        IDoinGudGovernor(guilds[avatar].GovernorxGuild).init(
+        IDoinGudGovernor(guilds[controller].GovernorxGuild).init(
             string.concat("Governorx", name),
-            guilds[avatar].AmorGuildToken,
+            guilds[controller].AmorGuildToken,
             snapshot,
-            avatar
+            guilds[controller].AvatarxGuild
         );
     }
 }

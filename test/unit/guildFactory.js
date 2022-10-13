@@ -2,8 +2,7 @@ const { ethers } = require("hardhat");
 const { use, expect } = require("chai");
 const { solidity } = require("ethereum-waffle");
 const { MOCK_GUILD_NAMES,
-        MOCK_GUILD_SYMBOLS, 
-        TWO_ADDRESS,
+        MOCK_GUILD_SYMBOLS,
         ZERO_ADDRESS,
         ONE_ADDRESS
       } = require('../helpers/constants.js');
@@ -25,6 +24,7 @@ use(solidity);
   let GUILD_ONE_CONTROLLERXGUILD;
   let GUILD_ONE_AVATARXGUILD;
   let GUILD_ONE_GOVERNORXGUILD;
+  let METADAO;
   let guild;
 
 describe("unit - Clone Factory", function () {
@@ -42,6 +42,7 @@ describe("unit - Clone Factory", function () {
     AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
     FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
     DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
+    METADAO = setup.metadao;
 
     root = setup.roles.root;
     multisig = setup.roles.doingud_multisig;
@@ -52,6 +53,8 @@ describe("unit - Clone Factory", function () {
     CONTROLLERXGUILD = setup.controller;
     GOVERNORXGUILD = setup.governor;
     AVATARXGUILD = setup.avatars.avatar;
+
+    await METADAO.init(AMOR_TOKEN.address, CLONE_FACTORY.address);
   });
 
   before('Setup', async function() {
@@ -60,18 +63,19 @@ describe("unit - Clone Factory", function () {
 
   context("function: deployGuildContracts", () => {
     it("Should deploy the Guild Token Contracts", async function () {
-      expect(await CLONE_FACTORY.deployGuildContracts(user1.address, MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0])).to.not.be.null;
+      await METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0]);
+      //expect(await CLONE_FACTORY.deployGuildContracts(user1.address, MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0])).to.not.be.null;
 
-      this.guildOneAvatarxGuild = await CLONE_FACTORY.guildsList(ONE_ADDRESS);
+      this.guildOneControllerxGuild = await METADAO.guilds(ONE_ADDRESS);
 
-      guild = await CLONE_FACTORY.guilds(this.guildOneAvatarxGuild);
+      guild = await CLONE_FACTORY.guilds(this.guildOneControllerxGuild);
 
       GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(guild.AmorGuildToken);
       GUILD_ONE_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(guild.DAmorxGuild);
       GUILD_ONE_FXAMORXGUILD = FX_AMOR_TOKEN.attach(guild.FXAmorxGuild);
-      GUILD_ONE_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(guild.ControllerxGuild);
+      GUILD_ONE_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(this.guildOneControllerxGuild);
       GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(guild.GovernorxGuild);
-      GUILD_ONE_AVATARXGUILD = AVATARXGUILD.attach(this.guildOneAvatarxGuild);
+      GUILD_ONE_AVATARXGUILD = AVATARXGUILD.attach(guild.AvatarxGuild);
     });
   
     it("Should have set the tokens' paramaters correctly", async function () {
@@ -104,11 +108,13 @@ describe("unit - Clone Factory", function () {
 
   context("function: guilds()", () => {
     it("Should return the guild address", async function () {
-      expect(await CLONE_FACTORY.guildsList(ONE_ADDRESS)).to.equal(GUILD_ONE_AVATARXGUILD.address);
+      expect(guild.AvatarxGuild).to.equal(GUILD_ONE_AVATARXGUILD.address);
     });
 
     it("Should not return an address outside the array range", async function () {
-      expect(await CLONE_FACTORY.guildsList(TWO_ADDRESS)).to.equal(ZERO_ADDRESS);
+      let guildDetail = await CLONE_FACTORY.guilds(ZERO_ADDRESS);
+
+      expect(guildDetail.AvatarxGuild).to.equal(ZERO_ADDRESS);
     });
   })
 
@@ -126,7 +132,7 @@ describe("unit - Clone Factory", function () {
 
   context("function: guildControllers()", () => {
     it("Should return the ControllerxGuild address", async function () {
-      expect(guild.ControllerxGuild).to.equal(GUILD_ONE_CONTROLLERXGUILD.address);
+      expect(await METADAO.guilds(ONE_ADDRESS)).to.equal(GUILD_ONE_CONTROLLERXGUILD.address);
     });
   });
 
