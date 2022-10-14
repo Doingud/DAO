@@ -121,7 +121,7 @@ describe('unit - Contract: Governor', function () {
             let transactionData = governor.interface.encodeFunctionData("setGuardians", [guardians]);
             await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
             //await governor.connect(authorizer_adaptor).setGuardians(guardians);
-            console.log("Flag 2");
+
             expect(await governor.guardiansLimit()).to.equals(4);
             await expect(governor.guardians(3)).to.be.reverted;
             console.log("Flag 3");
@@ -373,10 +373,17 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it fails to execute if UnderlyingTransactionReverted', async function () {
+            let targetProposal = await governor.proposals(0);
+            await governor.connect(root).castVote(targetProposal, true);
+            let state = await governor.state(targetProposal);
+            await governor.connect(user).castVote(targetProposal, true);
+            await governor.connect(user2).castVote(targetProposal, true);
             // mine 64000 blocks
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(twoWeeks);
-
+            console.log("Flag Vote 2");
+            console.log("Flag Vote 1");
+            console.log("Proposal: " );
             let unSTargets = [mockModule.address];
             let unSValues = [20];
             let unSCalldatas = [mockModule.interface.encodeFunctionData("testInteraction", [20])];
@@ -385,6 +392,7 @@ describe('unit - Contract: Governor', function () {
                 .to.be.revertedWith(
                     'UnderlyingTransactionReverted()'
                 );
+                console.log("Flag Vote 3");
         });
 
         it('it executes proposal', async function () {
