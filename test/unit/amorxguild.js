@@ -64,11 +64,11 @@ describe("unit - AMORxGuild", function () {
 
       it("Should fail if called more than once", async function () {
         await expect(AMOR_GUILD_TOKEN.init(
-          AMOR_TOKEN.address, 
           MOCK_GUILD_NAMES[0], 
           MOCK_GUILD_SYMBOLS[0],
+          AMOR_TOKEN.address, 
           user2.address
-        )).to.be.reverted;
+        )).to.be.revertedWith('AlreadyInitialized()');
       });
     });
   });

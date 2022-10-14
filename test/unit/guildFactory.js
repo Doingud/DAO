@@ -74,7 +74,7 @@ describe("unit - Clone Factory", function () {
       GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(this.guildOneGovernorxGuild);
       GUILD_ONE_AVATARXGUILD = AVATARXGUILD.attach(this.guildOneAvatarxGuild);
     });
-
+  
     it("Should have set the tokens' paramaters correctly", async function () {
       expect(await GUILD_ONE_AMORXGUILD.name()).to.equal("AMORx"+MOCK_GUILD_NAMES[0]);
       expect(await GUILD_ONE_DAMORXGUILD.name()).to.equal("dAMORx"+MOCK_GUILD_NAMES[0]);
