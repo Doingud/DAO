@@ -188,7 +188,7 @@ describe("unit - MetaDao", function () {
         });
 
 
-        it('Should fail if ', async function () {
+        it('Should fail if no index', async function () {
             let AMOR_TOKEN2;
             let USDC2;
             let user2;
@@ -210,17 +210,16 @@ describe("unit - MetaDao", function () {
             user2 = setup.roles.user2;
             user3 = setup.roles.user3;
             pool = setup.roles.pool;
-            /// Setup the MetaDao first
+            await init.avatar(setup);
+            await init.governor(setup);
             await init.metadao(setup);
             METADAO2 = setup.metadao;
-            ///   Setup the Controller
             await init.controller(setup);
             CONTROLLER2 = setup.controller;
-            ///   Setup the guild factory
             await init.getGuildFactory(setup);
-            FACTORY2 = setup.factory.guildFactory;
+            FACTORY2 = setup.factory;
 
-            await METADAO2.init(AMOR_TOKEN2.address, FACTORY2.address);
+            await METADAO2.init(AMOR_TOKEN2.address, FACTORY2.address,  setup.roles.root.address);
 
             /// Setup the guilds through the METADAO
             await METADAO2.createGuild(user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
