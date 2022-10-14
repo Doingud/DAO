@@ -82,16 +82,20 @@ describe('unit - Contract: Governor', function () {
 
         it('it changes guardians limit from proposal', async function () {
             guardians = [staker.address, operator.address, user.address];
-            await governor.connect(authorizer_adaptor).setGuardians(guardians);
+            await avatar.enableModule(authorizer_adaptor.address);
+            let transactionData = governor.interface.encodeFunctionData("setGuardians", [guardians]);
+            avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0)
+            console.log("Flag1");
+            //await governor.connect(authorizer_adaptor).setGuardians(guardians);
             expect(await governor.guardiansLimit()).to.equals(1);
-
+    
             targets = [governor.address];
             values = [0];
-            calldatas = [governor.interface.encodeFunctionData("changeGuardiansLimit", [4])];
-
-            await governor.connect(authorizer_adaptor).propose(targets, values, calldatas);
+            calldatas = governor.interface.encodeFunctionData("changeGuardiansLimit", [4]);
+            transactionData = governor.interface.encodeFunctionData("propose", [targets, values, calldatas]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, [calldatas], 0);
             firstProposalId = await governor.proposals(0);
-
+            console.log("Flag 2");
             time.increase(time.duration.days(1));
 
             // Vote as a guardians to pass the proposal locally            
@@ -100,7 +104,7 @@ describe('unit - Contract: Governor', function () {
             await governor.connect(user).castVote(firstProposalId, false);
             expect(await governor.proposalVoting(firstProposalId)).to.equals(2);
             expect(await governor.proposalWeight(firstProposalId)).to.equals(3);
-
+            console.log("Flag 3");
             // Execute the passed proposal
             time.increase(time.duration.days(14));
 
@@ -108,7 +112,7 @@ describe('unit - Contract: Governor', function () {
             await expect(governor.connect(authorizer_adaptor).execute(targets, values, calldatas))
                 .to
                 .emit(governor, "ProposalExecuted").withArgs(firstProposalId);
-
+            console.log("Flag 4");
             expect(await governor.guardiansLimit()).to.equals(4);
         });
 
@@ -143,7 +147,6 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to set guardians if no addresses in array', async function () {
             //  *** Low level calls do not revert in testing ***
-            await avatar.enableModule(authorizer_adaptor.address);
             let transactionData = governor.interface.encodeFunctionData("setGuardians", [[]]);
             await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0)).
                 to.emit(avatar, 'ExecutionFromModuleSuccess');

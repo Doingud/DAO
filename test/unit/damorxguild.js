@@ -311,7 +311,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             await dAMORxGuild.connect(staker2).withdraw();        
             const withdrawedTokens = (await AMORxGuild.balanceOf(staker2.address)).toString();
             
-            expect(withdrawedTokens).to.equal(currentAmount);
+            expect(withdrawedTokens).to.equal(staked2);
         });
 
         it('it fails to withdraw dAMORxGuild tokens if nothing to withdraw', async function () {
