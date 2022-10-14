@@ -84,16 +84,15 @@ describe('unit - Contract: Governor', function () {
             guardians = [staker.address, operator.address, user.address];
             await avatar.enableModule(authorizer_adaptor.address);
             let transactionData = governor.interface.encodeFunctionData("setGuardians", [guardians]);
-            avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0)
+            avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
             console.log("Flag1");
-            //await governor.connect(authorizer_adaptor).setGuardians(guardians);
             expect(await governor.guardiansLimit()).to.equals(1);
     
             targets = [governor.address];
             values = [0];
-            calldatas = governor.interface.encodeFunctionData("changeGuardiansLimit", [4]);
+            calldatas = [governor.interface.encodeFunctionData("changeGuardiansLimit", [4])];
             transactionData = governor.interface.encodeFunctionData("propose", [targets, values, calldatas]);
-            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, [calldatas], 0);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
             firstProposalId = await governor.proposals(0);
             console.log("Flag 2");
             time.increase(time.duration.days(1));
@@ -118,7 +117,9 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to propose if Guardian Limit not Reached', async function () {
             guardians = [staker.address, operator.address];
-            await governor.connect(authorizer_adaptor).setGuardians(guardians);
+            let transactionData = governor.interface.encodeFunctionData("setGuardians", [guardians]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
+            //await governor.connect(authorizer_adaptor).setGuardians(guardians);
 
             expect(await governor.guardiansLimit()).to.equals(4);
 
@@ -126,12 +127,17 @@ describe('unit - Contract: Governor', function () {
             values = [0];
             calldatas = [mockModule.interface.encodeFunctionData("testInteraction", [20])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
 
-            await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas)).to.be.revertedWith(
-                'NotEnoughGuardians()'
-            );
+            transactionData = governor.interface.encodeFunctionData("propose", [targets, values, calldatas]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
+            //await expect(governor.connect(authorizer_adaptor).propose(targets, values, calldatas)).to.be.revertedWith(
+            //    'NotEnoughGuardians()'
+            //);
+            await expect(governor.proposals(1)).to.be.reverted;
 
             guardians = [staker.address, operator.address, user.address];
-            await governor.connect(authorizer_adaptor).setGuardians(guardians);
+            transactionData = governor.interface.encodeFunctionData("setGuardians", [guardians]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
+            //await governor.connect(authorizer_adaptor).setGuardians(guardians);
         });
 
     });
