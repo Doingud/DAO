@@ -40,7 +40,6 @@ contract GuildController is IGuildController, Ownable {
     address public FXAMORxGuild;
     address public MetaDaoController;
 
-    // uint256 public triggerCounter;
     bool public trigger; // set true for a week if previous week were added >= 10 reports; users can vote only if trigger == true
     uint256[] public reportsQueue;
     mapping(uint256 => address) public queueReportsAuthors;
