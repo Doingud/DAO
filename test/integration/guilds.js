@@ -484,54 +484,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
             const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(user3.address);
             expect(balanceAfter).to.be.gt(balanceBefore);
-
-            
-            // await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
-           
-            // guardians = [staker.address, operator.address, user3.address];
-            // await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).setGuardians(guardians);
-
-            // // Add a proposal in guild’s snapshot to transfer guild’s funds somewhere
-            // // propose
-            // targets = [DOINGUD_AMOR_TOKEN.address];
-            // values = [0];
-            // calldatas = [DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('transfer', [user3.address, 20])]; // transferCalldata from https://docs.openzeppelin.com/contracts/4.x/governance
-
-            // await expect(GUILD_ONE_GOVERNORXGUILD.proposals(0)).to.be.reverted;
-            // await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).propose(targets, values, calldatas);
-            // await expect(GUILD_ONE_GOVERNORXGUILD.proposals(1)).to.be.reverted;
-
-            // // const oldProposalId = firstProposalId;
-            // firstProposalId = await GUILD_ONE_GOVERNORXGUILD.proposals(0);
-            // // expect(oldProposalId).to.not.equal(firstProposalId);
-
-            // expect((await GUILD_ONE_GOVERNORXGUILD.proposalVoting(firstProposalId)).toString()).to.equals("0");
-            // expect((await GUILD_ONE_GOVERNORXGUILD.proposalWeight(firstProposalId)).toString()).to.equals("0");
-            
-            // // Pass the proposal on the snapshot
-            // time.increase(time.duration.days(1));
-            // // Vote for the proposal in the snapshot
-            // // TODO: add SNAPSHOT INTERACTION HERE
-            // // old(current-to-change): Vote as a guardians to pass the proposal locally            
-            // await GUILD_ONE_GOVERNORXGUILD.connect(staker).castVote(firstProposalId, true);
-            // await GUILD_ONE_GOVERNORXGUILD.connect(operator).castVote(firstProposalId, true);
-            // await GUILD_ONE_GOVERNORXGUILD.connect(user3).castVote(firstProposalId, false);
-            // expect(await GUILD_ONE_GOVERNORXGUILD.proposalVoting(firstProposalId)).to.equals(2);
-            // expect(await GUILD_ONE_GOVERNORXGUILD.proposalWeight(firstProposalId)).to.equals(3);
-
-
-            // // Execute the proposal and for the proposal with guardians
-            // time.increase(time.duration.days(14));
-            // const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(user3.address);
-
-            // await expect(GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).execute(targets, values, calldatas))
-            //     .to
-            //     .emit(GUILD_ONE_GOVERNORXGUILD, "ProposalExecuted").withArgs(firstProposalId);
-
-            // const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(user3.address);
-            // expect(balanceAfter).to.be.gt(balanceBefore);
-
-            // await expect(GUILD_ONE_GOVERNORXGUILD.voters(firstProposalId)).to.be.reverted;    
         });
 
         it("Donate Guild’s fund from the Avatar contract: VOTE IN SNAPSHOT", async function () {  
@@ -662,42 +614,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             ).to.be.equals(true)
 
             expect(await DOINGUD_METADAO.guilds(GUILD_TWO_CONTROLLERXGUILD.address)).to.equal(ZERO_ADDRESS);  
-
-            
-
-            // await expect(GUILD_ONE_GOVERNORXGUILD.proposals(0)).to.be.reverted;
-            // await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).propose(targets, values, calldatas);
-            // await expect(GUILD_ONE_GOVERNORXGUILD.proposals(1)).to.be.reverted;
-
-            // const oldProposalId = firstProposalId;
-            // firstProposalId = await GUILD_ONE_GOVERNORXGUILD.proposals(0);
-            // expect(oldProposalId).to.not.equal(firstProposalId);
-
-            // expect((await GUILD_ONE_GOVERNORXGUILD.proposalVoting(firstProposalId)).toString()).to.equals("0");
-            // expect((await GUILD_ONE_GOVERNORXGUILD.proposalWeight(firstProposalId)).toString()).to.equals("0");
-            
-            // // Pass the proposal on the snapshot
-            // time.increase(time.duration.days(1));
-            // // Vote for the proposal in the snapshot
-            // // TODO: add SNAPSHOT INTERACTION HERE
-            // // old(current-to-change): Vote as a guardians to pass the proposal locally            
-            // await GUILD_ONE_GOVERNORXGUILD.connect(staker).castVote(firstProposalId, true);
-            // await GUILD_ONE_GOVERNORXGUILD.connect(operator).castVote(firstProposalId, true);
-            // await GUILD_ONE_GOVERNORXGUILD.connect(user3).castVote(firstProposalId, false);
-            // expect(await GUILD_ONE_GOVERNORXGUILD.proposalVoting(firstProposalId)).to.equals(2);
-            // expect(await GUILD_ONE_GOVERNORXGUILD.proposalWeight(firstProposalId)).to.equals(3);
-
-
-            // // Execute the proposal and for the proposal with guardians
-            // time.increase(time.duration.days(14));
-            // // const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(operator.address);
-
-            // await expect(GUILD_ONE_GOVERNORXGUILD.execute(targets, values, calldatas))
-            //     .to
-            //     .emit(GUILD_ONE_GOVERNORXGUILD, "ProposalExecuted").withArgs(firstProposalId);
-
-            // const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(operator.address);
-            // expect(balanceAfter).to.be.gt(balanceBefore);
         });
         it("Add report to the Guild", async function () {          
 
