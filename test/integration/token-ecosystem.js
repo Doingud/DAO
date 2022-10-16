@@ -301,7 +301,7 @@ const setupTests = deployments.createFixture(async () => {
         await expect(DOINGUD_CONTROLLER.connect(user2).claim(user2.address, [DOINGUD_AMOR_TOKEN.address])).
           to.emit(DOINGUD_AMOR_TOKEN, "Transfer");
 
-        expect(await DOINGUD_AMOR_TOKEN.balanceOf(user2.address)).to.equal((FIFTY_ETHER * 0.9 * 0.2 * 0.95).toString());
+        expect(await DOINGUD_AMOR_TOKEN.balanceOf(user2.address)).to.equal(((FIFTY_ETHER * ((BASIS_POINTS-TAX_RATE)/BASIS_POINTS) * 0.9 * 0.2 * ((BASIS_POINTS-TAX_RATE)/BASIS_POINTS)).toString()));
       });
     });
 

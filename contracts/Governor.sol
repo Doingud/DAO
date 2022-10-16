@@ -67,7 +67,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     mapping(uint256 => int256) public proposalVoting;
     mapping(uint256 => int256) public proposalWeight;
 
-    uint256 public GUARDIANS_LIMIT; // amount of guardians for contract to function propperly,
+    uint256 public guardiansLimit; // amount of guardians for contract to function propperly,
     // until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.
 
     address[] public guardians; // this is an array guardians who are allowed to vote for the proposals.
@@ -86,12 +86,14 @@ contract DoinGudGovernor is IDoinGudGovernor {
         uint256 startBlock,
         uint256 endBlock
     );
+    event ChangedGuardiansLimit(uint256 newLimit);
 
     bool private _initialized;
 
     uint96 private _votingDelay;
     uint96 private _votingPeriod;
 
+    error InvalidProposalId();
     error AlreadyInitialized();
     error NotEnoughGuardians();
     error Unauthorized();
@@ -120,7 +122,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         _initialized = true;
         _votingDelay = 1;
         _votingPeriod = 2 weeks;
-        GUARDIANS_LIMIT = 2;
+        guardiansLimit = 1;
 
         emit Initialized(avatarAddress_);
         return true;
@@ -128,7 +130,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
     /// @notice this modifier is needed to validate that amount of the Guardians is sufficient to vote and approve the “Many” decision
     modifier GuardianLimitReached() {
-        if (guardians.length < GUARDIANS_LIMIT) {
+        if (guardians.length < guardiansLimit) {
             revert NotEnoughGuardians();
         }
         _;
@@ -221,9 +223,11 @@ contract DoinGudGovernor is IDoinGudGovernor {
     }
 
     /// @notice this function changes guardians limit
+    /// Should be passed to the Avatar as a Governor contract proposal
     /// @param newLimit New limit value
-    function changeGuardiansLimit(uint256 newLimit) external onlyGuardian {
-        GUARDIANS_LIMIT = newLimit;
+    function changeGuardiansLimit(uint256 newLimit) external onlyAvatar {
+        guardiansLimit = newLimit;
+        emit ChangedGuardiansLimit(newLimit);
     }
 
     /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote.
@@ -243,7 +247,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
         if (targets.length > PROPOSAL_MAX_OPERATIONS) {
             revert InvalidParameters();
         }
-        // Submit proposals uniquely identified by a proposalId and an array of txHashes, to create a Reality.eth question that validates the execution of the connected transactions
+        /// Submit proposals uniquely identified by a proposalId and an array of txHashes,
+        /// to create a Reality.eth question that validates the execution of the connected transactions
         uint256 proposalId = hashProposal(targets, values, calldatas);
 
         ProposalCore storage proposal = _proposals[proposalId];
@@ -282,7 +287,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @param proposalId ID of the proposal
     /// @param support Boolean value: true (for) or false (against) user is voting
     function castVote(uint256 proposalId, bool support) external onlyGuardian GuardianLimitReached {
-        ProposalCore storage proposal = _proposals[proposalId];
         if (state(proposalId) != ProposalState.Active) {
             revert InvalidState();
         }
@@ -347,14 +351,12 @@ contract DoinGudGovernor is IDoinGudGovernor {
         ProposalCore storage proposal = _proposals[proposalId];
 
         if (proposal.voteStart == 0) {
-            revert("Governor: unknown proposal id");
+            revert InvalidProposalId();
         }
 
         if (proposal.voteStart >= block.timestamp) {
             return ProposalState.Pending;
         }
-
-        uint256 deadline = _proposals[proposalId].voteEnd;
 
         if (proposal.voteEnd >= block.timestamp) {
             return ProposalState.Active;
@@ -376,7 +378,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// Proposal should achieve at least 20% approval of guardians, to be cancelled
     /// @param proposalId ID of the proposal
     function castVoteForCancelling(uint256 proposalId) external onlyGuardian {
-        ProposalCore storage proposal = _proposals[proposalId];
         ProposalState state = state(proposalId);
 
         if (state != ProposalState.Active) {

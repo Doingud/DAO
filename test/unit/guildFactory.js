@@ -46,9 +46,8 @@ describe("unit - Clone Factory", function () {
     user1 = setup.roles.user1;
 
     await init.getGuildFactory(setup);
-    CLONE_FACTORY = setup.factory.guildFactory;
+    CLONE_FACTORY = setup.factory;
     CONTROLLERXGUILD = setup.controller;
-
     GOVERNORXGUILD = setup.governor;
     AVATARXGUILD = setup.avatars.avatar;
   });

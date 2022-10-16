@@ -51,15 +51,14 @@ describe("unit - MetaDao", function () {
         /// Setup the MetaDao first
         await init.metadao(setup);
         METADAO = setup.metadao;
-        TEST_ZERO_METADAO = setup.metadao;
         ///   Setup the Controller
         await init.controller(setup);
         CONTROLLER = setup.controller;
         ///   Setup the guild factory
         await init.getGuildFactory(setup);
-        FACTORY = setup.factory.guildFactory;
+        FACTORY = setup.factory;
 
-        await METADAO.init(AMOR_TOKEN.address, FACTORY.address, setup.roles.root.address);
+        await METADAO.init(AMOR_TOKEN.address, FACTORY.address, root.address);
     });
 
     beforeEach('setup', async function() {
@@ -183,7 +182,7 @@ describe("unit - MetaDao", function () {
         });
 
 
-        it('Should fail if ', async function () {
+        it('Should fail if no index', async function () {
             let AMOR_TOKEN2;
             let USDC2;
             let user2;
@@ -210,12 +209,10 @@ describe("unit - MetaDao", function () {
             /// Setup the MetaDao first
             await init.metadao(setup);
             METADAO2 = setup.metadao;
-            ///   Setup the Controller
             await init.controller(setup);
             CONTROLLER2 = setup.controller;
-            ///   Setup the guild factory
             await init.getGuildFactory(setup);
-            FACTORY2 = setup.factory.guildFactory;
+            FACTORY2 = setup.factory;
 
             await METADAO2.init(AMOR_TOKEN2.address, FACTORY2.address, root.address);
 
@@ -420,7 +417,7 @@ describe("unit - MetaDao", function () {
 
             let index = await METADAO.indexHashes(0);
             index = await METADAO.indexes(index);
-            expect(index.indexDenominator).to.equal(850);
+            expect(index.indexDenominator).to.equal(650);
         });
 
         it('Should updateIndex if index > 0', async function () {
@@ -437,8 +434,13 @@ describe("unit - MetaDao", function () {
                 [GUILD_CONTROLLER_TWO.address, 200]
                 ]
             );
-
-            await METADAO.addIndex([newIndex0, newIndex1]);
+            let newIndex2 = abi.encode(
+                ["tuple(address, uint256)"],
+                [
+                [METADAO.address, 1000]
+                ]
+            );
+            await METADAO.addIndex([newIndex0, newIndex1, newIndex2]);
             await METADAO.updateIndex([newIndex0, newIndex1], 1);
 
             let index = await METADAO.indexHashes(1);

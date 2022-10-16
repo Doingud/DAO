@@ -133,8 +133,9 @@ contract MetaDaoController is Ownable {
         uint256 amount,
         uint256 index
     ) external {
-        this.isWhitelisted(token);
-
+        if (this.isWhitelisted(token) == false) {
+            revert NotListed();
+        }
         if (indexes[FEES_INDEX].indexDenominator == 0) {
             revert NoIndex();
         }
@@ -349,6 +350,7 @@ contract MetaDaoController is Ownable {
 
         for (uint256 i; i < weights.length; i++) {
             (address guild, uint256 weight) = abi.decode(weights[i], (address, uint256));
+            index.indexDenominator -= index.indexWeights[guild];
             index.indexWeights[guild] = weight;
             index.indexDenominator += weight;
             index.creator = msg.sender;

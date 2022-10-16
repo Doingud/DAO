@@ -201,14 +201,9 @@ const getGuildFactory = async (setup) => {
     setup.roles.root.address // multisig
   );
 
-  const factory = {
-    guildFactory
-  }
+  setup.factory = guildFactory;
 
-  // const factory = guildFactory;
-  setup.factory = factory;
-
-  return factory;
+  return guildFactory;
 }
 
 const metadao = async(setup) =>{

@@ -338,6 +338,12 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             const withdrawedTokens = (await AMORxGuild.balanceOf(staker2.address)).toString();
             
             expect(withdrawedTokens).to.equal(staked2);
-        });         
+        });
+
+        it('it fails to withdraw dAMORxGuild tokens if nothing to withdraw', async function () {
+            await expect(dAMORxGuild.connect(staker2).withdraw()).to.be.revertedWith(
+                'InvalidAmount()'
+            ); 
+        });
     });
 });

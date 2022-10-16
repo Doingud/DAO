@@ -60,28 +60,13 @@ let operator;
 let authorizer_adaptor;
 
 let CONTROLLER;
-// let FACTORY;
 let CLONE_FACTORY;
 let AVATAR;
 let GOVERNOR;
-// let GUILD_CONTROLLER_ONE;
-// let GUILD_CONTROLLER_TWO;
-
-// let MOCK_MODULE;
-// let encodedIndex;
-// let encodedIndex2;
-// let targets;
-// let values;
-// let calldatas;
-// let firstProposalId;
-//const FEE_INDEX = ethers.utils.keccak256(toUtf8Bytes("FEE_INDEX"));
 
 let CONTROLLERXGUILD;
 let GOVERNORXGUILD;
 let AVATARXGUILD;
-// let VESTING;
-// let ERC20_TOKEN;
-// let AMOR_TOKEN_UPGRADE;
 
 /// The proxy for AMOR token
 let amor_proxy;
@@ -123,21 +108,13 @@ let IMPACT_MAKERS;
 let IMPACT_MAKERS_WEIGHTS;
 
 let zodiacModule;
-// let safe;
-// let safeSigner;
-
 let domain;
-// let starknetCoreAddress = '0x0000000000000000000000000000000000000001'
-// let spaceAddress = BigInt(0);
-// let zodiacRelayerAddress = BigInt(0);
 let GUILD_THREE_CONTROLLERXGUILD;
 
 describe("Integration: DoinGud guilds ecosystem", function () {
 
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
-        // ({ zodiacModule, safe, safeSigner } = await safeWithZodiacSetup());
-
         const setup = await init.initialize(signers);
         ///   Setup token contracts
         await init.getTokens(setup);
@@ -265,9 +242,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         );
 
         await DOINGUD_GOVERNOR.init(
-            // "DoinGud Governor",
             DOINGUD_AMOR_GUILD_TOKEN.address, //AMORxGuild
-            // setup.roles.authorizer_adaptor.address, // Snapshot Address
             DOINGUD_AVATAR.address // Avatar Address
         );
 
@@ -411,7 +386,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
             // set guardians
             guardians = [staker.address, operator.address, user3.address];
-            // await GUILD_ONE_GOVERNORXGUILD.connect(authorizer_adaptor).setGuardians(guardians);
             await GUILD_ONE_AVATARXGUILD.enableModule(authorizer_adaptor.address);
             let transactionData = GUILD_ONE_GOVERNORXGUILD.interface.encodeFunctionData("setGuardians", [guardians]);
             await GUILD_ONE_AVATARXGUILD.connect(authorizer_adaptor).execTransactionFromModule(GUILD_ONE_GOVERNORXGUILD.address, 0, transactionData, 0);
@@ -466,7 +440,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             expect(await DOINGUD_AMOR_TOKEN.balanceOf(user1.address)).to.equal((TEST_TRANSFER-taxDeducted).toString());
 
             // Call distribute function in the MetaDAO controller        
-            // await AMOR_TOKEN.transfer(METADAO.address, ONE_HUNDRED_ETHER);
             expect(await DOINGUD_METADAO.guildFees(GUILD_ONE_CONTROLLERXGUILD.address)).to.equal(0);
             await DOINGUD_METADAO.distributeFees();
             expect(await DOINGUD_METADAO.guildFees(GUILD_ONE_CONTROLLERXGUILD.address)).to.equal((taxDeducted * 0.5).toString());
@@ -665,9 +638,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             // Add a proposal in Metadao’s snapshot to remove guild from the metadao
 
             const id = "some_random_id";
-            // const txHash = ethers.utils.solidityKeccak256(["string"], ["some_tx_data"]);
             const tx = { to: DOINGUD_METADAO.address, value: 0, data: DOINGUD_METADAO.interface.encodeFunctionData('removeGuild', [GUILD_TWO_CONTROLLERXGUILD.address]), operation: 0, nonce: 0 }
-            // const tx = { to: user1.address, value: 0, data: "0xbaddad", operation: 0, nonce: 0 }
             const txHash = await module.getTransactionHash(tx.to, tx.value, tx.data, tx.operation, tx.nonce)
 
             const question = await module.buildQuestion(id, [txHash]);
@@ -691,22 +662,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             ).to.be.equals(true)
 
             expect(await DOINGUD_METADAO.guilds(GUILD_TWO_CONTROLLERXGUILD.address)).to.equal(ZERO_ADDRESS);  
-
-            // const question = await module.buildQuestion(id, [txHash]);
-            // const questionId = await module.getQuestionId(question, 0);
-            // await mock.givenMethodReturnUint(oracle.interface.getSighash("askQuestionWithMinBondERC20"), questionId);
-
-            // await module.addProposal(id, [txHash])
-
-            // const updateQuestionTimeout = module.interface.encodeFunctionData(
-            //     "setQuestionTimeout",
-            //     [31]
-            // )
-            // await avatar.exec(module.address, 0, updateQuestionTimeout)
-
-
-
-
 
             
 
@@ -743,18 +698,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
             // const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(operator.address);
             // expect(balanceAfter).to.be.gt(balanceBefore);
-
-        
-
-            // Add a proposal in Metadao’s snapshot to remove guild from the metadao
-            
-            // Vote for the proposal in the snapshot
-            
-            // Execute the proposal and for the proposal with guardians\
-            
-            // Execute the proposal
-        
-
         });
         it("Add report to the Guild", async function () {          
 
