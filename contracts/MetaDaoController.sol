@@ -41,7 +41,7 @@ import "./utils/interfaces/ICloneFactory.sol";
 import "./utils/interfaces/IGuildController.sol";
 import "./utils/interfaces/IMetaDaoController.sol";
 
-contract MetaDaoController is Ownable {
+contract MetaDaoController is IMetaDaoController, Ownable {
     using SafeERC20 for IERC20;
     /// Guild-related variables
     mapping(address => address) public guilds;
@@ -99,6 +99,7 @@ contract MetaDaoController is Ownable {
     error InvalidArray();
     /// The index array has not been set yet
     error NoIndex();
+    /// The guild has 0 funds to claim
     error InvalidClaim();
 
     function init(
@@ -226,11 +227,7 @@ contract MetaDaoController is Ownable {
         string memory name,
         string memory tokenSymbol
     ) public onlyOwner {
-        (address controller, address avatar, address governor) = ICloneFactory(guildFactory).deployGuildContracts(
-            guildOwner,
-            name,
-            tokenSymbol
-        );
+        (address controller, , ) = ICloneFactory(guildFactory).deployGuildContracts(guildOwner, name, tokenSymbol);
         guilds[sentinelGuilds] = controller;
         sentinelGuilds = controller;
         guilds[sentinelGuilds] = SENTINEL;
@@ -293,10 +290,7 @@ contract MetaDaoController is Ownable {
     /// @param  token address of the ERC20 token being checked
     /// @return bool true if token whitelisted, false if not whitelisted
     function isWhitelisted(address token) external view returns (bool) {
-        if (whitelist[token] == address(0)) {
-            revert NotListed();
-        }
-        return true;
+        return whitelist[token] != address(0);
     }
 
     /// @notice Adds a new index to the `Index` array
