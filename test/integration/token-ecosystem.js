@@ -422,6 +422,13 @@ const setupTests = deployments.createFixture(async () => {
         await GUILD_ONE_AMORXGUILD.connect(user1).approve(GUILD_ONE_DAMORXGUILD.address, amountAmorxOne);
         let oneYear = await time.duration.years(1);
         await GUILD_ONE_DAMORXGUILD.connect(user1).stake(ethers.BigNumber.from(amountAmorxOne.toString()), oneYear.toString());
+        /// TIME_DENOMINATOR = 1000000000000000000; MAX_LOCK_TIME = 365 days
+        /// X = (time * TIME_DENOMINATOR) / MAX_LOCK_TIME
+        /// COEFFICIENT = 2
+        /// dAMORxGuild = (COEFFICIENT * ( X * X) * amount) / (TIME_DENOMINATOR ** 2)
+        let x = (oneYear * oneYear) / oneYear;
+        let damorxGuild = ((2 * (x ** 2) * amountAmorxOne) / (oneYear ** 2)).toString();
+        expect(await GUILD_ONE_DAMORXGUILD.balanceOf(user1.address)).to.equal(damorxGuild);
       });
     });
 
