@@ -40,12 +40,11 @@ contract GuildController is IGuildController, Ownable {
     address public FXAMORxGuild;
     address public MetaDaoController;
 
-    // uint256 public triggerCounter;
     bool public trigger; // set true for a week if previous week were added >= 10 reports; users can vote only if trigger == true
     uint256[] public reportsQueue;
     mapping(uint256 => address) public queueReportsAuthors;
 
-    uint256 public ADDITIONAL_VOTING_TIME;
+    uint256 public additionalVotingTime;
     uint256 public constant WEEK = 7 days; // 1 week is the time for the users to vore for the specific report
     uint256 public constant DAY = 1 days;
     uint256 public constant HOUR = 1 hours;
@@ -91,10 +90,6 @@ contract GuildController is IGuildController, Ownable {
         FXGFXAMORxGuild = IFXAMORxGuild(FXAMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
         MetaDaoController = MetaDaoController_;
-        ADDITIONAL_VOTING_TIME = 0;
-
-        trigger = false;
-        timeVoting = 0;
 
         percentToConvert = 100;
         _initialized = true;
@@ -106,7 +101,7 @@ contract GuildController is IGuildController, Ownable {
         if (newTime < 2 days) {
             revert InvalidAmount();
         }
-        ADDITIONAL_VOTING_TIME = newTime;
+        additionalVotingTime = newTime;
     }
 
     function setPercentToConvert(uint256 newPercentToConvert) external onlyOwner {
@@ -116,15 +111,10 @@ contract GuildController is IGuildController, Ownable {
     /// @notice called by donate and gatherDonation, distributes amount of tokens between
     /// all of the impact makers based on their weight.
     /// Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers
-    function distribute(
-        uint256 amount,
-        address token,
-        address sender
-    ) internal returns (uint256) {
+    function distribute(uint256 amount, address token) internal returns (uint256) {
         // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (amount * weights[impactMakers[i]]) / totalWeight;
-
             claimableTokens[impactMakers[i]][token] += amountToSendVoter;
         }
 
@@ -138,12 +128,11 @@ contract GuildController is IGuildController, Ownable {
         if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
         }
-
         uint256 amount = IMetaDaoController(MetaDaoController).guildFunds(address(this), token);
         IMetaDaoController(MetaDaoController).claimToken(token);
 
         // distribute those tokens
-        distribute(amount, token, MetaDaoController);
+        distribute(amount, token);
     }
 
     /// @notice allows to donate AMORxGuild tokens to the Guild
@@ -159,7 +148,6 @@ contract GuildController is IGuildController, Ownable {
         if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
         }
-
         // if amount is below 10, most of the calculations will round down to zero, only wasting gas
         if (IERC20(token).balanceOf(msg.sender) < allAmount || allAmount < 10) {
             revert InvalidAmount();
@@ -169,10 +157,7 @@ contract GuildController is IGuildController, Ownable {
         uint256 amorxguildAmount = amount;
 
         // 10% of the tokens in the impact pool are getting:
-        if (token != AMORxGuild && token != AMOR) {
-            // recieve tokens
-            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
-        } else if (token == AMOR) {
+        if (token == AMOR) {
             // convert AMOR to AMORxGuild
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
 
@@ -188,9 +173,13 @@ contract GuildController is IGuildController, Ownable {
             IERC20(token).approve(AMORxGuild, taxCorrectedAmount);
 
             amorxguildAmount = IAmorxGuild(AMORxGuild).stakeAmor(address(this), taxCorrectedAmount);
-        } else {
-            // token == AMORxGuild
+        } else if (token == AMORxGuild) {
             ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amorxguildAmount);
+        } else {
+            // if token != AMORxGuild && token != AMOR
+            // recieve tokens
+            amount = 0;
+            // TODO: allow to mint FXAMOR tokend based on
         }
 
         if (token == AMORxGuild || token == AMOR) {
@@ -201,9 +190,13 @@ contract GuildController is IGuildController, Ownable {
         }
         uint256 decAmount = allAmount - amount; //decreased amount: other 90%
 
+        uint256 tokenBefore = IERC20(token).balanceOf(address(this));
+
         IERC20(token).safeTransferFrom(msg.sender, address(this), decAmount);
 
-        distribute(decAmount, token, msg.sender); // distribute other 90%
+        uint256 decTaxCorrectedAmount = IERC20(token).balanceOf(address(this)) - tokenBefore;
+
+        distribute(decTaxCorrectedAmount, token); // distribute other 90%
 
         return amorxguildAmount;
     }
@@ -267,7 +260,7 @@ contract GuildController is IGuildController, Ownable {
         }
 
         //check if the week has passed - can vote only a week from first vote
-        if (block.timestamp > (timeVoting + ADDITIONAL_VOTING_TIME)) {
+        if (block.timestamp > (timeVoting + additionalVotingTime)) {
             revert VotingTimeExpired();
         }
 
@@ -297,7 +290,7 @@ contract GuildController is IGuildController, Ownable {
             revert ReportNotExists();
         }
 
-        if (block.timestamp < (timeVoting + ADDITIONAL_VOTING_TIME)) {
+        if (block.timestamp < (timeVoting + additionalVotingTime)) {
             revert VotingTimeNotFinished();
         }
 
@@ -363,7 +356,7 @@ contract GuildController is IGuildController, Ownable {
     function startVoting() external {
         // nothing to finalize
         // startVoting will not start voting if there is another voting in progress
-        if (block.timestamp < (timeVoting + ADDITIONAL_VOTING_TIME)) {
+        if (block.timestamp < (timeVoting + additionalVotingTime)) {
             revert VotingTimeNotFinished();
         }
 
@@ -374,7 +367,7 @@ contract GuildController is IGuildController, Ownable {
 
         // if the voting time is over, then startVoting will first call finalizeVoting and then start it's own functional
         // if timeVoting == 0 then skip call finalizeVoting for the first start
-        if (block.timestamp >= (timeVoting + ADDITIONAL_VOTING_TIME) && timeVoting != 0) {
+        if (block.timestamp >= (timeVoting + additionalVotingTime) && timeVoting != 0) {
             finalizeVoting();
         }
 

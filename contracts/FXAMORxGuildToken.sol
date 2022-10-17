@@ -131,7 +131,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     /// @param  to Address where FXAMORxGuild must be minted to
     /// @param  amount uint256 amount of AMORxGuild to be staked
     /// @return uint256 the amount of AMORxGuild received from staking
-    function stake(address to, uint256 amount) external onlyAddress(_owner) returns (uint256) {
+    function stake(address to, uint256 amount) external onlyAddress(controller) returns (uint256) {
         if (to == msg.sender) {
             revert InvalidSender();
         }

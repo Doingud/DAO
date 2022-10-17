@@ -47,6 +47,28 @@ describe('unit - Contract: Avatar', function () {
         });
     });
 
+    context('» setGovernor testing', () => {
+        it('it fails to setGovernor if not the owner', async function () {
+            await expect(avatar.connect(user).setGovernor(ZERO_ADDRESS)).to.be.revertedWith(
+                'Unauthorized()'
+            );
+        });
+
+        it('it sets Governor', async function () {
+            expect(await avatar.governor()).to.equals(authorizer_adaptor.address);
+            await avatar.connect(root).setGovernor(ZERO_ADDRESS);
+            expect(await avatar.governor()).to.equals(ZERO_ADDRESS);
+        });
+
+        it('it fails to setGovernor if trying to add same address twice', async function () {
+            await expect(avatar.connect(root).setGovernor(ZERO_ADDRESS)).to.be.revertedWith(
+                'AlreadyInitialized()'
+            );
+
+            await avatar.connect(root).setGovernor(authorizer_adaptor.address);
+        });
+    });
+
     context('» enableModule testing', () => {
         it('it fails to enableModule if InvalidParameters', async function () {
             /// Low level calls to other contracts does not cause `execTransactionFromModule` to revert
@@ -125,6 +147,11 @@ describe('unit - Contract: Avatar', function () {
             await expect(avatar.execTransactionFromModule(avatar.address, 0, transactionCallData, 0))
                 .to
                 .emit(avatar, "ExecutionFromModuleSuccess").withArgs(root.address);
+
+            // delegate call
+            await expect(avatar.connect(root).execTransactionFromModule(governor.address, 0, encoded, 1))
+                .to
+                .emit(avatar, "ExecutionFromModuleSuccess").withArgs(root.address);
         });
     });
 
@@ -184,7 +211,13 @@ describe('unit - Contract: Avatar', function () {
             ]);
             encoded = iface.encodeFunctionData("testInteraction", ["1"]);
 
+            // call
             await expect(avatar.connect(authorizer_adaptor).executeProposal(mockModule.address, 0, encoded, 0))
+                .to
+                .emit(avatar, "ExecutionFromGovernorSuccess").withArgs(authorizer_adaptor.address);
+
+            // delegate call
+            await expect(avatar.connect(authorizer_adaptor).executeProposal(mockModule.address, 0, encoded, 1))
                 .to
                 .emit(avatar, "ExecutionFromGovernorSuccess").withArgs(authorizer_adaptor.address);
         });
