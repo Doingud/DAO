@@ -39,7 +39,7 @@ let AVATARXGUILD;
 let VESTING;
 let ERC20_TOKEN;
 let AMOR_TOKEN_UPGRADE;
-let PROPOSER;
+//let PROPOSER;
 
 /// The proxy for AMOR token
 let amor_proxy;
@@ -206,7 +206,7 @@ const setupTests = deployments.createFixture(async () => {
   );
 
   /// Setup the first two Guilds
-  await DOINGUD_METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
+  await DOINGUD_METADAO.createGuild(authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
   let guildOne = await DOINGUD_METADAO.guilds(ONE_ADDRESS);
   let ControllerxOne = guildOne;
   guildOne = await CLONE_FACTORY.guilds(guildOne);
@@ -224,14 +224,13 @@ const setupTests = deployments.createFixture(async () => {
   //GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxOne);
   
   // Setup the `Module` for testing
-  await GUILD_ONE_AVATARXGUILD.connect(user1).enableModule(authorizer_adaptor.address);
 
   /// Setup the Impact Makers for the GuildController
   IMPACT_MAKERS = [user2.address, user3.address, staker.address];
   IMPACT_MAKERS_WEIGHTS = [20, 20, 60];
   let setImpactMakersData = CONTROLLERXGUILD.interface.encodeFunctionData("setImpactMakers", [IMPACT_MAKERS, IMPACT_MAKERS_WEIGHTS]);
   await GUILD_ONE_AVATARXGUILD.connect(authorizer_adaptor).execTransactionFromModule(GUILD_ONE_CONTROLLERXGUILD.address, 0, setImpactMakersData, 0);
-  await DOINGUD_METADAO.createGuild(root.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
+  await DOINGUD_METADAO.createGuild(authorizer_adaptor.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
 
   let guildTwo = await DOINGUD_METADAO.guilds(ControllerxOne);
   let ControllerxTwo = guildTwo;
@@ -254,7 +253,7 @@ const setupTests = deployments.createFixture(async () => {
   GUILD_TWO_FXAMORXGUILD = FX_AMOR_TOKEN.attach(FXAmorxTwo);
   GUILD_TWO_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxTwo);
   */
-  await GUILD_TWO_AVATARXGUILD.enableModule(authorizer_adaptor.address);
+  //await GUILD_TWO_AVATARXGUILD.enableModule(authorizer_adaptor.address);
   await GUILD_TWO_AVATARXGUILD.connect(authorizer_adaptor).execTransactionFromModule(GUILD_TWO_CONTROLLERXGUILD.address, 0, setImpactMakersData, 0);
  
   /// Setup the initial Fee Index

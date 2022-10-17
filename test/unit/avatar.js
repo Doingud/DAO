@@ -4,6 +4,7 @@ const { ZERO_ADDRESS, ONE_ADDRESS } = require("../helpers/constants.js");
 const init = require('../test-init.js');
 
 let avatar;
+let governor;
 let authorizer_adaptor;
 let operator;
 let mockModule;
@@ -22,7 +23,7 @@ describe('unit - Contract: Avatar', function () {
         avatar = setup.avatars.avatar;
         mockModule = setup.avatars.module;
         await init.governor(setup);
-        await init.governor(setup);
+        governor = setup.governor;
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;
@@ -49,23 +50,24 @@ describe('unit - Contract: Avatar', function () {
 
     context('» setGovernor testing', () => {
         it('it fails to setGovernor if not the owner', async function () {
-            await expect(avatar.connect(user).setGovernor(ZERO_ADDRESS)).to.be.revertedWith(
+            await expect(avatar.connect(user2).setGovernor(ZERO_ADDRESS)).to.be.revertedWith(
                 'Unauthorized()'
             );
         });
 
         it('it sets Governor', async function () {
             expect(await avatar.governor()).to.equals(authorizer_adaptor.address);
-            await avatar.connect(root).setGovernor(ZERO_ADDRESS);
+            let transactionData = avatar.interface.encodeFunctionData("setGovernor", [ZERO_ADDRESS]);
+            await avatar.execTransactionFromModule(avatar.address, 0, transactionData, 0);
             expect(await avatar.governor()).to.equals(ZERO_ADDRESS);
         });
 
         it('it fails to setGovernor if trying to add same address twice', async function () {
-            await expect(avatar.connect(root).setGovernor(ZERO_ADDRESS)).to.be.revertedWith(
-                'AlreadyInitialized()'
-            );
-
-            await avatar.connect(root).setGovernor(authorizer_adaptor.address);
+            /// **Low level calls do not revert**
+            let transactionData = avatar.interface.encodeFunctionData("setGovernor", [ZERO_ADDRESS]);
+            await avatar.execTransactionFromModule(avatar.address, 0, transactionData, 0);
+            expect(await avatar.governor()).to.equals(ZERO_ADDRESS);
+            //await avatar.connect(root).setGovernor(authorizer_adaptor.address);
         });
     });
 
@@ -140,6 +142,7 @@ describe('unit - Contract: Avatar', function () {
         });
 
         it('it emits success in execTransactionFromModule', async function () {
+            let encoded = "0x";
             expect(await avatar.isModuleEnabled(root.address)).to.be.true;
             let transactionCallData = avatar.interface.encodeFunctionData("enableModule", [operator.address]);
 
@@ -149,9 +152,8 @@ describe('unit - Contract: Avatar', function () {
                 .emit(avatar, "ExecutionFromModuleSuccess").withArgs(root.address);
 
             // delegate call
-            await expect(avatar.connect(root).execTransactionFromModule(governor.address, 0, encoded, 1))
-                .to
-                .emit(avatar, "ExecutionFromModuleSuccess").withArgs(root.address);
+            await expect(avatar.execTransactionFromModule(governor.address, 0, encoded, 1))
+                .to.emit(avatar, "ExecutionFromModuleSuccess").withArgs(root.address);
         });
     });
 
@@ -199,6 +201,9 @@ describe('unit - Contract: Avatar', function () {
         });
 
         it('it emits fail in executeProposal', async function () {
+            let transactionData = avatar.interface.encodeFunctionData("setGovernor", [authorizer_adaptor.address]);
+            await avatar.execTransactionFromModule(avatar.address, 0, transactionData, 0);
+            expect(await avatar.governor()).to.equals(authorizer_adaptor.address);
             let encodedFail = "0x";
             await expect(avatar.connect(authorizer_adaptor).executeProposal(mockModule.address, 0, encodedFail, 0))
                 .to

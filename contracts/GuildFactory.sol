@@ -247,17 +247,14 @@ contract GuildFactory is ICloneFactory, Ownable {
     /// @notice Initializes the Guild Control Structures
     /// @param  controller the avatar token address for this guild
     /// @param  module address: The Reality.io address
-    function _initGuildControls(
-        address controller,
-        address module
-    ) internal {
+    function _initGuildControls(address controller, address module) internal {
         /// Init the Proposer
         bytes memory initParams = abi.encode(
             guilds[controller].AvatarxGuild,
             guilds[controller].GovernorxGuild,
             module
         );
-        
+
         IProposer(guilds[controller].ProposerxGuild).setUp(initParams);
         /// Init the Guild Controller
         IGuildController(controller).init(

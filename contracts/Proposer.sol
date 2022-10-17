@@ -18,7 +18,10 @@ contract Proposer is Module {
     /// @notice Initializes the Module
     /// @param  initializeParams Encoded initializing parameters passed from the GuildFactory
     function setUp(bytes memory initializeParams) public override {
-        (address _avatar, address _target, address _reality) = abi.decode(initializeParams, (address, address, address));
+        (address _avatar, address _target, address _reality) = abi.decode(
+            initializeParams,
+            (address, address, address)
+        );
         target = _target;
         avatar = _avatar;
         reality = _reality;
