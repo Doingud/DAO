@@ -105,9 +105,9 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     function init(
         address amor,
         address cloneFactory,
-        address admin
+        address avatar
     ) external {
-        _transferOwnership(admin);
+        _transferOwnership(avatar);
         amorToken = IERC20(amor);
         guildFactory = cloneFactory;
         /// Setup the linked list

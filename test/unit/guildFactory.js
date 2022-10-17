@@ -54,7 +54,8 @@ describe("unit - Clone Factory", function () {
     GOVERNORXGUILD = setup.governor;
     AVATARXGUILD = setup.avatars.avatar;
 
-    await METADAO.init(AMOR_TOKEN.address, CLONE_FACTORY.address);
+    /// Note: Using `root` as Avatar address
+    await METADAO.init(AMOR_TOKEN.address, CLONE_FACTORY.address, root.address);
   });
 
   before('Setup', async function() {
@@ -64,7 +65,6 @@ describe("unit - Clone Factory", function () {
   context("function: deployGuildContracts", () => {
     it("Should deploy the Guild Token Contracts", async function () {
       await METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0]);
-      //expect(await CLONE_FACTORY.deployGuildContracts(user1.address, MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0])).to.not.be.null;
 
       this.guildOneControllerxGuild = await METADAO.guilds(ONE_ADDRESS);
 
@@ -89,7 +89,7 @@ describe("unit - Clone Factory", function () {
 
     it("Should have initialized the control contracts", async function () {
       await expect(GUILD_ONE_GOVERNORXGUILD.init(ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWith("AlreadyInitialized()");
-      await expect(GUILD_ONE_CONTROLLERXGUILD.init(ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWith("AlreadyInitialized()");
+      await expect(GUILD_ONE_CONTROLLERXGUILD.init(ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWith("AlreadyInitialized()");
       await expect(GUILD_ONE_AVATARXGUILD.init(ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWith("AlreadyInitialized()");
     });
   });

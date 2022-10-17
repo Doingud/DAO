@@ -185,13 +185,18 @@ contract GuildFactory is ICloneFactory, Ownable {
             IdAMORxGuild(address(proxyContract)).init(
                 guildName,
                 guildSymbol,
-                msg.sender,
-                guildTokenAddress,
+                guilds[guildTokenAddress].AvatarxGuild,
+                guilds[guildTokenAddress].AmorGuildToken,
                 DEFAULT_GUARDIAN_THRESHOLD
             );
         } else {
             /// FXAMOR uses the same `init` layout as IAMORxGuild
-            IAmorxGuild(address(proxyContract)).init(guildName, guildSymbol, msg.sender, guildTokenAddress);
+            IAmorxGuild(address(proxyContract)).init(
+                guildName,
+                guildSymbol,
+                guildTokenAddress,
+                guilds[guildTokenAddress].AmorGuildToken
+            );
         }
 
         return address(proxyContract);
@@ -247,9 +252,7 @@ contract GuildFactory is ICloneFactory, Ownable {
 
         /// Init the AvatarxGuild
         IDoinGudGovernor(guilds[controller].GovernorxGuild).init(
-            string.concat("Governorx", name),
             guilds[controller].AmorGuildToken,
-            snapshot,
             guilds[controller].AvatarxGuild
         );
     }
