@@ -16,7 +16,7 @@ contract Proposer is Module {
     error Unauthorized();
 
     /// @notice Initializes the Module
-    /// @param  intializeParams Encoded initializing parameters passed from the GuildFactory
+    /// @param  initializeParams Encoded initializing parameters passed from the GuildFactory
     function setUp(bytes memory initializeParams) public override {
         (address _avatar, address _target, address _reality) = abi.decode(initializeParams, (address, address, address));
         target = _target;

@@ -41,6 +41,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         address FXAmorxGuild;
         address AvatarxGuild;
         address GovernorxGuild;
+        address ProposerxGuild;
     }
 
     /// The Mastercopy/Implementation Addresses
@@ -94,7 +95,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         /// `_cloneTarget` refers to the DoinGud Proxy
         cloneTarget = _doinGudProxy;
         metaDaoController = _metaDaoController;
-        snapshot = _snapshot;
+        proposerModule = _proposer;
     }
 
     /// @notice This deploys a new guild with it's associated tokens
@@ -145,7 +146,10 @@ contract GuildFactory is ICloneFactory, Ownable {
         /// Deploy the Guild Governor
         guild.GovernorxGuild = _deployGovernor();
 
-        _initGuildControls(_name, controller, guildOwner);
+        /// Deploy the Guild Proposer Module
+        guild.ProposerxGuild = _deployProposer();
+
+        _initGuildControls(controller, module);
 
         return (controller, guild.GovernorxGuild, guild.AvatarxGuild);
     }
@@ -235,27 +239,26 @@ contract GuildFactory is ICloneFactory, Ownable {
     /// @return address of the deployed module
     function _deployProposer() internal returns (address) {
         IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
-        proxyContract.initProxy(guildComponents[amorxGuildToken][GuildComponents.ProposerxGuild]);
+        proxyContract.initProxy(proposerModule);
 
         return address(proxyContract);
     }
 
     /// @notice Initializes the Guild Control Structures
-    /// @param  name string: name of the guild being deployed
     /// @param  controller the avatar token address for this guild
-    /// @param  module address: owner of the Guild
+    /// @param  module address: The Reality.io address
     function _initGuildControls(
         address controller,
         address module
     ) internal {
         /// Init the Proposer
         bytes memory initParams = abi.encode(
-            guildComponents[amorGuildToken][GuildComponents.AvatarxGuild],
-            guildComponents[amorGuildToken][GuildComponents.GovernorxGuild],
+            guilds[controller].AvatarxGuild,
+            guilds[controller].GovernorxGuild,
             module
         );
         
-        IProposer(guildComponents[amorGuildToken][GuildComponents.ProposerxGuild]).setUp(initParams);
+        IProposer(guilds[controller].ProposerxGuild).setUp(initParams);
         /// Init the Guild Controller
         IGuildController(controller).init(
             guilds[controller].AvatarxGuild,
