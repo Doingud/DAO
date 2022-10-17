@@ -59,8 +59,8 @@ let DOINGUD_METADAO;
 let GUILD_ONE_AMORXGUILD;
 let GUILD_ONE_DAMORXGUILD;
 let GUILD_ONE_CONTROLLERXGUILD;
-/*  The below variables are required in later integration
 let GUILD_ONE_FXAMORXGUILD;
+/*  The below variables are required in later integration
 let GUILD_ONE_AVATARXGUILD;
 let GUILD_ONE_GOVERNORXGUILD;
 */
@@ -219,22 +219,21 @@ const setupTests = deployments.createFixture(async () => {
   let DAmorxOne = await CLONE_FACTORY.guildComponents(AmorxOne, 0);
   let FXAmorxOne = await CLONE_FACTORY.guildComponents(AmorxOne, 1);
   let ControllerxOne = await CLONE_FACTORY.guildComponents(AmorxOne, 2);
-  let GovernorxOne = await CLONE_FACTORY.guildComponents(AmorxOne, 3);
-  let AvatarxOne = await CLONE_FACTORY.guildComponents(AmorxOne, 4);
+  //let GovernorxOne = await CLONE_FACTORY.guildComponents(AmorxOne, 3);
+  //let AvatarxOne = await CLONE_FACTORY.guildComponents(AmorxOne, 4);
 
   GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(AmorxOne);
   GUILD_ONE_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(DAmorxOne);
   GUILD_ONE_FXAMORXGUILD = FX_AMOR_TOKEN.attach(FXAmorxOne);
   GUILD_ONE_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(ControllerxOne);
-  GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxOne);
-  GUILD_ONE_AVATARXGUILD = AVATARXGUILD.attach(AvatarxOne);
+  //GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxOne);
+  //GUILD_ONE_AVATARXGUILD = AVATARXGUILD.attach(AvatarxOne);
 
   await DOINGUD_METADAO.createGuild(root.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
   let AmorxTwo = await CLONE_FACTORY.amorxGuildTokens(1);
   let ControllerxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 2);
   /* The below objects are required in later integration testing PRs
   let DAmorxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 0);
-  let FXAmorxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 1);
   let GovernorxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 3);
   let AvatarxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 4);
   */
@@ -302,6 +301,19 @@ const setupTests = deployments.createFixture(async () => {
           to.emit(DOINGUD_AMOR_TOKEN, "Transfer");
 
         expect(await DOINGUD_AMOR_TOKEN.balanceOf(user2.address)).to.equal(((FIFTY_ETHER * ((BASIS_POINTS-TAX_RATE)/BASIS_POINTS) * 0.9 * 0.2 * ((BASIS_POINTS-TAX_RATE)/BASIS_POINTS)).toString()));
+      });
+    });
+
+    context("Donate ERC20 token to the Guild", () => {
+      it("Should allow a user to donate and ERC20 token to the GuildController", async function () {
+        await DOINGUD_METADAO.addWhitelist(ERC20_TOKEN.address);
+        await GUILD_ONE_CONTROLLERXGUILD.connect(user1).setImpactMakers(IMPACT_MAKERS, IMPACT_MAKERS_WEIGHTS);
+        await ERC20_TOKEN.approve(GUILD_ONE_CONTROLLERXGUILD.address, ONE_HUNDRED_ETHER);
+        await expect(GUILD_ONE_CONTROLLERXGUILD.donate(FIFTY_ETHER, ERC20_TOKEN.address)).
+          to.emit(ERC20_TOKEN, "Transfer").
+          withArgs(root.address, GUILD_ONE_CONTROLLERXGUILD.address, FIFTY_ETHER);
+        expect(await GUILD_ONE_CONTROLLERXGUILD.claimableTokens(user3.address, ERC20_TOKEN.address)).
+          to.equal((FIFTY_ETHER/5).toString())
       });
     });
 
