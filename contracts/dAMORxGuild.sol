@@ -63,6 +63,9 @@ contract dAMORxGuild is ERC20Base, Ownable {
     // amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
 
+    // the front end needs to be able to query the number of holders of dAMOR for the stats page
+    uint256 public numberOfHolders;
+
     event Initialized(bool success, address owner, address AMORxGuild, uint256 amount);
 
     bool private _initialized;
@@ -142,6 +145,9 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
         uint256 newAmount = _stake(amount, time);
 
+        if (stakes[msg.sender] == 0) {
+            numberOfHolders += 1;
+        }
         stakesTimes[msg.sender] = block.timestamp + time;
         stakes[msg.sender] = newAmount;
 
@@ -197,6 +203,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
         if (delegation[msg.sender].length != 0) {
             undelegateAll();
         }
+        numberOfHolders -= 1;
+
         return amount;
     }
 

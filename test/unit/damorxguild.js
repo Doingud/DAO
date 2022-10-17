@@ -94,6 +94,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             koef = normalTime/MAX_LOCK_TIME;
             const expectedAmount = COEFFICIENT* (koef*koef) *ONE_HUNDRED_ETHER; // (koef)^2 *amount | NdAMOR = f(t)^2 *nAMOR
 
+            numberOfHoldersBefore = await dAMORxGuild.numberOfHolders();
             AMORxGuildBalanceBefore = await AMORxGuild.balanceOf(dAMORxGuild.address);
             await dAMORxGuild.connect(staker).stake(ONE_HUNDRED_ETHER, normalTime);        
             realAmount = (await dAMORxGuild.balanceOf(staker.address)).toString();
@@ -102,7 +103,10 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             expect(roundedRealAmount.toString()).to.equal(expectedAmount.toString());
 
             AMORxGuildBalanceAfter = (await AMORxGuild.balanceOf(dAMORxGuild.address)).toString();
+            numberOfHoldersAfter = await dAMORxGuild.numberOfHolders();
+
             expect(AMORxGuildBalanceAfter).to.equal(AMORxGuildBalanceBefore.add(ONE_HUNDRED_ETHER));
+            expect(numberOfHoldersAfter).to.equal(numberOfHoldersBefore.add(1));
         });
 
     });
@@ -123,13 +127,17 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             const newAmount = COEFFICIENT* (koef*koef) *ONE_HUNDRED_ETHER; // (koef)^2 *amount | NdAMOR = f(t)^2 *nAMOR
             const expectedAmount = ethers.BigNumber.from(realAmount).add(ethers.BigNumber.from(newAmount.toString()));
 
+            numberOfHoldersBefore = await dAMORxGuild.numberOfHolders();
+
             await dAMORxGuild.connect(staker).increaseStake(ONE_HUNDRED_ETHER);        
             const newRealAmount = await dAMORxGuild.balanceOf(staker.address);
             const roundedNewRealAmount = Math.round(newRealAmount.toString() * 100) / 100;
 
             expect(roundedNewRealAmount.toString()).to.be.gt(ethers.BigNumber.from(realAmount));
             expect(expectedAmount.toString()).to.be.gt(newRealAmount);
-            
+            numberOfHoldersAfter = await dAMORxGuild.numberOfHolders();
+            expect(numberOfHoldersAfter).to.equal(numberOfHoldersBefore);
+
             realAmount = newRealAmount;
         });
 
@@ -296,9 +304,13 @@ describe('unit - Contract: dAMORxGuild Token', function () {
         it('withdraw dAMORxGuild tokens if not delegated any', async function () {
             time.increase(maxLockTime);
             const currentAmount = (await dAMORxGuild.balanceOf(staker.address)).toString();
+            numberOfHoldersBefore = await dAMORxGuild.numberOfHolders();
+
             await dAMORxGuild.connect(staker).withdraw();        
             const withdrawedTokens = (await AMORxGuild.balanceOf(staker.address)).toString();
-            
+            numberOfHoldersAfter = await dAMORxGuild.numberOfHolders();
+
+            expect(numberOfHoldersAfter).to.equal(numberOfHoldersBefore.sub(1));
             expect(withdrawedTokens).to.equal(currentAmount);
         });
 
