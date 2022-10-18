@@ -126,7 +126,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
         guardiansLimit = 1;
         console.logBytes4(this.propose.selector);
 
-
         emit Initialized(avatarAddress_);
         return true;
     }
