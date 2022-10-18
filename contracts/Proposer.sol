@@ -6,6 +6,7 @@ import "@gnosis.pm/zodiac/contracts/core/Module.sol";
 import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/interfaces/IGovernor.sol";
+import "hardhat/console.sol";
 
 contract Proposer is Module {
     /// The Reality module from the Community Safe
@@ -48,9 +49,6 @@ contract Proposer is Module {
         bytes[] calldata data,
         Enum.Operation operation
     ) external onlyReality returns (bool) {
-        //bytes4 selector = bytes4(keccak256("propose(address[],uint256[],bytes[])"));
-        //bytes memory arguments = abi.encode(targets, values, data);
-        //bytes memory proposal = abi.encodeCall(IDoinGudGovernor.propose, (targets, values, data));
         bytes memory proposal = abi.encodeWithSelector(IDoinGudGovernor.propose.selector, targets, values, data);
         return exec(target, 0, proposal, operation);
     }
@@ -66,7 +64,7 @@ contract Proposer is Module {
         }
         bytes4 addGuardianFunctionSelector = bytes4(keccak256(bytes("setGuardians(address[])")));
         bytes memory data = abi.encode(guardians);
-        data = abi.encodeWithSelector(addGuardianFunctionSelector, data);
+        data = abi.encodeWithSelector(IDoinGudGovernor.setGuardians.selector, guardians);
         guardiansSet = exec(target, 0, data, Enum.Operation.Call);
         return guardiansSet;
     }

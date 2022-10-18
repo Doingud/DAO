@@ -39,6 +39,7 @@ import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "hardhat/console.sol";
 
 contract DoinGudGovernor is IDoinGudGovernor {
     using SafeCast for uint256;
@@ -123,6 +124,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
         _votingDelay = 1;
         _votingPeriod = 2 weeks;
         guardiansLimit = 1;
+        console.logBytes4(this.propose.selector);
+
 
         emit Initialized(avatarAddress_);
         return true;
