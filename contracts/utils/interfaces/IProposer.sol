@@ -12,5 +12,7 @@ interface IProposer {
         uint256[] memory values,
         bytes[] calldata data,
         Enum.Operation operation
-    ) external;
+    ) external returns (bool);
+
+    function setGuardiansAfterVote(address[] memory guardians) external returns (bool);
 }

@@ -68,13 +68,6 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         _;
     }
 
-    /*modifier onlyOwner() {
-        if (msg.sender != owner) {
-            revert Unauthorized();
-        }
-        _;
-    }*/
-
     modifier onlySelf() {
         if (msg.sender != address(this)) {
             revert Unauthorized();

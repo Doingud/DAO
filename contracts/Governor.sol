@@ -232,7 +232,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
     /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote.
     /// Only Avatar(as a result of the Snapshot) contract can add a proposal for voting.
-    /// Proposal execution will happen throught the Avatar contract
+    /// Proposal execution will happen through the Avatar contract
     function propose(
         address[] memory targets,
         uint256[] memory values,
