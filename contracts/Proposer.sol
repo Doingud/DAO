@@ -11,6 +11,8 @@ import "hardhat/console.sol";
 contract Proposer is Module {
     /// The Reality module from the Community Safe
     address public reality;
+    /// The Governor Address for this guild
+    address public governor;
     /// Proposer has already `setGuardians`
     bool public guardiansSet;
 
@@ -28,8 +30,9 @@ contract Proposer is Module {
             initializeParams,
             (address, address, address)
         );
-        target = _target;
+        target = _avatar;
         avatar = _avatar;
+        governor = _target;
         reality = _reality;
         _transferOwnership(avatar);
     }
@@ -50,7 +53,7 @@ contract Proposer is Module {
         Enum.Operation operation
     ) external onlyReality returns (bool) {
         bytes memory proposal = abi.encodeWithSelector(IDoinGudGovernor.propose.selector, targets, values, data);
-        return exec(target, 0, proposal, operation);
+        return exec(governor, 0, proposal, operation);
     }
 
     /// @notice Allows the Avatar to add Guardians before required `GuardianLimitReached`
@@ -62,10 +65,8 @@ contract Proposer is Module {
         if (guardiansSet) {
             revert AlreadySet();
         }
-        bytes4 addGuardianFunctionSelector = bytes4(keccak256(bytes("setGuardians(address[])")));
-        bytes memory data = abi.encode(guardians);
-        data = abi.encodeWithSelector(IDoinGudGovernor.setGuardians.selector, guardians);
-        guardiansSet = exec(target, 0, data, Enum.Operation.Call);
+        bytes memory data = abi.encodeWithSelector(IDoinGudGovernor.setGuardians.selector, guardians);
+        guardiansSet = exec(governor, 0, data, Enum.Operation.Call);
         return guardiansSet;
     }
 

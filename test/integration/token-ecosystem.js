@@ -222,13 +222,24 @@ const setupTests = deployments.createFixture(async () => {
   /// Proposer to create new guild
   let proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
   console.log("Flag 2");
+  await DOINGUD_PROPOSER.connect(authorizer_adaptor).setGuardiansAfterVote([user1.address, user2.address, user3.address]);
+  let guardians = await DOINGUD_GOVERNOR.guardians(0);
+  console.log("Guardian 1: %s", guardians);
+  console.log("user1 is: %s", user1.address);
   console.log("Fx selector: " + GOVERNORXGUILD.interface.getSighash("propose"));
   await DOINGUD_PROPOSER.connect(authorizer_adaptor).proposeAfterVote([DOINGUD_METADAO.address], [0], [proposal], 0);
   console.log("Before Proposal ID");
   let proposalId = await DOINGUD_GOVERNOR.proposals(0);
   console.log("Proposal Id: " + proposalId);
-  await DOINGUD_GOVERNOR.castVote(proposalId, true);
-  await DOINGUD_GOVERNOR.execute([METADAO.address], [0], [proposal]);
+  await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+  time.increase(time.duration.days(5));
+  await DOINGUD_GOVERNOR.connect(user1).castVote(proposalId, true);
+  await DOINGUD_GOVERNOR.connect(user2).castVote(proposalId, true);
+  console.log("Flag 3");
+  await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+  time.increase(time.duration.days(10));
+  await DOINGUD_GOVERNOR.execute([DOINGUD_METADAO.address], [0], [proposal]);
+  console.log("Flag 4");
 
   /// Setup the first two Guilds
   //await DOINGUD_METADAO.createGuild(authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
