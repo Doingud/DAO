@@ -153,12 +153,7 @@ contract GuildFactory is ICloneFactory, Ownable {
 
         _initGuildControls(_name, controller, guildOwner);
 
-        emit GuildCreated(
-            guild.AmorGuildToken,
-            guild.DAmorxGuild,
-            guild.FXAmorxGuild,
-            controller
-        );
+        emit GuildCreated(guild.AmorGuildToken, guild.DAmorxGuild, guild.FXAmorxGuild, controller);
 
         return (controller, guild.GovernorxGuild, guild.AvatarxGuild);
     }
