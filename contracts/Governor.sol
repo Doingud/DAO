@@ -37,7 +37,6 @@ import "./utils/interfaces/IAvatarxGuild.sol";
 import "./utils/interfaces/IGovernor.sol";
 import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
-import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -45,8 +44,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
     using SafeCast for uint256;
 
     struct ProposalCore {
-        uint256 voteStart;
-        uint256 voteEnd;
+        uint96 voteStart;
+        uint96 voteEnd;
         bool executed;
         bool canceled;
     }
@@ -54,7 +53,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     event ProposalCanceled(uint256 proposalId);
     event ProposalExecuted(uint256 proposalId);
 
-    uint256 public proposalMaxOperations = 10;
+    uint256 public constant PROPOSAL_MAX_OPERATIONS = 10;
     mapping(uint256 => ProposalCore) private _proposals;
     mapping(uint256 => int256) public proposalCancelApproval;
     mapping(uint256 => address[]) public cancellers; // cancellers mapping(uint proposal => address [] voters)
@@ -68,18 +67,16 @@ contract DoinGudGovernor is IDoinGudGovernor {
     mapping(uint256 => int256) public proposalVoting;
     mapping(uint256 => int256) public proposalWeight;
 
-    uint256 public GUARDIANS_LIMIT; // amount of guardians for contract to function propperly,
+    uint256 public guardiansLimit; // amount of guardians for contract to function propperly,
     // until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.
 
     address[] public guardians; // this is an array guardians who are allowed to vote for the proposals.
     mapping(address => uint256) public weights; // weight of each specific guardian
 
-    address public snapshotAddress;
     address public avatarAddress;
     IERC20 private AMORxGuild;
-    IVotes public token;
 
-    event Initialized(bool success, address avatarAddress, address snapshotAddress);
+    event Initialized(address avatarAddress);
     event ProposalCreated(
         uint256 proposalId,
         address proposer,
@@ -89,13 +86,14 @@ contract DoinGudGovernor is IDoinGudGovernor {
         uint256 startBlock,
         uint256 endBlock
     );
+    event ChangedGuardiansLimit(uint256 newLimit);
 
-    string public _name;
     bool private _initialized;
 
-    uint256 private _votingDelay;
-    uint256 private _votingPeriod;
+    uint96 private _votingDelay;
+    uint96 private _votingPeriod;
 
+    error InvalidProposalId();
     error AlreadyInitialized();
     error NotEnoughGuardians();
     error Unauthorized();
@@ -110,47 +108,30 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
     /// @notice Initializes the Governor contract
     /// @param  AMORxGuild_ the address of the AMORxGuild token
-    /// @param  snapshotAddress_ the address of the Snapshot
     /// @param  avatarAddress_ the address of the Avatar
-    function init(
-        string memory name,
-        address AMORxGuild_,
-        address snapshotAddress_,
-        address avatarAddress_
-    ) external returns (bool) {
+    function init(address AMORxGuild_, address avatarAddress_) external returns (bool) {
         if (_initialized) {
             revert AlreadyInitialized();
         }
 
-        token = IVotes(AMORxGuild_);
-        _name = name;
         // person who inflicted the creation of the contract is set as the only guardian of the system
         guardians.push(msg.sender);
         AMORxGuild = IERC20(AMORxGuild_);
-
-        snapshotAddress = snapshotAddress_;
         avatarAddress = avatarAddress_;
 
         _initialized = true;
-
         _votingDelay = 1;
         _votingPeriod = 2 weeks;
+        guardiansLimit = 1;
 
-        emit Initialized(_initialized, avatarAddress_, snapshotAddress_);
+        emit Initialized(avatarAddress_);
         return true;
     }
 
     /// @notice this modifier is needed to validate that amount of the Guardians is sufficient to vote and approve the “Many” decision
     modifier GuardianLimitReached() {
-        if (guardians.length < GUARDIANS_LIMIT) {
+        if (guardians.length < guardiansLimit) {
             revert NotEnoughGuardians();
-        }
-        _;
-    }
-
-    modifier onlySnapshot() {
-        if (msg.sender != snapshotAddress) {
-            revert Unauthorized();
         }
         _;
     }
@@ -171,7 +152,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
     /// @notice this function resets guardians array, and adds new guardian to the system.
     /// @param arrGuardians The array of guardians
-    function setGuardians(address[] memory arrGuardians) external onlySnapshot {
+    function setGuardians(address[] memory arrGuardians) external onlyAvatar {
         // check that the array is not empty
         if (arrGuardians.length == 0) {
             revert InvalidParameters();
@@ -202,7 +183,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
     /// @notice this function adds new guardian to the system
     /// @param guardian New guardian to be added
-    function addGuardian(address guardian) public onlySnapshot {
+    function addGuardian(address guardian) public onlyAvatar {
         // check that guardian won't be added twice
         for (uint256 i = 0; i < guardians.length; i++) {
             if (guardian == guardians[i]) {
@@ -215,7 +196,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
     /// @notice this function removes choosed guardian from the system
     /// @param guardian Guardian to be removed
-    function removeGuardian(address guardian) external onlySnapshot {
+    function removeGuardian(address guardian) external onlyAvatar {
         for (uint256 i = 0; i < guardians.length; i++) {
             if (guardians[i] == guardian) {
                 guardians[i] = guardians[guardians.length - 1];
@@ -229,7 +210,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @notice this function changes guardian as a result of the vote (propose function)
     /// @param current Current vote value
     /// @param newGuardian Guardian to be changed
-    function changeGuardian(uint256 current, address newGuardian) external onlySnapshot {
+    function changeGuardian(uint256 current, address newGuardian) external onlyAvatar {
         // check that guardian won't be added twice
         for (uint256 i = 0; i < guardians.length; i++) {
             if (newGuardian == guardians[i]) {
@@ -241,14 +222,22 @@ contract DoinGudGovernor is IDoinGudGovernor {
         weights[newGuardian] = 1;
     }
 
+    /// @notice this function changes guardians limit
+    /// Should be passed to the Avatar as a Governor contract proposal
+    /// @param newLimit New limit value
+    function changeGuardiansLimit(uint256 newLimit) external onlyAvatar {
+        guardiansLimit = newLimit;
+        emit ChangedGuardiansLimit(newLimit);
+    }
+
     /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote.
     /// Only Avatar(as a result of the Snapshot) contract can add a proposal for voting.
-    /// Proposal execution will happen throught the Avatar contract
+    /// Proposal execution will happen through the Avatar contract
     function propose(
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas
-    ) external onlySnapshot returns (uint256) {
+    ) external onlyAvatar GuardianLimitReached returns (uint256) {
         if (!(targets.length == values.length && targets.length == calldatas.length)) {
             revert InvalidParameters();
         }
@@ -257,10 +246,11 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert InvalidParameters();
         }
 
-        if (targets.length > proposalMaxOperations) {
+        if (targets.length > PROPOSAL_MAX_OPERATIONS) {
             revert InvalidParameters();
         }
-        // Submit proposals uniquely identified by a proposalId and an array of txHashes, to create a Reality.eth question that validates the execution of the connected transactions
+        /// Submit proposals uniquely identified by a proposalId and an array of txHashes,
+        /// to create a Reality.eth question that validates the execution of the connected transactions
         uint256 proposalId = hashProposal(targets, values, calldatas);
 
         ProposalCore storage proposal = _proposals[proposalId];
@@ -268,8 +258,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert InvalidState();
         }
 
-        uint256 snapshot = block.timestamp + _votingDelay;
-        uint256 deadline = snapshot + _votingPeriod;
+        uint96 snapshot = uint96(block.timestamp + _votingDelay);
+        uint96 deadline = snapshot + _votingPeriod;
 
         proposal.voteStart = snapshot;
         proposal.voteEnd = deadline;
@@ -298,14 +288,9 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @dev Internal vote casting mechanism: Check that the vote is pending, that it has not been cast yet
     /// @param proposalId ID of the proposal
     /// @param support Boolean value: true (for) or false (against) user is voting
-    function castVote(uint256 proposalId, bool support) external onlyGuardian {
-        ProposalCore storage proposal = _proposals[proposalId];
+    function castVote(uint256 proposalId, bool support) external onlyGuardian GuardianLimitReached {
         if (state(proposalId) != ProposalState.Active) {
             revert InvalidState();
-        }
-
-        if (AMORxGuild.balanceOf(msg.sender) > 0) {
-            revert InvalidAmount();
         }
 
         for (uint256 i = 0; i < voters[proposalId].length; i++) {
@@ -332,7 +317,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         address[] memory targets,
         uint256[] memory values,
         bytes[] memory calldatas
-    ) external returns (uint256) {
+    ) external GuardianLimitReached returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas);
 
         ProposalState status = state(proposalId);
@@ -368,17 +353,12 @@ contract DoinGudGovernor is IDoinGudGovernor {
         ProposalCore storage proposal = _proposals[proposalId];
 
         if (proposal.voteStart == 0) {
-            revert("Governor: unknown proposal id");
-        }
-        if (proposal.canceled) {
-            return ProposalState.Canceled;
+            revert InvalidProposalId();
         }
 
         if (proposal.voteStart >= block.timestamp) {
             return ProposalState.Pending;
         }
-
-        uint256 deadline = _proposals[proposalId].voteEnd;
 
         if (proposal.voteEnd >= block.timestamp) {
             return ProposalState.Active;
@@ -400,15 +380,10 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// Proposal should achieve at least 20% approval of guardians, to be cancelled
     /// @param proposalId ID of the proposal
     function castVoteForCancelling(uint256 proposalId) external onlyGuardian {
-        ProposalCore storage proposal = _proposals[proposalId];
         ProposalState state = state(proposalId);
 
         if (state != ProposalState.Active) {
             revert InvalidState();
-        }
-
-        if (AMORxGuild.balanceOf(msg.sender) > 0) {
-            revert InvalidAmount();
         }
 
         for (uint256 i = 0; i < cancellers[proposalId].length; i++) {

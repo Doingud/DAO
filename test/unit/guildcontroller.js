@@ -53,7 +53,7 @@ describe('unit - Contract: GuildController', function () {
         metadao = setup.metadao;
         controller = setup.controller;
         guildFactory = await init.getGuildFactory(setup);
-        await metadao.init(AMOR.address, setup.factory.address);
+        await metadao.init(AMOR.address, setup.factory.address, setup.roles.root.address);
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;
@@ -80,7 +80,6 @@ describe('unit - Contract: GuildController', function () {
                 AMOR.address,
                 AMORxGuild.address,
                 FXAMORxGuild.address,
-                root.address,
                 root.address
             )).to.be.revertedWith("AlreadyInitialized()");
         });
@@ -174,7 +173,7 @@ describe('unit - Contract: GuildController', function () {
 
         it('it fails to donate if token not in the whitelist', async function () {
             await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER, root.address)).to.be.revertedWith(
-                'NotListed()'
+                'NotWhitelistedToken()'
             );
         });
 
@@ -220,6 +219,64 @@ describe('unit - Contract: GuildController', function () {
             sum += difference;
             expect((await AMORxGuild.balanceOf(controller.address)).toString()).to.equal(sum.toString());            
         });
+
+        it('donates AMOR tokens', async function () {
+            const startBalance = await AMOR.balanceOf(controller.address);
+            const fxamorStart = await FXAMORxGuild.balanceOf(user.address);
+
+            await AMOR.connect(root).transfer(user.address, TEST_TRANSFER);
+            await AMOR.connect(user).approve(controller.address, TEST_TRANSFER);
+
+            await controller.connect(user).donate(TEST_TRANSFER_SMALLER, AMOR.address);
+
+            let amorToFxAmor = (TEST_TRANSFER_SMALLER * percentToConvert) / FEE_DENOMINATOR; // 10% of all donated AMOR
+            
+            let taxDeducted = amorToFxAmor*(TAX_RATE/BASIS_POINTS);
+            let amorAfterTransfer = amorToFxAmor - taxDeducted;
+            let AMORDeducted = amorAfterTransfer*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS;
+            let amorxguildAfterStaking = AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS;
+
+            const totalWeight = await controller.totalWeight();
+            const FxGAmount = Math.floor((amorxguildAfterStaking * percentToConvert) / FEE_DENOMINATOR); // FXAMORxGuild Amount = 10% of amount to Impact poll
+            const decIpAmount = TEST_TRANSFER_SMALLER - amorToFxAmor; //decreased amount
+
+            AMORDeducted = decIpAmount*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS;
+
+            sum = 0;
+            let weight = await controller.weights(impactMaker.address);
+            let amountToSendImpactMaker = Math.ceil((AMORDeducted * weight) / totalWeight);
+            sum += amountToSendImpactMaker;
+            expect((await FXAMORxGuild.balanceOf(user.address)).toString()).to.equal(fxamorStart.toString());
+            expect((await controller.claimableTokens(impactMaker.address, AMOR.address)).toString()).to.equal(amountToSendImpactMaker.toString());            
+
+            weight = await controller.weights(staker.address);
+            amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
+            sum += amountToSendImpactMaker;
+            expect((await controller.claimableTokens(staker.address, AMOR.address)).toString()).to.equal(amountToSendImpactMaker.toString());
+
+            weight = await controller.weights(operator.address);
+            amountToSendImpactMaker = Math.floor((decIpAmount * weight) / totalWeight);
+            sum += amountToSendImpactMaker;
+            expect((await controller.claimableTokens(operator.address, AMOR.address)).toString()).to.equal(amountToSendImpactMaker.toString());
+        
+            const difference = 1; // rounding error
+            sum += difference;
+
+            let expectedAMORBalance = ethers.BigNumber.from(startBalance.toString())
+                .add(ethers.BigNumber.from(sum.toString()));
+
+            let expectedfxamorBalance = ethers.BigNumber.from(fxamorStart.toString())
+                .add(ethers.BigNumber.from(FxGAmount.toString()));
+
+            expect((await AMOR.balanceOf(controller.address)).toString()).to.equal(expectedAMORBalance.toString());
+            expect((await FXAMORxGuild.balanceOf(user.address)).toString()).to.equal(expectedfxamorBalance.toString());            
+        });
+
+        it('it fails to donate if NotWhitelistedToken', async function () {
+            await expect(controller.connect(user).donate(TEST_TRANSFER_SMALLER, USDC.address)).to.be.revertedWith(
+                'NotWhitelistedToken()'
+            );
+        });
     });
 
     context('» gatherDonation and distribute testing', () => {
@@ -227,7 +284,7 @@ describe('unit - Contract: GuildController', function () {
         it('it fails to gatherDonation if token not in the whitelist', async function () {
             // gatherDonation --> distribute
             await expect(controller.connect(operator).gatherDonation(root.address)).to.be.revertedWith(
-                'NotListed()'
+                'NotWhitelistedToken()'
             );
         });
 
@@ -257,9 +314,48 @@ describe('unit - Contract: GuildController', function () {
             expect((current - previous).toString()).to.equal(AMORDeducted.toString());
         });
 
-        it('gathers donation in USDC', async function () {
+
+        it('donates USDC tokens', async function () {
             await metadao.connect(root).addWhitelist(USDC.address);
 
+            const startBalance = await USDC.balanceOf(controller.address);
+            const fxamorStart = await FXAMORxGuild.balanceOf(user.address);
+
+            await USDC.connect(root).transfer(user.address, TEST_TRANSFER);
+            await USDC.connect(user).approve(controller.address, TEST_TRANSFER);
+
+            await controller.connect(user).donate(TEST_TRANSFER_SMALLER, USDC.address);
+
+            const totalWeight = await controller.totalWeight();
+
+            sum = 0;
+            let weight = await controller.weights(impactMaker.address);
+            let amountToSendImpactMaker = Math.floor((TEST_TRANSFER_SMALLER * weight) / totalWeight);
+            sum += amountToSendImpactMaker;
+            expect((await FXAMORxGuild.balanceOf(user.address)).toString()).to.equal(fxamorStart.toString());
+            expect((await controller.claimableTokens(impactMaker.address, USDC.address)).toString()).to.equal(amountToSendImpactMaker.toString());            
+
+            weight = await controller.weights(staker.address);
+            amountToSendImpactMaker = Math.floor((TEST_TRANSFER_SMALLER * weight) / totalWeight);
+            sum += amountToSendImpactMaker;
+            expect((await controller.claimableTokens(staker.address, USDC.address)).toString()).to.equal(amountToSendImpactMaker.toString());
+
+            weight = await controller.weights(operator.address);
+            amountToSendImpactMaker = Math.floor((TEST_TRANSFER_SMALLER * weight) / totalWeight);
+            sum += amountToSendImpactMaker;
+            expect((await controller.claimableTokens(operator.address, USDC.address)).toString()).to.equal(amountToSendImpactMaker.toString());
+        
+            const difference = 2; // rounding error
+            sum += difference;
+
+            let expectedAMORBalance = ethers.BigNumber.from(startBalance.toString())
+                .add(ethers.BigNumber.from(sum.toString()));
+
+            expect((await USDC.balanceOf(controller.address)).toString()).to.equal(expectedAMORBalance.toString());
+            expect((await FXAMORxGuild.balanceOf(user.address)).toString()).to.equal(fxamorStart.toString());            
+        });
+
+        it('gathers donation in USDC', async function () {
             // add some funds to MetaDaoController
             await USDC.connect(root).approve(metadao.address, TEST_TRANSFER);
             await metadao.donate(USDC.address, TEST_TRANSFER, 0);
@@ -295,7 +391,7 @@ describe('unit - Contract: GuildController', function () {
             let amount = await metadao.guildFunds(controller.address, AMORxGuild.address);
             await controller.connect(user).gatherDonation(AMORxGuild.address);
 
-            let difference = 0; // difference -604 appears here: (decAmount * weights[impactMakers[i]]) / totalWeight
+            let difference = 0; // difference can appear here: (decAmount * weights[impactMakers[i]]) / totalWeight
             let weight = await controller.weights(impactMaker.address);
             weight = weight / totalWeight;
             let amountToSendImpactMaker = amount * weight;
@@ -423,6 +519,7 @@ describe('unit - Contract: GuildController', function () {
             await controller.connect(operator).addReport(report, v, r, s); // 9
             expect((await controller.queueReportsAuthors(9))).to.equal(operator.address);
 
+            time.increase(time.duration.days(2));
             await controller.connect(authorizer_adaptor).startVoting();
 
             expect(await controller.trigger()).to.equal(true);
@@ -466,6 +563,7 @@ describe('unit - Contract: GuildController', function () {
             expect(await controller.reportsVoting(0)).to.equals(2);
             expect(await controller.reportsWeight(0)).to.equals(2);
 
+            time.increase(time.duration.days(1));
             await controller.connect(operator).voteForReport(id, 1, false);
             expect(await controller.reportsVoting(0)).to.equals(1);
             expect(await controller.reportsWeight(0)).to.equals(3);
@@ -648,7 +746,7 @@ describe('unit - Contract: GuildController', function () {
         it('it sets new voting period', async function () {
             let newTime = 60 * 60 *24 * 2;
             await controller.connect(root).setVotingPeriod(newTime);
-            expect((await controller.ADDITIONAL_VOTING_TIME())).to.equal(newTime);
+            expect((await controller.additionalVotingTime())).to.equal(newTime);
         });
     });
 
