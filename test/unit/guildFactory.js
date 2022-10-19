@@ -56,7 +56,6 @@ describe("unit - Clone Factory", function () {
 
     /// Note: Using `root` as Avatar address
     await METADAO.init(AMOR_TOKEN.address, CLONE_FACTORY.address, root.address);
-  });
 
   before('Setup', async function() {
     await setupTests();
