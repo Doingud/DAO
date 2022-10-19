@@ -134,5 +134,6 @@ describe("unit - Clone Factory", function () {
       expect(await METADAO.guilds(ONE_ADDRESS)).to.equal(GUILD_ONE_CONTROLLERXGUILD.address);
     });
   });
-
+  
+  });
 });
