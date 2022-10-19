@@ -109,7 +109,6 @@ describe('unit - Contract: Governor', function () {
 
             transactionCallData = avatar.interface.encodeFunctionData("setGovernor", [governor.address]);
             await avatar.connect(authorizer_adaptor).execTransactionFromModule(avatar.address, 0, transactionCallData, 0);
-            //await avatar.connect(root).setGovernor(governor.address);
             await expect(governor.connect(authorizer_adaptor).execute(targets, values, calldatas))
                 .to
                 .emit(governor, "ProposalExecuted").withArgs(firstProposalId);

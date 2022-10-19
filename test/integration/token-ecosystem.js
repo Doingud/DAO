@@ -232,7 +232,6 @@ const setupTests = deployments.createFixture(async () => {
   );
 
   /// Setup the first two Guilds
-  //await DOINGUD_METADAO.createGuild(authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
   let guildOne = await DOINGUD_METADAO.guilds(ONE_ADDRESS);
   let ControllerxOne = guildOne;
   guildOne = await CLONE_FACTORY.guilds(guildOne);
@@ -273,7 +272,6 @@ const setupTests = deployments.createFixture(async () => {
   let ControllerxTwo = guildTwo;
   guildTwo = await CLONE_FACTORY.guilds(ControllerxTwo);
   let AvatarxTwo = guildTwo.AvatarxGuild;
-
   /* The below objects are required in later integration testing PRs
   let AmorxTwo = guildTwo.AmorGuildToken;
   let DAmorxTwo = guildTwo.DAmorxGuild;
@@ -290,8 +288,8 @@ const setupTests = deployments.createFixture(async () => {
   GUILD_TWO_FXAMORXGUILD = FX_AMOR_TOKEN.attach(FXAmorxTwo);
   GUILD_TWO_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxTwo);
   */
+  
   await GUILD_TWO_AVATARXGUILD.connect(authorizer_adaptor).execTransactionFromModule(GUILD_TWO_CONTROLLERXGUILD.address, 0, setImpactMakersData, 0);
-
   /// Setup the initial Fee Index
   const abi = ethers.utils.defaultAbiCoder;
   let encodedIndex = abi.encode(

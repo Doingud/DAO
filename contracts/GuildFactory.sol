@@ -64,7 +64,7 @@ contract GuildFactory is ICloneFactory, Ownable {
     /// Create a mapping of AvatarxGuild GuildComponents
     mapping(address => GuildComponents) public guilds;
 
-    /// Constants
+    /// CONSTANTS
     uint256 public constant DEFAULT_GUARDIAN_THRESHOLD = 10;
 
     /// ERRORS
@@ -256,6 +256,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         );
 
         IProposer(guilds[controller].ProposerxGuild).setUp(initParams);
+
         /// Init the Guild Controller
         IGuildController(controller).init(
             guilds[controller].AvatarxGuild,
