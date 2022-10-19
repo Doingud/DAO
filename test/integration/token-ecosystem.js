@@ -222,30 +222,14 @@ const setupTests = deployments.createFixture(async () => {
   /// Step 8: Propose to create a new guild
   let proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
   await metaHelper(
+    [DOINGUD_METADAO.address],
+    [0],
+    [proposal],
     [user1, user2, user3],
     authorizer_adaptor,
-    proposal,
-    DOINGUD_PROPOSER,
-    DOINGUD_METADAO,
-    DOINGUD_GOVERNOR
+    DOINGUD_PROPOSER.address,
+    DOINGUD_GOVERNOR.address
   );
-
-  /*
-  let proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
-  await DOINGUD_PROPOSER.connect(authorizer_adaptor).proposeAfterVote([DOINGUD_METADAO.address], [0], [proposal], 0);
-  let proposalId = await DOINGUD_GOVERNOR.proposals(0);
-  /// Time passed for Voting to take place
-  await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
-  time.increase(time.duration.days(5));
-  await DOINGUD_GOVERNOR.connect(user1).castVote(proposalId, true);
-  await DOINGUD_GOVERNOR.connect(user2).castVote(proposalId, true);
-  /// Time passed for Voting to finalize
-  await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
-  time.increase(time.duration.days(10));
-  */
-
-  /// Step 9: Execute the proposal that has passed
-  //await DOINGUD_GOVERNOR.execute([DOINGUD_METADAO.address], [0], [proposal]);
 
   /// Setup the first two Guilds
   //await DOINGUD_METADAO.createGuild(authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
@@ -274,24 +258,17 @@ const setupTests = deployments.createFixture(async () => {
   await GUILD_ONE_AVATARXGUILD.connect(authorizer_adaptor).execTransactionFromModule(GUILD_ONE_CONTROLLERXGUILD.address, 0, setImpactMakersData, 0);
 
   /// Setup Guild Two
-  await metaHelper("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]]);
-  /*proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]]);
-  await DOINGUD_PROPOSER.connect(authorizer_adaptor).proposeAfterVote([DOINGUD_METADAO.address], [0], [proposal], 0);
-  proposalId = await DOINGUD_GOVERNOR.proposals(1);
+  proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
+  await metaHelper(
+    [DOINGUD_METADAO.address],
+    [0],
+    [proposal],
+    [user1, user2, user3],
+    authorizer_adaptor,
+    DOINGUD_PROPOSER.address,
+    DOINGUD_GOVERNOR.address
+  );
 
-   /// Time passed for Voting to take place
-   await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
-   time.increase(time.duration.days(5));
-   await DOINGUD_GOVERNOR.connect(user1).castVote(proposalId, true);
-   await DOINGUD_GOVERNOR.connect(user2).castVote(proposalId, true);
-  
-   /// Time passed for Voting to finalize
-   await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
-   time.increase(time.duration.days(10));
-  
-   /// Execute the Proposal
-   await DOINGUD_GOVERNOR.execute([DOINGUD_METADAO.address], [0], [proposal]);
-    */
   let guildTwo = await DOINGUD_METADAO.guilds(ControllerxOne);
   let ControllerxTwo = guildTwo;
   guildTwo = await CLONE_FACTORY.guilds(ControllerxTwo);
@@ -313,9 +290,8 @@ const setupTests = deployments.createFixture(async () => {
   GUILD_TWO_FXAMORXGUILD = FX_AMOR_TOKEN.attach(FXAmorxTwo);
   GUILD_TWO_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxTwo);
   */
-  //await GUILD_TWO_AVATARXGUILD.enableModule(authorizer_adaptor.address);
   await GUILD_TWO_AVATARXGUILD.connect(authorizer_adaptor).execTransactionFromModule(GUILD_TWO_CONTROLLERXGUILD.address, 0, setImpactMakersData, 0);
- 
+
   /// Setup the initial Fee Index
   const abi = ethers.utils.defaultAbiCoder;
   let encodedIndex = abi.encode(
@@ -389,8 +365,16 @@ const setupTests = deployments.createFixture(async () => {
 
     context("Donate ERC20 token to the Guild", () => {
       it("Should allow a user to donate and ERC20 token to the GuildController", async function () {
-        
-        await DOINGUD_METADAO.addWhitelist(ERC20_TOKEN.address);
+        let addWhitelistProposal = METADAO.interface.encodeFunctionData("addWhitelist", [ERC20_TOKEN.address]);
+        await metaHelper(
+          [DOINGUD_METADAO.address],
+          [0],
+          [addWhitelistProposal],
+          [user1, user2, user3],
+          authorizer_adaptor,
+          DOINGUD_PROPOSER.address,
+          DOINGUD_GOVERNOR.address
+        );
         await ERC20_TOKEN.approve(GUILD_ONE_CONTROLLERXGUILD.address, ONE_HUNDRED_ETHER);
         await expect(GUILD_ONE_CONTROLLERXGUILD.donate(FIFTY_ETHER, ERC20_TOKEN.address)).
           to.emit(ERC20_TOKEN, "Transfer").
@@ -402,7 +386,16 @@ const setupTests = deployments.createFixture(async () => {
 
     context('Donate to the MetaDao', () => {
       it("Should allow a user to donate to the MetaDao", async function () {
-        await DOINGUD_METADAO.addWhitelist(ERC20_TOKEN.address);
+        let addWhitelistProposal = METADAO.interface.encodeFunctionData("addWhitelist", [ERC20_TOKEN.address]);
+        await metaHelper(
+          [DOINGUD_METADAO.address],
+          [0],
+          [addWhitelistProposal],
+          [user1, user2, user3],
+          authorizer_adaptor,
+          DOINGUD_PROPOSER.address,
+          DOINGUD_GOVERNOR.address
+        );
         await ERC20_TOKEN.approve(DOINGUD_METADAO.address, ONE_HUNDRED_ETHER);
         await DOINGUD_METADAO.donate(ERC20_TOKEN.address, FIFTY_ETHER, 0);
         await GUILD_ONE_CONTROLLERXGUILD.gatherDonation(ERC20_TOKEN.address);
@@ -450,7 +443,16 @@ const setupTests = deployments.createFixture(async () => {
             ]
         );
 
-        await DOINGUD_METADAO.addWhitelist(ERC20_TOKEN.address);
+        let addWhitelistProposal = METADAO.interface.encodeFunctionData("addWhitelist", [ERC20_TOKEN.address]);
+        await metaHelper(
+          [DOINGUD_METADAO.address],
+          [0],
+          [addWhitelistProposal],
+          [user1, user2, user3],
+          authorizer_adaptor,
+          DOINGUD_PROPOSER.address,
+          DOINGUD_GOVERNOR.address
+        );
         await DOINGUD_METADAO.addIndex([encodedIndex, encodedIndex2]);
         await ERC20_TOKEN.approve(DOINGUD_METADAO.address, ONE_HUNDRED_ETHER);
         await DOINGUD_METADAO.donate(ERC20_TOKEN.address, FIFTY_ETHER, 1);
