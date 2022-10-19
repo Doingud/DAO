@@ -19,7 +19,6 @@ let AMORxGuild;
 let FXAMORxGuild
 let controller;
 let metadao;
-let guildFactory;
 let USDC;
 let root;
 let authorizer_adaptor;
@@ -44,6 +43,8 @@ describe('unit - Contract: GuildController', function () {
         await init.getTokens(setup);
         await init.metadao(setup);
         await init.controller(setup);
+        await init.avatar(setup);
+        await init.governor(setup);
 
         AMOR = setup.tokens.AmorTokenImplementation;
         AMORxGuild = setup.tokens.AmorGuildToken;
@@ -52,7 +53,7 @@ describe('unit - Contract: GuildController', function () {
         metadao = setup.metadao;
         controller = setup.controller;
         guildFactory = await init.getGuildFactory(setup);
-        await metadao.init(AMOR.address, guildFactory.guildFactory.address);
+        await metadao.init(AMOR.address, setup.factory.address);
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;
@@ -79,7 +80,6 @@ describe('unit - Contract: GuildController', function () {
                 AMOR.address,
                 AMORxGuild.address,
                 FXAMORxGuild.address,
-                root.address,
                 root.address
             )).to.be.revertedWith("AlreadyInitialized()");
         });
@@ -173,7 +173,7 @@ describe('unit - Contract: GuildController', function () {
 
         it('it fails to donate if token not in the whitelist', async function () {
             await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER, root.address)).to.be.revertedWith(
-                'NotListed()'
+                'NotWhitelistedToken()'
             );
         });
 
@@ -274,7 +274,7 @@ describe('unit - Contract: GuildController', function () {
 
         it('it fails to donate if NotWhitelistedToken', async function () {
             await expect(controller.connect(user).donate(TEST_TRANSFER_SMALLER, USDC.address)).to.be.revertedWith(
-                'NotListed()'
+                'NotWhitelistedToken()'
             );
         });
     });
@@ -284,7 +284,7 @@ describe('unit - Contract: GuildController', function () {
         it('it fails to gatherDonation if token not in the whitelist', async function () {
             // gatherDonation --> distribute
             await expect(controller.connect(operator).gatherDonation(root.address)).to.be.revertedWith(
-                'NotListed()'
+                'NotWhitelistedToken()'
             );
         });
 
@@ -746,7 +746,7 @@ describe('unit - Contract: GuildController', function () {
         it('it sets new voting period', async function () {
             let newTime = 60 * 60 *24 * 2;
             await controller.connect(root).setVotingPeriod(newTime);
-            expect((await controller.ADDITIONAL_VOTING_TIME())).to.equal(newTime);
+            expect((await controller.additionalVotingTime())).to.equal(newTime);
         });
     });
 

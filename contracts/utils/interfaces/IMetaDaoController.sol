@@ -9,36 +9,27 @@ pragma solidity 0.8.15;
 interface IMetaDaoController {
     function init(address amor, address factory) external;
 
-    /// @notice Updates a guild's weight
-    /// @param  guildArray addresses of the guilds
-    /// @param  newWeights weights of the guilds, must be correspond to the order of `guildArray`
-    function updateGuildWeights(address[] memory guildArray, uint256[] memory newWeights) external;
-
     function guildFunds(address guild, address token) external returns (uint256);
 
     /// @notice Allows a user to donate a whitelisted asset
     /// @dev    `approve` must have been called on the `token` contract
     /// @param  token the address of the token to be donated
     /// @param  amount the amount of tokens to donate
-    function donate(address token, uint256 amount) external;
+    /// @param  index the index being donated to
+    function donate(
+        address token,
+        uint256 amount,
+        uint256 index
+    ) external;
 
-    /// @notice Distributes both the fees and the token donations
-    ///function distributeAll() external;
-
-    /// @notice Distributes the specified token
-    /// @param  token address of target token
-    function distributeToken(address token) external;
-
-    /// @notice Apportions approved token donations according to guild weights
-    /// @dev    Loops through all whitelisted tokens and calls `distributeToken()` for each
-    function distributeTokens() external;
+    function claimToken(address token) external;
 
     /// @notice Apportions collected AMOR fees
     function distributeFees() external;
 
     /// @notice Transfers apportioned tokens from the metadao to the guild
-    /// @dev only a guild can call this funtion
-    function claimToken(address token) external;
+    /// @param  guild target guild
+    function claimFees(address guild) external;
 
     /// @notice use this funtion to create a new guild via the guild factory
     /// @dev only admin can all this funtion
@@ -54,7 +45,7 @@ interface IMetaDaoController {
     /// @notice adds guild based on the controller address provided
     /// @dev give guild role in access control to the controller for the guild
     /// @param controller the controller address of the guild
-    function addGuild(address controller) external;
+    function addExternalGuild(address controller) external;
 
     /// @notice adds guild based on the controller address provided
     /// @dev give guild role in access control to the controller for the guild
@@ -62,12 +53,21 @@ interface IMetaDaoController {
     function addWhitelist(address _token) external;
 
     /// @notice removes guild based on id
-    /// @param index the index of the guild in guilds[]
-    /// @param controller the address of the guild controller to remove
-    function removeGuild(uint256 index, address controller) external;
+    /// @param controller the index of the guild in guilds[]
+    function removeGuild(address controller) external;
 
     /// @notice Checks that a token is whitelisted
     /// @param  token address of the ERC20 token being checked
     /// @return bool true if token whitelisted, false if not whitelisted
     function isWhitelisted(address token) external view returns (bool);
+
+    /// @notice Adds a new index to the `Index` array
+    /// @dev    Requires an encoded array of SORTED tuples in (address, uint256) format
+    /// @param  weights an array containing the weighting indexes for different guilds
+    /// @return index of the new index in the `Index` array
+    function addIndex(bytes[] calldata weights) external returns (uint256);
+
+    /// @notice Allows DoinGud to update the fee index used
+    /// @param  weights an array of the guild weights
+    function updateIndex(bytes[] calldata weights, uint256 index) external returns (uint256);
 }
