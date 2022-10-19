@@ -6,7 +6,6 @@ import "@gnosis.pm/zodiac/contracts/core/Module.sol";
 import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/interfaces/IGovernor.sol";
-import "hardhat/console.sol";
 
 contract Proposer is Module {
     /// The Reality module from the Community Safe

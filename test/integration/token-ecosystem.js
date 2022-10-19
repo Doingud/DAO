@@ -14,7 +14,7 @@ const { MOCK_GUILD_NAMES,
         ONE_ADDRESS
       } = require('../helpers/constants.js');
 const init = require('../test-init.js');
-const { getSqrt } = require("../helpers/helpers.js");
+const { getSqrt, metaHelper } = require("../helpers/helpers.js");
 const { time } = require("@openzeppelin/test-helpers");
 
 use(solidity);
@@ -210,36 +210,42 @@ const setupTests = deployments.createFixture(async () => {
     DOINGUD_AVATAR.address
   );
 
-  /// Setup the Proposer Module for the MetaDAO
+  /// Step 6: Setup the Proposer Module for the MetaDAO
   let ABI = new ethers.utils.AbiCoder;
   let initializeParams = ABI.encode(["address", "address", "address"], [DOINGUD_AVATAR.address, DOINGUD_GOVERNOR.address, authorizer_adaptor.address]);
   await DOINGUD_PROPOSER.setUp(initializeParams);
 
-  /// Guardians for the MetaDAO is setup on init
-  /// In this case `root.address` is a Guardian
-  console.log("we got this far");
-
-  /// Proposer to create new guild
-  let proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
-  console.log("Flag 2");
+  /// Step 7: Set the Guardians for the MetaDAO
+  /// Probably the first step after any new guild
   await DOINGUD_PROPOSER.connect(authorizer_adaptor).setGuardiansAfterVote([user1.address, user2.address, user3.address]);
-  let guardians = await DOINGUD_GOVERNOR.guardians(0);
-  console.log("Guardian 1: %s", guardians);
-  console.log("user1 is: %s", user1.address);
-  console.log("Fx selector: " + GOVERNORXGUILD.interface.getSighash("propose"));
+
+  /// Step 8: Propose to create a new guild
+  let proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
+  await metaHelper(
+    [user1, user2, user3],
+    authorizer_adaptor,
+    proposal,
+    DOINGUD_PROPOSER,
+    DOINGUD_METADAO,
+    DOINGUD_GOVERNOR
+  );
+
+  /*
+  let proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
   await DOINGUD_PROPOSER.connect(authorizer_adaptor).proposeAfterVote([DOINGUD_METADAO.address], [0], [proposal], 0);
-  console.log("Before Proposal ID");
   let proposalId = await DOINGUD_GOVERNOR.proposals(0);
-  console.log("Proposal Id: " + proposalId);
+  /// Time passed for Voting to take place
   await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
   time.increase(time.duration.days(5));
   await DOINGUD_GOVERNOR.connect(user1).castVote(proposalId, true);
   await DOINGUD_GOVERNOR.connect(user2).castVote(proposalId, true);
-  console.log("Flag 3");
+  /// Time passed for Voting to finalize
   await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
   time.increase(time.duration.days(10));
-  await DOINGUD_GOVERNOR.execute([DOINGUD_METADAO.address], [0], [proposal]);
-  console.log("Flag 4");
+  */
+
+  /// Step 9: Execute the proposal that has passed
+  //await DOINGUD_GOVERNOR.execute([DOINGUD_METADAO.address], [0], [proposal]);
 
   /// Setup the first two Guilds
   //await DOINGUD_METADAO.createGuild(authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
@@ -268,14 +274,24 @@ const setupTests = deployments.createFixture(async () => {
   await GUILD_ONE_AVATARXGUILD.connect(authorizer_adaptor).execTransactionFromModule(GUILD_ONE_CONTROLLERXGUILD.address, 0, setImpactMakersData, 0);
 
   /// Setup Guild Two
-  proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]]);
-  await DOINGUD_PROPOSER.connect(authorizer_adaptor).proposeAfterVote([METADAO.address], [0], [proposal], 0);
+  await metaHelper("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]]);
+  /*proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]]);
+  await DOINGUD_PROPOSER.connect(authorizer_adaptor).proposeAfterVote([DOINGUD_METADAO.address], [0], [proposal], 0);
   proposalId = await DOINGUD_GOVERNOR.proposals(1);
-  console.log("Proposal Id: " + proposalId);
-  await DOINGUD_GOVERNOR.castVote(proposalId, true);
-  await DOINGUD_GOVERNOR.execute([METADAO.address], [0], [proposal]);
-  //await DOINGUD_METADAO.createGuild(authorizer_adaptor.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
 
+   /// Time passed for Voting to take place
+   await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+   time.increase(time.duration.days(5));
+   await DOINGUD_GOVERNOR.connect(user1).castVote(proposalId, true);
+   await DOINGUD_GOVERNOR.connect(user2).castVote(proposalId, true);
+  
+   /// Time passed for Voting to finalize
+   await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+   time.increase(time.duration.days(10));
+  
+   /// Execute the Proposal
+   await DOINGUD_GOVERNOR.execute([DOINGUD_METADAO.address], [0], [proposal]);
+    */
   let guildTwo = await DOINGUD_METADAO.guilds(ControllerxOne);
   let ControllerxTwo = guildTwo;
   guildTwo = await CLONE_FACTORY.guilds(ControllerxTwo);
@@ -316,11 +332,22 @@ const setupTests = deployments.createFixture(async () => {
   );
 
   /// Setup the index for the MetaDAO
-
   let transactionData = METADAO.interface.encodeFunctionData("updateIndex", [[encodedIndex, encodedIndex2], 0]);
-  await DOINGUD_PROPOSER.connect(authorizer_adaptor).proposeAfterVote([DOINGUD_GOVERNOR.address], [0], [transactionData], 0);
+  await DOINGUD_PROPOSER.connect(authorizer_adaptor).proposeAfterVote([DOINGUD_METADAO.address], [0], [transactionData], 0);
+  proposalId = await DOINGUD_GOVERNOR.proposals(2);
 
-  await DOINGUD_METADAO.updateIndex([encodedIndex, encodedIndex2], 0);
+  /// Time passed for Voting to take place
+  await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+  time.increase(time.duration.days(5));
+  await DOINGUD_GOVERNOR.connect(user1).castVote(proposalId, true);
+  await DOINGUD_GOVERNOR.connect(user2).castVote(proposalId, true);
+ 
+  /// Time passed for Voting to finalize
+  await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+  time.increase(time.duration.days(10));
+ 
+  /// Execute the Proposal
+  await DOINGUD_GOVERNOR.execute([DOINGUD_METADAO.address], [0], [transactionData]);
 
 });
 
@@ -362,6 +389,7 @@ const setupTests = deployments.createFixture(async () => {
 
     context("Donate ERC20 token to the Guild", () => {
       it("Should allow a user to donate and ERC20 token to the GuildController", async function () {
+        
         await DOINGUD_METADAO.addWhitelist(ERC20_TOKEN.address);
         await ERC20_TOKEN.approve(GUILD_ONE_CONTROLLERXGUILD.address, ONE_HUNDRED_ETHER);
         await expect(GUILD_ONE_CONTROLLERXGUILD.donate(FIFTY_ETHER, ERC20_TOKEN.address)).
@@ -477,10 +505,11 @@ const setupTests = deployments.createFixture(async () => {
         await GUILD_ONE_AMORXGUILD.connect(user1).approve(GUILD_ONE_DAMORXGUILD.address, amountAmorxOne);
         let oneYear = await time.duration.years(1);
         await GUILD_ONE_DAMORXGUILD.connect(user1).stake(ethers.BigNumber.from(amountAmorxOne.toString()), ethers.BigNumber.from(oneYear.toString()));
-        /// TIME_DENOMINATOR = 1000000000000000000; MAX_LOCK_TIME = 365 days
-        /// X = (time * TIME_DENOMINATOR) / MAX_LOCK_TIME
-        /// COEFFICIENT = 2
-        /// dAMORxGuild = (COEFFICIENT * ( X * X) * amount) / (TIME_DENOMINATOR ** 2)
+        /*  
+        TIME_DENOMINATOR = 1000000000000000000; MAX_LOCK_TIME = 365 days; COEFFICIENT = 2
+        X = (time * TIME_DENOMINATOR) / MAX_LOCK_TIME
+        dAMORxGuild = (COEFFICIENT * ( X * X) * amount) / (TIME_DENOMINATOR ** 2)
+        */
         let x = (oneYear * oneYear) / oneYear;
         let damorxGuild = ((2 * (x ** 2) * amountAmorxOne) / (oneYear ** 2)).toString();
         expect(await GUILD_ONE_DAMORXGUILD.balanceOf(user1.address)).to.equal(damorxGuild);
@@ -488,7 +517,6 @@ const setupTests = deployments.createFixture(async () => {
     });
 
     context("Withdraw AMORxGuild from dAMORxGuild", () => {
-      /// ***Known Bug*** Issue added
       it("Should allow a user to withdraw their dAMORxGuild", async function () {
         /// Transfer AMOR to user 1
         await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
@@ -504,7 +532,6 @@ const setupTests = deployments.createFixture(async () => {
         await time.increase(time.duration.years(1));
         time.advanceBlock;
 
-        /// The below commented line is currently bugged and will fail
         await GUILD_ONE_DAMORXGUILD.connect(user1).withdraw();
         expect(await GUILD_ONE_AMORXGUILD.balanceOf(user1.address)).to.equal(ethers.BigNumber.from(amountAmorxOne.toString()));
       });
