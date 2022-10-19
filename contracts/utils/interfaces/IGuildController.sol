@@ -14,8 +14,7 @@ interface IGuildController {
         address AMOR_,
         address AMORxGuild_,
         address FXAMORxGuild_,
-        address MetaDaoController_,
-        address multisig
+        address MetaDaoController_
     ) external returns (bool);
 
     function setVotingPeriod(uint256 newTime) external;

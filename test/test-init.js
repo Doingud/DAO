@@ -95,8 +95,7 @@ const controller = async (setup) => {
     setup.tokens.AmorTokenImplementation.address,
     setup.tokens.AmorGuildToken.address, // AMORxGuild
     setup.tokens.FXAMORxGuild.address, // FXAMORxGuild
-    setup.metadao.address, // MetaDaoController
-    setup.roles.root.address // the multisig address of the MetaDAO, which owns the token
+    setup.metadao.address // MetaDaoController
   );
 
   await setup.tokens.AmorTokenImplementation.init(
@@ -165,25 +164,26 @@ const avatar = async (setup) => {
 
 const governor = async (setup) => {
   const governorFactory = await ethers.getContractFactory('DoinGudGovernor');
-  const governor = await governorFactory.deploy(
+  /*const governor = await governorFactory.deploy(
     setup.tokens.AmorGuildToken.address,
     "DoinGud Governor"
-  );
+  );*/
+  const governor = await governorFactory.deploy();
 
-  await governor.init(    
+  await governor.init(
+    "DoinGud Governor",
     setup.tokens.AmorGuildToken.address, //AMORxGuild
     setup.roles.authorizer_adaptor.address, // Snapshot Address
     setup.avatars.avatar.address // Avatar Address
   );
+
+  setup.governor = governor;
 
   return governor;
 };
 
 const getGuildFactory = async (setup) => {
   const cloneFactory = await ethers.getContractFactory("GuildFactory");
-
-  const controllerFactory = await ethers.getContractFactory("GuildController");
-  const controller = await controllerFactory.deploy();
 
   const guildFactory = await cloneFactory.deploy(
     setup.tokens.AmorTokenImplementation.address,
@@ -192,14 +192,13 @@ const getGuildFactory = async (setup) => {
     setup.tokens.dAMORxGuild.address,
     setup.tokens.AmorTokenProxy.address,
     setup.controller.address,
+    setup.governor.address,
+    setup.avatars.avatar.address,
     setup.metadao.address, // metaDaoController
-    setup.roles.root.address // multisig
+    setup.roles.authorizer_adaptor.address // snapshot address
   );
 
-  const factory = {
-    controller,
-    guildFactory
-  }
+  const factory = guildFactory;
 
   setup.factory = factory;
 

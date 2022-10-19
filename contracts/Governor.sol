@@ -34,23 +34,15 @@ pragma solidity 0.8.15;
  *
  */
 import "./utils/interfaces/IAvatarxGuild.sol";
+import "./utils/interfaces/IGovernor.sol";
 import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract DoinGudGovernor {
+contract DoinGudGovernor is IDoinGudGovernor {
     using SafeCast for uint256;
-
-    enum ProposalState {
-        Pending,
-        Active,
-        Canceled,
-        Defeated,
-        Succeeded,
-        Expired
-    }
 
     struct ProposalCore {
         uint256 voteStart;
@@ -85,7 +77,7 @@ contract DoinGudGovernor {
     address public snapshotAddress;
     address public avatarAddress;
     IERC20 private AMORxGuild;
-    IVotes public immutable token;
+    IVotes public token;
 
     event Initialized(bool success, address avatarAddress, address snapshotAddress);
     event ProposalCreated(
@@ -118,18 +110,12 @@ contract DoinGudGovernor {
     error CancelNotApproved();
     error UnderlyingTransactionReverted();
 
-    constructor(IVotes _token, string memory name) {
-        token = _token;
-        _name = name;
-        // person who inflicted the creation of the contract is set as the only guardian of the system
-        guardians.push(msg.sender);
-    }
-
     /// @notice Initializes the Governor contract
     /// @param  AMORxGuild_ the address of the AMORxGuild token
     /// @param  snapshotAddress_ the address of the Snapshot
     /// @param  avatarAddress_ the address of the Avatar
     function init(
+        string memory name,
         address AMORxGuild_,
         address snapshotAddress_,
         address avatarAddress_
@@ -137,6 +123,11 @@ contract DoinGudGovernor {
         if (_initialized) {
             revert AlreadyInitialized();
         }
+
+        token = IVotes(AMORxGuild_);
+        _name = name;
+        // person who inflicted the creation of the contract is set as the only guardian of the system
+        guardians.push(msg.sender);
         AMORxGuild = IERC20(AMORxGuild_);
 
         snapshotAddress = snapshotAddress_;
