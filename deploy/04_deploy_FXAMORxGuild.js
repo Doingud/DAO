@@ -18,6 +18,16 @@ async function main() {
 
     const UPDATED_FXAMORxGuild = FXAMORxGuild.attach(proxy.address);
     console.log("UPDATED_FXAMORxGuild address is %s", UPDATED_FXAMORxGuild.address);
+  
+    //await for 5 block transactions to ensure deployment before verifying
+    await AMORxGuild.deployTransaction.wait(5);
+
+    //verify
+    await hre.run("verify:verify", {
+      address: AMORxGuild.address,
+      contract: "contracts/AMORxGuildToken.sol:AMORxGuildToken", //Filename.sol:ClassName
+      constructorArguments: [MetaDAOController_, AMOR_],
+    });
   }
   
   main()

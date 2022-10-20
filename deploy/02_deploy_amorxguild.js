@@ -17,6 +17,15 @@ async function main() {
 
     const UPDATED_AMORxGuild = AMORxGuild.attach(proxy.address);
     console.log("UPDATED_AMORxGuild address is %s", UPDATED_AMORxGuild.address);
+    
+    //await for 5 block transactions to ensure deployment before verifying
+    await AMORxGuild.deployTransaction.wait(5);
+
+    //verify
+    await hre.run("verify:verify", {
+      address: AMORxGuild.address,
+      contract: "contracts/AMORxGuildToken.sol:AMORxGuildToken", //Filename.sol:ClassName
+    });
   }
   
   main()

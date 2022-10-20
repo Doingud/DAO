@@ -17,6 +17,15 @@ async function main() {
 
     const UPDATED_AMOR = AMOR.attach(proxy.address);
     console.log("UPDATED_AMOR address is %s", UPDATED_AMOR.address);
+
+    //await for 5 block transactions to ensure deployment before verifying
+    await AMOR.deployTransaction.wait(5);
+
+    //verify
+    await hre.run("verify:verify", {
+      address: AMOR.address,
+      contract: "contracts/AMORToken.sol:AMORToken", //Filename.sol:ClassName
+    });
   }
   
   main()

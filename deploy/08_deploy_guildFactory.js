@@ -30,6 +30,25 @@ async function main() {
     );
 
     console.log("guildFactory address:", guildFactory.address);
+
+    //await for 5 block transactions to ensure deployment before verifying
+    await guildFactory.deployTransaction.wait(5);
+
+    //verify
+    await hre.run("verify:verify", {
+      address: guildFactory.address,
+      contract: "contracts/GuildFactory.sol:GuildFactory", //Filename.sol:ClassName
+      constructorArguments: [
+        AMOR_,
+        AMORxGuild_,
+        FXAMORxGuild_,
+        dAMORxGuild_,
+        DoinGudProxy_,
+        GuildController_,
+        MetaDAOController_,
+        multisig_
+      ],
+    });
   }
   
   main()

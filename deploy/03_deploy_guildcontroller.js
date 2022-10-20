@@ -18,6 +18,15 @@ async function main() {
 
     const UPDATED_GuildController = GuildController.attach(proxy.address);
     console.log("UPDATED_GuildController address is %s", UPDATED_GuildController.address);
+  
+    //await for 5 block transactions to ensure deployment before verifying
+    await GuildController.deployTransaction.wait(5);
+
+    //verify
+    await hre.run("verify:verify", {
+      address: GuildController.address,
+      contract: "contracts/GuildController.sol:GuildController", //Filename.sol:ClassName
+    });
   }
   
   main()

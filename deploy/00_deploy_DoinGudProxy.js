@@ -8,6 +8,15 @@ async function main() {
     const DoinGudProxyFactory = await ethers.getContractFactory("DoinGudProxy");
     const DoinGudProxy = await DoinGudProxyFactory.deploy();
     console.log("DoinGudProxy address:", DoinGudProxy.address);
+
+    //await for 5 block transactions to ensure deployment before verifying
+    await DoinGudProxy.deployTransaction.wait(5);
+
+    //verify
+    await hre.run("verify:verify", {
+      address: DoinGudProxy.address,
+      contract: "contracts/DoinGudProxy.sol:DoinGudProxy", //Filename.sol:ClassName
+    });
   }
   
   main()

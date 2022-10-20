@@ -6,6 +6,7 @@ require("hardhat-deploy-ethers");
 require("solidity-coverage");
 require("@nomiclabs/hardhat-web3");
 require("hardhat-gas-reporter");
+require("@nomiclabs/hardhat-etherscan");
 
 const {
     INFURA_KEY,
