@@ -109,7 +109,7 @@ const setupTests = deployments.createFixture(async () => {
   DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
   ERC20_TOKEN = setup.tokens.ERC20Token;
 
-  ///   STEP 2: Deploy DoinGud Control Structures
+  ///   STEP 2: Deploy DoinGud Control Structure Implementations
   await init.metadao(setup);
   await init.avatar(setup);
   await init.controller(setup);
@@ -137,9 +137,7 @@ const setupTests = deployments.createFixture(async () => {
   //let metadao_proxy = await init.proxy();
   let proposer_proxy = await init.proxy();
 
-  /// STEP 3: Setup Beacons
-
-  //let BEACON_METADAO = await init.beacon(METADAO.address, metadao_proxy.address);
+  /// STEP 4: Setup the Beacons
   BEACON_AMOR = await init.beacon(AMOR_TOKEN.address, METADAO.address);
   let BEACON_AMOR_GUILD_TOKEN = await init.beacon(AMOR_GUILD_TOKEN.address, METADAO.address);
   let BEACON_DAMOR = await init.beacon(DAMOR_GUILD_TOKEN.address, METADAO.address);
@@ -156,10 +154,8 @@ const setupTests = deployments.createFixture(async () => {
   setup.b_governor = BEACON_GOVERNOR;
   setup.b_avatar = BEACON_AVATAR;
   setup.b_proposer = BEACON_PROPOSER;
-  //setup.metadao_proxy = metadao_proxy;
-  
 
-  ///   STEP 4: Init the proxies to point to the correct implementation addresses
+  ///   STEP 5: Init the proxies to point to the correct beacon addresses
   await amor_proxy.initProxy(BEACON_AMOR.address);
   await amor_guild_token_proxy.initProxy(BEACON_AMOR_GUILD_TOKEN.address);
   await dAmor_proxy.initProxy(BEACON_DAMOR.address);
@@ -168,9 +164,8 @@ const setupTests = deployments.createFixture(async () => {
   await avatar_proxy.initProxy(BEACON_AVATAR.address);
   await governor_proxy.initProxy(BEACON_GOVERNOR.address);
   await proposer_proxy.initProxy(BEACON_PROPOSER.address);
-  //await metadao_proxy.initProxy(BEACON_METADAO.address);
   
-  ///   STEP 5: Init the storage of the tokens and control contracts
+  ///   STEP 6: Init the storage of the tokens and control contracts
   DOINGUD_AMOR_TOKEN = AMOR_TOKEN.attach(amor_proxy.address);
   DOINGUD_AMOR_GUILD_TOKEN = AMOR_GUILD_TOKEN.attach(amor_guild_token_proxy.address);
   DOINGUD_DAMOR = DAMOR_GUILD_TOKEN.attach(dAmor_proxy.address);
@@ -232,15 +227,15 @@ const setupTests = deployments.createFixture(async () => {
     DOINGUD_AVATAR.address
   );
 
-  /// Step 6: Setup the Proposer Module for the MetaDAO
+  /// Step 7: Setup the Proposer Module for the MetaDAO
   let ABI = new ethers.utils.AbiCoder;
   let initializeParams = ABI.encode(["address", "address", "address"], [DOINGUD_AVATAR.address, DOINGUD_GOVERNOR.address, authorizer_adaptor.address]);
   await DOINGUD_PROPOSER.setUp(initializeParams);
 
-  /// Step 7: Set the Guardians for the MetaDAO
+  /// Step 8: Set the Guardians for the MetaDAO
   /// Probably the first step after any new guild
   await DOINGUD_PROPOSER.connect(authorizer_adaptor).setGuardiansAfterVote([user1.address, user2.address, user3.address]);
-  /// Step 8: Propose to create a new guild
+  /// Step 9: Propose to create a new guild
   let proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
   await metaHelper(
     [DOINGUD_METADAO.address],
@@ -269,7 +264,6 @@ const setupTests = deployments.createFixture(async () => {
   GUILD_ONE_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(ControllerxOne);
   GUILD_ONE_AVATARXGUILD = AVATARXGUILD.attach(AvatarxOne);
   GUILD_ONE_PROPOSER = PROPOSER.attach(ProposerxOne);
-  //GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxOne);
 
   /// Setup the Impact Makers for the GuildController
   IMPACT_MAKERS = [user2.address, user3.address, staker.address];
