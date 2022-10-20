@@ -120,6 +120,7 @@ module.exports = {
         etherscan: {
             apiKey: {
                 mainnet: ETHERSCAN_API_KEY,
+                polygonMumbai: ETHERSCAN_API_KEY,
                 kovan: ETHERSCAN_API_KEY,
                 rinkeby: ETHERSCAN_API_KEY,
                 goerli: ETHERSCAN_API_KEY,

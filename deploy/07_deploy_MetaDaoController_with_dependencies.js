@@ -51,6 +51,16 @@ async function main() {
     const MetaDaoController = await MetaDaoControllerFactory.deploy(admin);
     console.log("MetaDaoController address:", MetaDaoController.address);
 
+    a  = await ethers.getContractFactory('DoinGudProxy')
+    proxy = await a.deploy();
+    console.log("proxy address:", proxy.address);
+
+    tx = await proxy.initProxy(MetaDaoController.address);
+    console.log("tx is %s", tx);
+
+    const UPDATED_METADAO = MetaDaoController.attach(proxy.address);
+    console.log("UPDATED_METADAO address is %s", UPDATED_METADAO.address);
+
     //await for 5 block transactions to ensure deployment before verifying
     await MetaDaoController.deployTransaction.wait(5);
 
