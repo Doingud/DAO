@@ -17,6 +17,16 @@ async function main() {
 
     const UPDATED_DoinGudGovernor = DoinGudGovernor.attach(proxy.address);
     console.log("UPDATED_DoinGudGovernor address is %s", UPDATED_DoinGudGovernor.address);
+
+
+    //await for 5 block transactions to ensure deployment before verifying
+    await DoinGudGovernor.deployTransaction.wait(5);
+
+    //verify
+    await hre.run("verify:verify", {
+      address: DoinGudGovernor.address,
+      contract: "contracts/Governor.sol:DoinGudGovernor", //Filename.sol:ClassName
+    });
   }
   
   main()

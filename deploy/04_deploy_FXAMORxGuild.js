@@ -20,13 +20,12 @@ async function main() {
     console.log("UPDATED_FXAMORxGuild address is %s", UPDATED_FXAMORxGuild.address);
   
     //await for 5 block transactions to ensure deployment before verifying
-    await AMORxGuild.deployTransaction.wait(5);
+    await FXAMORxGuild.deployTransaction.wait(5);
 
     //verify
     await hre.run("verify:verify", {
-      address: AMORxGuild.address,
-      contract: "contracts/AMORxGuildToken.sol:AMORxGuildToken", //Filename.sol:ClassName
-      constructorArguments: [MetaDAOController_, AMOR_],
+      address: FXAMORxGuild.address,
+      contract: "contracts/FXAMORxGuildToken.sol:FXAMORxGuild", //Filename.sol:ClassName
     });
   }
   

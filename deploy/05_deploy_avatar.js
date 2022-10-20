@@ -18,6 +18,15 @@ async function main() {
   
     const UPDATED_AvatarxGuild = AvatarxGuild.attach(proxy.address);
     console.log("UPDATED_AvatarxGuild address is %s", UPDATED_AvatarxGuild.address);
+
+    //await for 5 block transactions to ensure deployment before verifying
+    await AvatarxGuild.deployTransaction.wait(5);
+
+    //verify
+    await hre.run("verify:verify", {
+      address: AvatarxGuild.address,
+      contract: "contracts/AvatarxGuild.sol:AvatarxGuild", //Filename.sol:ClassName
+    });
   }
   
   main()

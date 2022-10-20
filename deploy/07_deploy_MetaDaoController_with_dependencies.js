@@ -50,6 +50,16 @@ async function main() {
     const MetaDaoControllerFactory = await ethers.getContractFactory("MetaDaoController");
     const MetaDaoController = await MetaDaoControllerFactory.deploy(admin);
     console.log("MetaDaoController address:", MetaDaoController.address);
+
+    //await for 5 block transactions to ensure deployment before verifying
+    await MetaDaoController.deployTransaction.wait(5);
+
+    //verify
+    await hre.run("verify:verify", {
+      address: MetaDaoController.address,
+      contract: "contracts/MetaDaoController.sol:MetaDaoController", //Filename.sol:ClassName
+      constructorArguments: [admin],
+    });
   }
   
   main()
