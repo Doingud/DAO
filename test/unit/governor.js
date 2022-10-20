@@ -67,7 +67,8 @@ describe('unit - Contract: Governor', function () {
                 "newName",
                 AMORxGuild.address, //AMORxGuild
                 authorizer_adaptor.address, // Snapshot Address
-                authorizer_adaptor.address // Avatar Address
+                authorizer_adaptor.address, // Avatar Address
+                ZERO_ADDRESS
             )).to.be.revertedWith("AlreadyInitialized()");
         });
     });
