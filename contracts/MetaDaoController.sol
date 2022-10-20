@@ -40,6 +40,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./utils/interfaces/ICloneFactory.sol";
 import "./utils/interfaces/IGuildController.sol";
 import "./utils/interfaces/IMetaDaoController.sol";
+import "./utils/interfaces/IDoinGudBeacon.sol";
 
 contract MetaDaoController is IMetaDaoController, Ownable {
     using SafeERC20 for IERC20;
@@ -349,5 +350,11 @@ contract MetaDaoController is IMetaDaoController, Ownable {
             index.creator = msg.sender;
         }
         return arrayHash;
+    }
+
+    /// @notice Updates the Beacon
+    /// @param  newImplementation The address containing the new implementation
+    function upgradeBeacon(address beacon, address newImplementation) external onlyOwner {
+        IDoinGudBeacon(beacon).upgradeTo(newImplementation);
     }
 }

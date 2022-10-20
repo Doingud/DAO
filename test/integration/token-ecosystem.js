@@ -58,6 +58,8 @@ let DOINGUD_AVATAR;
 let DOINGUD_METADAO;
 let DOINGUD_PROPOSER;
 
+let BEACON_AMOR;
+
 /// The Newly Deployed Guilds
 let GUILD_ONE_AMORXGUILD;
 let GUILD_ONE_DAMORXGUILD;
@@ -132,19 +134,41 @@ const setupTests = deployments.createFixture(async () => {
   let controller_proxy = await init.proxy();
   let avatar_proxy = await init.proxy();
   let governor_proxy = await init.proxy();
-  let metadao_proxy = await init.proxy();
+  //let metadao_proxy = await init.proxy();
   let proposer_proxy = await init.proxy();
 
+  /// STEP 3: Setup Beacons
+
+  //let BEACON_METADAO = await init.beacon(METADAO.address, metadao_proxy.address);
+  BEACON_AMOR = await init.beacon(AMOR_TOKEN.address, METADAO.address);
+  let BEACON_AMOR_GUILD_TOKEN = await init.beacon(AMOR_GUILD_TOKEN.address, METADAO.address);
+  let BEACON_DAMOR = await init.beacon(DAMOR_GUILD_TOKEN.address, METADAO.address);
+  let BEACON_FXAMOR = await init.beacon(FX_AMOR_TOKEN.address, METADAO.address);
+  let BEACON_CONTROLLER = await init.beacon(CONTROLLERXGUILD.address, METADAO.address);
+  let BEACON_GOVERNOR = await init.beacon(GOVERNORXGUILD.address, METADAO.address);
+  let BEACON_AVATAR = await init.beacon(AVATARXGUILD.address, METADAO.address);
+  let BEACON_PROPOSER = await init.beacon(PROPOSER.address, METADAO.address);
+
+  setup.b_amorGuildToken = BEACON_AMOR_GUILD_TOKEN;
+  setup.b_damor = BEACON_DAMOR;
+  setup.b_fxamor = BEACON_FXAMOR;
+  setup.b_controller = BEACON_CONTROLLER;
+  setup.b_governor = BEACON_GOVERNOR;
+  setup.b_avatar = BEACON_AVATAR;
+  setup.b_proposer = BEACON_PROPOSER;
+  //setup.metadao_proxy = metadao_proxy;
+  
+
   ///   STEP 4: Init the proxies to point to the correct implementation addresses
-  await amor_proxy.initProxy(AMOR_TOKEN.address);
-  await amor_guild_token_proxy.initProxy(AMOR_GUILD_TOKEN.address);
-  await dAmor_proxy.initProxy(DAMOR_GUILD_TOKEN.address);
-  await fxAmor_proxy.initProxy(FX_AMOR_TOKEN.address);
-  await controller_proxy.initProxy(CONTROLLERXGUILD.address);
-  await avatar_proxy.initProxy(AVATARXGUILD.address);
-  await governor_proxy.initProxy(GOVERNORXGUILD.address);
-  await metadao_proxy.initProxy(METADAO.address);
-  await proposer_proxy.initProxy(PROPOSER.address);
+  await amor_proxy.initProxy(BEACON_AMOR.address);
+  await amor_guild_token_proxy.initProxy(BEACON_AMOR_GUILD_TOKEN.address);
+  await dAmor_proxy.initProxy(BEACON_DAMOR.address);
+  await fxAmor_proxy.initProxy(BEACON_FXAMOR.address);
+  await controller_proxy.initProxy(BEACON_CONTROLLER.address);
+  await avatar_proxy.initProxy(BEACON_AVATAR.address);
+  await governor_proxy.initProxy(BEACON_GOVERNOR.address);
+  await proposer_proxy.initProxy(BEACON_PROPOSER.address);
+  //await metadao_proxy.initProxy(BEACON_METADAO.address);
   
   ///   STEP 5: Init the storage of the tokens and control contracts
   DOINGUD_AMOR_TOKEN = AMOR_TOKEN.attach(amor_proxy.address);
@@ -154,10 +178,8 @@ const setupTests = deployments.createFixture(async () => {
   DOINGUD_AVATAR = AVATARXGUILD.attach(avatar_proxy.address);
   DOINGUD_CONTROLLER = CONTROLLERXGUILD.attach(controller_proxy.address);
   DOINGUD_GOVERNOR = GOVERNORXGUILD.attach(governor_proxy.address);
-  DOINGUD_METADAO = METADAO.attach(metadao_proxy.address);
   DOINGUD_PROPOSER = PROPOSER.attach(proposer_proxy.address);
-
-  setup.metadao = DOINGUD_METADAO;
+  DOINGUD_METADAO = setup.metadao;
 
   await init.getGuildFactory(setup);
   await init.vestingContract(setup);
@@ -218,7 +240,6 @@ const setupTests = deployments.createFixture(async () => {
   /// Step 7: Set the Guardians for the MetaDAO
   /// Probably the first step after any new guild
   await DOINGUD_PROPOSER.connect(authorizer_adaptor).setGuardiansAfterVote([user1.address, user2.address, user3.address]);
-
   /// Step 8: Propose to create a new guild
   let proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
   await metaHelper(
@@ -356,7 +377,6 @@ const setupTests = deployments.createFixture(async () => {
             to.emit(GUILD_ONE_FXAMORXGUILD, "Transfer");
         await expect(GUILD_ONE_CONTROLLERXGUILD.connect(user2).claim(user2.address, [DOINGUD_AMOR_TOKEN.address])).
           to.emit(DOINGUD_AMOR_TOKEN, "Transfer");
-
         expect(await DOINGUD_AMOR_TOKEN.balanceOf(user2.address)).to.equal(((FIFTY_ETHER * ((BASIS_POINTS-TAX_RATE)/BASIS_POINTS) * 0.9 * 0.2 * ((BASIS_POINTS-TAX_RATE)/BASIS_POINTS)).toString()));
       });
     });
@@ -462,13 +482,21 @@ const setupTests = deployments.createFixture(async () => {
     });
 
     context("Change the AMOR implementation address", () => {
-      it("Should allow the owner to change the implementation address", async function () {
-        await expect(amor_proxy.upgradeImplementation(AMOR_TOKEN_UPGRADE.address))
-          .to.emit(amor_proxy, "Upgraded")
-            .withArgs(AMOR_TOKEN_UPGRADE.address);
+      it("Should allow the owner to change the implementation address in the beacon", async function () {
+        let proposal = METADAO.interface.encodeFunctionData("upgradeBeacon", [BEACON_AMOR.address, AMOR_TOKEN_UPGRADE.address]);
+        await metaHelper(
+          [DOINGUD_METADAO.address],
+          [0],
+          [proposal],
+          [user1, user2, user3],
+          authorizer_adaptor,
+          DOINGUD_PROPOSER.address,
+          DOINGUD_GOVERNOR.address
+        );
 
-        /// Assert that the AMOR Token and the amor_proxy reference the same address
-        expect(await DOINGUD_AMOR_TOKEN.address).to.equal(amor_proxy.address);
+        /// Assert that the AMOR Token and the Upgrade reference the same address
+        let accessProxyAmor = amor_proxy.attach(DOINGUD_AMOR_TOKEN.address);
+        expect(await accessProxyAmor.implementation()).to.equal(AMOR_TOKEN_UPGRADE.address);
         
         /// Let user 1 stake AMOR into AMORxOne
         await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);

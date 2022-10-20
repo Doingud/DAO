@@ -144,7 +144,6 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         }
         // send to FXAMORxGuild contract to stake
         AMORxGuild.safeTransferFrom(msg.sender, address(this), amount);
-
         // mint FXAMORxGuild tokens to staker
         // Tokens are minted 1:1.
         _mint(to, amount);

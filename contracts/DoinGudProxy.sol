@@ -45,6 +45,7 @@ pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "@openzeppelin/contracts/proxy/Proxy.sol";
+import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 
 contract DoinGudProxy is Proxy, ERC1967Upgrade {
     bool private _initializedProxy;
@@ -61,25 +62,43 @@ contract DoinGudProxy is Proxy, ERC1967Upgrade {
         if (_initializedProxy) {
             revert Initialized();
         }
-        _upgradeTo(logic);
+        _upgradeBeaconToAndCall(logic, "", false);
         _initializedProxy = true;
     }
 
     //  Uprade the token implementation
     //  Still needs access control
-    function upgradeImplementation(address newImplementation) external {
-        _upgradeTo(newImplementation);
-    }
+    //function upgradeImplementation(address newImplementation) external {
+    //    _upgradeTo(newImplementation);
+    //}
 
     //  View the current implementation
-    function viewImplementation() external view returns (address) {
-        return _getImplementation();
+    function viewBeacon() external view returns (address) {
+        return _getBeacon();
+    }
+
+    function implementation() external view returns (address) {
+        return _implementation();
     }
 
     /**
-     * @dev Returns the current implementation address.
+     * @dev Returns the current implementation address of the associated beacon.
      */
-    function _implementation() internal view virtual override returns (address impl) {
-        return ERC1967Upgrade._getImplementation();
+    function _implementation() internal view virtual override returns (address) {
+        return IBeacon(_getBeacon()).implementation();
+    }
+
+    /**
+     * @dev Changes the proxy to use a new beacon. Deprecated: see {_upgradeBeaconToAndCall}.
+     *
+     * If `data` is nonempty, it's used as data in a delegate call to the implementation returned by the beacon.
+     *
+     * Requirements:
+     *
+     * - `beacon` must be a contract.
+     * - The implementation returned by `beacon` must be a contract.
+     */
+    function _setBeacon(address beacon, bytes memory data) internal virtual {
+        _upgradeBeaconToAndCall(beacon, data, false);
     }
 }

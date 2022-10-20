@@ -18,6 +18,7 @@ use(solidity);
   let CONTROLLERXGUILD;
   let GOVERNORXGUILD;
   let AVATARXGUILD;
+  let PROPOSER;
   let GUILD_ONE_AMORXGUILD;
   let GUILD_ONE_DAMORXGUILD;
   let GUILD_ONE_FXAMORXGUILD;
@@ -26,6 +27,13 @@ use(solidity);
   let GUILD_ONE_GOVERNORXGUILD;
   let METADAO;
   let guild;
+  let BEACON_AMOR_GUILD_TOKEN;
+  let BEACON_DAMOR;
+  let BEACON_FXAMOR;
+  let BEACON_CONTROLLER;
+  let BEACON_GOVERNOR;
+  let BEACON_AVATAR;
+  let BEACON_PROPOSER;
 
 describe("unit - Clone Factory", function () {
 
@@ -49,12 +57,31 @@ describe("unit - Clone Factory", function () {
     multisig = setup.roles.doingud_multisig;
     user1 = setup.roles.user1;
 
-    await init.getGuildFactory(setup);
-    CLONE_FACTORY = setup.factory;
+
     CONTROLLERXGUILD = setup.controller;
     GOVERNORXGUILD = setup.governor;
     AVATARXGUILD = setup.avatars.avatar;
+    PROPOSER = setup.proposer;
 
+    BEACON_AMOR = await init.beacon(AMOR_TOKEN.address, METADAO.address);
+    BEACON_AMOR_GUILD_TOKEN = await init.beacon(AMOR_GUILD_TOKEN.address, METADAO.address);
+    BEACON_DAMOR = await init.beacon(DAMOR_GUILD_TOKEN.address, METADAO.address);
+    BEACON_FXAMOR = await init.beacon(FX_AMOR_TOKEN.address, METADAO.address);
+    BEACON_CONTROLLER = await init.beacon(CONTROLLERXGUILD.address, METADAO.address);
+    BEACON_GOVERNOR = await init.beacon(GOVERNORXGUILD.address, METADAO.address);
+    BEACON_AVATAR = await init.beacon(AVATARXGUILD.address, METADAO.address);
+    BEACON_PROPOSER = await init.beacon(PROPOSER.address, METADAO.address);
+  
+    setup.b_amorGuildToken = BEACON_AMOR_GUILD_TOKEN;
+    setup.b_damor = BEACON_DAMOR;
+    setup.b_fxamor = BEACON_FXAMOR;
+    setup.b_controller = BEACON_CONTROLLER;
+    setup.b_governor = BEACON_GOVERNOR;
+    setup.b_avatar = BEACON_AVATAR;
+    setup.b_proposer = BEACON_PROPOSER;
+
+    await init.getGuildFactory(setup);
+    CLONE_FACTORY = setup.factory;
     /// Note: Using `root` as Avatar address
     await METADAO.init(AMOR_TOKEN.address, CLONE_FACTORY.address, root.address);
   });
@@ -98,12 +125,12 @@ describe("unit - Clone Factory", function () {
   context("Constructor", ()=> {
     it("Should return the implementation addresses", async function () {
       expect(await CLONE_FACTORY.amorToken()).to.equal(AMOR_TOKEN.address);
-      expect(await CLONE_FACTORY.amorxGuildToken()).to.equal(AMOR_GUILD_TOKEN.address);
-      expect(await CLONE_FACTORY.dAmorxGuild()).to.equal(DAMOR_GUILD_TOKEN.address);
-      expect(await CLONE_FACTORY.fXAmorxGuild()).to.equal(FX_AMOR_TOKEN.address);
-      expect(await CLONE_FACTORY.controllerxGuild()).to.equal(CONTROLLERXGUILD.address);
-      expect(await CLONE_FACTORY.governorxGuild()).to.equal(GOVERNORXGUILD.address);
-      expect(await CLONE_FACTORY.avatarxGuild()).to.equal(AVATARXGUILD.address);
+      expect(await CLONE_FACTORY.amorxGuildToken()).to.equal(BEACON_AMOR_GUILD_TOKEN.address);
+      expect(await CLONE_FACTORY.dAmorxGuild()).to.equal(BEACON_DAMOR.address);
+      expect(await CLONE_FACTORY.fXAmorxGuild()).to.equal(BEACON_FXAMOR.address);
+      expect(await CLONE_FACTORY.controllerxGuild()).to.equal(BEACON_CONTROLLER.address);
+      expect(await CLONE_FACTORY.governorxGuild()).to.equal(BEACON_GOVERNOR.address);
+      expect(await CLONE_FACTORY.avatarxGuild()).to.equal(BEACON_AVATAR.address);
     })
   });
 
