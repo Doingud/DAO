@@ -14,7 +14,8 @@ const {
     GAURDIAN_THRESHOLD,
     AMOR_TOKEN_NAME, 
     AMOR_TOKEN_SYMBOL,
-    TEST_TRANSFER
+    TEST_TRANSFER,
+    ONE_ADDRESS
 } = require('../helpers/constants.js');
 const { time } = require("@openzeppelin/test-helpers");
 const { getFutureTimestamp } = require("../helpers/helpers.js");
@@ -110,6 +111,8 @@ let IMPACT_MAKERS_WEIGHTS;
 let zodiacModule;
 let domain;
 let GUILD_THREE_CONTROLLERXGUILD;
+let ControllerxTwo;
+let ControllerxThree;
 
 describe("Integration: DoinGud guilds ecosystem", function () {
 
@@ -233,7 +236,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             DOINGUD_AMOR_GUILD_TOKEN.address, // AMORxGuild
             DOINGUD_FXAMOR.address, // FXAMORxGuild
             DOINGUD_METADAO.address, // MetaDaoController
-            setup.roles.root.address // the multisig address of the MetaDAO, which owns the token
         );
 
         await DOINGUD_AVATAR.init(
@@ -256,14 +258,18 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         IMPACT_MAKERS = [user2.address, user3.address, staker.address];
         IMPACT_MAKERS_WEIGHTS = [20, 20, 60];
         await DOINGUD_CONTROLLER.setImpactMakers(IMPACT_MAKERS, IMPACT_MAKERS_WEIGHTS);
+        
         /// Setup the first two Guilds
         await DOINGUD_METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
-        let AmorxOne = await CLONE_FACTORY.amorxGuildTokens(0);
-        let DAmorxOne = await CLONE_FACTORY.guildComponents(AmorxOne, 0);
-        let FXAmorxOne = await CLONE_FACTORY.guildComponents(AmorxOne, 1);
-        let ControllerxOne = await CLONE_FACTORY.guildComponents(AmorxOne, 2);
-        let GovernorxOne = await CLONE_FACTORY.guildComponents(AmorxOne, 3);
-        let AvatarxOne = await CLONE_FACTORY.guildComponents(AmorxOne, 4);
+        let guildOne = await DOINGUD_METADAO.guilds(ONE_ADDRESS);
+        let ControllerxOne = guildOne;
+        guildOne = await CLONE_FACTORY.guilds(guildOne);
+        let AmorxOne = guildOne.AmorGuildToken;
+        let DAmorxOne = guildOne.DAmorxGuild;
+        let FXAmorxOne = guildOne.FXAmorxGuild;
+        let AvatarxOne = guildOne.AvatarxGuild;
+        let GovernorxOne = guildOne.GovernorxGuild;
+
         GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(AmorxOne);
         GUILD_ONE_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(DAmorxOne);
         GUILD_ONE_FXAMORXGUILD = FX_AMOR_TOKEN.attach(FXAmorxOne);
@@ -272,13 +278,14 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         GUILD_ONE_AVATARXGUILD = AVATARXGUILD.attach(AvatarxOne);
 
         await DOINGUD_METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
-        let AmorxTwo = await CLONE_FACTORY.amorxGuildTokens(1);
-        let ControllerxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 2);
+        let guildTwo = await DOINGUD_METADAO.guilds(ControllerxOne);
+        ControllerxTwo = guildTwo;
+        // let AvatarxTwo = guildTwo.AvatarxGuild;
+
         /* The below objects are required in later integration testing PRs
-        let DAmorxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 0);
-        let FXAmorxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 1);
-        let GovernorxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 3);
-        let AvatarxTwo = await CLONE_FACTORY.guildComponents(AmorxTwo, 4);
+        let AmorxTwo = guildTwo.AmorGuildToken;
+        let DAmorxTwo = guildTwo.DAmorxGuild;
+        let FXAmorxTwo = guildTwo.FXAMORxGuild;
         */
 
         GUILD_TWO_CONTROLLERXGUILD = CONTROLLER.attach(ControllerxTwo);
@@ -358,7 +365,9 @@ describe("Integration: DoinGud guilds ecosystem", function () {
               to.not.equal(ZERO_ADDRESS);
 
             // // Check that the guild was created with some custom(non-AMOR) token
-            const token = await CLONE_FACTORY.amorxGuildTokens(2);
+            let guildThree = await DOINGUD_METADAO.guilds(ControllerxTwo);
+            ControllerxThree = guildThree;
+            const token = guildThree.AmorGuildToken;
             expect(token).to.not.equal(AMOR_GUILD_TOKEN.address);
 
             // Try to stake token and receive AMORxGuild
@@ -398,9 +407,10 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
 
             await DOINGUD_METADAO.createGuild(user2.address, MOCK_GUILD_NAMES[2], MOCK_GUILD_SYMBOLS[2]);
-            let AmorxThree = await CLONE_FACTORY.amorxGuildTokens(1);
-            let ControllerxThree = await CLONE_FACTORY.guildComponents(AmorxThree, 2);
-            GUILD_THREE_CONTROLLERXGUILD = CONTROLLER.attach(ControllerxThree);
+            // // Check that the guild was created with some custom(non-AMOR) token
+
+            let ControllerxFour = await DOINGUD_METADAO.guilds(ControllerxThree);
+            GUILD_THREE_CONTROLLERXGUILD = CONTROLLER.attach(ControllerxFour);
             await DOINGUD_METADAO.removeGuild(GUILD_THREE_CONTROLLERXGUILD.address);
 
             expect(await DOINGUD_METADAO.guilds(GUILD_THREE_CONTROLLERXGUILD.address)).to.equal(ZERO_ADDRESS);

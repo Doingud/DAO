@@ -82,7 +82,6 @@ describe('unit - Contract: GuildController', function () {
                 AMOR.address,
                 AMORxGuild.address,
                 FXAMORxGuild.address,
-                root.address,
                 root.address
             )).to.be.revertedWith("AlreadyInitialized()");
         });
@@ -176,7 +175,7 @@ describe('unit - Contract: GuildController', function () {
 
         it('it fails to donate if token not in the whitelist', async function () {
             await expect(controller.connect(operator).donate(ONE_HUNDRED_ETHER, root.address)).to.be.revertedWith(
-                'NotListed()'
+                'NotWhitelistedToken()'
             );
         });
 
@@ -277,7 +276,7 @@ describe('unit - Contract: GuildController', function () {
 
         it('it fails to donate if NotWhitelistedToken', async function () {
             await expect(controller.connect(user).donate(TEST_TRANSFER_SMALLER, USDC.address)).to.be.revertedWith(
-                'NotListed()'
+                'NotWhitelistedToken()'
             );
         });
     });
@@ -287,7 +286,7 @@ describe('unit - Contract: GuildController', function () {
         it('it fails to gatherDonation if token not in the whitelist', async function () {
             // gatherDonation --> distribute
             await expect(controller.connect(operator).gatherDonation(root.address)).to.be.revertedWith(
-                'NotListed()'
+                'NotWhitelistedToken()'
             );
         });
 
@@ -749,7 +748,7 @@ describe('unit - Contract: GuildController', function () {
         it('it sets new voting period', async function () {
             let newTime = 60 * 60 *24 * 2;
             await controller.connect(root).setVotingPeriod(newTime);
-            expect((await controller.ADDITIONAL_VOTING_TIME())).to.equal(newTime);
+            expect((await controller.additionalVotingTime())).to.equal(newTime);
         });
     });
 
