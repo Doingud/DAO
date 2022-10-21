@@ -88,7 +88,7 @@ let DOINGUD_METADAO;
 
 let GUILD_ONE_AMORXGUILD;
 // let GUILD_ONE_DAMORXGUILD;
-// let GUILD_ONE_FXAMORXGUILD;
+let GUILD_ONE_FXAMORXGUILD;
 let GUILD_ONE_CONTROLLERXGUILD;
 let GUILD_ONE_GOVERNORXGUILD;
 let GUILD_ONE_AVATARXGUILD;
@@ -194,7 +194,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
         await init.getGuildFactory(setup);
         await init.vestingContract(setup);
-        CLONE_FACTORY = setup.factory.guildFactory;
+        CLONE_FACTORY = setup.factory;
         VESTING = setup.vesting;
 
         await DOINGUD_AMOR_TOKEN.init(
