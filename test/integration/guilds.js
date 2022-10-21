@@ -280,9 +280,9 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         await DOINGUD_METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
         let guildTwo = await DOINGUD_METADAO.guilds(ControllerxOne);
         ControllerxTwo = guildTwo;
-        // let AvatarxTwo = guildTwo.AvatarxGuild;
 
         /* The below objects are required in later integration testing PRs
+        let AvatarxTwo = guildTwo.AvatarxGuild;
         let AmorxTwo = guildTwo.AmorGuildToken;
         let DAmorxTwo = guildTwo.DAmorxGuild;
         let FXAmorxTwo = guildTwo.FXAMORxGuild;
@@ -405,18 +405,29 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             expect(await GUILD_ONE_CONTROLLERXGUILD.AMOR()).to.equal(DOINGUD_AMOR_TOKEN.address);
             await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
 
-
             await DOINGUD_METADAO.createGuild(user2.address, MOCK_GUILD_NAMES[2], MOCK_GUILD_SYMBOLS[2]);
             // // Check that the guild was created with some custom(non-AMOR) token
 
             let ControllerxFour = await DOINGUD_METADAO.guilds(ControllerxThree);
             GUILD_THREE_CONTROLLERXGUILD = CONTROLLER.attach(ControllerxFour);
             await DOINGUD_METADAO.removeGuild(GUILD_THREE_CONTROLLERXGUILD.address);
-
             expect(await DOINGUD_METADAO.guilds(GUILD_THREE_CONTROLLERXGUILD.address)).to.equal(ZERO_ADDRESS);
 
-            tx1 = { to: DOINGUD_METADAO.address, value: 0, data: DOINGUD_METADAO.interface.encodeFunctionData('addExternalGuild', [GUILD_THREE_CONTROLLERXGUILD.address]), operation: 0, nonce: 0 }
+            await DOINGUD_METADAO.transferOwnership(GUILD_ONE_AVATARXGUILD.address);
 
+            await AVATARXGUILD.enableModule(zodiacModule.address);
+            await AVATARXGUILD.enableModule(authorizer_adaptor.address);
+
+            let data = DOINGUD_METADAO.interface.encodeFunctionData('addExternalGuild', [GUILD_THREE_CONTROLLERXGUILD.address]);
+
+            tx1 = { to: AVATARXGUILD.address, 
+                    value: 0, 
+                    data: AVATARXGUILD.interface.encodeFunctionData(
+                        'execTransactionFromModule',
+                        [DOINGUD_METADAO.address, 0, data, 0]), 
+                    operation: 1, 
+                    nonce: 0
+            }
             const txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, tx1);
 
             const abiCoder = new ethers.utils.AbiCoder();
