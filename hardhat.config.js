@@ -12,6 +12,7 @@ const {
     INFURA_KEY,
     MNEMONIC,
     ETHERSCAN_API_KEY,
+    POLYGONSCAN_API_KEY,
     ARBISCAN_API_KEY,
     ALCHEMY_API_KEY,
     PK,
@@ -120,11 +121,11 @@ module.exports = {
         etherscan: {
             apiKey: {
                 mainnet: ETHERSCAN_API_KEY,
-                polygonMumbai: ETHERSCAN_API_KEY,
                 kovan: ETHERSCAN_API_KEY,
                 rinkeby: ETHERSCAN_API_KEY,
                 goerli: ETHERSCAN_API_KEY,
                 arbitrumOne: ARBISCAN_API_KEY,
+                polygonMumbai: POLYGONSCAN_API_KEY,
             },
         },
     },
@@ -148,6 +149,7 @@ module.exports = {
             rinkeby: ETHERSCAN_API_KEY,
             goerli: ETHERSCAN_API_KEY,
             arbitrumOne: ARBISCAN_API_KEY,
+            polygonMumbai: POLYGONSCAN_API_KEY,
         },
     },
     namedAccounts: {
