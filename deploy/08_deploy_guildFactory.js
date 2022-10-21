@@ -4,13 +4,15 @@ const addresses = getAddresses();
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    const multisig_ = addresses.multisig; // 0xdd634602038eBf699581D34d6142a4FB5aa66Ff5
+    const snapshot_ = addresses.Snapshot; // 0xdd634602038eBf699581D34d6142a4FB5aa66Ff5
     const AMOR_ = addresses.AMOR;
     const AMORxGuild_ = addresses.AMORxGuild;
     const FXAMORxGuild_ = addresses.FXAMORxGuild;
     const dAMORxGuild_ = addresses.dAMORxGuild;
     const DoinGudProxy_ = addresses.DoinGudProxy;
     const GuildController_ = addresses.GuildController;
+    const Governor_ = addresses.Governor;
+    const AvatarxGuild_ = addresses.Avatar;
     const MetaDAOController_ = addresses.MetaDAOController;
 
     console.log("Deploying contracts with the account:", deployer.address);
@@ -25,8 +27,10 @@ async function main() {
         dAMORxGuild_,
         DoinGudProxy_,
         GuildController_,
+        Governor_,
+        AvatarxGuild_,
         MetaDAOController_,
-        multisig_
+        snapshot_,
     );
 
     console.log("guildFactory address:", guildFactory.address);
@@ -45,8 +49,10 @@ async function main() {
         dAMORxGuild_,
         DoinGudProxy_,
         GuildController_,
+        Governor_,
+        AvatarxGuild_,
         MetaDAOController_,
-        multisig_
+        snapshot_,
       ],
     });
   }
