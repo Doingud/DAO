@@ -35,11 +35,10 @@ pragma solidity 0.8.15;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *
  */
-import "./Executor.sol";
 import "./utils/interfaces/IAvatarxGuild.sol";
 import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
-contract AvatarxGuild is Executor, IAvatarxGuild {
+contract AvatarxGuild is IAvatarxGuild {
     event ExecutionFromGovernorSuccess(address governorAddress);
     event ExecutionFromGovernorFailure(address governorAddress);
     event Initialized(bool success, address owner, address governorAddress);
@@ -84,7 +83,6 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
             revert AlreadyInitialized();
         }
         governor = governorAddress_;
-        //modules[SENTINEL_MODULES] = address(0x2);
         _initialized = true;
         /// Setup the first module provided by the MetaDAO
         modules[initModule] = SENTINEL_MODULES;
