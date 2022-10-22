@@ -22,10 +22,10 @@ async function main() {
     let tx = await MetaDaoController.init(AMORToken, GuildFactory, AvatarxGuild);
     console.log("tx is %s", tx);
   
-    // generate data for create first guild
+    // generate data to create first guild
     const GuildController_ = addresses.GuildController;
     let data = MetaDaoController.interface.encodeFunctionData('addExternalGuild', [GuildController_.address]);
-    console.log("data for create first guild is %s", data);
+    console.log("data to create first guild is %s", data);
   }
   
   main()

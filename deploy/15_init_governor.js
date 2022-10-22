@@ -3,9 +3,8 @@ const addresses = getAddresses();
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    const AMOR = addresses.AMOR;
-    const Avatar = addresses.Avatar;
-    const Snapshot = addresses.Snapshot;
+    const AMORxGuild_ = addresses.AMORxGuild;
+    const Avatar_ = addresses.Avatar;
     const Governor_ = addresses.Governor;
 
     console.log("Deploying contracts with the account:", deployer.address);
@@ -17,7 +16,7 @@ async function main() {
     let Governor = await b.deployed();
     console.log("Governor address:", Governor.address);
 
-    let tx = await Governor.init('Governor', AMOR, Snapshot, Avatar);
+    let tx = await Governor.init('Governor', AMORxGuild_, Avatar_);
     console.log("tx is %s", tx);
     console.log("DoinGudProxy address:", Governor.address);
 }
