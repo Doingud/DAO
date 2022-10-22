@@ -1,0 +1,16 @@
+{
+  "mumbai": {
+    "MetaDAOController": {
+      "address": "0x0AE50B75339E196b557d4CE2fbcED690005B2cE2"
+    },
+    "Avatar": {
+      "address": "0xb33010656D1Ff613ff3066B22613eB15767800f6"
+    },
+    "GuildFactory": {
+      "address": "0x0ed4F4Db02C6614c3f8a5c46a8464455F0a13117"
+    },
+    "Governor": {
+      "address": "0x708a3561F48884eC6c626174852d99d68A580615"
+    }
+  }
+}

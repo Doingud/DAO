@@ -14,7 +14,15 @@
     "deploy:contracts:goerli": "npx hardhat deploy --network goerli",
     "verify:contracts:goerli": "npx hardhat --network goerli etherscan-verify",
     "deploy:contracts:mainnet": "npx hardhat deploy --network mainnet",
-    "dry-run:deployment": "npx hardhat node --tags deployment"
+    "dry-run:deployment": "npx hardhat node --tags deployment",
+
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ dao",
+    "create-local": "graph create --node http://localhost:8020/ dao",
+    "remove-local": "graph remove --node http://localhost:8020/ dao",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 dao",
+    "graphTest": "graph test"
   },
   "repository": {
     "type": "git",
@@ -41,7 +49,9 @@
     "hardhat-deploy": "^0.7.0-beta.46",
     "hardhat-gas-reporter": "^1.0.8",
     "openzeppelin-contracts-sol5": "npm:@openzeppelin/contracts@2.5.1",
-    "openzeppelin-contracts-sol8": "npm:@openzeppelin/contracts@4.2.0"
+    "openzeppelin-contracts-sol8": "npm:@openzeppelin/contracts@4.2.0",
+
+    "matchstick-as": "0.5.0" 
   },
   "dependencies": {
     "@gnosis.pm/zodiac": "^1.1.4",
@@ -54,6 +64,9 @@
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "solhint": "^3.3.7",
     "solhint-plugin-prettier": "^0.0.5",
-    "solidity-coverage": "^0.7.20"
+    "solidity-coverage": "^0.7.20",
+
+    "@graphprotocol/graph-cli": "0.35.0",
+    "@graphprotocol/graph-ts": "0.28.1"
   }
 }
