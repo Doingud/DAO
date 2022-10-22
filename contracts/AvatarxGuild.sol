@@ -43,7 +43,6 @@ contract AvatarxGuild is IAvatarxGuild {
     event ExecutionFromGovernorFailure(address governorAddress);
     event Initialized(bool success, address owner, address governorAddress);
 
-    //address public owner;
     address public governor;
 
     address internal constant SENTINEL_MODULES = address(0x1);
