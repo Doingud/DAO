@@ -419,7 +419,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             await AVATARXGUILD.enableModule(authorizer_adaptor.address);
 
             let data = DOINGUD_METADAO.interface.encodeFunctionData('addExternalGuild', [GUILD_THREE_CONTROLLERXGUILD.address]);
-
+console.log("data is %s", data);
             tx1 = { to: AVATARXGUILD.address, 
                     value: 0, 
                     data: AVATARXGUILD.interface.encodeFunctionData(

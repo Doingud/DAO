@@ -19,13 +19,13 @@ async function main() {
     console.log("MetaDaoController address:", MetaDaoController.address);
     console.log("MetaDaoController owner is %s", await MetaDaoController.owner());
 
-    let tx = await MetaDaoController.init(AMORToken, GuildFactory);
+    let tx = await MetaDaoController.init(AMORToken, GuildFactory, AvatarxGuild);
     console.log("tx is %s", tx);
   
-    // MetaDAO is owned by Avatar
-    tx = await MetaDaoController.transferOwnership(AvatarxGuild);
-    console.log("tx is %s", tx);
-    console.log("MetaDaoController address:", MetaDaoController.address);
+    // generate data for create first guild
+    const GuildController_ = addresses.GuildController;
+    let data = MetaDaoController.interface.encodeFunctionData('addExternalGuild', [GuildController_.address]);
+    console.log("data for create first guild is %s", data);
   }
   
   main()
