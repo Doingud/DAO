@@ -8,6 +8,7 @@ import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
 contract ModuleMock is Module {
     uint256 public testValues;
+    error RevertError();
 
     constructor(address avatar, address target) {
         target = target;
@@ -27,5 +28,9 @@ contract ModuleMock is Module {
     function testInteraction(uint256 value) external returns (bool) {
         testValues = value;
         return true;
+    }
+
+    function testRevert() external {
+        revert RevertError();
     }
 }

@@ -49,7 +49,7 @@ contract GuildController is IGuildController, Ownable {
     uint256 public constant DAY = 1 days;
     uint256 public constant HOUR = 1 hours;
     uint256 public constant FEE_DENOMINATOR = 1000;
-    uint256 public percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
+    uint256 public percentToConvert; //10% // FEE_DENOMINATOR/100*10
 
     event Initialized(bool success, address owner, address AMORxGuild);
 
@@ -91,6 +91,7 @@ contract GuildController is IGuildController, Ownable {
         FXAMORxGuild = FXAMORxGuild_;
         MetaDaoController = MetaDaoController_;
 
+        percentToConvert = 100;
         _initialized = true;
         emit Initialized(_initialized, initOwner, AMORxGuild_);
         return true;
@@ -129,7 +130,6 @@ contract GuildController is IGuildController, Ownable {
         }
         uint256 amount = IMetaDaoController(MetaDaoController).guildFunds(address(this), token);
         IMetaDaoController(MetaDaoController).claimToken(token);
-
         // distribute those tokens
         distribute(amount, token);
     }
@@ -159,7 +159,6 @@ contract GuildController is IGuildController, Ownable {
         if (token == AMOR) {
             // convert AMOR to AMORxGuild
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
-
             // Must calculate stakedAmor prior to transferFrom()
             uint256 stakedAmor = IERC20(token).balanceOf(address(this));
             // get all tokens
@@ -188,7 +187,6 @@ contract GuildController is IGuildController, Ownable {
             FXGFXAMORxGuild.stake(msg.sender, amorxguildAmount); // from address(this)
         }
         uint256 decAmount = allAmount - amount; //decreased amount: other 90%
-
         uint256 tokenBefore = IERC20(token).balanceOf(address(this));
 
         IERC20(token).safeTransferFrom(msg.sender, address(this), decAmount);

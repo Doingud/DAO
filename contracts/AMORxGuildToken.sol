@@ -76,7 +76,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     /// It allows fine-grained control over the tax rate
     /// 1 basis point change == 0.01% change in the tax rate
     /// Here it is the denominator for tax-related calculations
-    uint256 public BASIS_POINTS = 10000;
+    uint256 public constant BASIS_POINTS = 10000;
     /// Co-efficient
     uint256 private constant COEFFICIENT = 10**9;
 
@@ -107,6 +107,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         _setTokenDetail(name, symbol);
         guildController = controller;
         _initialized = true;
+        /// Proxy storage requires BASIS_POINTS and COEFFICIENT to be initialized in the init function
         emit Initialized(name, symbol, amorAddress);
     }
 
