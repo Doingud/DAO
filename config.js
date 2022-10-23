@@ -13,8 +13,6 @@ const taxController = 'taxController';
 const multisig = 'multisig';
 
 const Snapshot = 'Snapshot';
-const MOCK_MODULE = 'MOCK_MODULE';
-const USDC_MOCK = 'USDC_MOCK';
 
 const Avatar_MetaDAOController = 'Avatar_MetaDAOController';
 const Governor_MetaDAOController = 'Governor_MetaDAOController';
