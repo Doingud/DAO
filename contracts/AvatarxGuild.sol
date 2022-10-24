@@ -43,6 +43,7 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
     event ExecutionFromGovernorSuccess(address governorAddress);
     event ExecutionFromGovernorFailure(address governorAddress);
     event Initialized(address owner, address governorAddress);
+    event GovernorSet(address newGovernor);
 
     address public governor;
 
@@ -97,6 +98,7 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         }
 
         governor = newGovernor;
+        GovernorSet(newGovernor);
     }
 
     /// @dev Allows to add a module to the whitelist.
