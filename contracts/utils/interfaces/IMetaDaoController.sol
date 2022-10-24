@@ -7,7 +7,11 @@
 pragma solidity 0.8.15;
 
 interface IMetaDaoController {
-    function init(address amor, address factory) external;
+    function init(
+        address amor,
+        address factory,
+        address avatar
+    ) external;
 
     function guildFunds(address guild, address token) external returns (uint256);
 

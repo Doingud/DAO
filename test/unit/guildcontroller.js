@@ -53,7 +53,7 @@ describe('unit - Contract: GuildController', function () {
         metadao = setup.metadao;
         controller = setup.controller;
         guildFactory = await init.getGuildFactory(setup);
-        await metadao.init(AMOR.address, setup.factory.address);
+        await metadao.init(AMOR.address, setup.factory.address, setup.roles.root.address);
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;
