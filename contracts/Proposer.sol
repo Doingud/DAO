@@ -38,13 +38,11 @@ contract Proposer is Module {
 
     /// @notice Allows for on-chain execution of off-chain vote
     /// @dev    Links to a `Reality`/`SnapSafe` module
-    /*
     /// @param  targets An array of proposed targets for proposed transactions
     /// @param  values An array of values corresponding to proposed transactions
     /// @param  data An array of encoded function calls with parameters corresponding to proposals
     /// @param  operation A specifying enum corresponding to the type of low-level call to use (`delegateCall` or `Call`)
     /// @return bool Was the proposal successfully proposed to the GovernorxGuild
-    */
     function proposeAfterVote(
         address[] memory targets,
         uint256[] memory values,

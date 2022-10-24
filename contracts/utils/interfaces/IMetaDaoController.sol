@@ -73,5 +73,7 @@ interface IMetaDaoController {
 
     /// @notice Allows DoinGud to update the fee index used
     /// @param  weights an array of the guild weights
+    /// @param  index the index location
+    /// @return uint256 location of the index created in the index array
     function updateIndex(bytes[] calldata weights, uint256 index) external returns (uint256);
 }

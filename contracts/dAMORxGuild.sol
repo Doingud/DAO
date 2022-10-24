@@ -198,8 +198,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
         amountDelegated[msg.sender] = 0;
 
-        AMORxGuild.safeTransfer(msg.sender, unstakeAMORAmount);
         stakesAMOR[msg.sender] = 0;
+        AMORxGuild.safeTransfer(msg.sender, unstakeAMORAmount);
 
         if (delegation[msg.sender].length != 0) {
             undelegateAll();

@@ -66,12 +66,6 @@ contract DoinGudProxy is Proxy, ERC1967Upgrade {
         _initializedProxy = true;
     }
 
-    //  Uprade the token implementation
-    //  Still needs access control
-    //function upgradeImplementation(address newImplementation) external {
-    //    _upgradeTo(newImplementation);
-    //}
-
     //  View the current implementation
     function viewBeacon() external view returns (address) {
         return _getBeacon();
