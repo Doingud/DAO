@@ -46,7 +46,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     /// Guild-related variables
     mapping(address => address) public guilds;
     address public sentinelGuilds;
-    uint96 public guildCounter;
+    uint32 public guildCounter;
     mapping(address => uint256) public guildWeight;
     /// Mapping of guild --> token --> amount
     mapping(address => mapping(address => uint256)) public guildFunds;
@@ -102,11 +102,12 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     /// The guild has 0 funds to claim
     error InvalidClaim();
 
-    constructor(address admin) {
-        _transferOwnership(admin);
-    }
-
-    function init(address amor, address cloneFactory) external onlyOwner {
+    function init(
+        address amor,
+        address cloneFactory,
+        address avatar
+    ) external {
+        _transferOwnership(avatar);
         amorToken = IERC20(amor);
         guildFactory = cloneFactory;
         /// Setup the linked list
