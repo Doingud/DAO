@@ -52,6 +52,7 @@ contract GuildController is IGuildController, Ownable {
     uint256 public percentToConvert;
 
     event Initialized(bool success, address owner, address AMORxGuild);
+    event VotingPeriodSet(uint256 newPeriod);
 
     bool private _initialized;
 
@@ -102,6 +103,7 @@ contract GuildController is IGuildController, Ownable {
             revert InvalidAmount();
         }
         additionalVotingTime = newTime;
+        emit VotingPeriodSet(newTime);
     }
 
     function setPercentToConvert(uint256 newPercentToConvert) external onlyOwner {
