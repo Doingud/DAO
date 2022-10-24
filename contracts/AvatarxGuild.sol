@@ -36,29 +36,32 @@ pragma solidity 0.8.15;
  *
  */
 import "./utils/interfaces/IAvatarxGuild.sol";
-import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
+import "./utils/interfaces/IGovernor.sol";
 
 contract AvatarxGuild is IAvatarxGuild {
     event ExecutionFromGovernorSuccess(address governorAddress);
     event ExecutionFromGovernorFailure(address governorAddress);
-    event Initialized(bool success, address owner, address governorAddress);
+    event Initialized(address owner, address governorAddress);
 
     address public governor;
-
+    address public reality;
     address internal constant SENTINEL_MODULES = address(0x1);
     bool private _initialized;
+    bool private guardiansSet;
 
     mapping(address => address) internal modules;
 
     /// Custom errors
-    /// Error if the AmorxGuild has already been initialized
+    /// Error if the AvatarxGuild has already been initialized
     error AlreadyInitialized();
     error NotWhitelisted();
     error NotEnabled();
     error NotDisabled();
     error InvalidParameters();
     error Unauthorized();
+    error AlreadySet();
 
+    /// Access Control Modifiers
     modifier onlyGovernor() {
         if (msg.sender != governor) {
             revert Unauthorized();
@@ -73,11 +76,18 @@ contract AvatarxGuild is IAvatarxGuild {
         _;
     }
 
+    modifier onlyReality() {
+        if (msg.sender != reality) {
+            revert Unauthorized();
+        }
+        _;
+    }
+
     /// @notice Initializes the Avatar contract
     /// @param  initModule the address of the module which can execute transactions after Snaphsot
     /// @param  governorAddress_ the address of the GovernorxGuild
     /// @return bool initialization successful/unsuccessful
-    function init(address initModule, address governorAddress_) external returns (bool) {
+    function init(address reality, address governorAddress_) external returns (bool) {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -85,8 +95,8 @@ contract AvatarxGuild is IAvatarxGuild {
         _initialized = true;
         /// Setup the first module provided by the MetaDAO
         modules[initModule] = SENTINEL_MODULES;
-        modules[SENTINEL_MODULES] = initModule;
-        emit Initialized(_initialized, initModule, governorAddress_);
+        modules[SENTINEL_MODULES] = address(0x02);
+        emit Initialized(initModule, governorAddress_);
         return true;
     }
 
@@ -246,5 +256,33 @@ contract AvatarxGuild is IAvatarxGuild {
             mstore(array, moduleCount)
         }
         return (array, next);
+    }
+
+    /// @notice Allows for on-chain execution of off-chain vote
+    /// @dev    Links to a `Reality`/`SnapSafe` module
+    /// @param  targets An array of proposed targets for proposed transactions
+    /// @param  values An array of values corresponding to proposed transactions
+    /// @param  data An array of encoded function calls with parameters corresponding to proposals
+    /// @param  operation A specifying enum corresponding to the type of low-level call to use (`delegateCall` or `Call`)
+    /// @return bool Was the proposal successfully proposed to the GovernorxGuild
+    function proposeAfterVote(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] calldata data,
+        Enum.Operation operation
+    ) external onlyReality {
+        IDoinGudGovernor.propose(targets, values, calldatas);
+    }
+
+    /// @notice Allows the Avatar to add Guardians before required `GuardianLimitReached`
+    /// @dev    `Governor` requires minimum amount of Guardians before proposals can be made
+    /// @dev    Can only be called once, before any other proposals can be called
+    /// @param  guardians Array of addresses chosen to be the first guardians
+    /// @return bool successful execution of `setGuardians`
+    function setGuardiansAfterVote(address[] memory guardians) external onlyReality {
+        if (guardiansSet) {
+            revert AlreadySet();
+        }
+        IDoinGudGovernor.setGuardians(guardians);
     }
 }

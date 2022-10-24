@@ -80,8 +80,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         address _controllerxGuild,
         address _governor,
         address _avatarxGuild,
-        address _metaDaoController,
-        address _proposer
+        address _metaDaoController
     ) {
         /// The AMOR Token address
         amorToken = _amorToken;
@@ -104,7 +103,7 @@ contract GuildFactory is ICloneFactory, Ownable {
     /// @param  _name The name of the Guild without the prefix "AMORx"
     /// @param  _symbol The symbol of the Guild
     function deployGuildContracts(
-        address module,
+        address reality,
         string memory _name,
         string memory _symbol
     )
@@ -146,10 +145,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         /// Deploy the Guild Governor
         guild.GovernorxGuild = _deployGovernor();
 
-        /// Deploy the Guild Proposer Module
-        guild.ProposerxGuild = _deployProposer();
-
-        _initGuildControls(controller, module);
+        _initGuildControls(controller, reality);
 
         return (controller, guild.GovernorxGuild, guild.AvatarxGuild);
     }
@@ -234,29 +230,10 @@ contract GuildFactory is ICloneFactory, Ownable {
         return address(proxyContract);
     }
 
-    /// @notice Deploys the Proposer Module for the guild
-    /// @dev    This module is linked to a specific Reality.eth module
-    /// @return address of the deployed module
-    function _deployProposer() internal returns (address) {
-        IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
-        proxyContract.initProxy(proposerModule);
-
-        return address(proxyContract);
-    }
-
     /// @notice Initializes the Guild Control Structures
     /// @param  controller the avatar token address for this guild
     /// @param  module address: The Reality.io address
-    function _initGuildControls(address controller, address module) internal {
-        /// Init the Proposer
-        bytes memory initParams = abi.encode(
-            guilds[controller].AvatarxGuild,
-            guilds[controller].GovernorxGuild,
-            module
-        );
-
-        IProposer(guilds[controller].ProposerxGuild).setUp(initParams);
-
+    function _initGuildControls(address controller, address reality) internal {
         /// Init the Guild Controller
         IGuildController(controller).init(
             guilds[controller].AvatarxGuild,
@@ -267,7 +244,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         );
 
         /// Init the AvatarxGuild
-        IAvatarxGuild(guilds[controller].AvatarxGuild).init(module, guilds[controller].GovernorxGuild);
+        IAvatarxGuild(guilds[controller].AvatarxGuild).init(reality, guilds[controller].GovernorxGuild);
 
         /// Init the AvatarxGuild
         IDoinGudGovernor(guilds[controller].GovernorxGuild).init(
