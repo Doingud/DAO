@@ -39,19 +39,17 @@ contract GuildController is IGuildController, Ownable {
     address public dAMORxGuild;
     address public FXAMORxGuild;
     address public MetaDaoController;
-    address public multisig;
 
-    // uint256 public triggerCounter;
     bool public trigger; // set true for a week if previous week were added >= 10 reports; users can vote only if trigger == true
     uint256[] public reportsQueue;
     mapping(uint256 => address) public queueReportsAuthors;
 
-    uint256 public ADDITIONAL_VOTING_TIME;
+    uint256 public additionalVotingTime;
     uint256 public constant WEEK = 7 days; // 1 week is the time for the users to vore for the specific report
     uint256 public constant DAY = 1 days;
     uint256 public constant HOUR = 1 hours;
     uint256 public constant FEE_DENOMINATOR = 1000;
-    uint256 public percentToConvert = 100; //10% // FEE_DENOMINATOR/100*10
+    uint256 public percentToConvert; //10% // FEE_DENOMINATOR/100*10
 
     event Initialized(bool success, address owner, address AMORxGuild);
 
@@ -79,8 +77,7 @@ contract GuildController is IGuildController, Ownable {
         address AMOR_,
         address AMORxGuild_,
         address FXAMORxGuild_,
-        address MetaDaoController_,
-        address multisig_ // the multisig address of the MetaDAO, which owns the token
+        address MetaDaoController_
     ) external returns (bool) {
         if (_initialized) {
             revert AlreadyInitialized();
@@ -93,12 +90,8 @@ contract GuildController is IGuildController, Ownable {
         FXGFXAMORxGuild = IFXAMORxGuild(FXAMORxGuild_);
         FXAMORxGuild = FXAMORxGuild_;
         MetaDaoController = MetaDaoController_;
-        multisig = multisig_;
-        ADDITIONAL_VOTING_TIME = 0;
 
-        trigger = false;
-        timeVoting = 0;
-
+        percentToConvert = 100;
         _initialized = true;
         emit Initialized(_initialized, initOwner, AMORxGuild_);
         return true;
@@ -108,7 +101,7 @@ contract GuildController is IGuildController, Ownable {
         if (newTime < 2 days) {
             revert InvalidAmount();
         }
-        ADDITIONAL_VOTING_TIME = newTime;
+        additionalVotingTime = newTime;
     }
 
     function setPercentToConvert(uint256 newPercentToConvert) external onlyOwner {
@@ -267,7 +260,7 @@ contract GuildController is IGuildController, Ownable {
         }
 
         //check if the week has passed - can vote only a week from first vote
-        if (block.timestamp > (timeVoting + ADDITIONAL_VOTING_TIME)) {
+        if (block.timestamp > (timeVoting + additionalVotingTime)) {
             revert VotingTimeExpired();
         }
 
@@ -297,7 +290,7 @@ contract GuildController is IGuildController, Ownable {
             revert ReportNotExists();
         }
 
-        if (block.timestamp < (timeVoting + ADDITIONAL_VOTING_TIME)) {
+        if (block.timestamp < (timeVoting + additionalVotingTime)) {
             revert VotingTimeNotFinished();
         }
 
@@ -363,7 +356,7 @@ contract GuildController is IGuildController, Ownable {
     function startVoting() external {
         // nothing to finalize
         // startVoting will not start voting if there is another voting in progress
-        if (block.timestamp < (timeVoting + ADDITIONAL_VOTING_TIME)) {
+        if (block.timestamp < (timeVoting + additionalVotingTime)) {
             revert VotingTimeNotFinished();
         }
 
@@ -374,7 +367,7 @@ contract GuildController is IGuildController, Ownable {
 
         // if the voting time is over, then startVoting will first call finalizeVoting and then start it's own functional
         // if timeVoting == 0 then skip call finalizeVoting for the first start
-        if (block.timestamp >= (timeVoting + ADDITIONAL_VOTING_TIME) && timeVoting != 0) {
+        if (block.timestamp >= (timeVoting + additionalVotingTime) && timeVoting != 0) {
             finalizeVoting();
         }
 

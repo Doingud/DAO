@@ -46,6 +46,8 @@ describe("unit - MetaDao", function () {
         user2 = setup.roles.user2;
         user3 = setup.roles.user3;
         pool = setup.roles.pool;
+        await init.avatar(setup);
+        await init.governor(setup);
         /// Setup the MetaDao first
         await init.metadao(setup);
         METADAO = setup.metadao;
@@ -55,9 +57,9 @@ describe("unit - MetaDao", function () {
         CONTROLLER = setup.controller;
         ///   Setup the guild factory
         await init.getGuildFactory(setup);
-        FACTORY = setup.factory.guildFactory;
+        FACTORY = setup.factory;
 
-        await METADAO.init(AMOR_TOKEN.address, FACTORY.address);
+        await METADAO.init(AMOR_TOKEN.address, FACTORY.address, setup.roles.root.address);
     });
 
     beforeEach('setup', async function() {
@@ -186,7 +188,7 @@ describe("unit - MetaDao", function () {
         });
 
 
-        it('Should fail if ', async function () {
+        it('Should fail if no index', async function () {
             let AMOR_TOKEN2;
             let USDC2;
             let user2;
@@ -204,21 +206,22 @@ describe("unit - MetaDao", function () {
             USDC2 = setup.tokens.ERC20Token;
             ///   Setup signer accounts
             root = setup.roles.root;
-            multisig = setup.roles.doingud_multisig;    
+            multisig = setup.roles.doingud_multisig;
             user2 = setup.roles.user2;
             user3 = setup.roles.user3;
             pool = setup.roles.pool;
-            /// Setup the MetaDao first
+            await init.avatar(setup);
+            await init.governor(setup);
             await init.metadao(setup);
             METADAO2 = setup.metadao;
-            ///   Setup the Controller
             await init.controller(setup);
+            await init.avatar(setup);
+            await init.governor(setup);
             CONTROLLER2 = setup.controller;
-            ///   Setup the guild factory
             await init.getGuildFactory(setup);
-            FACTORY2 = setup.factory.guildFactory;
+            FACTORY2 = setup.factory;
 
-            await METADAO2.init(AMOR_TOKEN2.address, FACTORY2.address);
+            await METADAO2.init(AMOR_TOKEN2.address, FACTORY2.address,  setup.roles.root.address);
 
             /// Setup the guilds through the METADAO
             await METADAO2.createGuild(user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
@@ -288,12 +291,12 @@ describe("unit - MetaDao", function () {
 
         it('Should revert to claim NotListed token', async function () {
             await expect(GUILD_CONTROLLER_ONE.gatherDonation(GUILD_CONTROLLER_TWO.address)).
-                to.be.revertedWith("NotListed()");
+                to.be.revertedWith("NotWhitelistedToken()");
         });
 
         it('Should revert if called not listed token', async function () {
             await expect(GUILD_CONTROLLER_ONE.gatherDonation(GUILD_CONTROLLER_ONE.address)).
-                to.be.revertedWith("NotListed()");
+                to.be.revertedWith("NotWhitelistedToken()");
         });
 
         it('Should revert if called with no tokens allocated', async function () {

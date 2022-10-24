@@ -51,8 +51,10 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
     // staker => time staked for
     mapping(address => uint256) public stakesTimes;
-    // staker => all staker balance
+    // staker => all staker balance in dAMORxGuild
     mapping(address => uint256) public stakes;
+    // staker => all staker balance in AMORxGuild
+    mapping(address => uint256) public stakesAMOR;
     // those who delegated to a specific address
     mapping(address => address[]) public delegators;
     // staker => delegated to (many accounts) => amount
@@ -149,8 +151,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
             numberOfHolders += 1;
         }
         stakesTimes[msg.sender] = block.timestamp + time;
-        stakes[msg.sender] = newAmount;
-
+        stakes[msg.sender] += newAmount;
+        stakesAMOR[msg.sender] += amount;
         return newAmount;
     }
 
@@ -183,6 +185,10 @@ contract dAMORxGuild is ERC20Base, Ownable {
             revert TimeTooSmall();
         }
 
+        uint256 unstakeAMORAmount = stakesAMOR[msg.sender];
+        if (AMORxGuild.balanceOf(address(this)) < unstakeAMORAmount) {
+            revert InvalidAmount();
+        }
         uint256 amount = stakes[msg.sender];
         if (amount <= 0) {
             revert InvalidAmount();
@@ -198,7 +204,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
         amountDelegated[msg.sender] = 0;
 
-        AMORxGuild.safeTransfer(msg.sender, amount);
+        AMORxGuild.safeTransfer(msg.sender, unstakeAMORAmount);
+        stakesAMOR[msg.sender] = 0;
 
         if (delegation[msg.sender].length != 0) {
             undelegateAll();
