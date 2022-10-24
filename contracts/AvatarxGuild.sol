@@ -98,7 +98,7 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         }
 
         governor = newGovernor;
-        GovernorSet(newGovernor);
+        emit GovernorSet(newGovernor);
     }
 
     /// @dev Allows to add a module to the whitelist.
