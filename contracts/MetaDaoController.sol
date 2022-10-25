@@ -219,15 +219,15 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     /// @notice use this funtion to create a new guild via the guild factory
     /// @dev    only admin can all this funtion
     /// @dev    NB: this function does not check that a guild `name` & `symbol` is unique
-    /// @param  guildOwner address that will control the functions of the guild
+    /// @param  realityModule address that will control the functions of the guild
     /// @param  name the name for the guild
     /// @param  tokenSymbol the symbol for the Guild's token
     function createGuild(
-        address guildOwner,
+        address realityModule,
         string memory name,
         string memory tokenSymbol
     ) public onlyOwner {
-        (address controller, , ) = ICloneFactory(guildFactory).deployGuildContracts(guildOwner, name, tokenSymbol);
+        (address controller, , ) = ICloneFactory(guildFactory).deployGuildContracts(realityModule, name, tokenSymbol);
         guilds[sentinelGuilds] = controller;
         sentinelGuilds = controller;
         guilds[sentinelGuilds] = SENTINEL;

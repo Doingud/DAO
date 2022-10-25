@@ -81,8 +81,9 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it changes guardians limit from proposal', async function () {
+            let transactionCallData = avatar.interface.encodeFunctionData("enableModule", [authorizer_adaptor.address]);
+            await avatar.execTransactionFromModule(avatar.address, 0, transactionCallData, 0);
             guardians = [staker.address, operator.address, user.address];
-            await avatar.enableModule(authorizer_adaptor.address);
             let transactionData = governor.interface.encodeFunctionData("setGuardians", [guardians]);
             avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
             expect(await governor.guardiansLimit()).to.equals(1);
@@ -106,7 +107,8 @@ describe('unit - Contract: Governor', function () {
             // Execute the passed proposal
             time.increase(time.duration.days(14));
 
-            await avatar.connect(root).setGovernor(governor.address);
+            transactionCallData = avatar.interface.encodeFunctionData("setGovernor", [governor.address]);
+            await avatar.connect(authorizer_adaptor).execTransactionFromModule(avatar.address, 0, transactionCallData, 0);
             await expect(governor.connect(authorizer_adaptor).execute(targets, values, calldatas))
                 .to
                 .emit(governor, "ProposalExecuted").withArgs(firstProposalId);
@@ -148,6 +150,9 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to set guardians if no addresses in array', async function () {
             //  *** Low level calls do not revert in testing ***
+            let transactionCallData = avatar.interface.encodeFunctionData("enableModule", [authorizer_adaptor.address]);
+            await avatar.execTransactionFromModule(avatar.address, 0, transactionCallData, 0);
+
             let transactionData = governor.interface.encodeFunctionData("setGuardians", [[]]);
             await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0)).
                 to.emit(avatar, 'ExecutionFromModuleSuccess');

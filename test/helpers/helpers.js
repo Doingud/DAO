@@ -1,4 +1,5 @@
 const { SECONDS_IN_DAY } = require('./constants');
+const { time } = require("@openzeppelin/test-helpers");
 
 async function increaseTime(value) {
   if (!ethers.BigNumber.isBigNumber(value)) {
@@ -48,6 +49,22 @@ const getSqrt = function (value) {
     return y;
 }
 
+const metaHelper = async function (TARGETS, VALUES, PROPOSALS, guardians, reality, PROPOSER, GOVERNOR) {
+  let PROPOSER_CONTRACT = await ethers.getContractFactory("Proposer");
+  PROPOSER_CONTRACT = PROPOSER_CONTRACT.attach(PROPOSER);
+  let GOVERNOR_CONTRACT = await ethers.getContractFactory("DoinGudGovernor");
+  GOVERNOR_CONTRACT = GOVERNOR_CONTRACT.attach(GOVERNOR);
+  await PROPOSER_CONTRACT.connect(reality).proposeAfterVote(TARGETS, VALUES, PROPOSALS, 0);
+  let proposalId = await GOVERNOR_CONTRACT.hashProposal(TARGETS, VALUES, PROPOSALS);
+  await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+  time.increase(time.duration.days(5));
+  await GOVERNOR_CONTRACT.connect(guardians[0]).castVote(proposalId, true);
+  await GOVERNOR_CONTRACT.connect(guardians[1]).castVote(proposalId, true);
+  await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+  time.increase(time.duration.days(10));
+  await GOVERNOR_CONTRACT.execute(TARGETS, VALUES, PROPOSALS);
+}
+
 module.exports = {
   getFutureTimestamp,
   impersonateAddress,
@@ -55,4 +72,5 @@ module.exports = {
   getCurrentBlockTimestamp,
   increaseTime,
   getSqrt,
+  metaHelper
 };
