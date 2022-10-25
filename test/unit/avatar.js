@@ -1,6 +1,7 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { ZERO_ADDRESS, ONE_ADDRESS } = require("../helpers/constants.js");
+const { metaHelper } = require('../helpers/helpers.js');
 const init = require('../test-init.js');
 
 let avatar;
@@ -8,6 +9,9 @@ let governor;
 let authorizer_adaptor;
 let operator;
 let mockModule;
+let root;
+let user2;
+let user1;
 
 let iface;
 let encoded;
@@ -17,18 +21,28 @@ describe('unit - Contract: Avatar', function () {
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(signers);
+        avatar = await init.proxy();
+        governor = await init.proxy();
         await init.getTokens(setup);
         AMORxGuild = setup.tokens.AmorGuildToken;
         await init.avatar(setup);
-        avatar = setup.avatars.avatar;
-        mockModule = setup.avatars.module;
+        await avatar.initProxy(setup.avatars.avatar.address);
+        let AVATAR = setup.avatars.avatar;
         await init.governor(setup);
-        governor = setup.governor;
+        await governor.initProxy(setup.governor.address);
+        let GOVERNOR = setup.governor;
+        avatar = AVATAR.attach(avatar.address);
+        governor = GOVERNOR.attach(governor.address);
+        await avatar.init(setup.roles.root.address, governor.address);
+        await governor.init(AMORxGuild.address, avatar.address);
+        mockModule = setup.avatars.module;
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;
         authorizer_adaptor = setup.roles.authorizer_adaptor;
+        user1 = setup.roles.user1;
         user2 = setup.roles.user2;
+
     });
 
     before('>>> setup', async function() {
@@ -48,51 +62,44 @@ describe('unit - Contract: Avatar', function () {
         });
     });
 
+    context("» setGuardiansAfterVote testing", () => {
+        it("it sets the Guardians", async function () {
+            let GUARDIANS = [user1.address, user2.address];
+            await avatar.setGuardiansAfterVote(GUARDIANS);
+            expect(await governor.guardians(0)).to.equal(user1.address);
+        });
+    });
+
     context('» setGovernor testing', () => {
         it('it fails to setGovernor if not the owner', async function () {
             await expect(avatar.connect(user2).setGovernor(ZERO_ADDRESS)).to.be.revertedWith(
                 'Unauthorized()'
             );
         });
-
-        it('it sets Governor', async function () {
-            expect(await avatar.governor()).to.equals(authorizer_adaptor.address);
-            let transactionData = avatar.interface.encodeFunctionData("setGovernor", [ZERO_ADDRESS]);
-            await avatar.execTransactionFromModule(avatar.address, 0, transactionData, 0);
-            expect(await avatar.governor()).to.equals(ZERO_ADDRESS);
-        });
-
-        it('it fails to setGovernor if trying to add same address twice', async function () {
-            /// **Low level calls do not revert**
-            let transactionData = avatar.interface.encodeFunctionData("setGovernor", [ZERO_ADDRESS]);
-            await avatar.execTransactionFromModule(avatar.address, 0, transactionData, 0);
-            expect(await avatar.governor()).to.equals(ZERO_ADDRESS);
-            //await avatar.connect(root).setGovernor(authorizer_adaptor.address);
-        });
     });
 
     context('» enableModule testing', () => {
         it('it fails to enableModule if InvalidParameters', async function () {
-            /// Low level calls to other contracts does not cause `execTransactionFromModule` to revert
-            let transactionCallData = avatar.interface.encodeFunctionData("enableModule", [ZERO_ADDRESS]);
-            await avatar.execTransactionFromModule(avatar.address, 0, transactionCallData, 0);
+            let transactionData = avatar.interface.encodeFunctionData("enableModule", [ZERO_ADDRESS]);
+            await expect(metaHelper([avatar.address], [0], [transactionData], [user1, user2], root, avatar.address, governor.address)).
+                to.be.revertedWith("UnderlyingTransactionReverted()");
+
             expect(await avatar.isModuleEnabled(ZERO_ADDRESS)).to.be.false;
         });
 
         it('it enables Module', async function () {
             expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
-            let transactionCallData = avatar.interface.encodeFunctionData("enableModule", [operator.address]);
-            await avatar.execTransactionFromModule(avatar.address, 0, transactionCallData, 0);
-            //await avatar.enableModule(operator.address);
+            let transactionData = avatar.interface.encodeFunctionData("enableModule", [operator.address]);
+            await metaHelper([avatar.address], [0], [transactionData], [user1, user2], root, avatar.address, governor.address);
+
             expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
         });
 
         it('it fails to enableModule if trying to add twice', async function () {
             let enabledModulesBefore = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
-            /// This revert cannot be observed by hardhat
-            let transactionCallData = avatar.interface.encodeFunctionData("enableModule", [operator.address]);
-            await avatar.execTransactionFromModule(avatar.address, 0, transactionCallData, 0);
-            //  But we can check the length of the linked list of enabled modules
+            let transactionData = avatar.interface.encodeFunctionData("enableModule", [operator.address]);
+            await expect(metaHelper([avatar.address], [0], [transactionData], [user1, user2], root, avatar.address, governor.address)).
+                to.be.revertedWith("UnderlyingTransactionReverted()");
             let enabledModulesAfter = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
             expect(enabledModulesBefore.array.length).to.equal(enabledModulesAfter.array.length);
             
@@ -102,9 +109,10 @@ describe('unit - Contract: Avatar', function () {
     context('» disableModule testing', () => {
         it('it fails to disableModule if InvalidParameters', async function () {
             let enabledModulesBefore = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
-            let transactionCallData = avatar.interface.encodeFunctionData("disableModule", [ONE_ADDRESS, ZERO_ADDRESS]);
-            await avatar.execTransactionFromModule(avatar.address, 0, transactionCallData, 0);
-            //  But we can check the length of the linked list of enabled modules
+            let transactionData = avatar.interface.encodeFunctionData("disableModule", [ONE_ADDRESS, ZERO_ADDRESS]);
+            await expect(metaHelper([avatar.address], [0], [transactionData], [user1, user2], root, avatar.address, governor.address)).
+                to.be.revertedWith("UnderlyingTransactionReverted()");
+
             let enabledModulesAfter = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
             expect(enabledModulesBefore.array.length).to.equal(enabledModulesAfter.array.length);
         });
@@ -112,16 +120,19 @@ describe('unit - Contract: Avatar', function () {
         it('it disable Module', async function () {
             expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
             const prevModule = ONE_ADDRESS;
-            let transactionCallData = avatar.interface.encodeFunctionData("disableModule", [prevModule, operator.address]);
-            await avatar.execTransactionFromModule(avatar.address, 0, transactionCallData, 0);
+            let transactionData = avatar.interface.encodeFunctionData("disableModule", [prevModule, operator.address]);
+            await metaHelper([avatar.address], [0], [transactionData], [user1, user2], root, avatar.address, governor.address);
+
             expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
         });
 
         it('it fails to disableModule if trying to add twice', async function () {
             let enabledModulesBefore = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
             const prevModule = ONE_ADDRESS;
-            let transactionCallData = avatar.interface.encodeFunctionData("disableModule", [prevModule, operator.address]);
-            await avatar.execTransactionFromModule(avatar.address, 0, transactionCallData, 0);
+            let transactionData = avatar.interface.encodeFunctionData("disableModule", [prevModule, operator.address]);
+            await expect(metaHelper([avatar.address], [0], [transactionData], [user1, user2], root, avatar.address, governor.address)).
+                to.be.revertedWith("UnderlyingTransactionReverted()");
+
             let enabledModulesAfter = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
             expect(enabledModulesBefore.array.length).to.equal(enabledModulesAfter.array.length);
         });
@@ -135,25 +146,27 @@ describe('unit - Contract: Avatar', function () {
         });
 
         it('it emits fail in execTransactionFromModule', async function () {
+            let transactionData = avatar.interface.encodeFunctionData("enableModule", [authorizer_adaptor.address]);
+            await metaHelper([avatar.address], [0], [transactionData], [user1, user2], root, avatar.address, governor.address);
             let encodedFail = "0x";
-            await expect(avatar.execTransactionFromModule(avatar.address, 0, encodedFail, 0)).
+            await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(avatar.address, 0, encodedFail, 0)).
                 to.emit(avatar, "ExecutionFromModuleFailure").
-                withArgs(root.address);
+                withArgs(authorizer_adaptor.address);
         });
 
         it('it emits success in execTransactionFromModule', async function () {
             let encoded = "0x";
-            expect(await avatar.isModuleEnabled(root.address)).to.be.true;
-            let transactionCallData = avatar.interface.encodeFunctionData("enableModule", [operator.address]);
+
+            let transactionCallData = avatar.interface.encodeFunctionData("enableModule", [root.address]);
 
             // call test
-            await expect(avatar.execTransactionFromModule(avatar.address, 0, transactionCallData, 0))
+            await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(avatar.address, 0, transactionCallData, 0))
                 .to
-                .emit(avatar, "ExecutionFromModuleSuccess").withArgs(root.address);
+                .emit(avatar, "ExecutionFromModuleSuccess").withArgs(authorizer_adaptor.address);
 
             // delegate call
-            await expect(avatar.execTransactionFromModule(governor.address, 0, encoded, 1))
-                .to.emit(avatar, "ExecutionFromModuleSuccess").withArgs(root.address);
+            await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, encoded, 1))
+                .to.emit(avatar, "ExecutionFromModuleSuccess").withArgs(authorizer_adaptor.address);
         });
     });
 
@@ -173,8 +186,12 @@ describe('unit - Contract: Avatar', function () {
         });
 
         it('it emits success in execTransactionFromModuleReturnData', async function () {
-            let transactionCallData = avatar.interface.encodeFunctionData("disableModule", [ONE_ADDRESS, operator.address]);
-            await expect(avatar.execTransactionFromModuleReturnData(avatar.address, 0, transactionCallData, 0))
+            let encoded = mockModule.interface.encodeFunctionData("testInteraction", [1]);
+            expect(await mockModule.testValues()).to.equal(0);
+
+            expect(await avatar.isModuleEnabled(root.address)).to.equals(true);
+            // call
+            await expect(avatar.connect(root).execTransactionFromModuleReturnData(mockModule.address, 0, encoded, 0))
                 .to.emit(avatar, "ExecutionFromModuleSuccess").withArgs(root.address);
         });
     });
@@ -187,7 +204,8 @@ describe('unit - Contract: Avatar', function () {
             [array, ] = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
             expect(array).to.contain(operator.address);
             expect(array).to.contain(root.address);
-            expect(array.length).to.equal(2);
+            expect(array).to.contain(authorizer_adaptor.address);
+            expect(array.length).to.equal(4);
         });
     });
 
@@ -225,6 +243,14 @@ describe('unit - Contract: Avatar', function () {
             await expect(avatar.connect(authorizer_adaptor).executeProposal(mockModule.address, 0, encoded, 1))
                 .to
                 .emit(avatar, "ExecutionFromGovernorSuccess").withArgs(authorizer_adaptor.address);
+        });
+    });
+
+    context("function: proposeAfterVote()", () => {
+        it("Should fail when not called by the `reality` address", async function () {
+            let transactionData = mockModule.interface.encodeFunctionData("testInteraction", [1]);
+            await expect(avatar.connect(user2).proposeAfterVote([mockModule.address], [0], [transactionData])).
+                to.be.revertedWith("Unauthorized()");
         });
     });
 });

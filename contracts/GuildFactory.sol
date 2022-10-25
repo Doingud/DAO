@@ -41,7 +41,6 @@ contract GuildFactory is ICloneFactory, Ownable {
         address FXAmorxGuild;
         address AvatarxGuild;
         address GovernorxGuild;
-        address ProposerxGuild;
     }
 
     /// The Mastercopy/Implementation Addresses
@@ -51,8 +50,6 @@ contract GuildFactory is ICloneFactory, Ownable {
     address public amorxGuildToken;
     /// The MetaDaoController address
     address public immutable metaDaoController;
-    /// The Proposer module
-    address public immutable proposerModule;
     /// The DoinGud generic proxy contract (the target)
     address public immutable cloneTarget;
     address public immutable avatarxGuild;
@@ -94,12 +91,11 @@ contract GuildFactory is ICloneFactory, Ownable {
         /// `_cloneTarget` refers to the DoinGud Proxy
         cloneTarget = _doinGudProxy;
         metaDaoController = _metaDaoController;
-        proposerModule = _proposer;
     }
 
     /// @notice This deploys a new guild with it's associated tokens
     /// @dev    Takes the names and symbols and associates it to a guild
-    /// @param  module The address of the Reality.eth module linked to this guild's snapshot
+    /// @param  reality The address of the Reality.eth module linked to this guild's snapshot
     /// @param  _name The name of the Guild without the prefix "AMORx"
     /// @param  _symbol The symbol of the Guild
     function deployGuildContracts(
@@ -232,7 +228,7 @@ contract GuildFactory is ICloneFactory, Ownable {
 
     /// @notice Initializes the Guild Control Structures
     /// @param  controller the avatar token address for this guild
-    /// @param  module address: The Reality.io address
+    /// @param  reality the Reality.io address
     function _initGuildControls(address controller, address reality) internal {
         /// Init the Guild Controller
         IGuildController(controller).init(

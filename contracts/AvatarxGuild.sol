@@ -84,19 +84,20 @@ contract AvatarxGuild is IAvatarxGuild {
     }
 
     /// @notice Initializes the Avatar contract
-    /// @param  initModule the address of the module which can execute transactions after Snaphsot
-    /// @param  governorAddress_ the address of the GovernorxGuild
+    /// @param  realityAddress the address of the oracle which can propose transactions after Snaphsot
+    /// @param  governorAddress the address of the GovernorxGuild
     /// @return bool initialization successful/unsuccessful
-    function init(address reality, address governorAddress_) external returns (bool) {
+    function init(address realityAddress, address governorAddress) external returns (bool) {
         if (_initialized) {
             revert AlreadyInitialized();
         }
-        governor = governorAddress_;
+        governor = governorAddress;
+        reality = realityAddress;
         _initialized = true;
         /// Setup the first module provided by the MetaDAO
-        modules[initModule] = SENTINEL_MODULES;
+        //modules[address(0x02)] = SENTINEL_MODULES;
         modules[SENTINEL_MODULES] = address(0x02);
-        emit Initialized(initModule, governorAddress_);
+        emit Initialized(reality, governorAddress);
         return true;
     }
 
@@ -104,7 +105,6 @@ contract AvatarxGuild is IAvatarxGuild {
         if (newGovernor == governor) {
             revert AlreadyInitialized();
         }
-
         governor = newGovernor;
     }
 
@@ -263,26 +263,22 @@ contract AvatarxGuild is IAvatarxGuild {
     /// @param  targets An array of proposed targets for proposed transactions
     /// @param  values An array of values corresponding to proposed transactions
     /// @param  data An array of encoded function calls with parameters corresponding to proposals
-    /// @param  operation A specifying enum corresponding to the type of low-level call to use (`delegateCall` or `Call`)
-    /// @return bool Was the proposal successfully proposed to the GovernorxGuild
     function proposeAfterVote(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] calldata data,
-        Enum.Operation operation
+        bytes[] calldata data
     ) external onlyReality {
-        IDoinGudGovernor.propose(targets, values, calldatas);
+        IDoinGudGovernor(governor).propose(targets, values, data);
     }
 
     /// @notice Allows the Avatar to add Guardians before required `GuardianLimitReached`
     /// @dev    `Governor` requires minimum amount of Guardians before proposals can be made
     /// @dev    Can only be called once, before any other proposals can be called
     /// @param  guardians Array of addresses chosen to be the first guardians
-    /// @return bool successful execution of `setGuardians`
     function setGuardiansAfterVote(address[] memory guardians) external onlyReality {
         if (guardiansSet) {
             revert AlreadySet();
         }
-        IDoinGudGovernor.setGuardians(guardians);
+        IDoinGudGovernor(governor).setGuardians(guardians);
     }
 }
