@@ -126,7 +126,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             const newAmount = COEFFICIENT* (koef*koef) *ONE_HUNDRED_ETHER; // (koef)^2 *amount | NdAMOR = f(t)^2 *nAMOR
             const expectedAmount = ethers.BigNumber.from(realAmount).add(ethers.BigNumber.from(newAmount.toString()));
 
-            await dAMORxGuild.connect(staker).increaseStake(ONE_HUNDRED_ETHER);        
+            await dAMORxGuild.connect(staker).increaseStake(ONE_HUNDRED_ETHER);
             const newRealAmount = await dAMORxGuild.balanceOf(staker.address);
             const roundedNewRealAmount = Math.round(newRealAmount.toString() * 100) / 100;
 
@@ -298,9 +298,9 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
         it('withdraw dAMORxGuild tokens if not delegated any', async function () {
             time.increase(maxLockTime);
-
             await dAMORxGuild.connect(staker).withdraw();        
             const withdrawedTokens = (await AMORxGuild.balanceOf(staker.address)).toString();
+
             expect(withdrawedTokens).to.equal(staked);
         });
 
