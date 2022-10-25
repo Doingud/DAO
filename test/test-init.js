@@ -1,6 +1,5 @@
 //  Init the test environment
 
-//const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants');
 const { ethers } = require('hardhat');
 const { TAX_RATE,
         AMOR_TOKEN_NAME, 
@@ -140,7 +139,7 @@ const avatar = async (setup) => {
   const module = await moduleFactory.deploy(avatar.address, avatar.address);
 
   await avatar.init(
-    setup.roles.root.address, // owner
+    setup.roles.root.address, // reality
     setup.roles.authorizer_adaptor.address // governor Address
   );
 
@@ -228,25 +227,15 @@ const vestingContract = async (setup) => {
   return vesting;
 }
 
-const proposer = async(setup) => {
-  const proposerFactory = await ethers.getContractFactory("Proposer");
-  const proposer = await proposerFactory.deploy();
-
-  setup.proposer = proposer;
-
-  return proposer;
-}
-
 module.exports = {
-  controller,
-  getTokens,
-  initialize,
   avatar,
-  vestingContract,
+  controller,
   getGuildFactory,
+  getTokens,
   governor,
+  initialize,
   metadao,
   metadaoMock,
   proxy,
-  proposer
+  vestingContract
 }; 

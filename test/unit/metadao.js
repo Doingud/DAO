@@ -54,7 +54,6 @@ describe("unit - MetaDao", function () {
         ///   Setup the Controller
         await init.controller(setup);
         CONTROLLER = setup.controller;
-        await init.proposer(setup);
         ///   Setup the guild factory
         await init.getGuildFactory(setup);
         FACTORY = setup.factory;
@@ -214,7 +213,6 @@ describe("unit - MetaDao", function () {
             await init.avatar(setup);
             await init.governor(setup);
             CONTROLLER2 = setup.controller;
-            await init.proposer(setup);
             await init.getGuildFactory(setup);
             FACTORY2 = setup.factory;
 
