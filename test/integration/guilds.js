@@ -223,7 +223,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         await DOINGUD_FXAMOR.init(
             "DoinGud FXAMOR", 
             "FXAMOR", 
-            DOINGUD_METADAO.address, //controller
+            DOINGUD_CONTROLLER.address, //controller
             DOINGUD_AMOR_GUILD_TOKEN.address
         );
 
@@ -514,7 +514,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             ]);
 
             expect(await zodiacModule.getNumOfTxInProposal(0)).to.equal(1);
-console.log("3546e is %s", 3546);
+console.log("How to ?pass? passed proposal from Snapshot to MetaDao automatically");
 // ???
 // await zodiacModule.executeProposalTx(0, tx1.to, tx1.value, tx1.data, tx1.operation);
 
@@ -777,24 +777,13 @@ console.log("3546e is %s", 3546);
             await DOINGUD_AMOR_TOKEN.connect(user2).approve(DOINGUD_CONTROLLER.address, FIFTY_ETHER);
             await DOINGUD_AMOR_TOKEN.connect(user1).approve(DOINGUD_CONTROLLER.address, FIFTY_ETHER);
 
-            proposal = DOINGUD_CONTROLLER.interface.encodeFunctionData("donate", [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address]);
-            await metaHelper(
-                [DOINGUD_CONTROLLER.address],
-                [0],
-                [proposal],
-                [user1, user2, user3],
-                user2,
-                DOINGUD_AVATAR.address,
-                DOINGUD_GOVERNOR.address
-            );
+            await expect(DOINGUD_CONTROLLER.connect(user2).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
+            to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
+                to.emit(DOINGUD_FXAMOR, "Transfer");
 
-            // await expect(DOINGUD_CONTROLLER.connect(user2).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
-            // to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
-            //     to.emit(DOINGUD_FXAMOR, "Transfer");
-
-            // await expect(DOINGUD_CONTROLLER.connect(user1).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
-            // to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
-            //     to.emit(DOINGUD_FXAMOR, "Transfer");
+            await expect(DOINGUD_CONTROLLER.connect(user1).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
+            to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
+                to.emit(DOINGUD_FXAMOR, "Transfer");
 
 
             // Prepare a report for the guild and add it using GuildController
@@ -821,8 +810,8 @@ console.log("3546e is %s", 3546);
             v = parseInt(signature.slice(130, 132), 16);
                     
             report = messageHash;
-
             await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s);
+
             expect((await DOINGUD_CONTROLLER.queueReportsAuthors(0))).to.equal(operator.address);
         });
         it("Vote for the report at the Guild with FXAMOR", async function () {                    
@@ -841,7 +830,6 @@ console.log("3546e is %s", 3546);
             await expect(DOINGUD_CONTROLLER.connect(user1).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
             to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
                 to.emit(DOINGUD_FXAMOR, "Transfer");
-            
             // Prepare a report for the guild and add it using GuildController
                     
             await DOINGUD_CONTROLLER.connect(operator).addReport(report, v, r, s);
