@@ -109,6 +109,7 @@ let IMPACT_MAKERS;
 let IMPACT_MAKERS_WEIGHTS;
 
 let zodiacModule;
+let zodiacModuleMain;
 let domain;
 let GUILD_THREE_CONTROLLERXGUILD;
 let ControllerxTwo;
@@ -198,6 +199,43 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         VESTING = setup.vesting;
 
 
+                // setup Snapshot
+                const wallets = await ethers.getSigners();
+                const safeSigner = wallets[0]; // One 1 signer on the safe
+              
+                const GnosisSafeL2 = await ethers.getContractFactory(
+                  '@gnosis.pm/safe-contracts/contracts/GnosisSafeL2.sol:GnosisSafeL2'
+                );
+                const FactoryContract = await ethers.getContractFactory(
+                  '@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol:GnosisSafeProxyFactory'
+                );
+                const singleton = await GnosisSafeL2.deploy();
+                const factory = await FactoryContract.deploy();
+              
+                const template = await factory.callStatic.createProxy(singleton.address, '0x');
+                await factory.createProxy(singleton.address, '0x');
+              
+                const safe = GnosisSafeL2.attach(template);
+                safe.setup([safeSigner.address], 1, ZERO_ADDRESS, '0x', ZERO_ADDRESS, ZERO_ADDRESS, 0, ZERO_ADDRESS);
+              
+                const SnapshotXContract = await ethers.getContractFactory('SnapshotXL1Executor');
+              
+                //deploying singleton master contract
+                const masterzodiacModule = await SnapshotXContract.deploy(
+                    DOINGUD_AVATAR.address,
+                    DOINGUD_AVATAR.address,
+                    DOINGUD_AVATAR.address,
+                    DOINGUD_AVATAR.address,
+                    1,
+                    []
+                );
+        
+                zodiacModuleMain = masterzodiacModule;
+              
+                domain = {
+                    chainId: ethers.BigNumber.from(network.config.chainId),
+                    verifyingContract: zodiacModuleMain.address,
+                };
 
         await DOINGUD_AMOR_TOKEN.init(
             AMOR_TOKEN_NAME, 
@@ -238,7 +276,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         );
 
         await DOINGUD_AVATAR.init(
-            authorizer_adaptor.address, // owner
+            zodiacModuleMain.address,//authorizer_adaptor.address, // owner
             DOINGUD_GOVERNOR.address // governor Address
         );
 
@@ -257,7 +295,32 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
         /// Step 7: Set the Guardians for the MetaDAO
         /// Probably the first step after any new guild
-        await DOINGUD_AVATAR.connect(authorizer_adaptor).setGuardiansAfterVote([user1.address, user2.address, user3.address]);
+        // await DOINGUD_AVATAR.connect(authorizer_adaptor).setGuardiansAfterVote([user1.address, user2.address, user3.address]);
+
+        let GUARDIANS = [user1.address, user2.address, user3.address];
+        data = DOINGUD_AVATAR.interface.encodeFunctionData("setGuardiansAfterVote", [GUARDIANS]);
+        let tx1 = {
+            to: DOINGUD_AVATAR.address,
+            value: 0,
+            data: data,
+            operation: 0,
+            nonce: 0,
+        };
+        const txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, tx1);
+
+        const abiCoder = new ethers.utils.AbiCoder();
+        const executionHash = ethers.utils.keccak256(
+            abiCoder.encode(['bytes32[]'], [[txHash1]])
+        );
+        const proposal_outcome = 1;
+
+        // Add a proposal in guild’s snapshot to donate guild’s funds to the impact makers
+        await zodiacModuleMain.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+            txHash1,
+        ]);
+        // expect(await zodiacModule.getNumOfTxInProposal(0)).to.equal(1);
+        await zodiacModuleMain.executeProposalTx(0, tx1.to, tx1.value, tx1.data, tx1.operation);
+
 
         /// Step 8: Propose to create a new guild
         proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
@@ -266,7 +329,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             [0],
             [proposal],
             [user1, user2, user3],
-            authorizer_adaptor,
+            zodiacModuleMain,
             DOINGUD_AVATAR.address,
             DOINGUD_GOVERNOR.address
         );
@@ -370,29 +433,29 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         await DOINGUD_GOVERNOR.execute([DOINGUD_METADAO.address], [0], [transactionData]);
 
 
-        // setup Snapshot
-        const wallets = await ethers.getSigners();
-        const safeSigner = wallets[0]; // One 1 signer on the safe
+        // // setup Snapshot
+        // const wallets = await ethers.getSigners();
+        // const safeSigner = wallets[0]; // One 1 signer on the safe
       
-        const GnosisSafeL2 = await ethers.getContractFactory(
-          '@gnosis.pm/safe-contracts/contracts/GnosisSafeL2.sol:GnosisSafeL2'
-        );
-        const FactoryContract = await ethers.getContractFactory(
-          '@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol:GnosisSafeProxyFactory'
-        );
-        const singleton = await GnosisSafeL2.deploy();
-        const factory = await FactoryContract.deploy();
+        // const GnosisSafeL2 = await ethers.getContractFactory(
+        //   '@gnosis.pm/safe-contracts/contracts/GnosisSafeL2.sol:GnosisSafeL2'
+        // );
+        // const FactoryContract = await ethers.getContractFactory(
+        //   '@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol:GnosisSafeProxyFactory'
+        // );
+        // const singleton = await GnosisSafeL2.deploy();
+        // const factory = await FactoryContract.deploy();
       
-        const template = await factory.callStatic.createProxy(singleton.address, '0x');
-        await factory.createProxy(singleton.address, '0x');
+        // const template = await factory.callStatic.createProxy(singleton.address, '0x');
+        // await factory.createProxy(singleton.address, '0x');
       
-        const safe = GnosisSafeL2.attach(template);
-        safe.setup([safeSigner.address], 1, ZERO_ADDRESS, '0x', ZERO_ADDRESS, ZERO_ADDRESS, 0, ZERO_ADDRESS);
+        // const safe = GnosisSafeL2.attach(template);
+        // safe.setup([safeSigner.address], 1, ZERO_ADDRESS, '0x', ZERO_ADDRESS, ZERO_ADDRESS, 0, ZERO_ADDRESS);
       
-        const SnapshotXContract = await ethers.getContractFactory('SnapshotXL1Executor');
+        const SnapshotXContract2 = await ethers.getContractFactory('SnapshotXL1Executor');
       
         //deploying singleton master contract
-        const masterzodiacModule = await SnapshotXContract.deploy(
+        const masterzodiacModule2 = await SnapshotXContract2.deploy(
           GUILD_ONE_AVATARXGUILD.address,
           GUILD_ONE_AVATARXGUILD.address,
           GUILD_ONE_AVATARXGUILD.address,
@@ -401,7 +464,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
           []
         );
 
-        zodiacModule = masterzodiacModule;
+        zodiacModule = masterzodiacModule2;
       
         domain = {
             chainId: ethers.BigNumber.from(network.config.chainId),
