@@ -90,7 +90,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     event GuardiansSetted(address[] arrGuardians);
     event GuardianAdded(address newGuardian);
     event GuardianRemoved(address guardian);
-    event GuardianChanged(address oldGuardian, address newGuardian);
+    event GuardianChanged(uint256 oldGuardian, address newGuardian);
     event VoteCasted(uint256 proposalId, bool support, address votedGuardian);
 
     bool private _initialized;
