@@ -110,7 +110,11 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @param  AMORxGuild_ the address of the AMORxGuild token
     /// @param  avatarAddress_ the address of the Avatar
     /// @param  initialGuardian the user responsible for the guardian actions
-    function init(address AMORxGuild_, address avatarAddress_, address initialGuardian) external returns (bool) {
+    function init(
+        address AMORxGuild_,
+        address avatarAddress_,
+        address initialGuardian
+    ) external returns (bool) {
         if (_initialized) {
             revert AlreadyInitialized();
         }

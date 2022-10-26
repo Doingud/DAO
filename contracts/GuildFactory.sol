@@ -229,7 +229,11 @@ contract GuildFactory is ICloneFactory, Ownable {
     /// @notice Initializes the Guild Control Structures
     /// @param  controller the avatar token address for this guild
     /// @param  reality the Reality.io address
-    function _initGuildControls(address controller, address reality, address initialGuardian) internal {
+    function _initGuildControls(
+        address controller,
+        address reality,
+        address initialGuardian
+    ) internal {
         /// Init the Guild Controller
         IGuildController(controller).init(
             guilds[controller].AvatarxGuild,
