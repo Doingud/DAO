@@ -109,13 +109,14 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @notice Initializes the Governor contract
     /// @param  AMORxGuild_ the address of the AMORxGuild token
     /// @param  avatarAddress_ the address of the Avatar
-    function init(address AMORxGuild_, address avatarAddress_) external returns (bool) {
+    /// @param  initialGuardian the user responsible for the guardian actions
+    function init(address AMORxGuild_, address avatarAddress_, address initialGuardian) external returns (bool) {
         if (_initialized) {
             revert AlreadyInitialized();
         }
 
         // person who inflicted the creation of the contract is set as the only guardian of the system
-        guardians.push(msg.sender);
+        guardians.push(initialGuardian);
         AMORxGuild = IERC20(AMORxGuild_);
         avatarAddress = avatarAddress_;
 

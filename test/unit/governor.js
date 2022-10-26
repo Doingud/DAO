@@ -46,7 +46,7 @@ describe('unit - Contract: Governor', function () {
         avatar = AVATAR.attach(avatar.address);
         governor = GOVERNOR.attach(governor.address);
         await avatar.init(setup.roles.root.address, governor.address);
-        await governor.init(AMORxGuild.address, avatar.address);
+        await governor.init(AMORxGuild.address, avatar.address, setup.roles.root.address);
         mockModule = setup.avatars.module;
         root = setup.roles.root;
         staker = setup.roles.staker;
@@ -73,6 +73,7 @@ describe('unit - Contract: Governor', function () {
             await expect(governor.init(
                 AMORxGuild.address, //AMORxGuild
                 authorizer_adaptor.address, // Avatar Address
+                user2.address
             )).to.be.revertedWith("AlreadyInitialized()");
         });
     });
@@ -93,10 +94,8 @@ describe('unit - Contract: Governor', function () {
             await metaHelper([avatar.address], [0], [transactionData], [staker, operator], root, avatar.address, governor.address);
 
             expect(await governor.guardiansLimit()).to.equals(1);
-            console.log("Flag 3");
             transactionData = governor.interface.encodeFunctionData("changeGuardiansLimit", [3]);
             await metaHelper([governor.address], [0], [transactionData], [staker, operator], root, avatar.address, governor.address);
-            console.log("Flag 4");
 
             expect(await governor.guardiansLimit()).to.equals(3);
         });

@@ -99,6 +99,7 @@ contract GuildFactory is ICloneFactory, Ownable {
     /// @param  _symbol The symbol of the Guild
     function deployGuildContracts(
         address reality,
+        address initialGuardian,
         string memory _name,
         string memory _symbol
     )
@@ -140,7 +141,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         /// Deploy the Guild Governor
         guild.GovernorxGuild = _deployGovernor();
 
-        _initGuildControls(controller, reality);
+        _initGuildControls(controller, reality, initialGuardian);
 
         return (controller, guild.GovernorxGuild, guild.AvatarxGuild);
     }
@@ -228,7 +229,7 @@ contract GuildFactory is ICloneFactory, Ownable {
     /// @notice Initializes the Guild Control Structures
     /// @param  controller the avatar token address for this guild
     /// @param  reality the Reality.io address
-    function _initGuildControls(address controller, address reality) internal {
+    function _initGuildControls(address controller, address reality, address initialGuardian) internal {
         /// Init the Guild Controller
         IGuildController(controller).init(
             guilds[controller].AvatarxGuild,
@@ -241,10 +242,11 @@ contract GuildFactory is ICloneFactory, Ownable {
         /// Init the AvatarxGuild
         IAvatarxGuild(guilds[controller].AvatarxGuild).init(reality, guilds[controller].GovernorxGuild);
 
-        /// Init the AvatarxGuild
+        /// Init the GovernorxGuild
         IDoinGudGovernor(guilds[controller].GovernorxGuild).init(
             guilds[controller].AmorGuildToken,
-            guilds[controller].AvatarxGuild
+            guilds[controller].AvatarxGuild,
+            initialGuardian
         );
     }
 }
