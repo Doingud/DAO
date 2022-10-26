@@ -31,7 +31,6 @@ import "./utils/interfaces/IdAMORxGuild.sol";
 import "./utils/interfaces/IGuildController.sol";
 import "./utils/interfaces/IAvatarxGuild.sol";
 import "./utils/interfaces/IGovernor.sol";
-import "./utils/interfaces/IProposer.sol";
 
 contract GuildFactory is ICloneFactory, Ownable {
     /// The various guild components
