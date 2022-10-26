@@ -194,7 +194,8 @@ const setupTests = deployments.createFixture(async () => {
 
   await DOINGUD_GOVERNOR.init(
     DOINGUD_AMOR_GUILD_TOKEN.address, //AMORxGuild
-    DOINGUD_AVATAR.address // Avatar Address
+    DOINGUD_AVATAR.address, // Avatar Address
+    root.address
   );
 
   await DOINGUD_METADAO.init(
@@ -208,7 +209,7 @@ const setupTests = deployments.createFixture(async () => {
   await DOINGUD_AVATAR.connect(authorizer_adaptor).setGuardiansAfterVote([user1.address, user2.address, user3.address]);
 
   /// Step 8: Propose to create a new guild
-  let proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
+  let proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, root.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
   await metaHelper(
     [DOINGUD_METADAO.address],
     [0],
@@ -244,7 +245,7 @@ const setupTests = deployments.createFixture(async () => {
   await metaHelper([GUILD_ONE_CONTROLLERXGUILD.address], [0], [setImpactMakersData], [user1, user2], authorizer_adaptor, GUILD_ONE_AVATARXGUILD.address, GUILD_ONE_GOVERNORXGUILD.address)
 
   /// Setup Guild Two
-  proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
+  proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, root.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
   await metaHelper(
     [DOINGUD_METADAO.address],
     [0],

@@ -352,7 +352,6 @@ describe('unit - Contract: Governor', function () {
             await expect(governor.connect(authorizer_adaptor).execute([mockModule.address], [0], [proposal]))
                 .to
                 .emit(governor, "ProposalExecuted").withArgs(proposalId);
-            console.log("here");
             expect(await mockModule.testValues()).to.equal(2);
             await expect(governor.voters(proposalId)).to.be.reverted;
         });
