@@ -114,6 +114,7 @@ let GUILD_THREE_CONTROLLERXGUILD;
 let ControllerxTwo;
 let ControllerxThree;
 
+let RealityModule;
 describe("Integration: DoinGud guilds ecosystem", function () {
 
     const setupTests = deployments.createFixture(async () => {
@@ -197,6 +198,32 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         CLONE_FACTORY = setup.factory;
         VESTING = setup.vesting;
 
+                    // // USED ZODIAC RealityModuleERC20   
+const Mock = await ethers.getContractFactory("MockContract");
+const mock = await Mock.deploy();
+const oracle = await hre.ethers.getContractAt("RealitioV3ERC20", mock.address);
+console.log("Oracle address is %s", oracle.address);
+
+let Module = await ethers.getContractFactory("RealityModuleERC20")
+const module = await Module.deploy(
+    DOINGUD_AVATAR.address,
+    DOINGUD_AVATAR.address,
+    DOINGUD_AVATAR.address,
+    oracle.address,
+    1, 10, 0, 0, 0,
+    authorizer_adaptor.address,
+    {
+        gasLimit: 10000000, // InvalidInputError: Transaction requires at least 279668 gas but got 100000
+    }
+)
+await module.deployTransaction.wait()
+console.log("Module deployed to:", module.address);
+
+let module_proxy = await init.proxy();
+await module_proxy.initProxy(module.address);
+Module = Module.attach(module_proxy.address);
+
+
         await DOINGUD_AMOR_TOKEN.init(
             AMOR_TOKEN_NAME, 
             AMOR_TOKEN_SYMBOL, 
@@ -236,7 +263,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         );
 
         await DOINGUD_AVATAR.init(
-            authorizer_adaptor.address, // owner
+            Module.address,//authorizer_adaptor.address, // owner
             DOINGUD_GOVERNOR.address // governor Address
         );
 
@@ -251,12 +278,69 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             DOINGUD_AVATAR.address
         );
 
+
+        let proposal = DOINGUD_AVATAR.interface.encodeFunctionData("enableModule", [module.address]);
+        await metaHelper(
+            [DOINGUD_AVATAR.address],
+            [0],
+            [proposal],
+            [user1, user2, user3],
+            authorizer_adaptor,
+            DOINGUD_AVATAR.address,
+            DOINGUD_GOVERNOR.address
+        );
+
         /// Step 7: Set the Guardians for the MetaDAO
         /// Probably the first step after any new guild
-        await DOINGUD_AVATAR.connect(authorizer_adaptor).setGuardiansAfterVote([user1.address, user2.address, user3.address]);
+    const id = "some_random_id";
+    let GUARDIANS = [user1.address, user2.address, user3.address];
+    data = DOINGUD_AVATAR.interface.encodeFunctionData("setGuardiansAfterVote", [GUARDIANS]);
+    let tx = {
+        to: DOINGUD_AVATAR.address,
+        value: 0,
+        data: data,
+        operation: 0,
+        nonce: 0,
+    };
+    const txHash = await module.getTransactionHash(tx.to, tx.value, tx.data, tx.operation, tx.nonce)
+
+    const question = await module.buildQuestion(id, [txHash]);
+    const questionId = await module.getQuestionId(question, 0)
+    await mock.givenMethodReturnUint(oracle.interface.getSighash("askQuestionWithMinBondERC20"), questionId)
+    // await module.addProposal(id, [txHash])
+    await expect(
+        module.addProposal(id, [txHash])
+    ).to.emit(module, "ProposalQuestionCreated").withArgs(questionId, id)
+
+    const questionHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(question))
+    
+    expect(
+        await module.questionIds(questionHash)
+    ).to.be.deep.equals(questionId)
+
+    await mock.givenMethodReturnUint(oracle.interface.getSighash("askQuestionWithMinBondERC20"), questionId);
+
+    const block = await ethers.provider.getBlock("latest")
+    await mock.reset()
+    await mock.givenMethodReturnUint(oracle.interface.getSighash("getBond"), 7331)
+    await mock.givenMethodReturnBool(oracle.interface.getSighash("resultFor"), true)
+    await mock.givenMethodReturnUint(oracle.interface.getSighash("getFinalizeTS"), block.timestamp)
+    await getFutureTimestamp(24); // await nextBlockTime(hre, block.timestamp + 24) // ts
+
+    time.increase(time.duration.days(24));
+
+    console.log("33333 is %s", 33333);
+    await module.executeProposal(id, [txHash], tx.to, tx.value, tx.data, tx.operation);
+    expect(
+        await module.executedProposalTransactions(ethers.utils.solidityKeccak256(["string"], [question]), txHash)
+    ).to.be.equals(true)
+
+
+    console.log("12222 is %s", 12222);
+        // await DOINGUD_AVATAR.connect(authorizer_adaptor).setGuardiansAfterVote([user1.address, user2.address, user3.address]);
 
         /// Step 8: Propose to create a new guild
-        let proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
+        proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
         await metaHelper(
             [DOINGUD_METADAO.address],
             [0],
@@ -366,43 +450,43 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         await DOINGUD_GOVERNOR.execute([DOINGUD_METADAO.address], [0], [transactionData]);
 
 
-        // setup Snapshot
-        const wallets = await ethers.getSigners();
-        const safeSigner = wallets[0]; // One 1 signer on the safe
+        // // setup Snapshot
+        // const wallets = await ethers.getSigners();
+        // const safeSigner = wallets[0]; // One 1 signer on the safe
       
-        const GnosisSafeL2 = await ethers.getContractFactory(
-          '@gnosis.pm/safe-contracts/contracts/GnosisSafeL2.sol:GnosisSafeL2'
-        );
-        const FactoryContract = await ethers.getContractFactory(
-          '@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol:GnosisSafeProxyFactory'
-        );
-        const singleton = await GnosisSafeL2.deploy();
-        const factory = await FactoryContract.deploy();
+        // const GnosisSafeL2 = await ethers.getContractFactory(
+        //   '@gnosis.pm/safe-contracts/contracts/GnosisSafeL2.sol:GnosisSafeL2'
+        // );
+        // const FactoryContract = await ethers.getContractFactory(
+        //   '@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol:GnosisSafeProxyFactory'
+        // );
+        // const singleton = await GnosisSafeL2.deploy();
+        // const factory = await FactoryContract.deploy();
       
-        const template = await factory.callStatic.createProxy(singleton.address, '0x');
-        await factory.createProxy(singleton.address, '0x');
+        // const template = await factory.callStatic.createProxy(singleton.address, '0x');
+        // await factory.createProxy(singleton.address, '0x');
       
-        const safe = GnosisSafeL2.attach(template);
-        safe.setup([safeSigner.address], 1, ZERO_ADDRESS, '0x', ZERO_ADDRESS, ZERO_ADDRESS, 0, ZERO_ADDRESS);
+        // const safe = GnosisSafeL2.attach(template);
+        // safe.setup([safeSigner.address], 1, ZERO_ADDRESS, '0x', ZERO_ADDRESS, ZERO_ADDRESS, 0, ZERO_ADDRESS);
       
-        const SnapshotXContract = await ethers.getContractFactory('SnapshotXL1Executor');
+        // const SnapshotXContract = await ethers.getContractFactory('SnapshotXL1Executor');
       
-        //deploying singleton master contract
-        const masterzodiacModule = await SnapshotXContract.deploy(
-          GUILD_ONE_AVATARXGUILD.address,
-          GUILD_ONE_AVATARXGUILD.address,
-          GUILD_ONE_AVATARXGUILD.address,
-          GUILD_ONE_AVATARXGUILD.address,
-          1,
-          []
-        );
+        // //deploying singleton master contract
+        // const masterzodiacModule = await SnapshotXContract.deploy(
+        //   GUILD_ONE_AVATARXGUILD.address,
+        //   GUILD_ONE_AVATARXGUILD.address,
+        //   GUILD_ONE_AVATARXGUILD.address,
+        //   GUILD_ONE_AVATARXGUILD.address,
+        //   1,
+        //   []
+        // );
 
-        zodiacModule = masterzodiacModule;
+        // zodiacModule = masterzodiacModule;
       
-        domain = {
-            chainId: ethers.BigNumber.from(network.config.chainId),
-            verifyingContract: zodiacModule.address,
-        };
+        // domain = {
+        //     chainId: ethers.BigNumber.from(network.config.chainId),
+        //     verifyingContract: zodiacModule.address,
+        // };
     });
 
     beforeEach('setup', async function() {
@@ -514,13 +598,10 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             ]);
 
             expect(await zodiacModule.getNumOfTxInProposal(0)).to.equal(1);
-console.log("How to ?pass? passed proposal from Snapshot to MetaDao automatically");
-// ???
-// await zodiacModule.executeProposalTx(0, tx1.to, tx1.value, tx1.data, tx1.operation);
+            // await zodiacModule.executeProposalTx(0, tx1.to, tx1.value, tx1.data, tx1.operation);
 
             // snapshot proposal to createGuild 
             // -> Snapshot proposal passed
-            // ???
             // -> Governor propose called via the Avatar 
             // -> Guardians vote -> Guardians vote passes 
             // -> execute called on Governor 
@@ -601,6 +682,34 @@ console.log("How to ?pass? passed proposal from Snapshot to MetaDao automaticall
 
             expect(await zodiacModule.getNumOfTxInProposal(0)).to.equal(1);
 
+
+//             const tx = { to: DOINGUD_METADAO.address, value: 0, data: DOINGUD_METADAO.interface.encodeFunctionData('removeGuild', [GUILD_TWO_CONTROLLERXGUILD.address]), operation: 0, nonce: 0 }
+// console.log("111 is %s", 111);
+// // Add a proposal in Metadao’s snapshot to remove guild from the metadao
+// const id = "some_random_id";
+// // const tx = { to: DOINGUD_METADAO.address, value: 0, data: DOINGUD_METADAO.interface.encodeFunctionData('removeGuild', [GUILD_TWO_CONTROLLERXGUILD.address]), operation: 0, nonce: 0 }
+// const txHash = await RealityModule.getTransactionHash(tx.to, tx.value, tx.data, tx.operation, tx.nonce)
+
+// const question = await RealityModule.buildQuestion(id, [txHash]);
+// const questionId = await RealityModule.getQuestionId(question, 0)
+// await mock.givenMethodReturnUint(oracle.interface.getSighash("askQuestionWithMinBondERC20"), questionId)
+// console.log("1212 is %s", 1212);
+// await RealityModule.addProposal(id, [txHash])
+
+
+// const block = await ethers.provider.getBlock("latest")
+// await mock.reset()
+// await mock.givenMethodReturnUint(oracle.interface.getSighash("getBond"), 7331)
+// await mock.givenMethodReturnBool(oracle.interface.getSighash("resultFor"), true)
+// await mock.givenMethodReturnUint(oracle.interface.getSighash("getFinalizeTS"), block.timestamp)
+// await getFutureTimestamp(24); // await nextBlockTime(hre, block.timestamp + 24) // ts
+
+// time.increase(time.duration.days(24));
+
+// await RealityModule.executeProposal(id, [txHash], tx.to, tx.value, tx.data, tx.operation);
+// expect(
+//     await RealityModule.executedProposalTransactions(ethers.utils.solidityKeccak256(["string"], [question]), txHash)
+// ).to.be.equals(true)
             const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(user3.address);
 
             // Execute the proposal
@@ -731,7 +840,6 @@ console.log("How to ?pass? passed proposal from Snapshot to MetaDao automaticall
             Module = Module.attach(module_proxy.address);
 
             // Add a proposal in Metadao’s snapshot to remove guild from the metadao
-
             const id = "some_random_id";
             const tx = { to: DOINGUD_METADAO.address, value: 0, data: DOINGUD_METADAO.interface.encodeFunctionData('removeGuild', [GUILD_TWO_CONTROLLERXGUILD.address]), operation: 0, nonce: 0 }
             const txHash = await module.getTransactionHash(tx.to, tx.value, tx.data, tx.operation, tx.nonce)
@@ -761,11 +869,20 @@ console.log("How to ?pass? passed proposal from Snapshot to MetaDao automaticall
 
             time.increase(time.duration.days(24));
 
-            await module.executeProposal(id, [txHash], tx.to, tx.value, tx.data, tx.operation);
-            expect(
-                await module.executedProposalTransactions(ethers.utils.solidityKeccak256(["string"], [question]), txHash)
-            ).to.be.equals(true)
-
+            // await module.executeProposal(id, [txHash], tx.to, tx.value, tx.data, tx.operation);
+            // expect(
+            //     await module.executedProposalTransactions(ethers.utils.solidityKeccak256(["string"], [question]), txHash)
+            // ).to.be.equals(true)
+            proposal = DOINGUD_METADAO.interface.encodeFunctionData('removeGuild', [GUILD_TWO_CONTROLLERXGUILD.address]);
+            await metaHelper(
+                [DOINGUD_METADAO.address],
+                [0],
+                [proposal],
+                [user1, user2, user3],
+                authorizer_adaptor,
+                DOINGUD_AVATAR.address,
+                DOINGUD_GOVERNOR.address
+            );
             expect(await DOINGUD_METADAO.guilds(GUILD_TWO_CONTROLLERXGUILD.address)).to.equal(ZERO_ADDRESS);  
         });
         it("Add report to the Guild", async function () {          
