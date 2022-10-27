@@ -348,7 +348,8 @@ describe('unit - Contract: Governor', function () {
             let unSTargets = [mockModule.address];
             let unSValues = [0];
             let unSCalldatas = [mockModule.interface.encodeFunctionData("testRevert", [])];
-            console.log("Flag 1");
+            let avaGov = await mockGovernor.avatarAddress();
+            console.log("Avatar: %s; GovernorAvatar: %s", mockAvatar.address, avaGov);
             await mockAvatar.connect(root).proposeAfterVote(unSTargets, unSValues, unSCalldatas);
             /*
             transactionData = governor.interface.encodeFunctionData("propose", [unSTargets, unSValues, unSCalldatas]);
