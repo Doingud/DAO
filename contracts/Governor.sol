@@ -120,6 +120,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
         // person who inflicted the creation of the contract is set as the only guardian of the system
         guardians.push(initialGuardian);
+        weights[initialGuardian] = 1;
         AMORxGuild = IERC20(AMORxGuild_);
         avatarAddress = avatarAddress_;
 

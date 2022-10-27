@@ -206,10 +206,11 @@ const setupTests = deployments.createFixture(async () => {
 
   /// Step 7: Set the Guardians for the MetaDAO
   /// Probably the first step after any new guild
-  await DOINGUD_AVATAR.connect(authorizer_adaptor).setGuardiansAfterVote([user1.address, user2.address, user3.address]);
+  let proposal = DOINGUD_GOVERNOR.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
+  await metaHelper([DOINGUD_GOVERNOR.address], [0], [proposal], [root], authorizer_adaptor, DOINGUD_AVATAR.address, DOINGUD_GOVERNOR.address);
 
   /// Step 8: Propose to create a new guild
-  let proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, root.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
+  proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, root.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
   await metaHelper(
     [DOINGUD_METADAO.address],
     [0],
@@ -238,7 +239,8 @@ const setupTests = deployments.createFixture(async () => {
   GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxOne);
 
   /// Setup the Impact Makers for the GuildController
-  await GUILD_ONE_AVATARXGUILD.connect(authorizer_adaptor).setGuardiansAfterVote([user1.address, user2.address, user3.address]);
+  proposal = GUILD_ONE_GOVERNORXGUILD.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
+  await metaHelper([GUILD_ONE_GOVERNORXGUILD.address], [0], [proposal], [root], authorizer_adaptor, GUILD_ONE_AVATARXGUILD.address, GUILD_ONE_GOVERNORXGUILD.address);
   IMPACT_MAKERS = [user2.address, user3.address, staker.address];
   IMPACT_MAKERS_WEIGHTS = [20, 20, 60];
   let setImpactMakersData = CONTROLLERXGUILD.interface.encodeFunctionData("setImpactMakers", [IMPACT_MAKERS, IMPACT_MAKERS_WEIGHTS]);
@@ -275,11 +277,11 @@ const setupTests = deployments.createFixture(async () => {
   GUILD_TWO_AMORXGUILD = AMOR_GUILD_TOKEN.attach(AmorxTwo);
   GUILD_TWO_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(DAmorxTwo);
   GUILD_TWO_FXAMORXGUILD = FX_AMOR_TOKEN.attach(FXAmorxTwo);
-
   */
-  await GUILD_TWO_AVATARXGUILD.connect(authorizer_adaptor).setGuardiansAfterVote([user1.address, user2.address, user3.address]);
+
+  proposal = GUILD_TWO_GOVERNORXGUILD.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
+  await metaHelper([GUILD_TWO_GOVERNORXGUILD.address], [0], [proposal], [root], authorizer_adaptor, GUILD_TWO_AVATARXGUILD.address, GUILD_TWO_GOVERNORXGUILD.address);
   await metaHelper([GUILD_TWO_CONTROLLERXGUILD.address], [0], [setImpactMakersData], [user1, user2], authorizer_adaptor, GUILD_TWO_AVATARXGUILD.address, GUILD_TWO_GOVERNORXGUILD.address)
-  //await GUILD_TWO_AVATARXGUILD.connect(authorizer_adaptor).execTransactionFromModule(GUILD_TWO_CONTROLLERXGUILD.address, 0, setImpactMakersData, 0);
   /// Setup the initial Fee Index
   const abi = ethers.utils.defaultAbiCoder;
   let encodedIndex = abi.encode(
@@ -297,22 +299,7 @@ const setupTests = deployments.createFixture(async () => {
 
   /// Setup the index for the MetaDAO
   let transactionData = METADAO.interface.encodeFunctionData("updateIndex", [[encodedIndex, encodedIndex2], 0]);
-  await DOINGUD_AVATAR.connect(authorizer_adaptor).proposeAfterVote([DOINGUD_METADAO.address], [0], [transactionData]);
-  let proposalId = await DOINGUD_GOVERNOR.proposals(2);
-
-  /// Time passed for Voting to take place
-  await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
-  time.increase(time.duration.days(5));
-  await DOINGUD_GOVERNOR.connect(user1).castVote(proposalId, true);
-  await DOINGUD_GOVERNOR.connect(user2).castVote(proposalId, true);
- 
-  /// Time passed for Voting to finalize
-  await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
-  time.increase(time.duration.days(10));
- 
-  /// Execute the Proposal
-  await DOINGUD_GOVERNOR.execute([DOINGUD_METADAO.address], [0], [transactionData]);
-
+  await metaHelper([DOINGUD_METADAO.address], [0], [transactionData], [user1, user2], authorizer_adaptor, DOINGUD_AVATAR.address, DOINGUD_GOVERNOR.address);
 });
 
     beforeEach('setup', async function() {
