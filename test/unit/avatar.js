@@ -1,7 +1,6 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
 const { ZERO_ADDRESS, ONE_ADDRESS } = require("../helpers/constants.js");
-const { metaHelper } = require('../helpers/helpers.js');
 const init = require('../test-init.js');
 
 let avatar;
@@ -33,7 +32,7 @@ describe('unit - Contract: Avatar', function () {
         let GOVERNOR = setup.governor;
         avatar = AVATAR.attach(avatar.address);
         governor = GOVERNOR.attach(governor.address);
-        await avatar.init(setup.roles.root.address, governor.address);
+        await avatar.init(setup.roles.root.address, setup.roles.authorizer_adaptor.address);
         await governor.init(AMORxGuild.address, avatar.address, setup.roles.user1.address);
         mockModule = setup.avatars.module;
         root = setup.roles.root;
@@ -62,35 +61,39 @@ describe('unit - Contract: Avatar', function () {
         });
     });
 
-    context("» setGuardiansAfterVote testing", () => {
-        it("it sets the Guardians", async function () {
-            let GUARDIANS = [user1.address, user2.address];
-            await avatar.setGuardiansAfterVote(GUARDIANS);
-            expect(await governor.guardians(0)).to.equal(user1.address);
-        });
-    });
-
     context('» setGovernor testing', () => {
         it('it fails to setGovernor if not the owner', async function () {
             await expect(avatar.connect(user2).setGovernor(ZERO_ADDRESS)).to.be.revertedWith(
                 'Unauthorized()'
             );
         });
+
+        it('it succeeds in setting the governor', async function () {
+            let transactionData = avatar.interface.encodeFunctionData("setGovernor", [user1.address]);
+            await avatar.connect(authorizer_adaptor).executeProposal(avatar.address, 0, transactionData, 0);
+            expect(await avatar.governor()).to.equal(user1.address);
+
+            transactionData = avatar.interface.encodeFunctionData("setGovernor", [authorizer_adaptor.address]);
+            await avatar.connect(user1).executeProposal(avatar.address, 0, transactionData, 0);
+        });
+
     });
 
     context('» enableModule testing', () => {
         it('it fails to enableModule if InvalidParameters', async function () {
             let transactionData = avatar.interface.encodeFunctionData("enableModule", [ZERO_ADDRESS]);
-            await expect(metaHelper([avatar.address], [0], [transactionData], [user1, user2], root, avatar.address, governor.address)).
-                to.be.revertedWith("UnderlyingTransactionReverted()");
+            await expect(avatar.connect(authorizer_adaptor).executeProposal(avatar.address, 0, transactionData, 0))
+                .to.emit(avatar, "ExecutionFromGovernorFailure")
+                .withArgs(authorizer_adaptor.address);
 
             expect(await avatar.isModuleEnabled(ZERO_ADDRESS)).to.be.false;
         });
 
         it('it enables Module', async function () {
+            
             expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
             let transactionData = avatar.interface.encodeFunctionData("enableModule", [operator.address]);
-            await metaHelper([avatar.address], [0], [transactionData], [user1, user2], root, avatar.address, governor.address);
+            await avatar.connect(authorizer_adaptor).executeProposal(avatar.address, 0, transactionData, 0);
 
             expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
         });
@@ -98,8 +101,8 @@ describe('unit - Contract: Avatar', function () {
         it('it fails to enableModule if trying to add twice', async function () {
             let enabledModulesBefore = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
             let transactionData = avatar.interface.encodeFunctionData("enableModule", [operator.address]);
-            await expect(metaHelper([avatar.address], [0], [transactionData], [user1, user2], root, avatar.address, governor.address)).
-                to.be.revertedWith("UnderlyingTransactionReverted()");
+            await expect(avatar.connect(authorizer_adaptor).executeProposal(avatar.address, 0, transactionData, 0)).to.emit(avatar, "ExecutionFromGovernorFailure");
+
             let enabledModulesAfter = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
             expect(enabledModulesBefore.array.length).to.equal(enabledModulesAfter.array.length);
             
@@ -110,8 +113,7 @@ describe('unit - Contract: Avatar', function () {
         it('it fails to disableModule if InvalidParameters', async function () {
             let enabledModulesBefore = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
             let transactionData = avatar.interface.encodeFunctionData("disableModule", [ONE_ADDRESS, ZERO_ADDRESS]);
-            await expect(metaHelper([avatar.address], [0], [transactionData], [user1, user2], root, avatar.address, governor.address)).
-                to.be.revertedWith("UnderlyingTransactionReverted()");
+            await avatar.connect(authorizer_adaptor).executeProposal(avatar.address, 0, transactionData, 0);
 
             let enabledModulesAfter = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
             expect(enabledModulesBefore.array.length).to.equal(enabledModulesAfter.array.length);
@@ -121,7 +123,7 @@ describe('unit - Contract: Avatar', function () {
             expect(await avatar.isModuleEnabled(operator.address)).to.equals(true);
             const prevModule = ONE_ADDRESS;
             let transactionData = avatar.interface.encodeFunctionData("disableModule", [prevModule, operator.address]);
-            await metaHelper([avatar.address], [0], [transactionData], [user1, user2], root, avatar.address, governor.address);
+            await avatar.connect(authorizer_adaptor).executeProposal(avatar.address, 0, transactionData, 0);
 
             expect(await avatar.isModuleEnabled(operator.address)).to.equals(false);
         });
@@ -130,8 +132,7 @@ describe('unit - Contract: Avatar', function () {
             let enabledModulesBefore = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
             const prevModule = ONE_ADDRESS;
             let transactionData = avatar.interface.encodeFunctionData("disableModule", [prevModule, operator.address]);
-            await expect(metaHelper([avatar.address], [0], [transactionData], [user1, user2], root, avatar.address, governor.address)).
-                to.be.revertedWith("UnderlyingTransactionReverted()");
+            await avatar.connect(authorizer_adaptor).executeProposal(avatar.address, 0, transactionData, 0);
 
             let enabledModulesAfter = await avatar.getModulesPaginated(ONE_ADDRESS, 5);
             expect(enabledModulesBefore.array.length).to.equal(enabledModulesAfter.array.length);
@@ -147,7 +148,8 @@ describe('unit - Contract: Avatar', function () {
 
         it('it emits fail in execTransactionFromModule', async function () {
             let transactionData = avatar.interface.encodeFunctionData("enableModule", [authorizer_adaptor.address]);
-            await metaHelper([avatar.address], [0], [transactionData], [user1, user2], root, avatar.address, governor.address);
+            await avatar.connect(authorizer_adaptor).executeProposal(avatar.address, 0, transactionData, 0);
+
             let encodedFail = "0x";
             await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(avatar.address, 0, encodedFail, 0)).
                 to.emit(avatar, "ExecutionFromModuleFailure").

@@ -59,7 +59,9 @@ const metaHelper = async function (TARGETS, VALUES, PROPOSALS, guardians, realit
   await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
   time.increase(time.duration.days(5));
   await GOVERNOR_CONTRACT.connect(guardians[0]).castVote(proposalId, true);
-  await GOVERNOR_CONTRACT.connect(guardians[1]).castVote(proposalId, true);
+  if (guardians.length > 1) {
+    await GOVERNOR_CONTRACT.connect(guardians[1]).castVote(proposalId, true);
+  }
   await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
   time.increase(time.duration.days(10));
   await GOVERNOR_CONTRACT.execute(TARGETS, VALUES, PROPOSALS);
