@@ -35,7 +35,6 @@ import "./utils/interfaces/IGovernor.sol";
 contract GuildFactory is ICloneFactory, Ownable {
     /// The various guild components
     struct GuildComponents {
-        //address AvatarxGuild;
         address AmorGuildToken;
         address DAmorxGuild;
         address FXAmorxGuild;
@@ -65,6 +64,15 @@ contract GuildFactory is ICloneFactory, Ownable {
 
     /// CONSTANTS
     uint256 public constant DEFAULT_GUARDIAN_THRESHOLD = 10;
+
+    /// EVENTS
+    event guildContractsCreated(
+        address AmorGuildToken,
+        address DAmorxGuild,
+        address FXAmorxGuild,
+        address AvatarxGuild,
+        address GovernorxGuild
+    );
 
     /// ERRORS
     /// The deployment was unsuccessful
@@ -145,7 +153,13 @@ contract GuildFactory is ICloneFactory, Ownable {
         guild.GovernorxGuild = _deployGovernor();
 
         _initGuildControls(_name, controller, guildOwner);
-
+        emit guildContractsCreated(
+            guild.AmorGuildToken,
+            guild.DAmorxGuild,
+            guild.FXAmorxGuild,
+            guild.AvatarxGuild,
+            guild.GovernorxGuild
+        );
         return (controller, guild.GovernorxGuild, guild.AvatarxGuild);
     }
 

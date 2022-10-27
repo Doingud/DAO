@@ -85,6 +85,24 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     bytes32[] public indexHashes;
     bytes32 public constant FEES_INDEX = keccak256("FEES_INDEX");
 
+    /// Events
+    event guildCreated(
+        address guildOwner,
+        string name,
+        string tokenSymbol,
+        address guildController,
+        uint256 guildCounter
+    );
+    event guildAdded(
+        address guildController,
+        uint256 guildCounter
+    );
+    event guildRemoved(
+        address guildController,
+        uint256 guildCounter
+    );
+    event tokenWhitelisted(address token);
+
     /// Errors
     /// The token is not whitelisted
     error NotListed();
@@ -234,6 +252,13 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         unchecked {
             guildCounter += 1;
         }
+        emit guildCreated(
+            guildOwner,
+            name,
+            tokenSymbol,
+            controller,
+            guildCounter
+        );
     }
 
     /// @notice Adds an external guild to the registry
@@ -249,6 +274,10 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         unchecked {
             guildCounter += 1;
         }
+        emit guildAdded(
+            guildAddress,
+            guildCounter
+        );
     }
 
     /// @notice adds token to whitelist
@@ -258,6 +287,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         whitelist[sentinelWhitelist] = _token;
         sentinelWhitelist = _token;
         whitelist[sentinelWhitelist] = SENTINEL;
+        emit tokenWhitelisted(_token);
     }
 
     /// @notice removes guild based on id
@@ -284,6 +314,10 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         unchecked {
             guildCounter -= 1;
         }
+        emit guildRemoved(
+            controller,
+            guildCounter
+        );
     }
 
     /// @notice Checks that a token is whitelisted
