@@ -87,6 +87,11 @@ contract DoinGudGovernor is IDoinGudGovernor {
         uint256 endBlock
     );
     event ChangedGuardiansLimit(uint256 newLimit);
+    event GuardiansSetted(address[] arrGuardians);
+    event GuardianAdded(address newGuardian);
+    event GuardianRemoved(address guardian);
+    event GuardianChanged(address oldGuardian, address newGuardian);
+    event VoteCasted(uint256 proposalId, bool support, address votedGuardian);
 
     bool private _initialized;
 
@@ -179,6 +184,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
                 delete weights[guardians[i]];
             }
         }
+        emit GuardiansSetted(arrGuardians);
     }
 
     /// @notice this function adds new guardian to the system
@@ -192,6 +198,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
         guardians.push(guardian);
         weights[guardian] = 1;
+        emit GuardianAdded(guardian);
     }
 
     /// @notice this function removes choosed guardian from the system
@@ -205,6 +212,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
                 break;
             }
         }
+        emit GuardianRemoved(guardian);
     }
 
     /// @notice this function changes guardian as a result of the vote (propose function)
@@ -220,6 +228,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         guardians[current] = newGuardian;
         delete weights[guardians[current]];
         weights[newGuardian] = 1;
+        emit GuardianChanged(current, newGuardian);
     }
 
     /// @notice this function changes guardians limit
@@ -307,6 +316,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
 
         voters[proposalId].push(msg.sender);
+        emit VoteCasted(proposalId, support, msg.sender);
     }
 
     /// @notice function allows anyone to execute specific proposal, based on the vote.

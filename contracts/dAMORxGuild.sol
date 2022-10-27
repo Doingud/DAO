@@ -66,6 +66,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
     mapping(address => uint256) public amountDelegated;
 
     event Initialized(bool success, address owner, address AMORxGuild, uint256 amount);
+    event AMORxGuildStakedToDAMOR(address from, uint256 amount, uint256 mintAmount);
+    event AMORxGuildWithdrawedFromDAMOR(address to, uint256 burnedDAMORxGuild, uint256 returnedAMORxGuild);
 
     bool private _initialized;
     uint256 public constant COEFFICIENT = 2;
@@ -147,6 +149,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         stakesTimes[msg.sender] = block.timestamp + time;
         stakes[msg.sender] += newAmount;
         stakesAMOR[msg.sender] += amount;
+        emit AMORxGuildStakedToDAMOR(msg.sender, amount, newAmount);
         return newAmount;
     }
 
@@ -204,6 +207,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         if (delegation[msg.sender].length != 0) {
             undelegateAll();
         }
+        emit AMORxGuildStakedToDAMOR(msg.sender, amount, unstakeAMORAmount);
         return amount;
     }
 

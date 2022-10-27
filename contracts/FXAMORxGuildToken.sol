@@ -71,6 +71,11 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
 
     IERC20 public AMORxGuild;
 
+    /// Events
+    event AMORxGuildStakedToFXAMOR(address to, uint256 amount);
+    event AMORxGuildWithdrawedFromFXAMOR(address to, uint256 amount);
+
+    /// Errors
     error AlreadyInitialized();
     error Unauthorized();
     error EmptyArray();
@@ -151,6 +156,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
 
         stakes[to] += amount;
 
+        emit AMORxGuildStakedToFXAMOR(to, amount);
         return amount;
     }
 
@@ -167,6 +173,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         _burn(account, amount);
         AMORxGuild.safeTransfer(controller, amount);
         stakes[account] -= amount;
+        emit AMORxGuildWithdrawedFromFXAMOR(account, amount);
     }
 
     /// @notice Allows some external account to vote with your FXAMORxGuild tokens

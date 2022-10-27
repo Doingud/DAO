@@ -80,6 +80,11 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     /// Co-efficient
     uint256 private constant COEFFICIENT = 10**9;
 
+    /// Events
+    event TaxChanged(uint256 newRate);
+    event AmorStaked(address to, uint256 amount, uint256 mintAmount);
+    event AmorWithdrawed(address to, uint256 amorxguildAmount, uint256 amorReturned);
+
     /// Custom errors
     /// Error if the AmorxGuild has already been initialized
     error AlreadyInitialized();
@@ -120,6 +125,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         }
 
         stakingTaxRate = newRate;
+        emit TaxChanged(newRate);
     }
 
     /// @notice Allows a user to stake their AMOR and receive AMORxGuild in return
@@ -146,6 +152,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         mintAmount = (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS;
         _mint(to, mintAmount);
 
+        emit AmorStaked(to, amount, mintAmount);
         return mintAmount;
     }
 
@@ -165,6 +172,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         //  Correct for the tax on transfer
         //  Transfer AMOR to the tx.origin, but note: this is taxed!
         tokenAmor.safeTransfer(msg.sender, amorReturned);
+        emit AmorWithdrawed(msg.sender, amount, amorReturned);
         //  Return the amount of AMOR returned to the user
         return amorReturned;
     }
