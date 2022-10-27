@@ -93,14 +93,8 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         address guildController,
         uint256 guildCounter
     );
-    event guildAdded(
-        address guildController,
-        uint256 guildCounter
-    );
-    event guildRemoved(
-        address guildController,
-        uint256 guildCounter
-    );
+    event guildAdded(address guildController, uint256 guildCounter);
+    event guildRemoved(address guildController, uint256 guildCounter);
     event tokenWhitelisted(address token);
 
     /// Errors
@@ -252,13 +246,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         unchecked {
             guildCounter += 1;
         }
-        emit guildCreated(
-            guildOwner,
-            name,
-            tokenSymbol,
-            controller,
-            guildCounter
-        );
+        emit guildCreated(guildOwner, name, tokenSymbol, controller, guildCounter);
     }
 
     /// @notice Adds an external guild to the registry
@@ -274,10 +262,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         unchecked {
             guildCounter += 1;
         }
-        emit guildAdded(
-            guildAddress,
-            guildCounter
-        );
+        emit guildAdded(guildAddress, guildCounter);
     }
 
     /// @notice adds token to whitelist
@@ -314,10 +299,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         unchecked {
             guildCounter -= 1;
         }
-        emit guildRemoved(
-            controller,
-            guildCounter
-        );
+        emit guildRemoved(controller, guildCounter);
     }
 
     /// @notice Checks that a token is whitelisted

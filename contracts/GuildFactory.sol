@@ -67,6 +67,7 @@ contract GuildFactory is ICloneFactory, Ownable {
 
     /// EVENTS
     event guildContractsCreated(
+        address GuildController,
         address AmorGuildToken,
         address DAmorxGuild,
         address FXAmorxGuild,
@@ -154,6 +155,7 @@ contract GuildFactory is ICloneFactory, Ownable {
 
         _initGuildControls(_name, controller, guildOwner);
         emit guildContractsCreated(
+            controller,
             guild.AmorGuildToken,
             guild.DAmorxGuild,
             guild.FXAmorxGuild,

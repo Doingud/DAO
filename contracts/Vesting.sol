@@ -66,6 +66,9 @@ contract Vesting is Ownable {
     /// Tokens
     IERC20 public amorToken;
 
+    ///Events
+    event AmorWithdrawed(address to, uint256 amount);
+
     /// Custom errors
     /// The target has already been allocated an initial vesting amount
     error AlreadyAllocated();
@@ -102,6 +105,7 @@ contract Vesting is Ownable {
         tokensWithdrawn += amount;
         /// Transfer the AMOR to the caller
         amorToken.transfer(msg.sender, amount);
+        emit AmorWithdrawed(msg.sender, amount);
     }
 
     /// @notice Returns the amount of vested tokens allocated to the target
