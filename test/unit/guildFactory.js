@@ -59,6 +59,7 @@ describe("unit - Clone Factory", function () {
 
     /// Note: Using `root` as Avatar address
     await METADAO.init(AMOR_TOKEN.address, CLONE_FACTORY.address, root.address);
+  });
 
   before('Setup', async function() {
     await setupTests();
@@ -66,7 +67,7 @@ describe("unit - Clone Factory", function () {
 
   context("function: deployGuildContracts", () => {
     it("Should deploy the Guild Token Contracts", async function () {
-      await METADAO.createGuild(user1.address, user2.address, MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0]);
+      await METADAO.createGuild(user1.address, user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
 
       this.guildOneControllerxGuild = await METADAO.guilds(ONE_ADDRESS);
 
@@ -137,6 +138,5 @@ describe("unit - Clone Factory", function () {
       expect(await METADAO.guilds(ONE_ADDRESS)).to.equal(GUILD_ONE_CONTROLLERXGUILD.address);
     });
   });
-  
-  });
+
 });

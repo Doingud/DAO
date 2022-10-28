@@ -6,7 +6,7 @@ async function main() {
     const AMORxGuild_ = addresses.AMORxGuild;
     const Avatar_ = addresses.Avatar;
     const Governor_ = addresses.Governor;
-    const multisig_ = addresses.multisig;
+    // const multisig_ = addresses.multisig;
 
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
