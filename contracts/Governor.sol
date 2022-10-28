@@ -117,6 +117,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         if (_initialized) {
             revert AlreadyInitialized();
         }
+
         // person who inflicted the creation of the contract is set as the only guardian of the system
         guardians.push(initialGuardian);
         weights[initialGuardian] = 1;
@@ -245,9 +246,11 @@ contract DoinGudGovernor is IDoinGudGovernor {
         if (!(targets.length == values.length && targets.length == calldatas.length)) {
             revert InvalidParameters();
         }
+
         if (targets.length == 0) {
             revert InvalidParameters();
         }
+
         if (targets.length > PROPOSAL_MAX_OPERATIONS) {
             revert InvalidParameters();
         }

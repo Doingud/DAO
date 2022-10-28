@@ -130,6 +130,7 @@ contract GuildController is IGuildController, Ownable {
         }
         uint256 amount = IMetaDaoController(MetaDaoController).guildFunds(address(this), token);
         IMetaDaoController(MetaDaoController).claimToken(token);
+
         // distribute those tokens
         distribute(amount, token);
     }
@@ -159,6 +160,7 @@ contract GuildController is IGuildController, Ownable {
         if (token == AMOR) {
             // convert AMOR to AMORxGuild
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
+
             // Must calculate stakedAmor prior to transferFrom()
             uint256 stakedAmor = IERC20(token).balanceOf(address(this));
             // get all tokens
@@ -187,6 +189,7 @@ contract GuildController is IGuildController, Ownable {
             FXGFXAMORxGuild.stake(msg.sender, amorxguildAmount); // from address(this)
         }
         uint256 decAmount = allAmount - amount; //decreased amount: other 90%
+
         uint256 tokenBefore = IERC20(token).balanceOf(address(this));
 
         IERC20(token).safeTransferFrom(msg.sender, address(this), decAmount);
