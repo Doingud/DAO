@@ -41,7 +41,7 @@ import "./utils/interfaces/IGovernor.sol";
 contract AvatarxGuild is IAvatarxGuild {
     event ExecutionFromGovernorSuccess(address governorAddress);
     event ExecutionFromGovernorFailure(address governorAddress);
-    event Initialized(bool success, address owner, address governorAddress);
+    event Initialized(address owner, address governorAddress);
     event GovernorSet(address newGovernor);
 
     address public governor;

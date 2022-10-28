@@ -53,14 +53,16 @@ const contractAddresses = {
         [multisig]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', // Dev wallet
     },
     'mumbai': {
-        [DoinGudProxy]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
+        [DoinGudProxy]: '0x61368c2C71274bB53fE77Ba27820A2b3120dfC1B',
 
-        [AMOR]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
-        [AMORxGuild]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
-        [FXAMORxGuild]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
-        [dAMORxGuild]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
-        [GuildController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
-        [Avatar]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
+        [AMOR]: '0x2aEBC1778CBC5476037ec4158d2886Aa16414B4C',
+        [AMORxGuild]: '0x7e6036c94403b4b272a8523ae7Fa5Db2A13323E5',
+        [GuildController]: '0x45De03d43C5b19AF5AB8E66fA62Eb27C8003606B',
+
+        [FXAMORxGuild]: '0xAA761EB31536651d19E570282b3Eb0923E418fDf',
+        [Avatar]: '0x74660e357e17Db2D938a2505063C886D2d364FC7',
+
+        [dAMORxGuild]: '0x13EcFA04eD1A1e475e3f4c121ecd0da5a6aa65A2',
 
         [Avatar_MetaDAOController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', 
         [Governor_MetaDAOController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
