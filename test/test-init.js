@@ -1,6 +1,5 @@
 //  Init the test environment
 
-//const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants');
 const { ethers } = require('hardhat');
 const { TAX_RATE,
         AMOR_TOKEN_NAME, 
@@ -140,7 +139,7 @@ const avatar = async (setup) => {
   const module = await moduleFactory.deploy(avatar.address, avatar.address);
 
   await avatar.init(
-    setup.roles.root.address, // owner
+    setup.roles.root.address, // reality
     setup.roles.authorizer_adaptor.address // governor Address
   );
 
@@ -175,7 +174,8 @@ const governor = async (setup) => {
 
   await governor.init(
     setup.tokens.AmorGuildToken.address, //AMORxGuild
-    setup.avatars.avatar.address // Avatar Address
+    setup.avatars.avatar.address, // Avatar Address
+    setup.roles.root.address
   );
 
   setup.governor = governor;
@@ -196,8 +196,7 @@ const getGuildFactory = async (setup) => {
     setup.controller.address,
     setup.governor.address,
     setup.avatars.avatar.address,
-    setup.metadao.address, // metaDaoController
-    setup.roles.authorizer_adaptor.address // snapshot address
+    setup.metadao.address // metaDaoController
   );
 
   const factory = guildFactory;
@@ -207,7 +206,7 @@ const getGuildFactory = async (setup) => {
   return factory;
 }
 
-const metadao = async(setup) =>{
+const metadao = async(setup) => {
   const MetaDaoFactory = await ethers.getContractFactory('MetaDaoController');
   const metadao = await MetaDaoFactory.deploy();
 
@@ -232,14 +231,14 @@ const vestingContract = async (setup) => {
 }
 
 module.exports = {
-  controller,
-  getTokens,
-  initialize,
   avatar,
-  vestingContract,
+  controller,
   getGuildFactory,
+  getTokens,
   governor,
+  initialize,
   metadao,
   metadaoMock,
-  proxy
+  proxy,
+  vestingContract
 }; 

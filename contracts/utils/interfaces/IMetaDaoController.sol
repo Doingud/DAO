@@ -40,8 +40,10 @@ interface IMetaDaoController {
     /// @param guildOwner address that will control the functions of the guild
     /// @param name the name for the guild
     /// @param tokenSymbol the symbol for the Guild's token
+    /// @param initialGuardian the user responsible for the initial Guardian actions
     function createGuild(
         address guildOwner,
+        address initialGuardian,
         string memory name,
         string memory tokenSymbol
     ) external;

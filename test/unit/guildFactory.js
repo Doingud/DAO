@@ -26,6 +26,8 @@ use(solidity);
   let GUILD_ONE_GOVERNORXGUILD;
   let METADAO;
   let guild;
+  let user1;
+  let user2;
 
 describe("unit - Clone Factory", function () {
 
@@ -47,6 +49,7 @@ describe("unit - Clone Factory", function () {
     root = setup.roles.root;
     multisig = setup.roles.doingud_multisig;
     user1 = setup.roles.user1;
+    user2 = setup.roles.user2;
 
     await init.getGuildFactory(setup);
     CLONE_FACTORY = setup.factory;
@@ -56,6 +59,7 @@ describe("unit - Clone Factory", function () {
 
     /// Note: Using `root` as Avatar address
     await METADAO.init(AMOR_TOKEN.address, CLONE_FACTORY.address, root.address);
+  });
 
   before('Setup', async function() {
     await setupTests();
@@ -63,9 +67,8 @@ describe("unit - Clone Factory", function () {
 
   context("function: deployGuildContracts", () => {
     it("Should deploy the Guild Token Contracts", async function () {
-      expect(await METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0])).
+      await expect(METADAO.createGuild(user1.address, user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0])).
         to.emit(CLONE_FACTORY, "GuildCreated");
-      //expect(await CLONE_FACTORY.deployGuildContracts(user1.address, MOCK_GUILD_NAMES[0],MOCK_GUILD_SYMBOLS[0])).to.not.be.null;
 
       this.guildOneControllerxGuild = await METADAO.guilds(ONE_ADDRESS);
 
@@ -89,7 +92,7 @@ describe("unit - Clone Factory", function () {
     });
 
     it("Should have initialized the control contracts", async function () {
-      await expect(GUILD_ONE_GOVERNORXGUILD.init(ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWith("AlreadyInitialized()");
+      await expect(GUILD_ONE_GOVERNORXGUILD.init(ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWith("AlreadyInitialized()");
       await expect(GUILD_ONE_CONTROLLERXGUILD.init(ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWith("AlreadyInitialized()");
       await expect(GUILD_ONE_AVATARXGUILD.init(ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWith("AlreadyInitialized()");
     });
@@ -136,6 +139,5 @@ describe("unit - Clone Factory", function () {
       expect(await METADAO.guilds(ONE_ADDRESS)).to.equal(GUILD_ONE_CONTROLLERXGUILD.address);
     });
   });
-  
-  });
+
 });
