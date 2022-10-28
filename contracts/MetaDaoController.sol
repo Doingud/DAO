@@ -86,16 +86,17 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     bytes32 public constant FEES_INDEX = keccak256("FEES_INDEX");
 
     /// Events
-    event guildCreated(
+    event GuildCreated(
         address guildOwner,
         string name,
         string tokenSymbol,
         address guildController,
         uint256 guildCounter
     );
-    event guildAdded(address guildController, uint256 guildCounter);
-    event guildRemoved(address guildController, uint256 guildCounter);
-    event tokenWhitelisted(address token);
+    event GuildAdded(address guildController, uint256 guildCounter);
+    event GuildRemoved(address guildController, uint256 guildCounter);
+    event TokenWhitelisted(address token);
+    event DonatedToIndex(uint256 amount, address token, uint256 index, address sender);
 
     /// Errors
     /// The token is not whitelisted
@@ -163,6 +164,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
             allocateByIndex(token, amount, index);
         }
+        emit DonatedToIndex(amount, token, index, msg.sender);
     }
 
     /// @notice Allocates donated funds by the index specified
@@ -246,7 +248,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         unchecked {
             guildCounter += 1;
         }
-        emit guildCreated(guildOwner, name, tokenSymbol, controller, guildCounter);
+        emit GuildCreated(guildOwner, name, tokenSymbol, controller, guildCounter);
     }
 
     /// @notice Adds an external guild to the registry
@@ -262,7 +264,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         unchecked {
             guildCounter += 1;
         }
-        emit guildAdded(guildAddress, guildCounter);
+        emit GuildAdded(guildAddress, guildCounter);
     }
 
     /// @notice adds token to whitelist
@@ -272,7 +274,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         whitelist[sentinelWhitelist] = _token;
         sentinelWhitelist = _token;
         whitelist[sentinelWhitelist] = SENTINEL;
-        emit tokenWhitelisted(_token);
+        emit TokenWhitelisted(_token);
     }
 
     /// @notice removes guild based on id
@@ -299,7 +301,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         unchecked {
             guildCounter -= 1;
         }
-        emit guildRemoved(controller, guildCounter);
+        emit GuildRemoved(controller, guildCounter);
     }
 
     /// @notice Checks that a token is whitelisted
