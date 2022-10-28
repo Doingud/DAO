@@ -57,15 +57,15 @@ const contractAddresses = {
 
         [AMOR]: '0x2aEBC1778CBC5476037ec4158d2886Aa16414B4C',
         [AMORxGuild]: '0x7e6036c94403b4b272a8523ae7Fa5Db2A13323E5',
-        [GuildController]: '0x45De03d43C5b19AF5AB8E66fA62Eb27C8003606B',
+        [GuildController]: '0x8Aa729B8afCa54098ca2E5cA0422304ba6deB5bf',
 
-        [FXAMORxGuild]: '0xAA761EB31536651d19E570282b3Eb0923E418fDf',
-        [Avatar]: '0x74660e357e17Db2D938a2505063C886D2d364FC7',
+        [FXAMORxGuild]: '0xDaC9778cd2482CE5fad06002aE14F5990358aB44',
+        [Avatar]: '0x73F9cCE41b5053a5a2c73CaF6b79115ec0e1a8F9',
 
-        [dAMORxGuild]: '0x13EcFA04eD1A1e475e3f4c121ecd0da5a6aa65A2',
-        [MetaDAOController]: '0x303bE7Ca244583Ccefc4a46b4474E0cca67727D1',
-        [GuildFactory]: '0xa0225d9cfE632f889e9cfC644C6352c9e160B6A2',
-        [Governor]: '0x6C0828f9590e23977891bCdF7185CF160aDA6E28',
+        [dAMORxGuild]: '0x38B423119AE2001c99b34f94A73413050eD16215',
+        [MetaDAOController]: '0xbb33f543cf22417B0857AbC7cb7F5Ea358703419',
+        [GuildFactory]: '0x0e4e08CD43B2717969D7D50872d87Ae3Ab8DBC92',
+        [Governor]: '0xcCC1E821DDAC5eD008B7018f5a882caddc70AF09',
         [Vesting]: '0xD37f81eDCcdD823647b07F95e5cb54aDdAdb383D',
 
         [Avatar_MetaDAOController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', 
