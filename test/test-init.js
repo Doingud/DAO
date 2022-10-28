@@ -200,11 +200,9 @@ const getGuildFactory = async (setup) => {
     setup.roles.authorizer_adaptor.address // snapshot address
   );
 
-  const factory = guildFactory;
+  setup.factory = guildFactory;
 
-  setup.factory = factory;
-
-  return factory;
+  return guildFactory;
 }
 
 const metadao = async(setup) =>{

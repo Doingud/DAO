@@ -60,12 +60,11 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
         it("Should fail if called more than once", async function () {
             await expect(dAMORxGuild.init(
+                AMORxGuild.address, 
                 MOCK_GUILD_NAMES[0], 
                 MOCK_GUILD_SYMBOLS[0],
-                root.address,
-                AMORxGuild.address,
                 ONE_HUNDRED_ETHER
-            )).to.be.revertedWith("AlreadyInitialized()");
+            )).to.be.reverted;
         });
     });
     
@@ -126,7 +125,9 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             const newAmount = COEFFICIENT* (koef*koef) *ONE_HUNDRED_ETHER; // (koef)^2 *amount | NdAMOR = f(t)^2 *nAMOR
             const expectedAmount = ethers.BigNumber.from(realAmount).add(ethers.BigNumber.from(newAmount.toString()));
 
-            await dAMORxGuild.connect(staker).increaseStake(ONE_HUNDRED_ETHER);
+            await dAMORxGuild.connect(staker).increaseStake(ONE_HUNDRED_ETHER);    
+            staked = ethers.BigNumber.from(staked).add(ethers.BigNumber.from(ONE_HUNDRED_ETHER.toString()));
+
             const newRealAmount = await dAMORxGuild.balanceOf(staker.address);
             const roundedNewRealAmount = Math.round(newRealAmount.toString() * 100) / 100;
 
@@ -294,6 +295,31 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             await expect(dAMORxGuild.connect(staker).withdraw()).to.be.revertedWith(
                 'TimeTooSmall()'
             ); 
+        });  
+
+        it('stakes AMORxGuild tokens and mints dAMORxGuild if now withdrawed', async function () {
+            time.increase(maxLockTime);
+            const amountBefore = (await dAMORxGuild.balanceOf(staker.address)).toString();
+            await AMORxGuild.connect(root).mint(staker.address, ONE_HUNDRED_ETHER);
+            await AMORxGuild.connect(staker).approve(dAMORxGuild.address, ONE_HUNDRED_ETHER);
+
+            koef = normalTime/MAX_LOCK_TIME;
+
+            const difference = 190;
+            const expectedAmount = COEFFICIENT* (koef*koef) *ONE_HUNDRED_ETHER; // (koef)^2 *amount | NdAMOR = f(t)^2 *nAMOR
+            const expectedAmountAfter = ethers.BigNumber.from(amountBefore)
+                .add(ethers.BigNumber.from(expectedAmount.toString()))
+                .sub(ethers.BigNumber.from(difference.toString()));
+
+            AMORxGuildBalanceBefore = await AMORxGuild.balanceOf(dAMORxGuild.address);
+            await dAMORxGuild.connect(staker).stake(ONE_HUNDRED_ETHER, normalTime);        
+            realAmount = (await dAMORxGuild.balanceOf(staker.address)).toString();
+            const roundedRealAmount = Math.round(realAmount * 100) / 100;
+            
+            expect(roundedRealAmount.toString()).to.equal(expectedAmountAfter.toString());
+
+            AMORxGuildBalanceAfter = (await AMORxGuild.balanceOf(dAMORxGuild.address)).toString();
+            expect(AMORxGuildBalanceAfter).to.equal(AMORxGuildBalanceBefore.add(ONE_HUNDRED_ETHER));
         });
 
         it('withdraw dAMORxGuild tokens if not delegated any', async function () {
@@ -303,7 +329,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
             expect(withdrawedTokens).to.equal(staked);
         });
-
+    
         it('withdraw dAMORxGuild tokens if delegated', async function () {
             time.increase(maxLockTime);
             await dAMORxGuild.connect(staker2).delegate(operator.address, ethers.BigNumber.from(12));

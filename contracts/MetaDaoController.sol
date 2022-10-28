@@ -277,7 +277,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
 
     /// @notice removes guild based on id
     /// @param  controller the address of the guild controller to remove
-    function removeGuild(address controller) external onlyOwner {
+    function removeGuild(address controller) external {
         if (guilds[controller] == address(0)) {
             revert InvalidGuild();
         }

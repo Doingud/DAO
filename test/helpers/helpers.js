@@ -54,5 +54,5 @@ module.exports = {
   getContract,
   getCurrentBlockTimestamp,
   increaseTime,
-  getSqrt
+  getSqrt,
 };

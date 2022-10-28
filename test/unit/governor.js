@@ -1,7 +1,7 @@
 const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { ZERO_ADDRESS } = require("../helpers/constants.js");
+const { ZERO_ADDRESS } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
 const twoWeeks = time.duration.days(14);
