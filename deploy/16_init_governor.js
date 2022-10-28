@@ -6,6 +6,7 @@ async function main() {
     const AMORxGuild_ = addresses.AMORxGuild;
     const Avatar_ = addresses.Avatar;
     const Governor_ = addresses.Governor;
+    const multisig_ = addresses.multisig;
 
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
@@ -19,6 +20,12 @@ async function main() {
     let tx = await Governor.init('Governor', AMORxGuild_, Avatar_);
     console.log("tx is %s", tx);
     console.log("DoinGudProxy address:", Governor.address);
+
+
+    // IMPACT_MAKERS = [multisig_.address];
+    // IMPACT_MAKERS_WEIGHTS = [20];
+    // let setImpactMakersData = Governor.interface.encodeFunctionData("setImpactMakers", [IMPACT_MAKERS, IMPACT_MAKERS_WEIGHTS]);
+    // await metaHelper([Governor.address], [0], [setImpactMakersData], [user1, user2], authorizer_adaptor, Avatar_.address, GUILD_ONE_GOVERNORXGUILD.address)
 }
   
   main()

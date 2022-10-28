@@ -49,8 +49,6 @@ contract GuildFactory is ICloneFactory, Ownable {
     address public amorxGuildToken;
     /// The MetaDaoController address
     address public immutable metaDaoController;
-    /// The snapshot address
-    address public immutable snapshot;
     /// The DoinGud generic proxy contract (the target)
     address public immutable cloneTarget;
     address public immutable avatarxGuild;
@@ -88,8 +86,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         address _controllerxGuild,
         address _governor,
         address _avatarxGuild,
-        address _metaDaoController,
-        address _snapshot
+        address _metaDaoController
     ) {
         /// The AMOR Token address
         amorToken = _amorToken;
@@ -103,15 +100,16 @@ contract GuildFactory is ICloneFactory, Ownable {
         /// `_cloneTarget` refers to the DoinGud Proxy
         cloneTarget = _doinGudProxy;
         metaDaoController = _metaDaoController;
-        snapshot = _snapshot;
     }
 
     /// @notice This deploys a new guild with it's associated tokens
     /// @dev    Takes the names and symbols and associates it to a guild
+    /// @param  reality The address of the Reality.eth module linked to this guild's snapshot
     /// @param  _name The name of the Guild without the prefix "AMORx"
     /// @param  _symbol The symbol of the Guild
     function deployGuildContracts(
-        address guildOwner,
+        address reality,
+        address initialGuardian,
         string memory _name,
         string memory _symbol
     )
@@ -153,7 +151,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         /// Deploy the Guild Governor
         guild.GovernorxGuild = _deployGovernor();
 
-        _initGuildControls(_name, controller, guildOwner);
+        _initGuildControls(controller, reality, initialGuardian);
         emit guildContractsCreated(
             controller,
             guild.AmorGuildToken,
@@ -246,13 +244,12 @@ contract GuildFactory is ICloneFactory, Ownable {
     }
 
     /// @notice Initializes the Guild Control Structures
-    /// @param  name string: name of the guild being deployed
     /// @param  controller the avatar token address for this guild
-    /// @param  owner address: owner of the Guild
+    /// @param  reality the Reality.io address
     function _initGuildControls(
-        string memory name,
         address controller,
-        address owner
+        address reality,
+        address initialGuardian
     ) internal {
         /// Init the Guild Controller
         IGuildController(controller).init(
@@ -264,12 +261,13 @@ contract GuildFactory is ICloneFactory, Ownable {
         );
 
         /// Init the AvatarxGuild
-        IAvatarxGuild(guilds[controller].AvatarxGuild).init(owner, guilds[controller].GovernorxGuild);
+        IAvatarxGuild(guilds[controller].AvatarxGuild).init(reality, guilds[controller].GovernorxGuild);
 
-        /// Init the AvatarxGuild
+        /// Init the GovernorxGuild
         IDoinGudGovernor(guilds[controller].GovernorxGuild).init(
             guilds[controller].AmorGuildToken,
-            guilds[controller].AvatarxGuild
+            guilds[controller].AvatarxGuild,
+            initialGuardian
         );
     }
 }

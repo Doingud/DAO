@@ -13,6 +13,7 @@ interface ICloneFactory {
 
     function deployGuildContracts(
         address owner,
+        address initialGuardian,
         string memory _name,
         string memory _symbol
     )

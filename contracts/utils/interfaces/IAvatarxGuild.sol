@@ -105,10 +105,27 @@ interface IAvatarxGuild {
         view
         returns (address[] memory array, address next);
 
+    /// @notice This function executes the proposal voted on by the GOVERNOR
+    /// @dev    Not to be confused with SNAPSHOT
+    /// @param  target Destination address of module transaction.
+    /// @param  value Ether value of module transaction.
+    /// @param  proposal Data payload of module transaction.
+    /// @param  operation Operation type of module transaction.
     function executeProposal(
         address target,
         uint256 value,
         bytes memory proposal,
         Enum.Operation operation
     ) external returns (bool success);
+
+    /// @notice Allows for on-chain execution of off-chain vote
+    /// @dev    Links to a `Reality`/`SnapSafe` module
+    /// @param  targets An array of proposed targets for proposed transactions
+    /// @param  values An array of values corresponding to proposed transactions
+    /// @param  data An array of encoded function calls with parameters corresponding to proposals
+    function proposeAfterVote(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] calldata data
+    ) external;
 }

@@ -35,33 +35,34 @@ pragma solidity 0.8.15;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *
  */
-import "./Executor.sol";
 import "./utils/interfaces/IAvatarxGuild.sol";
-import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
+import "./utils/interfaces/IGovernor.sol";
 
-contract AvatarxGuild is Executor, IAvatarxGuild {
+contract AvatarxGuild is IAvatarxGuild {
     event ExecutionFromGovernorSuccess(address governorAddress);
     event ExecutionFromGovernorFailure(address governorAddress);
     event Initialized(bool success, address owner, address governorAddress);
     event GovernorSet(address newGovernor);
 
-    address public owner;
     address public governor;
-
+    address public reality;
     address internal constant SENTINEL_MODULES = address(0x1);
     bool private _initialized;
+    bool private guardiansSet;
 
     mapping(address => address) internal modules;
 
     /// Custom errors
-    /// Error if the AmorxGuild has already been initialized
+    /// Error if the AvatarxGuild has already been initialized
     error AlreadyInitialized();
     error NotWhitelisted();
     error NotEnabled();
     error NotDisabled();
     error InvalidParameters();
     error Unauthorized();
+    error AlreadySet();
 
+    /// Access Control Modifiers
     modifier onlyGovernor() {
         if (msg.sender != governor) {
             revert Unauthorized();
@@ -69,30 +70,42 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         _;
     }
 
-    modifier onlyOwner() {
-        if (msg.sender != owner) {
+    modifier onlySelf() {
+        if (msg.sender != address(this)) {
             revert Unauthorized();
         }
         _;
     }
 
-    function init(address initOwner, address governorAddress_) external returns (bool) {
+    modifier onlyReality() {
+        if (msg.sender != reality) {
+            revert Unauthorized();
+        }
+        _;
+    }
+
+    /// @notice Initializes the Avatar contract
+    /// @param  realityAddress the address of the oracle which can propose transactions after Snaphsot
+    /// @param  governorAddress the address of the GovernorxGuild
+    /// @return bool initialization successful/unsuccessful
+    function init(address realityAddress, address governorAddress) external returns (bool) {
         if (_initialized) {
             revert AlreadyInitialized();
         }
-        governor = governorAddress_;
-        owner = initOwner;
-        modules[SENTINEL_MODULES] = address(0x2);
+        governor = governorAddress;
+        reality = realityAddress;
         _initialized = true;
-        emit Initialized(_initialized, initOwner, governorAddress_);
+        /// Setup the first module provided by the MetaDAO
+        //modules[address(0x02)] = SENTINEL_MODULES;
+        modules[SENTINEL_MODULES] = address(0x02);
+        emit Initialized(reality, governorAddress);
         return true;
     }
 
-    function setGovernor(address newGovernor) external onlyOwner {
+    function setGovernor(address newGovernor) external onlySelf {
         if (newGovernor == governor) {
             revert AlreadyInitialized();
         }
-
         governor = newGovernor;
         emit GovernorSet(newGovernor);
     }
@@ -101,7 +114,7 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
     ///      This can only be done via a Safe transaction.
     /// @notice Enables the module `module` for the Safe.
     /// @param module Module to be whitelisted.
-    function enableModule(address module) public {
+    function enableModule(address module) public onlySelf {
         // Module address cannot be null or sentinel.
         if (module == address(0) || module == SENTINEL_MODULES) {
             revert NotEnabled();
@@ -120,7 +133,7 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
     /// @notice Disables the module `module` for the Safe.
     /// @param prevModule Module that pointed to the module to be removed in the linked list
     /// @param module Module to be removed.
-    function disableModule(address prevModule, address module) public {
+    function disableModule(address prevModule, address module) public onlySelf {
         // Validate module address and check that it corresponds to module index.
         if (module == address(0) || module == SENTINEL_MODULES) {
             revert NotDisabled();
@@ -245,5 +258,18 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
             mstore(array, moduleCount)
         }
         return (array, next);
+    }
+
+    /// @notice Allows for on-chain execution of off-chain vote
+    /// @dev    Links to a `Reality`/`SnapSafe` module
+    /// @param  targets An array of proposed targets for proposed transactions
+    /// @param  values An array of values corresponding to proposed transactions
+    /// @param  data An array of encoded function calls with parameters corresponding to proposals
+    function proposeAfterVote(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] calldata data
+    ) external onlyReality {
+        IDoinGudGovernor(governor).propose(targets, values, data);
     }
 }

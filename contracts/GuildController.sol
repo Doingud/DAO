@@ -75,7 +75,7 @@ contract GuildController is IGuildController, Ownable {
     error InvalidSender();
 
     function init(
-        address initOwner,
+        address initOwner, // The Avatar for this Guild
         address AMOR_,
         address AMORxGuild_,
         address FXAMORxGuild_,
