@@ -57,6 +57,12 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
     
     context('» stake testing', () => {
 
+        it('it fails to stakes AMORxGuild tokens if not an owner', async function () {
+            await expect(FXAMORxGuild.connect(staker).stake(root.address, FIFTY_ETHER)).to.be.revertedWith(
+                'Unauthorized()'
+            );
+        });
+
         it('it fails to stakes AMORxGuild tokens if not enough AMORxGuild', async function () {
             await expect(FXAMORxGuild.connect(operator).stake(staker.address, ONE_HUNDRED_ETHER)).to.be.revertedWith(
                 'InvalidAmount()'

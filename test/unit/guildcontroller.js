@@ -40,15 +40,6 @@ describe('unit - Contract: GuildController', function () {
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(signers);
-        root = setup.roles.root;
-        staker = setup.roles.staker;
-        operator = setup.roles.operator;
-        impactMaker = setup.roles.doingud_multisig;
-        user = setup.roles.user3;
-        user2 = setup.roles.user2;
-        authorizer_adaptor = setup.roles.authorizer_adaptor;
-        operator = setup.roles.operator;
-
         await init.getTokens(setup);
         await init.metadao(setup);
         await init.controller(setup);
@@ -61,9 +52,16 @@ describe('unit - Contract: GuildController', function () {
         USDC = setup.tokens.ERC20Token;    
         metadao = setup.metadao;
         controller = setup.controller;
-        await init.getGuildFactory(setup);
-        factory = setup.factory;
-        await metadao.init(AMOR.address, factory.address, root.address);
+        guildFactory = await init.getGuildFactory(setup);
+        await metadao.init(AMOR.address, setup.factory.address, setup.roles.root.address);
+        root = setup.roles.root;
+        staker = setup.roles.staker;
+        operator = setup.roles.operator;
+        impactMaker = setup.roles.doingud_multisig;
+        user = setup.roles.user3;
+        user2 = setup.roles.user2;
+        authorizer_adaptor = setup.roles.authorizer_adaptor;
+        operator = setup.roles.operator;
     });
 
     before('>>> setup', async function() {
