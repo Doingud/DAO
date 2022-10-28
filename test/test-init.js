@@ -174,7 +174,8 @@ const governor = async (setup) => {
 
   await governor.init(
     setup.tokens.AmorGuildToken.address, //AMORxGuild
-    setup.avatars.avatar.address // Avatar Address
+    setup.avatars.avatar.address, // Avatar Address
+    setup.roles.root.address
   );
 
   setup.governor = governor;

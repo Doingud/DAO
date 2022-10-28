@@ -47,7 +47,12 @@ interface IDoinGudGovernor {
     /// @notice Initializes the Governor contract
     /// @param  AMORxGuild_ the address of the AMORxGuild token
     /// @param  avatarAddress_ the address of the Avatar
-    function init(address AMORxGuild_, address avatarAddress_) external returns (bool);
+    /// @param  initialGuardian the useer responsible for the initial guardian actions
+    function init(
+        address AMORxGuild_,
+        address avatarAddress_,
+        address initialGuardian
+    ) external returns (bool);
 
     /// @notice this function resets guardians array, and adds new guardian to the system.
     /// @param arrGuardians The array of guardians

@@ -270,15 +270,4 @@ contract AvatarxGuild is IAvatarxGuild {
     ) external onlyReality {
         IDoinGudGovernor(governor).propose(targets, values, data);
     }
-
-    /// @notice Allows the Avatar to add Guardians before required `GuardianLimitReached`
-    /// @dev    `Governor` requires minimum amount of Guardians before proposals can be made
-    /// @dev    Can only be called once, before any other proposals can be called
-    /// @param  guardians Array of addresses chosen to be the first guardians
-    function setGuardiansAfterVote(address[] memory guardians) external onlyReality {
-        if (guardiansSet) {
-            revert AlreadySet();
-        }
-        IDoinGudGovernor(governor).setGuardians(guardians);
-    }
 }
