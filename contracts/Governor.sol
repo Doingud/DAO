@@ -35,7 +35,6 @@ pragma solidity 0.8.15;
  */
 import "./utils/interfaces/IAvatarxGuild.sol";
 import "./utils/interfaces/IGovernor.sol";
-import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
 
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -109,13 +108,18 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @notice Initializes the Governor contract
     /// @param  AMORxGuild_ the address of the AMORxGuild token
     /// @param  avatarAddress_ the address of the Avatar
-    function init(address AMORxGuild_, address avatarAddress_) external returns (bool) {
+    /// @param  initialGuardian the user responsible for the guardian actions
+    function init(
+        address AMORxGuild_,
+        address avatarAddress_,
+        address initialGuardian
+    ) external returns (bool) {
         if (_initialized) {
             revert AlreadyInitialized();
         }
         // person who inflicted the creation of the contract is set as the only guardian of the system
-        guardians.push(msg.sender);
-
+        guardians.push(initialGuardian);
+        weights[initialGuardian] = 1;
         AMORxGuild = IERC20(AMORxGuild_);
         avatarAddress = avatarAddress_;
 
@@ -232,7 +236,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
     /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote.
     /// Only Avatar(as a result of the Snapshot) contract can add a proposal for voting.
-    /// Proposal execution will happen throught the Avatar contract
+    /// Proposal execution will happen through the Avatar contract
     function propose(
         address[] memory targets,
         uint256[] memory values,

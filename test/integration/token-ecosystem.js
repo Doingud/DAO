@@ -14,7 +14,7 @@ const { MOCK_GUILD_NAMES,
         ONE_ADDRESS
       } = require('../helpers/constants.js');
 const init = require('../test-init.js');
-const { getSqrt } = require("../helpers/helpers.js");
+const { getSqrt, metaHelper } = require("../helpers/helpers.js");
 const { time } = require("@openzeppelin/test-helpers");
 
 use(solidity);
@@ -62,18 +62,19 @@ let GUILD_ONE_DAMORXGUILD;
 let GUILD_ONE_CONTROLLERXGUILD;
 let GUILD_ONE_AVATARXGUILD;
 let GUILD_ONE_FXAMORXGUILD;
+let GUILD_ONE_GOVERNORXGUILD;
 /*  The below variables are required in later integration
 let GUILD_ONE_FXAMORXGUILD;
-let GUILD_ONE_GOVERNORXGUILD;
+
 */
 
 let GUILD_TWO_CONTROLLERXGUILD;
 let GUILD_TWO_AVATARXGUILD;
+let GUILD_TWO_GOVERNORXGUILD;
 /*  The below variables are required in later integration
 let GUILD_TWO_AMORXGUILD;
 let GUILD_TWO_DAMORXGUILD;
 let GUILD_TWO_FXAMORXGUILD;
-let GUILD_TWO_GOVERNORXGUILD;
 */
 
 /// Required variables
@@ -106,8 +107,8 @@ const setupTests = deployments.createFixture(async () => {
 
   ///   STEP 2: Deploy DoinGud Control Structures
   await init.metadao(setup);
-  await init.controller(setup);
   await init.avatar(setup);
+  await init.controller(setup);
   await init.governor(setup);
 
   CONTROLLERXGUILD = setup.controller;
@@ -138,7 +139,7 @@ const setupTests = deployments.createFixture(async () => {
   await avatar_proxy.initProxy(AVATARXGUILD.address);
   await governor_proxy.initProxy(GOVERNORXGUILD.address);
   await metadao_proxy.initProxy(METADAO.address);
-  
+
   ///   STEP 5: Init the storage of the tokens and control contracts
   DOINGUD_AMOR_TOKEN = AMOR_TOKEN.attach(amor_proxy.address);
   DOINGUD_AMOR_GUILD_TOKEN = AMOR_GUILD_TOKEN.attach(amor_guild_token_proxy.address);
@@ -187,23 +188,40 @@ const setupTests = deployments.createFixture(async () => {
   );
 
   await DOINGUD_AVATAR.init(
-    setup.roles.root.address, // owner
+    authorizer_adaptor.address, // owner
     DOINGUD_GOVERNOR.address // governor Address
   );
 
   await DOINGUD_GOVERNOR.init(
     DOINGUD_AMOR_GUILD_TOKEN.address, //AMORxGuild
-    DOINGUD_AVATAR.address // Avatar Address
+    DOINGUD_AVATAR.address, // Avatar Address
+    root.address
   );
 
   await DOINGUD_METADAO.init(
     DOINGUD_AMOR_TOKEN.address,
     CLONE_FACTORY.address,
-    root.address
+    DOINGUD_AVATAR.address
+  );
+
+  /// Step 7: Set the Guardians for the MetaDAO
+  /// Probably the first step after any new guild
+  let proposal = DOINGUD_GOVERNOR.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
+  await metaHelper([DOINGUD_GOVERNOR.address], [0], [proposal], [root], authorizer_adaptor, DOINGUD_AVATAR.address, DOINGUD_GOVERNOR.address);
+
+  /// Step 8: Propose to create a new guild
+  proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, root.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
+  await metaHelper(
+    [DOINGUD_METADAO.address],
+    [0],
+    [proposal],
+    [user1, user2, user3],
+    authorizer_adaptor,
+    DOINGUD_AVATAR.address,
+    DOINGUD_GOVERNOR.address
   );
 
   /// Setup the first two Guilds
-  await DOINGUD_METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
   let guildOne = await DOINGUD_METADAO.guilds(ONE_ADDRESS);
   let ControllerxOne = guildOne;
   guildOne = await CLONE_FACTORY.guilds(guildOne);
@@ -211,30 +229,40 @@ const setupTests = deployments.createFixture(async () => {
   let DAmorxOne = guildOne.DAmorxGuild;
   let FXAmorxOne = guildOne.FXAmorxGuild;
   let AvatarxOne = guildOne.AvatarxGuild;
-  //let GovernorxOne = guildOne.GovernorxGuild;
+  let GovernorxOne = guildOne.GovernorxGuild;
 
   GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(AmorxOne);
   GUILD_ONE_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(DAmorxOne);
   GUILD_ONE_FXAMORXGUILD = FX_AMOR_TOKEN.attach(FXAmorxOne);
   GUILD_ONE_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(ControllerxOne);
   GUILD_ONE_AVATARXGUILD = AVATARXGUILD.attach(AvatarxOne);
-  //GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxOne);
-  
-  // Setup the `Module` for testing
-  await GUILD_ONE_AVATARXGUILD.connect(user1).enableModule(authorizer_adaptor.address);
+  GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxOne);
 
   /// Setup the Impact Makers for the GuildController
+  proposal = GUILD_ONE_GOVERNORXGUILD.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
+  await metaHelper([GUILD_ONE_GOVERNORXGUILD.address], [0], [proposal], [root], authorizer_adaptor, GUILD_ONE_AVATARXGUILD.address, GUILD_ONE_GOVERNORXGUILD.address);
   IMPACT_MAKERS = [user2.address, user3.address, staker.address];
   IMPACT_MAKERS_WEIGHTS = [20, 20, 60];
   let setImpactMakersData = CONTROLLERXGUILD.interface.encodeFunctionData("setImpactMakers", [IMPACT_MAKERS, IMPACT_MAKERS_WEIGHTS]);
-  await GUILD_ONE_AVATARXGUILD.connect(authorizer_adaptor).execTransactionFromModule(GUILD_ONE_CONTROLLERXGUILD.address, 0, setImpactMakersData, 0);
-  await DOINGUD_METADAO.createGuild(root.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
+  await metaHelper([GUILD_ONE_CONTROLLERXGUILD.address], [0], [setImpactMakersData], [user1, user2], authorizer_adaptor, GUILD_ONE_AVATARXGUILD.address, GUILD_ONE_GOVERNORXGUILD.address)
+
+  /// Setup Guild Two
+  proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, root.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
+  await metaHelper(
+    [DOINGUD_METADAO.address],
+    [0],
+    [proposal],
+    [user1, user2, user3],
+    authorizer_adaptor,
+    DOINGUD_AVATAR.address,
+    DOINGUD_GOVERNOR.address
+  );
 
   let guildTwo = await DOINGUD_METADAO.guilds(ControllerxOne);
   let ControllerxTwo = guildTwo;
   guildTwo = await CLONE_FACTORY.guilds(ControllerxTwo);
   let AvatarxTwo = guildTwo.AvatarxGuild;
-
+  let GovernorxTwo = guildTwo.GovernorxGuild;
   /* The below objects are required in later integration testing PRs
   let AmorxTwo = guildTwo.AmorGuildToken;
   let DAmorxTwo = guildTwo.DAmorxGuild;
@@ -244,16 +272,16 @@ const setupTests = deployments.createFixture(async () => {
   /// Attach the implementations to the deployed proxies
   GUILD_TWO_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(ControllerxTwo);
   GUILD_TWO_AVATARXGUILD = AVATARXGUILD.attach(AvatarxTwo); 
-
+  GUILD_TWO_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxTwo);
   /* The below GUILD_TWO objects will be required later on
   GUILD_TWO_AMORXGUILD = AMOR_GUILD_TOKEN.attach(AmorxTwo);
   GUILD_TWO_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(DAmorxTwo);
   GUILD_TWO_FXAMORXGUILD = FX_AMOR_TOKEN.attach(FXAmorxTwo);
-  GUILD_TWO_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxTwo);
   */
-  await GUILD_TWO_AVATARXGUILD.enableModule(authorizer_adaptor.address);
-  await GUILD_TWO_AVATARXGUILD.connect(authorizer_adaptor).execTransactionFromModule(GUILD_TWO_CONTROLLERXGUILD.address, 0, setImpactMakersData, 0);
- 
+
+  proposal = GUILD_TWO_GOVERNORXGUILD.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
+  await metaHelper([GUILD_TWO_GOVERNORXGUILD.address], [0], [proposal], [root], authorizer_adaptor, GUILD_TWO_AVATARXGUILD.address, GUILD_TWO_GOVERNORXGUILD.address);
+  await metaHelper([GUILD_TWO_CONTROLLERXGUILD.address], [0], [setImpactMakersData], [user1, user2], authorizer_adaptor, GUILD_TWO_AVATARXGUILD.address, GUILD_TWO_GOVERNORXGUILD.address)
   /// Setup the initial Fee Index
   const abi = ethers.utils.defaultAbiCoder;
   let encodedIndex = abi.encode(
@@ -269,8 +297,9 @@ const setupTests = deployments.createFixture(async () => {
       ]
   );
 
-  await DOINGUD_METADAO.updateIndex([encodedIndex, encodedIndex2], 0);
-
+  /// Setup the index for the MetaDAO
+  let transactionData = METADAO.interface.encodeFunctionData("updateIndex", [[encodedIndex, encodedIndex2], 0]);
+  await metaHelper([DOINGUD_METADAO.address], [0], [transactionData], [user1, user2], authorizer_adaptor, DOINGUD_AVATAR.address, DOINGUD_GOVERNOR.address);
 });
 
     beforeEach('setup', async function() {
@@ -311,7 +340,16 @@ const setupTests = deployments.createFixture(async () => {
 
     context("Donate ERC20 token to the Guild", () => {
       it("Should allow a user to donate and ERC20 token to the GuildController", async function () {
-        await DOINGUD_METADAO.addWhitelist(ERC20_TOKEN.address);
+        let addWhitelistProposal = METADAO.interface.encodeFunctionData("addWhitelist", [ERC20_TOKEN.address]);
+        await metaHelper(
+          [DOINGUD_METADAO.address],
+          [0],
+          [addWhitelistProposal],
+          [user1, user2, user3],
+          authorizer_adaptor,
+          DOINGUD_AVATAR.address,
+          DOINGUD_GOVERNOR.address
+        );
         await ERC20_TOKEN.approve(GUILD_ONE_CONTROLLERXGUILD.address, ONE_HUNDRED_ETHER);
         await expect(GUILD_ONE_CONTROLLERXGUILD.donate(FIFTY_ETHER, ERC20_TOKEN.address)).
           to.emit(ERC20_TOKEN, "Transfer").
@@ -323,7 +361,16 @@ const setupTests = deployments.createFixture(async () => {
 
     context('Donate to the MetaDao', () => {
       it("Should allow a user to donate to the MetaDao", async function () {
-        await DOINGUD_METADAO.addWhitelist(ERC20_TOKEN.address);
+        let addWhitelistProposal = METADAO.interface.encodeFunctionData("addWhitelist", [ERC20_TOKEN.address]);
+        await metaHelper(
+          [DOINGUD_METADAO.address],
+          [0],
+          [addWhitelistProposal],
+          [user1, user2, user3],
+          authorizer_adaptor,
+          DOINGUD_AVATAR.address,
+          DOINGUD_GOVERNOR.address
+        );
         await ERC20_TOKEN.approve(DOINGUD_METADAO.address, ONE_HUNDRED_ETHER);
         await DOINGUD_METADAO.donate(ERC20_TOKEN.address, FIFTY_ETHER, 0);
         await GUILD_ONE_CONTROLLERXGUILD.gatherDonation(ERC20_TOKEN.address);
@@ -371,7 +418,16 @@ const setupTests = deployments.createFixture(async () => {
             ]
         );
 
-        await DOINGUD_METADAO.addWhitelist(ERC20_TOKEN.address);
+        let addWhitelistProposal = METADAO.interface.encodeFunctionData("addWhitelist", [ERC20_TOKEN.address]);
+        await metaHelper(
+          [DOINGUD_METADAO.address],
+          [0],
+          [addWhitelistProposal],
+          [user1, user2, user3],
+          authorizer_adaptor,
+          DOINGUD_AVATAR.address,
+          DOINGUD_GOVERNOR.address
+        );
         await DOINGUD_METADAO.addIndex([encodedIndex, encodedIndex2]);
         await ERC20_TOKEN.approve(DOINGUD_METADAO.address, ONE_HUNDRED_ETHER);
         await DOINGUD_METADAO.donate(ERC20_TOKEN.address, FIFTY_ETHER, 1);
@@ -426,10 +482,11 @@ const setupTests = deployments.createFixture(async () => {
         await GUILD_ONE_AMORXGUILD.connect(user1).approve(GUILD_ONE_DAMORXGUILD.address, amountAmorxOne);
         let oneYear = await time.duration.years(1);
         await GUILD_ONE_DAMORXGUILD.connect(user1).stake(ethers.BigNumber.from(amountAmorxOne.toString()), ethers.BigNumber.from(oneYear.toString()));
-        /// TIME_DENOMINATOR = 1000000000000000000; MAX_LOCK_TIME = 365 days
-        /// X = (time * TIME_DENOMINATOR) / MAX_LOCK_TIME
-        /// COEFFICIENT = 2
-        /// dAMORxGuild = (COEFFICIENT * ( X * X) * amount) / (TIME_DENOMINATOR ** 2)
+        /*  
+        TIME_DENOMINATOR = 1000000000000000000; MAX_LOCK_TIME = 365 days; COEFFICIENT = 2
+        X = (time * TIME_DENOMINATOR) / MAX_LOCK_TIME
+        dAMORxGuild = (COEFFICIENT * ( X * X) * amount) / (TIME_DENOMINATOR ** 2)
+        */
         let x = (oneYear * oneYear) / oneYear;
         let damorxGuild = ((2 * (x ** 2) * amountAmorxOne) / (oneYear ** 2)).toString();
         expect(await GUILD_ONE_DAMORXGUILD.balanceOf(user1.address)).to.equal(damorxGuild);
@@ -437,7 +494,6 @@ const setupTests = deployments.createFixture(async () => {
     });
 
     context("Withdraw AMORxGuild from dAMORxGuild", () => {
-      /// ***Known Bug*** Issue added
       it("Should allow a user to withdraw their dAMORxGuild", async function () {
         /// Transfer AMOR to user 1
         await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
@@ -453,7 +509,6 @@ const setupTests = deployments.createFixture(async () => {
         await time.increase(time.duration.years(1));
         time.advanceBlock;
 
-        /// The below commented line is currently bugged and will fail
         await GUILD_ONE_DAMORXGUILD.connect(user1).withdraw();
         expect(await GUILD_ONE_AMORXGUILD.balanceOf(user1.address)).to.equal(ethers.BigNumber.from(amountAmorxOne.toString()));
       });
