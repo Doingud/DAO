@@ -53,7 +53,7 @@ contract GuildController is IGuildController, Ownable {
 
     event Initialized(bool success, address owner, address AMORxGuild);
     event DonatedToGuild(uint256 amount, address token, uint256 givenAmorxguild, address sender);
-    event VotedForTheReport(address msg.sender, uint256 id, uint256 amount, bool sign);
+    event VotedForTheReport(address voter, uint256 id, uint256 amount, bool sign);
 
     bool private _initialized;
 

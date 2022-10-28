@@ -22,6 +22,8 @@ async function main() {
     let tx = await MetaDaoController.init(AMORToken, GuildFactory, AvatarxGuild);
     console.log("tx is %s", tx);
   
+    await MetaDaoController.createGuild(GuildController_.address, 'MetaDao GUILD 1', 'MG1');
+
     // generate data to create first guild
     const GuildController_ = addresses.GuildController;
     let data = MetaDaoController.interface.encodeFunctionData('addExternalGuild', [GuildController_.address]);
