@@ -63,11 +63,11 @@ const contractAddresses = {
         [Avatar]: '0x74660e357e17Db2D938a2505063C886D2d364FC7',
 
         [dAMORxGuild]: '0x13EcFA04eD1A1e475e3f4c121ecd0da5a6aa65A2',
+        [MetaDAOController]: '0x303bE7Ca244583Ccefc4a46b4474E0cca67727D1',
 
         [Avatar_MetaDAOController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', 
         [Governor_MetaDAOController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
         [dAMOR_MetaDAOController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
-        [MetaDAOController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
 
         [GuildFactory]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
         [Governor]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
