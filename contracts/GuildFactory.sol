@@ -67,6 +67,13 @@ contract GuildFactory is ICloneFactory, Ownable {
     /// The deployment was unsuccessful
     error Unsuccessful();
 
+    event GuildCreated(
+        address amorxGuildToken,
+        address dAMORxGuildToken,
+        address fxAMORxGuildToken,
+        address controllerxGuild
+    );
+
     constructor(
         address _amorToken,
         address _amorxGuildToken,
@@ -142,6 +149,8 @@ contract GuildFactory is ICloneFactory, Ownable {
         guild.GovernorxGuild = _deployGovernor();
 
         _initGuildControls(controller, reality, initialGuardian);
+
+        emit GuildCreated(guild.AmorGuildToken, guild.DAmorxGuild, guild.FXAmorxGuild, controller);
 
         return (controller, guild.GovernorxGuild, guild.AvatarxGuild);
     }
