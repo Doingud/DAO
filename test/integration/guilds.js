@@ -1,5 +1,6 @@
 const { ethers } = require("hardhat");
 const { use, expect } = require("chai");
+const { _TypedDataEncoder } =require('@ethersproject/hash');
 const { solidity } = require("ethereum-waffle");
 const init = require('../test-init.js');
 const { 
@@ -18,6 +19,30 @@ const {
 } = require('../helpers/constants.js');
 const { time } = require("@openzeppelin/test-helpers");
 const { metaHelper } = require("../helpers/helpers.js");
+const EIP712_TYPES = {
+    Transaction: [
+      {
+        name: 'to',
+        type: 'address',
+      },
+      {
+        name: 'value',
+        type: 'uint256',
+      },
+      {
+        name: 'data',
+        type: 'bytes',
+      },
+      {
+        name: 'operation',
+        type: 'uint8',
+      },
+      {
+        name: 'nonce',
+        type: 'uint256',
+      },
+    ],
+};
 
 use(solidity);
 
@@ -87,8 +112,10 @@ let GUILD_TWO_FXAMORXGUILD;
 let IMPACT_MAKERS;
 let IMPACT_MAKERS_WEIGHTS;
 
-// let zodiacModule;
-// let domain;
+let zodiacModule;
+let domain;
+let snapshotModule;
+let realityModule;
 let GUILD_THREE_CONTROLLERXGUILD;
 let ControllerxTwo;
 let ControllerxThree;
@@ -176,6 +203,76 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         CLONE_FACTORY = setup.factory;
         VESTING = setup.vesting;
 
+//--------------------------------------------------------
+        // setup reality.eth
+        // RealityModuleERC20
+        const Avatar = await hre.ethers.getContractFactory("TestAvatar");
+        const avatar = await Avatar.deploy();
+        console.log("realityModule avatar.address is %s", avatar.address);
+        console.log("DOINGUD_AVATAR.address is %s", DOINGUD_AVATAR.address);
+        const Mock = await ethers.getContractFactory("MockContract");
+        const mock = await Mock.deploy();
+        const oracle = await hre.ethers.getContractAt("RealitioV3ERC20", mock.address);
+        console.log("Oracle address is %s", oracle.address);
+                  
+        let realityModule = await ethers.getContractFactory("RealityModuleERC20")
+        const module = await realityModule.deploy(
+            DOINGUD_AVATAR.address,
+            avatar.address, // avatar Safe authorizer_adaptor.address
+            DOINGUD_AVATAR.address, // target DOINGUD_AVATAR
+            oracle.address,
+            1, 10, 0, 0, 0,
+            authorizer_adaptor.address,
+            {
+                gasLimit: 10000000, // InvalidInputError: Transaction requires at least 279668 gas but got 100000
+            }
+        )
+        await module.deployTransaction.wait()
+        console.log("realityModule deployed to:", module.address);
+
+        let module_proxy = await init.proxy();
+        await module_proxy.initProxy(module.address);
+        realityModule = realityModule.attach(module_proxy.address);
+        
+        // setup Snapshot
+        const wallets = await ethers.getSigners();
+        const safeSigner = wallets[0]; // One 1 signer on the safe
+
+        const GnosisSafeL2 = await ethers.getContractFactory(
+          '@gnosis.pm/safe-contracts/contracts/GnosisSafeL2.sol:GnosisSafeL2'
+        );
+        const FactoryContract = await ethers.getContractFactory(
+          '@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol:GnosisSafeProxyFactory'
+        );
+        const singleton = await GnosisSafeL2.deploy();
+        const factory = await FactoryContract.deploy();
+
+        const template = await factory.callStatic.createProxy(singleton.address, '0x');
+        await factory.createProxy(singleton.address, '0x');
+
+        const safe = GnosisSafeL2.attach(template);
+        safe.setup([safeSigner.address], 1, ZERO_ADDRESS, '0x', ZERO_ADDRESS, ZERO_ADDRESS, 0, ZERO_ADDRESS);
+
+        const SnapshotXContract = await ethers.getContractFactory('SnapshotXL1Executor');
+
+        //deploying singleton master contract
+        const masterzodiacModule = await SnapshotXContract.deploy(
+            DOINGUD_AVATAR.address,
+            realityModule.address, //avatar reality.eth
+            avatar.address, //target DOINGUD_AVATAR 
+            DOINGUD_AVATAR.address,
+            1,
+            []
+        );
+
+        snapshotModule = masterzodiacModule;
+        await avatar.setModule(snapshotModule.address);
+
+        domain = {
+            chainId: ethers.BigNumber.from(network.config.chainId),
+            verifyingContract: snapshotModule.address,
+        };
+
         await DOINGUD_AMOR_TOKEN.init(
             AMOR_TOKEN_NAME, 
             AMOR_TOKEN_SYMBOL, 
@@ -215,7 +312,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         );
 
         await DOINGUD_AVATAR.init(
-            authorizer_adaptor.address, // owner
+            avatar.address, //realityModule.address,//authorizer_adaptor.address, // owner
             DOINGUD_GOVERNOR.address // governor Address
         );
 
@@ -233,8 +330,151 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
         /// Step 7: Set the Guardians for the MetaDAO
         /// Probably the first step after any new guild
-        let proposal = DOINGUD_GOVERNOR.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
-        await metaHelper([DOINGUD_GOVERNOR.address], [0], [proposal], [root], authorizer_adaptor, DOINGUD_AVATAR.address, DOINGUD_GOVERNOR.address);
+        // await metaHelper([DOINGUD_GOVERNOR.address], [0], [proposal], [root], authorizer_adaptor, DOINGUD_AVATAR.address, DOINGUD_GOVERNOR.address);
+        // await DOINGUD_AVATAR.connect(authorizer_adaptor).setGuardiansAfterVote([user1.address, user2.address, user3.address]);
+
+
+        // let proposal = DOINGUD_GOVERNOR.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
+        // let txToAvatar = {
+        //     to: DOINGUD_GOVERNOR.address,
+        //     value: 0,
+        //     data: proposal,
+        //     operation: 0,
+        //     nonce: 0,
+        // };
+        // // await metaHelper([GUILD_ONE_GOVERNORXGUILD.address], [0], [proposal], [root], authorizer_adaptor, GUILD_ONE_AVATARXGUILD.address, GUILD_ONE_GOVERNORXGUILD.address);       
+        // // const metaHelper = async function (TARGETS, VALUES, PROPOSALS, guardians, reality, AVATAR, GOVERNOR) {
+        
+        // let TARGETS = [DOINGUD_GOVERNOR.address];
+        // let VALUES = [0];
+        // let PROPOSALS = [proposal];
+        // // await AVATAR_CONTRACT.connect(reality).proposeAfterVote(TARGETS, VALUES, PROPOSALS);
+        // let dataToSnapshot = DOINGUD_AVATAR.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+        // let txToSnapshot = {
+        //     to: DOINGUD_AVATAR.address,
+        //     value: 0,
+        //     data: proposal,
+        //     operation: 0,
+        //     nonce: 0,
+        // };
+
+        // let proposalId = await DOINGUD_GOVERNOR.hashProposal(TARGETS, VALUES, PROPOSALS);
+        // await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        // time.increase(time.duration.days(5));
+        // await GOVERNOR_CONTRACT.connect(guardians[0]).castVote(proposalId, true);
+        // if (guardians.length > 1) {
+        //   await GOVERNOR_CONTRACT.connect(guardians[1]).castVote(proposalId, true);
+        // }
+        // await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        // time.increase(time.duration.days(10));
+        // await GOVERNOR_CONTRACT.execute(TARGETS, VALUES, PROPOSALS);
+
+
+
+        // let GUARDIANS = [user1.address, user2.address, user3.address];
+        // let data = DOINGUD_AVATAR.interface.encodeFunctionData("setGuardisetGuardiansansAfterVote", [GUARDIANS]);
+        // let tx1 = {
+        //     to: DOINGUD_GOVERNOR.address,
+        //     value: 0,
+        //     data: proposal,
+        //     operation: 0,
+        //     nonce: 0,
+        // };
+        // await DOINGUD_METADAO.transferOwnership(GUILD_ONE_AVATARXGUILD.address);
+        let guardians = [user1.address, user2.address, user3.address];
+        let proposal = DOINGUD_GOVERNOR.interface.encodeFunctionData("setGuardians", [guardians]);
+        let txToAvatar = {
+            to: DOINGUD_GOVERNOR.address,
+            value: 0,
+            data: proposal,
+            operation: 0,
+            nonce: 0,
+        };
+
+        data = DOINGUD_GOVERNOR.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
+        // proposal = DOINGUD_AVATAR.interface.encodeFunctionData('proposeAfterVote', [DOINGUD_GOVERNOR.address, 0, data, 0]);
+
+        let TARGETS = [DOINGUD_GOVERNOR.address];
+        let VALUES = [0];
+        let PROPOSALS = [proposal];
+        
+        // await AVATAR_CONTRACT.connect(reality).proposeAfterVote(TARGETS, VALUES, PROPOSALS);
+        let dataToReality = DOINGUD_AVATAR.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+        // dataToSnapshot =  DOINGUD_AVATAR.interface.encodeFunctionData('proposeAfterVote', [DOINGUD_GOVERNOR.address, 0, data, 0]);
+        // let txToReality = {
+        //     to: DOINGUD_AVATAR.address,
+        //     value: 0,
+        //     data: dataToReality,
+        //     operation: 0,
+        //     nonce: 0,
+        // };
+
+        let dataToSnapshot = avatar.interface.encodeFunctionData("exec", [DOINGUD_AVATAR.address, 0, dataToReality]);
+
+        let txToSnapshot = {
+            to: avatar.address,
+            value: 0,
+            data: dataToSnapshot,
+            operation: 0,
+            nonce: 0,
+        };
+
+        // const id = "some_random_id";
+        //     const tx = { to: user1.address, value: 0, data: "0xbaddad", operation: 0, nonce: 0 }
+        //     const txHash = await module.getTransactionHash(tx.to, tx.value, tx.data, tx.operation, tx.nonce)
+        //     const question = await module.buildQuestion(id, [txHash]);
+        //     const questionId = await module.getQuestionId(question, 0)
+
+        //     await mock.givenMethodReturnUint(oracle.interface.getSighash("askQuestionWithMinBondERC20"), questionId)
+        //     await module.addProposal(id, [txHash])
+        // let data = DOINGUD_GOVERNOR.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
+        // tx1 = { to: AVATARXGUILD.address, 
+        //         value: 0, 
+        //         data: [AVATARXGUILD.interface.encodeFunctionData(
+        //             'proposeAfterVote',
+        //             [DOINGUD_GOVERNOR.address, 0, data, 0])], 
+        //         operation: 1, 
+        //         nonce: 0
+        // }
+        const txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+
+        const abiCoder = new ethers.utils.AbiCoder();
+        const executionHash = ethers.utils.keccak256(
+            abiCoder.encode(['bytes32[]'], [[txHash1]])
+        );
+        const proposal_outcome = 1;
+
+        // Add a proposal in guild’s snapshot to donate guild’s funds to the impact makers
+        await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+            txHash1,
+        ]);
+
+        tx1 = txToSnapshot
+console.log("311 is %s", 311);
+        // expect(await zodiacModule.getNumOfTxInProposal(0)).to.equal(1);
+        console.log(" tx1.to is %s",  tx1.to);
+        await snapshotModule.executeProposalTx(0, tx1.to, tx1.value, tx1.data, tx1.operation);
+console.log("312 is %s", 312);
+
+        let proposalId = await DOINGUD_GOVERNOR.hashProposal(TARGETS, VALUES, PROPOSALS);
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(5));
+
+        console.log("31122 is %s", 31122);
+        await DOINGUD_GOVERNOR.connect(root).castVote(proposalId, true);
+        // if (guardians.length > 1) {
+        //   await GOVERNOR_CONTRACT.connect(guardians[1]).castVote(proposalId, true);
+        // }
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(10));
+console.log("313 is %s", 313);
+        expect(await DOINGUD_GOVERNOR.guardians(0)).to.equals(root.address);
+        await DOINGUD_GOVERNOR.execute(TARGETS, VALUES, PROPOSALS);
+        expect(await DOINGUD_GOVERNOR.guardians(0)).to.equals(user1.address);
+        expect(await DOINGUD_GOVERNOR.guardians(1)).to.equals(user2.address);
+
+console.log("444 is %s", 444);
+
 
         /// Step 8: Propose to create a new guild
         proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, root.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
