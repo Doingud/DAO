@@ -12,6 +12,10 @@ to participate in the Web3 ecosystem. This repository consists of the `contracts
 - `utils` is a directory of different additional contracts which help to run the DAO system(Math, ERC20)
 - `test` is a directory of mock contracts needed only for unit tests
 
+![](https://i.imgur.com/KzGxk6h.png)
+
+More detailed documentation of the project may be found [here](https://hackmd.io/@TwtRuwCaRB-QzT6jG_XuNA/rJ2VFa2v5).
+
 
 ## Installation
 
@@ -61,3 +65,5 @@ npm run deploy:<network>
 npm run verify:<network>
 ```
 This will deploy contracts at the specified network, and verify them afterwards.
+
+
