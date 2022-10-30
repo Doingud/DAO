@@ -46,10 +46,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// Advanced math functions for bonding curve
-import "./utils/ABDKMath64x64.sol";
+import "../utils/ABDKMath64x64.sol";
 /// Custom contracts
-import "./utils/ERC20Base.sol";
-import "./interfaces/IFXAMORxGuild.sol";
+import "../utils/ERC20Base.sol";
+import "../interfaces/IFXAMORxGuild.sol";
 
 contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     using ABDKMath64x64 for uint256;

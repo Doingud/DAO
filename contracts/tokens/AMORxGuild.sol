@@ -52,11 +52,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 /// Advanced math functions for bonding curve
-import "./utils/ABDKMath64x64.sol";
+import "../utils/ABDKMath64x64.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./utils/ERC20Base.sol";
-import "./interfaces/IAmorGuildToken.sol";
+import "../utils/ERC20Base.sol";
+import "../interfaces/IAmorGuildToken.sol";
 
 contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     using ABDKMath64x64 for uint256;

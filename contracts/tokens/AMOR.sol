@@ -43,7 +43,7 @@ pragma solidity 0.8.15;
  *
  */
 
-import "./utils/ERC20Base.sol";
+import "../utils/ERC20Base.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
