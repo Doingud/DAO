@@ -24,13 +24,13 @@ pragma solidity 0.8.15;
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "./utils/interfaces/IAmorGuildToken.sol";
-import "./utils/interfaces/ICloneFactory.sol";
-import "./utils/interfaces/IDoinGudProxy.sol";
-import "./utils/interfaces/IdAMORxGuild.sol";
-import "./utils/interfaces/IGuildController.sol";
-import "./utils/interfaces/IAvatarxGuild.sol";
-import "./utils/interfaces/IGovernor.sol";
+import "./interfaces/IAmorGuildToken.sol";
+import "./interfaces/ICloneFactory.sol";
+import "./interfaces/IDoinGudProxy.sol";
+import "./interfaces/IdAMORxGuild.sol";
+import "./interfaces/IGuildController.sol";
+import "./interfaces/IAvatarxGuild.sol";
+import "./interfaces/IGovernor.sol";
 
 contract GuildFactory is ICloneFactory, Ownable {
     /// The various guild components

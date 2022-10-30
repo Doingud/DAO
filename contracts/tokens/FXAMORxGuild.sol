@@ -49,7 +49,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./utils/ABDKMath64x64.sol";
 /// Custom contracts
 import "./utils/ERC20Base.sol";
-import "./utils/interfaces/IFXAMORxGuild.sol";
+import "./interfaces/IFXAMORxGuild.sol";
 
 contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     using ABDKMath64x64 for uint256;
