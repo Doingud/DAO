@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
 
-import "./interfaces/IAmorGuildToken.sol";
+import "./interfaces/IAMORxGuild.sol";
 import "./interfaces/IFXAMORxGuild.sol";
 import "./interfaces/IGuildController.sol";
 import "./interfaces/IMetaDaoController.sol";

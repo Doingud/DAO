@@ -24,7 +24,7 @@ pragma solidity 0.8.15;
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "./interfaces/IAmorGuildToken.sol";
+import "./interfaces/IAMORxGuild.sol";
 import "./interfaces/ICloneFactory.sol";
 import "./interfaces/IDoinGudProxy.sol";
 import "./interfaces/IdAMORxGuild.sol";
