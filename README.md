@@ -14,7 +14,7 @@ to participate in the Web3 ecosystem. This repository consists of the `contracts
 
 ![](https://i.imgur.com/KzGxk6h.png)
 
-More detailed documentation of the project may be found [here](https://hackmd.io/@TwtRuwCaRB-QzT6jG_XuNA/rJ2VFa2v5).
+More detailed documentation of the project may be found [here](https://hackmd.io/@TwtRuwCaRB-QzT6jG_XuNA/HybxsfItc).
 
 
 ## Installation
