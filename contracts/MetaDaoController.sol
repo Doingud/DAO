@@ -47,11 +47,8 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     mapping(address => address) public guilds;
     address public sentinelGuilds;
     uint32 public guildCounter;
-    mapping(address => uint256) public guildWeight;
     /// Mapping of guild --> token --> amount
     mapping(address => mapping(address => uint256)) public guildFunds;
-    /// The total weight of the guilds
-    uint256 public guildsTotalWeight;
     /// The Avatar associated with a guildController
     /// The fees distributed will go the AvatarxGuild
     mapping(address => address) public guildAvatar;
