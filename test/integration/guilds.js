@@ -336,7 +336,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             const taxDeducted = TEST_TRANSFER*(TAX_RATE/BASIS_POINTS);
 
             await DOINGUD_AMOR_TOKEN.approve(root.address, TEST_TRANSFER);
-            expect(await DOINGUD_AMOR_TOKEN.transferFrom(root.address, user1.address, TEST_TRANSFER))
+            await expect(DOINGUD_AMOR_TOKEN.transferFrom(root.address, user1.address, TEST_TRANSFER))
               .to.emit(DOINGUD_AMOR_TOKEN, "Transfer")
                 .withArgs(root.address, user1.address, (TEST_TRANSFER-taxDeducted).toString());
 
