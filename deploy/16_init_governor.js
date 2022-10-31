@@ -6,20 +6,21 @@ async function main() {
     const AMORxGuild_ = addresses.AMORxGuild;
     const Avatar_ = addresses.Avatar;
     const Governor_ = addresses.Governor;
-    // const multisig_ = addresses.multisig;
+    const initialGuardian = addresses.multisig;
 
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
 
-    // connect DoinGudProxy
+    // connect Governor
     let a  = await ethers.getContractFactory('DoinGudGovernor')
     let b = await a.attach(Governor_)
     let Governor = await b.deployed();
     console.log("Governor address:", Governor.address);
 
-    let tx = await Governor.init('Governor', AMORxGuild_, Avatar_);
+
+    let tx = await Governor.init(AMORxGuild_, Avatar_, initialGuardian);
     console.log("tx is %s", tx);
-    console.log("DoinGudProxy address:", Governor.address);
+    console.log("Governor address:", Governor.address);
 
 
     // IMPACT_MAKERS = [multisig_.address];

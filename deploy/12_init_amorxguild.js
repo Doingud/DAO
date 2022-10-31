@@ -20,6 +20,10 @@ async function main() {
     const tx = await AMORxGuild.init("AMORxMETADAO", "AMORxG", AMOR_, MetaDao);
     console.log("tx is %s", tx);
     console.log("AMORxGuildToken address:", AMORxGuild.address);
+
+    // const tx = await AMORxGuild.setTax(10);
+    // console.log("tx is %s", tx);
+    // console.log("AMORxGuildToken address:", AMORxGuild.address);
   }
   
   main()
