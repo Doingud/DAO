@@ -53,7 +53,7 @@ const contractAddresses = {
         [multisig]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', // Dev wallet
     },
     'mumbai': {
-        [DoinGudProxy]: '0xA122b90f208e6a25Beb83Bd2d770934F565CD071',
+        [DoinGudProxy]: '',
 
         [AMOR]: '0x41F4Ed5b662AbBD5E7ce1Fa24d53b074a00e219F',
         [AMORxGuild]: '0x4da293feACC9c9368F2A7f7982b68c286Af4b559',
