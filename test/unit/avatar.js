@@ -51,6 +51,7 @@ describe('unit - Contract: Avatar', function () {
     context('» init testing', () => {
         it('initialized variables check', async function () {
             expect(await avatar.isModuleEnabled(ONE_ADDRESS)).to.equals(false);
+            expect(await avatar.isModuleEnabled(authorizer_adaptor.address)).to.be.true;
         });
 
         it("Should fail if called more than once", async function () {
