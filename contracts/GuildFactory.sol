@@ -97,6 +97,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         /// `_cloneTarget` refers to the DoinGud Proxy
         cloneTarget = _doinGudProxy;
         metaDaoController = _metaDaoController;
+        _transferOwnership(_metaDaoController);
     }
 
     /// @notice This deploys a new guild with it's associated tokens
@@ -111,6 +112,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         string memory _symbol
     )
         external
+        onlyOwner
         returns (
             address controller,
             address avatar,
