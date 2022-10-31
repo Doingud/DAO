@@ -1,5 +1,4 @@
 const { getAddresses } = require('../config');
-const { avatar } = require('../test/test-init');
 const addresses = getAddresses();
 
 async function main() {
@@ -12,9 +11,7 @@ async function main() {
     const MetaDao = addresses.MetaDAOController;
     const GuildFactory = addresses.GuildFactory;
     const AMORToken = addresses.AMOR;
-    const GuildController_ = addresses.GuildController;
-    const reality = addresses.multisig;
-    const initialGuardian = addresses.multisig;
+
     // connect MetaDaoController
     let a  = await ethers.getContractFactory('MetaDaoController')
     let b = await a.attach(MetaDao)
@@ -22,17 +19,8 @@ async function main() {
     console.log("MetaDaoController address:", MetaDaoController.address);
     console.log("MetaDaoController owner is %s", await MetaDaoController.owner());
 
-    // let tx = await MetaDaoController.init(AMORToken, GuildFactory, AvatarxGuild);
-    // console.log("tx is %s", tx);
-  
-    // await MetaDaoController.createGuild(reality, initialGuardian, 'MetaDao GUILD 1', 'MG1'); // must be via avatar
-
-    governor executeProposal --> avatar.executeProposal --> MetaDaoController.createGuild
-    // // generate data to create first guild
-    let data = MetaDaoController.interface.encodeFunctionData('createGuild', [reality.address, initialGuardian.address, 'MetaDao GUILD 1', 'MG1']);
-
-    // let data = MetaDaoController.interface.encodeFunctionData('addExternalGuild', [GuildController_.address]);
-    // console.log("data to create first guild is %s", data);
+    let tx = await MetaDaoController.init(AMORToken, GuildFactory, AvatarxGuild);
+    console.log("tx is %s", tx);
   }
   
   main()

@@ -21,6 +21,8 @@ async function main() {
     const tx = await DAMOR.init("DoinGud dAMOR", "DAMOR", multisig_, AMORxGuild_, GUARDIAN_THRESHOLD);
     console.log("tx is %s", tx);
     console.log("DAMOR address:", DAMOR.address);
+
+    // await DAMOR.stake(70, 36288000)
   }
   
   main()

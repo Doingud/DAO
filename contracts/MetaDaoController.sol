@@ -87,7 +87,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
 
     /// Events
     event GuildCreated(
-        address realityModule, 
+        address realityModule,
         address initialGuardian,
         string name,
         string tokenSymbol,

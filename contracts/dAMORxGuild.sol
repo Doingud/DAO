@@ -289,9 +289,12 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
 
         address account;
+        uint256 delegatedTo;
         for (uint256 i = 0; i < accounts.length; i++) {
             account = accounts[i];
+            delegatedTo = delegations[msg.sender][account];
             delete delegations[msg.sender][account];
+            emit dAMORxGuildUndelegated(account, msg.sender, delegations[msg.sender][account]);
 
             // clear msg.sender delegation from list of delegators to `account` address
             for (uint256 j = 0; j < delegators[account].length; j++) {

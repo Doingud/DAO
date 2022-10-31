@@ -72,8 +72,10 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     IERC20 public AMORxGuild;
 
     /// Events
-    event AMORxGuildStakedToFXAMOR(address to, uint256 amount);
-    event AMORxGuildWithdrawedFromFXAMOR(address to, uint256 amount);
+    event AMORxGuildStakedToFXAMOR(address to, uint256 amount, uint256 time);
+    event AMORxGuildWithdrawedFromFXAMOR(address to, uint256 amount, uint256 time);
+    event FXAMORxGuildUndelegated(address from, address owner, uint256 amount);
+    event FXAMORxGuildDelegated(address to, address owner, uint256 amount);
 
     /// Errors
     error AlreadyInitialized();
@@ -156,7 +158,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
 
         stakes[to] += amount;
 
-        emit AMORxGuildStakedToFXAMOR(to, amount);
+        emit AMORxGuildStakedToFXAMOR(to, amount, block.timestamp);
         return amount;
     }
 
@@ -173,7 +175,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         _burn(account, amount);
         AMORxGuild.safeTransfer(controller, amount);
         stakes[account] -= amount;
-        emit AMORxGuildWithdrawedFromFXAMOR(account, amount);
+        emit AMORxGuildWithdrawedFromFXAMOR(account, amount, block.timestamp);
     }
 
     /// @notice Allows some external account to vote with your FXAMORxGuild tokens
@@ -195,6 +197,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         delegators[to].push(msg.sender);
         delegations[msg.sender][to] += amount;
         amountDelegated[msg.sender] += amount;
+        emit FXAMORxGuildDelegated(to, msg.sender, amount);
     }
 
     /// @notice Unallows some external account to vote with your delegated FXAMORxGuild tokens
@@ -217,5 +220,6 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             delegations[msg.sender][account] = 0;
             amountDelegated[msg.sender] = 0;
         }
+        emit FXAMORxGuildUndelegated(account, msg.sender, amount);
     }
 }

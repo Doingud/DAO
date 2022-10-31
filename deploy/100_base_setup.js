@@ -18,7 +18,7 @@ async function main() {
     let MetaDaoController = await b.deployed();
     console.log("MetaDaoController address:", MetaDaoController.address);
 
-    a  = await ethers.getContractFactory('DoinGudGovernor')
+    a  = await ethers.getContractFactory('DoinGudGovernorVersionForTesting');//DoinGudGovernor')
     b = await a.attach(Governor_)
     Governor = await b.deployed();
     console.log("Governor address:", Governor.address);
@@ -32,21 +32,27 @@ async function main() {
 
     // governor executeProposal --> avatar.executeProposal --> MetaDaoController.createGuild
     // // generate data to create first guild
-    let proposal = MetaDaoController.interface.encodeFunctionData('createGuild', [reality, initialGuardian, 'MetaDao GUILD 1', 'MG1']);
+    let proposal = MetaDaoController.interface.encodeFunctionData('createGuild', [reality, initialGuardian, 'MetaDaoV1 GUILD 1', 'MG1V1']);
+    // proposal = MetaDaoController.interface.encodeFunctionData('addExternalGuild', [GuildController_]);
+
     console.log(1);
 
-    await AvatarxGuild.proposeAfterVote([MetaDaoController.address], [0], [proposal]);
+    // await AvatarxGuild.proposeAfterVote([MetaDaoController.address], [0], [proposal]);
+    // let proposalId = await Governor.proposals(1);
     let proposalId = await Governor.hashProposal([MetaDaoController.address], [0], [proposal]);
+    console.log("proposalId is %s", proposalId);
     // await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
     // time.increase(time.duration.days(5));
 
-    await Governor.castVote(proposalId, true);
+    // await Governor.castVote(proposalId, true);
     console.log(2);
 
     // await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
     // time.increase(time.duration.days(10));
+    let tx = await Governor.state(proposalId);
+    console.log("tx is %s", tx);
     await Governor.execute([MetaDaoController.address], [0], [proposal]);
-    console.log(3);
+    // console.log(3);
 
     // let data = MetaDaoController.interface.encodeFunctionData('addExternalGuild', [GuildController_.address]);
     // console.log("data to create first guild is %s", data);
