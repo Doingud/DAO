@@ -54,6 +54,8 @@ contract GuildController is IGuildController, Ownable {
     event Initialized(bool success, address owner, address AMORxGuild);
     event DonatedToGuild(uint256 amount, address token, uint256 givenAmorxguild, address sender);
     event VotedForTheReport(address voter, uint256 reportId, uint256 amount, bool sign);
+    event VotingPeriodUpdated(uint256 newPeriod);
+    event PercentToConvertUpdated(uint256 newPercent);
 
     bool private _initialized;
 
@@ -104,10 +106,12 @@ contract GuildController is IGuildController, Ownable {
             revert InvalidAmount();
         }
         additionalVotingTime = newTime;
+        emit VotingPeriodUpdated(newTime);
     }
 
     function setPercentToConvert(uint256 newPercentToConvert) external onlyOwner {
         percentToConvert = newPercentToConvert;
+        emit PercentToConvertUpdated(newTime);
     }
 
     /// @notice called by donate and gatherDonation, distributes amount of tokens between

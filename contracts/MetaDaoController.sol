@@ -98,6 +98,10 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     event GuildRemoved(address guildController, uint256 guildCounter);
     event TokenWhitelisted(address token);
     event DonatedToIndex(uint256 amount, address token, uint256 index, address sender);
+    event FeesClaimed(address guild, uint256 guildFees);
+    event FeesDistributed(address guild, uint256 guildFees);
+    event IndexAdded(uint256 index, bytes[] weights);
+    event IndexUpdated(uint256 index, bytes[] weights);
 
     /// Errors
     /// The token is not whitelisted
@@ -218,6 +222,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
                 guildFees[guilds[endOfList]] += amountToDistribute;
             }
             endOfList = guilds[endOfList];
+            emit FeesDistributed(guilds[endOfList], amountToDistribute);
         }
     }
 
@@ -229,6 +234,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         }
         amorToken.safeTransfer(guild, guildFees[guild]);
         delete guildFees[guild];
+        emit FeesClaimed(guild, guildFees[guild]);
     }
 
     /// @notice use this funtion to create a new guild via the guild factory
@@ -333,6 +339,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         indexHashes.push(hashArray);
         _updateIndex(weights, indexHashes[indexHashes.length - 1]);
 
+        emit IndexAdded((indexHashes.length - 1), weights);
         return indexHashes.length - 1;
     }
 
@@ -349,6 +356,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
             indexHashes.push(key);
             return indexHashes.length;
         }
+        emit IndexUpdated(index, weights);
         return 0;
     }
 

@@ -18,11 +18,16 @@ async function main() {
     console.log("dAMORxGuild address:", DAMOR.address);
     console.log("dAMORxGuild owner is %s", await DAMOR.owner());
 
-    const tx = await DAMOR.init("DoinGud dAMOR", "DAMOR", multisig_, AMORxGuild_, GUARDIAN_THRESHOLD);
-    console.log("tx is %s", tx);
-    console.log("DAMOR address:", DAMOR.address);
+    // const tx = await DAMOR.init("DoinGud dAMOR", "DAMOR", multisig_, AMORxGuild_, GUARDIAN_THRESHOLD);
+    // console.log("tx is %s", tx);
+    // console.log("DAMOR address:", DAMOR.address);
 
-    // await DAMOR.stake(70, 36288000)
+    const AMOR_ = addresses.AMOR;
+    a  = await ethers.getContractFactory('AMORToken')
+    b = await a.attach(AMOR_)
+    AMORToken = await b.deployed();
+    await AMORToken.approve(DAMOR.address, 10000)
+    await DAMOR.stake(70, 36288000)
   }
   
   main()
