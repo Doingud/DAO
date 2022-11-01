@@ -18,7 +18,6 @@ const {
     ONE_ADDRESS
 } = require('../helpers/constants.js');
 const { time } = require("@openzeppelin/test-helpers");
-const { metaHelper } = require("../helpers/helpers.js");
 const EIP712_TYPES = {
     Transaction: [
       {
@@ -112,10 +111,8 @@ let GUILD_TWO_FXAMORXGUILD;
 let IMPACT_MAKERS;
 let IMPACT_MAKERS_WEIGHTS;
 
-let zodiacModule;
 let domain;
 let snapshotModule;
-let realityModule;
 let GUILD_THREE_CONTROLLERXGUILD;
 let ControllerxTwo;
 let ControllerxThree;
@@ -259,7 +256,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         //deploying singleton master contract
         const masterzodiacModule = await SnapshotXContract.deploy(
             DOINGUD_AVATAR.address,
-            realityModule.address, //avatar reality.eth
+            realityModule.address, //avatarreality.eth
             avatar.address, //target DOINGUD_AVATAR 
             DOINGUD_AVATAR.address,
             1,
@@ -305,7 +302,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         );
 
         await DOINGUD_CONTROLLER.init(
-            DOINGUD_AVATAR.address,//setup.roles.root.address, // owner
+            DOINGUD_AVATAR.address, // owner
             DOINGUD_AMOR_TOKEN.address,
             DOINGUD_AMOR_GUILD_TOKEN.address, // AMORxGuild
             DOINGUD_FXAMOR.address, // FXAMORxGuild
@@ -313,7 +310,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         );
 
         await DOINGUD_AVATAR.init(
-            avatar.address, //realityModule.address,//authorizer_adaptor.address, // owner
+            avatar.address, // owner
             DOINGUD_GOVERNOR.address // governor Address
         );
 
@@ -333,25 +330,12 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         /// Probably the first step after any new guild
         let guardians = [user1.address, user2.address, user3.address];
         let proposal = DOINGUD_GOVERNOR.interface.encodeFunctionData("setGuardians", [guardians]);
-        // let txToAvatar = {
-        //     to: DOINGUD_GOVERNOR.address,
-        //     value: 0,
-        //     data: proposal,
-        //     operation: 0,
-        //     nonce: 0,
-        // };
-
-        // data = DOINGUD_GOVERNOR.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
-        // proposal = DOINGUD_AVATAR.interface.encodeFunctionData('proposeAfterVote', [DOINGUD_GOVERNOR.address, 0, data, 0]);
-
         let TARGETS = [DOINGUD_GOVERNOR.address];
         let VALUES = [0];
         let PROPOSALS = [proposal];
         
         let dataToReality = DOINGUD_AVATAR.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
         let dataToSnapshot = avatar.interface.encodeFunctionData("exec", [DOINGUD_AVATAR.address, 0, dataToReality]);
-        // dataToSnapshot = realityModule.interface.encodeFunctionData("execTransactionFromModule", [DOINGUD_AVATAR.address, 0, dataToReality, 0]);
-
         let txToSnapshot = {
             to: avatar.address,
             value: 0,
@@ -1018,53 +1002,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         });
 
         it("Donate Guild’s fund from the Avatar contract: VOTE IN SNAPSHOT", async function () {  
-            // proposal = GUILD_ONE_AVATARXGUILD.interface.encodeFunctionData("enableModule", [authorizer_adaptor.address]);
-            // await metaHelper(
-            //     [GUILD_ONE_AVATARXGUILD.address],
-            //     [0],
-            //     [proposal],
-            //     [user1, user2, user3],
-            //     authorizer_adaptor,
-            //     GUILD_ONE_AVATARXGUILD.address,
-            //     GUILD_ONE_GOVERNORXGUILD.address
-            // );
-    //         proposal = GUILD_ONE_AVATARXGUILD.interface.encodeFunctionData("enableModule", [authorizer_adaptor.address]);
-    //         let TARGETS = [GUILD_ONE_AVATARXGUILD.address];
-    //         let VALUES = [0];
-    //         let PROPOSALS = [proposal];
-    
-    //         dataToReality = GUILD_ONE_AVATARXGUILD.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
-    //         dataToSnapshot = avatar.interface.encodeFunctionData("exec", [GUILD_ONE_AVATARXGUILD.address, 0, dataToReality]);
-    //         txToSnapshot = {
-    //             to: avatar.address,
-    //             value: 0,
-    //             data: dataToSnapshot,
-    //             operation: 1,
-    //             nonce: 0,
-    //         };
-    //         txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
-    
-    //         abiCoder = new ethers.utils.AbiCoder();
-    //         executionHash = ethers.utils.keccak256(
-    //             abiCoder.encode(['bytes32[]'], [[txHash1]])
-    //         );
-    //         proposal_outcome = 1;
-    // console.log("889 is %s", 889);
-    //         await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
-    //             txHash1,
-    //         ]);
-
-    //         await snapshotModule.executeProposalTx(8, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
-    //         proposalId = await GUILD_ONE_GOVERNORXGUILD.hashProposal(TARGETS, VALUES, PROPOSALS);
-    //         await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
-    //         time.increase(time.duration.days(5));
-    //         await GUILD_ONE_GOVERNORXGUILD.connect(user1).castVote(proposalId, true);
-    //         await GUILD_ONE_GOVERNORXGUILD.connect(user2).castVote(proposalId, true);
-    
-    //         await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
-    //         time.increase(time.duration.days(10));
-    //         await GUILD_ONE_GOVERNORXGUILD.execute(TARGETS, VALUES, PROPOSALS);
-
+            await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
 
             // Execute the proposal
             proposal = DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('transfer', [user3.address, 20]);
@@ -1089,18 +1027,15 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
                 txHash1,
             ]);
-    console.log("88 is %s", 88);
             await snapshotModule.executeProposalTx(8, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
             proposalId = await GUILD_ONE_GOVERNORXGUILD.hashProposal(TARGETS, VALUES, PROPOSALS);
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(time.duration.days(5));
-    console.log("99 is %s", 99);
             await GUILD_ONE_GOVERNORXGUILD.connect(user1).castVote(proposalId, true);
             await GUILD_ONE_GOVERNORXGUILD.connect(user2).castVote(proposalId, true);
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(time.duration.days(10));
             await GUILD_ONE_GOVERNORXGUILD.execute(TARGETS, VALUES, PROPOSALS);
-console.log("10 is %s", 10);
             await DOINGUD_AMOR_TOKEN.transfer(authorizer_adaptor.address, ONE_HUNDRED_ETHER);
             await DOINGUD_AMOR_TOKEN.connect(authorizer_adaptor).approve(GUILD_ONE_CONTROLLERXGUILD.address, TEST_TRANSFER);
 
@@ -1112,16 +1047,6 @@ console.log("10 is %s", 10);
             const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(GUILD_ONE_CONTROLLERXGUILD.address);
 
             proposal = DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('approve', [GUILD_ONE_CONTROLLERXGUILD.address, FIFTY_ETHER]);
-            // await metaHelper(
-            //     [DOINGUD_AMOR_TOKEN.address],
-            //     [0],
-            //     [proposal],
-            //     [user1, user2, user3],
-            //     authorizer_adaptor,
-            //     GUILD_ONE_AVATARXGUILD.address,
-            //     GUILD_ONE_GOVERNORXGUILD.address
-            // );
-            // proposal = DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('transfer', [user3.address, 20]);
             TARGETS = [DOINGUD_AMOR_TOKEN.address];
             VALUES = [0];
             PROPOSALS = [proposal];            
@@ -1155,15 +1080,6 @@ console.log("10 is %s", 10);
 
 
             proposal = GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address]);
-            // await metaHelper(
-            //     [GUILD_ONE_CONTROLLERXGUILD.address],
-            //     [0],
-            //     [proposal],
-            //     [user1, user2, user3],
-            //     authorizer_adaptor,
-            //     GUILD_ONE_AVATARXGUILD.address,
-            //     GUILD_ONE_GOVERNORXGUILD.address
-            // );
             TARGETS = [GUILD_ONE_CONTROLLERXGUILD.address];
             VALUES = [0];
             PROPOSALS = [proposal];            
@@ -1204,17 +1120,6 @@ console.log("10 is %s", 10);
 
         it("Remove guild from the MetaDAO: VOTE IN SNAPSHOT", async function () {          
             proposal = DOINGUD_METADAO.interface.encodeFunctionData('removeGuild', [GUILD_TWO_CONTROLLERXGUILD.address]);
-            // await metaHelper(
-            //     [DOINGUD_METADAO.address],
-            //     [0],
-            //     [proposal],
-            //     [user1, user2, user3],
-            //     authorizer_adaptor,
-            //     DOINGUD_AVATAR.address,
-            //     DOINGUD_GOVERNOR.address
-            // );
-            // proposal = DOINGUD_METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, root.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
-
             TARGETS = [DOINGUD_METADAO.address];
             VALUES = [0];
             PROPOSALS = [proposal];
@@ -1253,6 +1158,7 @@ console.log("10 is %s", 10);
     
             expect(await DOINGUD_METADAO.guilds(GUILD_TWO_CONTROLLERXGUILD.address)).to.equal(ZERO_ADDRESS);  
         });
+
         it("Add report to the Guild", async function () {          
 
             // Gain some amount of donations
@@ -1299,6 +1205,7 @@ console.log("10 is %s", 10);
 
             expect((await DOINGUD_CONTROLLER.queueReportsAuthors(0))).to.equal(operator.address);
         });
+
         it("Vote for the report at the Guild with FXAMOR", async function () {                    
             
             // Gain some amount of donations
@@ -1346,6 +1253,7 @@ console.log("10 is %s", 10);
             expect(await DOINGUD_CONTROLLER.reportsVoting(0)).to.equals(3);
             expect(await DOINGUD_CONTROLLER.reportsWeight(0)).to.equals(5);
         });
+
         it("Finalize report vote for the Guild with no reports passing", async function () {          
             // Gain some amount of donations
             await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
@@ -1409,6 +1317,7 @@ console.log("10 is %s", 10);
             const balanceAfter3 = amount * 3 / 2;
             expect((await DOINGUD_AMOR_GUILD_TOKEN.balanceOf(DOINGUD_CONTROLLER.address)).toString()).to.equal(balanceAfter3.toString());
         });
+
         it("Finalize report vote for the Guild with part of reports passing", async function () {          
             // Gain some amount of donations
             await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
@@ -1553,6 +1462,7 @@ console.log("10 is %s", 10);
             const balanceAfter3 = balanceBefore3.add(fiftyToCreator);
             expect((await DOINGUD_AMOR_GUILD_TOKEN.balanceOf(operator.address)).toString()).to.equal(balanceAfter3.toString());
         });
+
         it("Finalize report vote for the Guild with all of the reports passing", async function () {          
             // Gain some amount of donations
             await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
