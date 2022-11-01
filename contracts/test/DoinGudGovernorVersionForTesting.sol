@@ -81,12 +81,13 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
         address proposer,
         address[] targets,
         uint256[] values,
-        bytes[] calldatas,
+        // bytes[] calldatas,
         uint256 startBlock,
         uint256 endBlock
     );
     event ChangedGuardiansLimit(uint256 newLimit);
-    event GuardiansSetted(address[] arrGuardians);
+    event GuardianSetted(address arrGuardians);
+    // event GuardiansSetted(address[] arrGuardians);
     event GuardianAdded(address newGuardian);
     event GuardianRemoved(address guardian);
     event GuardianChanged(uint256 oldGuardian, address newGuardian);
@@ -172,23 +173,26 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
                 delete weights[guardians[i]];
                 guardians[i] = arrGuardians[i];
                 weights[arrGuardians[i]] = 1;
+                emit GuardianSetted(arrGuardians[i]);
             }
             for (uint256 i = guardians.length; i < arrGuardians.length; i++) {
                 guardians.push(arrGuardians[i]);
                 weights[arrGuardians[i]] = 1;
+                emit GuardianSetted(arrGuardians[i]);
             }
         } else {
             for (uint256 i = 0; i < arrGuardians.length; i++) {
                 delete weights[guardians[i]];
                 guardians[i] = arrGuardians[i];
                 weights[arrGuardians[i]] = 1;
+                emit GuardianSetted(arrGuardians[i]);
             }
             for (uint256 i = arrGuardians.length; i < guardians.length; i++) {
                 delete guardians[i];
                 delete weights[guardians[i]];
             }
         }
-        emit GuardiansSetted(arrGuardians);
+        // emit GuardiansSetted(arrGuardians);
     }
 
     /// @notice this function adds new guardian to the system
@@ -288,7 +292,7 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
             msg.sender, // proposer
             targets,
             values,
-            calldatas,
+            // calldatas,
             snapshot,
             deadline
         );

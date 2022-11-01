@@ -57,7 +57,8 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
     event VotedForTheReport(address voter, uint256 reportId, uint256 amount, bool sign);
     event VotingPeriodUpdated(uint256 newPeriod);
     event PercentToConvertUpdated(uint256 newPercent);
-    event ImpactMakersSetted(address[] arrImpactMakers, uint256[] arrWeight);
+    event ImpactMakerSetted(address arrImpactMakers, uint256 arrWeight);
+    // event ImpactMakersSetted(address[] arrImpactMakers, uint256[] arrWeight);
     event ImpactMakersAdded(address newImpactMaker, uint256 weight);
     event ImpactMakersRemoved(address ImpactMaker);
     event ImpactMakersChanged(address ImpactMaker, uint256 weight);
@@ -422,8 +423,9 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
             impactMakers.push(arrImpactMakers[i]);
             weights[arrImpactMakers[i]] = arrWeight[i];
             totalWeight += arrWeight[i];
+            emit ImpactMakerSetted(arrImpactMakers[i], arrWeight[i]);
         }
-        emit ImpactMakersSetted(arrImpactMakers, arrWeight);
+        // emit ImpactMakersSetted(arrImpactMakers, arrWeight);
     }
 
     /// @notice allows to add impactMaker with a specific weight
