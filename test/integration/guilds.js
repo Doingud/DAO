@@ -260,8 +260,9 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         //deploying singleton master contract
         const masterzodiacModule = await SnapshotXContract.deploy(
             DOINGUD_AVATAR.address,
-            realityModule.address, //avatarreality.eth
-            avatar.address, //target DOINGUD_AVATAR 
+            realityModule.address, // avatar reality.eth
+            // avatar aka GnosisSafe Avatar as we need interaction user-input node and output-DOINGUD_AVATAR node
+            avatar.address, // target
             DOINGUD_AVATAR.address,
             1,
             []
