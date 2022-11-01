@@ -20,20 +20,12 @@ describe('unit - Contract: Avatar', function () {
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(signers);
-        avatar = await init.proxy();
-        governor = await init.proxy();
         await init.getTokens(setup);
         AMORxGuild = setup.tokens.AmorGuildToken;
         await init.avatar(setup);
-        await avatar.initProxy(setup.avatars.avatar.address);
-        let AVATAR = setup.avatars.avatar;
+        avatar = setup.avatars.avatar;
         await init.governor(setup);
-        await governor.initProxy(setup.governor.address);
-        let GOVERNOR = setup.governor;
-        avatar = AVATAR.attach(avatar.address);
-        governor = GOVERNOR.attach(governor.address);
-        await avatar.init(setup.roles.root.address, setup.roles.authorizer_adaptor.address);
-        await governor.init(AMORxGuild.address, avatar.address, setup.roles.user1.address);
+
         mockModule = setup.avatars.module;
         root = setup.roles.root;
         staker = setup.roles.staker;
@@ -167,7 +159,7 @@ describe('unit - Contract: Avatar', function () {
                 .emit(avatar, "ExecutionFromModuleSuccess").withArgs(authorizer_adaptor.address);
 
             // delegate call
-            await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, encoded, 1))
+            await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(avatar.address, 0, encoded, 1))
                 .to.emit(avatar, "ExecutionFromModuleSuccess").withArgs(authorizer_adaptor.address);
         });
     });
