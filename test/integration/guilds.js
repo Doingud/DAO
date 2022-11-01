@@ -201,7 +201,6 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         CLONE_FACTORY = setup.factory;
         VESTING = setup.vesting;
 
-//--------------------------------------------------------
         // setup reality.eth
         // RealityModuleERC20
         const Avatar = await hre.ethers.getContractFactory("TestAvatar");
@@ -217,7 +216,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         const module = await realityModule.deploy(
             DOINGUD_AVATAR.address,
             avatar.address, // avatar Safe authorizer_adaptor.address
-            DOINGUD_AVATAR.address, // target DOINGUD_AVATAR
+            avatar.address, // target DOINGUD_AVATAR
             oracle.address,
             1, 10, 0, 0, 0,
             authorizer_adaptor.address,
@@ -933,7 +932,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             const taxDeducted = TEST_TRANSFER*(TAX_RATE/BASIS_POINTS);
 
             await DOINGUD_AMOR_TOKEN.approve(root.address, TEST_TRANSFER);
-            expect(await DOINGUD_AMOR_TOKEN.transferFrom(root.address, user1.address, TEST_TRANSFER))
+            await expect(DOINGUD_AMOR_TOKEN.transferFrom(root.address, user1.address, TEST_TRANSFER))
               .to.emit(DOINGUD_AMOR_TOKEN, "Transfer")
                 .withArgs(root.address, user1.address, (TEST_TRANSFER-taxDeducted).toString());
 
