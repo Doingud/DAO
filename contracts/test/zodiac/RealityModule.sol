@@ -134,60 +134,6 @@ abstract contract RealityModule is Module {
         emit RealityModuleSetup(msg.sender, _owner, avatar, target);
     }
 
-    /// @notice This can only be called by the owner
-    function setQuestionTimeout(uint32 timeout) public onlyOwner {
-        require(timeout > 0, "Timeout has to be greater 0");
-        questionTimeout = timeout;
-    }
-
-    /// @dev Sets the cooldown before an answer is usable.
-    /// @param cooldown Cooldown in seconds that should be required after a oracle provided answer
-    /// @notice This can only be called by the owner
-    /// @notice There need to be at least 60 seconds between end of cooldown and expiration
-    function setQuestionCooldown(uint32 cooldown) public onlyOwner {
-        uint32 expiration = answerExpiration;
-        require(
-            expiration == 0 || expiration - cooldown >= 60,
-            "There need to be at least 60s between end of cooldown and expiration"
-        );
-        questionCooldown = cooldown;
-    }
-
-    /// @dev Sets the duration for which a positive answer is valid.
-    /// @param expiration Duration that a positive answer of the oracle is valid in seconds (or 0 if valid forever)
-    /// @notice A proposal with an expired answer is the same as a proposal that has been marked invalid
-    /// @notice There need to be at least 60 seconds between end of cooldown and expiration
-    /// @notice This can only be called by the owner
-    function setAnswerExpiration(uint32 expiration) public onlyOwner {
-        require(
-            expiration == 0 || expiration - questionCooldown >= 60,
-            "There need to be at least 60s between end of cooldown and expiration"
-        );
-        answerExpiration = expiration;
-    }
-
-    /// @dev Sets the question arbitrator that will be used for future questions.
-    /// @param arbitrator Address of the arbitrator
-    /// @notice This can only be called by the owner
-    function setArbitrator(address arbitrator) public onlyOwner {
-        questionArbitrator = arbitrator;
-    }
-
-    /// @dev Sets the minimum bond that is required for an answer to be accepted.
-    /// @param bond Minimum bond that is required for an answer to be accepted
-    /// @notice This can only be called by the owner
-    function setMinimumBond(uint256 bond) public onlyOwner {
-        minimumBond = bond;
-    }
-
-    /// @dev Sets the template that should be used for future questions.
-    /// @param templateId ID of the template that should be used for proposal questions
-    /// @notice Check https://github.com/realitio/realitio-dapp#structuring-and-fetching-information for more information
-    /// @notice This can only be called by the owner
-    function setTemplate(uint256 templateId) public onlyOwner {
-        template = templateId;
-    }
-
     /// @dev Function to add a proposal that should be considered for execution
     /// @param proposalId Id that should identify the proposal uniquely
     /// @param txHashes EIP-712 hashes of the transactions that should be executed
@@ -240,54 +186,6 @@ abstract contract RealityModule is Module {
         internal
         virtual
         returns (bytes32);
-
-    /// @dev Marks a proposal as invalid, preventing execution of the connected transactions
-    /// @param proposalId Id that should identify the proposal uniquely
-    /// @param txHashes EIP-712 hashes of the transactions that should be executed
-    /// @notice This can only be called by the owner
-    function markProposalAsInvalid(
-        string memory proposalId,
-        bytes32[] memory txHashes // owner only is checked in markProposalAsInvalidByHash(bytes32)
-    ) public {
-        string memory question = buildQuestion(proposalId, txHashes);
-        bytes32 questionHash = keccak256(bytes(question));
-        markProposalAsInvalidByHash(questionHash);
-    }
-
-    /// @dev Marks a question hash as invalid, preventing execution of the connected transactions
-    /// @param questionHash Question hash calculated based on the proposal id and txHashes
-    /// @notice This can only be called by the owner
-    function markProposalAsInvalidByHash(bytes32 questionHash)
-        public
-        onlyOwner
-    {
-        questionIds[questionHash] = INVALIDATED;
-    }
-
-    /// @dev Marks a proposal with an expired answer as invalid, preventing execution of the connected transactions
-    /// @param questionHash Question hash calculated based on the proposal id and txHashes
-    function markProposalWithExpiredAnswerAsInvalid(bytes32 questionHash)
-        public
-    {
-        uint32 expirationDuration = answerExpiration;
-        require(expirationDuration > 0, "Answers are valid forever");
-        bytes32 questionId = questionIds[questionHash];
-        require(questionId != INVALIDATED, "Proposal is already invalidated");
-        require(
-            questionId != bytes32(0),
-            "No question id set for provided proposal"
-        );
-        require(
-            oracle.resultFor(questionId) == bytes32(uint256(1)),
-            "Only positive answers can expire"
-        );
-        uint32 finalizeTs = oracle.getFinalizeTS(questionId);
-        require(
-            finalizeTs + uint256(expirationDuration) < block.timestamp,
-            "Answer has not expired yet"
-        );
-        questionIds[questionHash] = INVALIDATED;
-    }
 
     /// @dev Executes the transactions of a proposal via the target if accepted
     /// @param proposalId Id that should identify the proposal uniquely

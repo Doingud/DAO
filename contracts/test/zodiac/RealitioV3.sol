@@ -42,28 +42,6 @@ interface RealitioV3 {
         returns (bytes32);
 }
 
-interface RealitioV3ETH is RealitioV3 {
-    /// @notice Ask a new question and return the ID
-    /// @dev Template data is only stored in the event logs, but its block number is kept in contract storage.
-    /// @param template_id The ID number of the template the question will use
-    /// @param question A string containing the parameters that will be passed into the template to make the question
-    /// @param arbitrator The arbitration contract that will have the final word on the answer if there is a dispute
-    /// @param timeout How long the contract should wait after the answer is changed before finalizing on that answer
-    /// @param opening_ts If set, the earliest time it should be possible to answer the question.
-    /// @param nonce A user-specified nonce used in the question ID. Change it to repeat a question.
-    /// @param min_bond The minimum bond that may be used for an answer.
-    /// @return The ID of the newly-created question, created deterministically.
-    function askQuestionWithMinBond(
-        uint256 template_id,
-        string memory question,
-        address arbitrator,
-        uint32 timeout,
-        uint32 opening_ts,
-        uint256 nonce,
-        uint256 min_bond
-    ) external payable returns (bytes32);
-}
-
 interface RealitioV3ERC20 is RealitioV3 {
     /// @notice Ask a new question and return the ID
     /// @dev Template data is only stored in the event logs, but its block number is kept in contract storage.

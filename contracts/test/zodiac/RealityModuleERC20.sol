@@ -2,7 +2,6 @@
 pragma solidity >=0.8.0;
 
 import "./RealityModule.sol";
-import "./RealitioV3.sol";
 
 contract RealityModuleERC20 is RealityModule {
     /// @param _owner Address of the owner

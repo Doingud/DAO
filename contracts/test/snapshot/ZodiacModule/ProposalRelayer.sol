@@ -5,7 +5,7 @@ pragma solidity ^0.8.9;
 import "@gnosis.pm/zodiac/contracts/guard/Guardable.sol";
 // import '../Interfaces/IStarknetCore.sol';
 
-import "contracts/test/snapshot/ethereum/TestContracts/MockStarknetMessaging.sol";
+import "contracts/test/snapshot/TestContracts/StarknetMessaging.sol";
 
 /**
  * @title Snapshot X L1 Proposal Relayer
@@ -16,7 +16,7 @@ contract SnapshotXProposalRelayer is Guardable {
   /// The StarkNet Core contract
   // IStarknetCore public starknetCore;
 
-  MockStarknetMessaging public starknetCore;
+  StarknetMessaging public starknetCore;
 
   /// Address of the StarkNet contract that will send execution details to this contract in a L2 -> L1 message
   uint256 public l2ExecutionRelayer;
@@ -42,17 +42,8 @@ contract SnapshotXProposalRelayer is Guardable {
   function setUpSnapshotXProposalRelayer(address _starknetCore, uint256 _l2ExecutionRelayer)
     internal
   {
-    starknetCore = MockStarknetMessaging(_starknetCore);
+    starknetCore = StarknetMessaging(_starknetCore);
     l2ExecutionRelayer = _l2ExecutionRelayer;
-  }
-
-  /**
-   * @dev Changes the StarkNet execution relayer contract
-   * @param _l2ExecutionRelayer Address of the new execution relayer contract
-   */
-  function changeL2ExecutionRelayer(uint256 _l2ExecutionRelayer) public onlyOwner {
-    l2ExecutionRelayer = _l2ExecutionRelayer;
-    emit ChangedL2ExecutionRelayer(_l2ExecutionRelayer);
   }
 
   /**

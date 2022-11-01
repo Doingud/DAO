@@ -2,7 +2,7 @@
 pragma solidity ^0.8.6;
 
 import './IStarknetMessaging.sol';
-import './NamedStorage.sol';
+// import './NamedStorage.sol';
 
 /**
   Implements sending messages to L2 by adding them to a pipe and consuming messages from L2 by
@@ -27,15 +27,15 @@ contract StarknetMessaging is IStarknetMessaging {
   }
 
   function l1ToL2Messages() internal pure returns (mapping(bytes32 => uint256) storage) {
-    return NamedStorage.bytes32ToUint256Mapping(L1L2_MESSAGE_MAP_TAG);
+    return bytes32ToUint256Mapping(L1L2_MESSAGE_MAP_TAG);
   }
 
   function l2ToL1Messages() internal pure returns (mapping(bytes32 => uint256) storage) {
-    return NamedStorage.bytes32ToUint256Mapping(L2L1_MESSAGE_MAP_TAG);
+    return bytes32ToUint256Mapping(L2L1_MESSAGE_MAP_TAG);
   }
 
   function l1ToL2MessageNonce() public view returns (uint256) {
-    return NamedStorage.getUintValue(L1L2_MESSAGE_NONCE_TAG);
+    return getUintValue(L1L2_MESSAGE_NONCE_TAG);
   }
 
   /**
@@ -47,7 +47,7 @@ contract StarknetMessaging is IStarknetMessaging {
     uint256[] calldata payload
   ) external override returns (bytes32) {
     uint256 nonce = l1ToL2MessageNonce();
-    NamedStorage.setUintValue(L1L2_MESSAGE_NONCE_TAG, nonce + 1);
+    setUintValue(L1L2_MESSAGE_NONCE_TAG, nonce + 1);
     emit LogMessageToL2(msg.sender, to_address, selector, payload, nonce);
     bytes32 msgHash = keccak256(
       abi.encodePacked(
@@ -81,5 +81,33 @@ contract StarknetMessaging is IStarknetMessaging {
     emit ConsumedMessageToL1(from_address, msg.sender, payload);
     l2ToL1Messages()[msgHash] -= 1;
     return msgHash;
+  }
+
+  
+  // from NamedStorage.sol
+
+  function bytes32ToUint256Mapping(string memory tag_)
+    internal
+    pure
+    returns (mapping(bytes32 => uint256) storage randomVariable)
+  {
+    bytes32 location = keccak256(abi.encodePacked(tag_));
+    assembly {
+      randomVariable.slot := location
+    }
+  }
+
+  function getUintValue(string memory tag_) internal view returns (uint256 retVal) {
+    bytes32 slot = keccak256(abi.encodePacked(tag_));
+    assembly {
+      retVal := sload(slot)
+    }
+  }
+
+  function setUintValue(string memory tag_, uint256 value) internal {
+    bytes32 slot = keccak256(abi.encodePacked(tag_));
+    assembly {
+      sstore(slot, value)
+    }
   }
 }
