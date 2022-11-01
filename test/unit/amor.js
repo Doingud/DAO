@@ -45,6 +45,9 @@ describe("unit - AMOR Token", function () {
     user1 = setup.roles.user1;
     user2 = setup.roles.user2;
     user3 = setup.roles.user3;
+
+    AMOR_BEACON = await init.beacon(IMPLEMENTATION.address, root.address);
+    PROXY_CONTRACT = await init.proxy();
     
   });
 

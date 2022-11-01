@@ -22,7 +22,6 @@ pragma solidity 0.8.15;
  */
 
 import "@openzeppelin/contracts/proxy/Clones.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./interfaces/IAMORxGuild.sol";
 import "./interfaces/ICloneFactory.sol";
@@ -32,7 +31,7 @@ import "./interfaces/IGuildController.sol";
 import "./interfaces/IAvatarxGuild.sol";
 import "./interfaces/IGovernor.sol";
 
-contract GuildFactory is ICloneFactory, Ownable {
+contract GuildFactory is ICloneFactory {
     /// The various guild components
     struct GuildComponents {
         address AmorGuildToken;
@@ -111,7 +110,6 @@ contract GuildFactory is ICloneFactory, Ownable {
         string memory _symbol
     )
         external
-        onlyOwner
         returns (
             address controller,
             address avatar,

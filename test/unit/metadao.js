@@ -27,12 +27,18 @@ let DAMOR_GUILD_TOKEN;
 let CONTROLLERXGUILD;
 let GOVERNORXGUILD;
 let AVATARXGUILD;
-let PROPOSER;
 let GUILD_CONTROLLER_ONE;
 let GUILD_CONTROLLER_TWO;
 
 let encodedIndex;
 let encodedIndex2;
+
+let BEACON_AMOR_GUILD_TOKEN;
+let BEACON_DAMOR;
+let BEACON_FXAMOR;
+let BEACON_CONTROLLER;
+let BEACON_GOVERNOR;
+let BEACON_AVATAR;
 
 describe("unit - MetaDao", function () {
 
@@ -60,13 +66,11 @@ describe("unit - MetaDao", function () {
         ///   Setup the Controller
         await init.controller(setup);
         CONTROLLER = setup.controller;
-        await init.proposer(setup);
         FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
         DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
         CONTROLLERXGUILD = setup.controller;
         GOVERNORXGUILD = setup.governor;
         AVATARXGUILD = setup.avatars.avatar;
-        PROPOSER = setup.proposer;
 
         BEACON_AMOR = await init.beacon(AMOR_TOKEN.address, METADAO.address);
         BEACON_AMOR_GUILD_TOKEN = await init.beacon(AMOR_GUILD_TOKEN.address, METADAO.address);
@@ -75,7 +79,6 @@ describe("unit - MetaDao", function () {
         BEACON_CONTROLLER = await init.beacon(CONTROLLERXGUILD.address, METADAO.address);
         BEACON_GOVERNOR = await init.beacon(GOVERNORXGUILD.address, METADAO.address);
         BEACON_AVATAR = await init.beacon(AVATARXGUILD.address, METADAO.address);
-        BEACON_PROPOSER = await init.beacon(PROPOSER.address, METADAO.address);
       
         setup.b_amorGuildToken = BEACON_AMOR_GUILD_TOKEN;
         setup.b_damor = BEACON_DAMOR;
@@ -83,7 +86,6 @@ describe("unit - MetaDao", function () {
         setup.b_controller = BEACON_CONTROLLER;
         setup.b_governor = BEACON_GOVERNOR;
         setup.b_avatar = BEACON_AVATAR;
-        setup.b_proposer = BEACON_PROPOSER;
         ///   Setup the guild factory
         await init.getGuildFactory(setup);
         FACTORY = setup.factory;
@@ -247,6 +249,26 @@ describe("unit - MetaDao", function () {
             await init.avatar(setup);
             await init.governor(setup);
             CONTROLLER2 = setup.controller;
+            FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
+            DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
+            CONTROLLERXGUILD = setup.controller;
+            GOVERNORXGUILD = setup.governor;
+            AVATARXGUILD = setup.avatars.avatar;
+
+            BEACON_AMOR = await init.beacon(AMOR_TOKEN.address, METADAO.address);
+            BEACON_AMOR_GUILD_TOKEN = await init.beacon(AMOR_GUILD_TOKEN.address, METADAO.address);
+            BEACON_DAMOR = await init.beacon(DAMOR_GUILD_TOKEN.address, METADAO.address);
+            BEACON_FXAMOR = await init.beacon(FX_AMOR_TOKEN.address, METADAO.address);
+            BEACON_CONTROLLER = await init.beacon(CONTROLLERXGUILD.address, METADAO.address);
+            BEACON_GOVERNOR = await init.beacon(GOVERNORXGUILD.address, METADAO.address);
+            BEACON_AVATAR = await init.beacon(AVATARXGUILD.address, METADAO.address);
+
+            setup.b_amorGuildToken = BEACON_AMOR_GUILD_TOKEN;
+            setup.b_damor = BEACON_DAMOR;
+            setup.b_fxamor = BEACON_FXAMOR;
+            setup.b_controller = BEACON_CONTROLLER;
+            setup.b_governor = BEACON_GOVERNOR;
+            setup.b_avatar = BEACON_AVATAR;
             await init.getGuildFactory(setup);
             FACTORY2 = setup.factory;
 
@@ -258,7 +280,7 @@ describe("unit - MetaDao", function () {
             GUILD_CONTROLLER_ONE2 = CONTROLLER2.attach(GUILD_CONTROLLER_ONE2);
             GUILD_CONTROLLER_TWO2 = await METADAO2.guilds(GUILD_CONTROLLER_ONE2.address);
             GUILD_CONTROLLER_TWO2 = CONTROLLER2.attach(GUILD_CONTROLLER_TWO2);
-    
+
             await METADAO2.addWhitelist(USDC2.address);
             await AMOR_TOKEN2.approve(METADAO2.address, ONE_HUNDRED_ETHER);
             await USDC2.approve(METADAO2.address, ONE_HUNDRED_ETHER);
@@ -275,7 +297,7 @@ describe("unit - MetaDao", function () {
                 [GUILD_CONTROLLER_TWO2.address, 0]
                 ]
             );
-    
+
             await METADAO2.updateIndex([encodedIndex, encodedIndex2], 0);
 
             let hash = await METADAO2.indexHashes(0);

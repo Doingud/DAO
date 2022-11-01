@@ -18,7 +18,6 @@ use(solidity);
   let CONTROLLERXGUILD;
   let GOVERNORXGUILD;
   let AVATARXGUILD;
-  let PROPOSER;
   let GUILD_ONE_AMORXGUILD;
   let GUILD_ONE_DAMORXGUILD;
   let GUILD_ONE_FXAMORXGUILD;
@@ -27,8 +26,16 @@ use(solidity);
   let GUILD_ONE_GOVERNORXGUILD;
   let METADAO;
   let guild;
+  let BEACON_AMOR;
+  let BEACON_AMOR_GUILD_TOKEN;
+  let BEACON_DAMOR;
+  let BEACON_FXAMOR;
+  let BEACON_CONTROLLER;
+  let BEACON_GOVERNOR;
+  let BEACON_AVATAR;
   let user1;
   let user2;
+  let guildOneControllerxGuild;
 
 describe("unit - Clone Factory", function () {
 
@@ -40,7 +47,6 @@ describe("unit - Clone Factory", function () {
     await init.controller(setup);
     await init.avatar(setup);
     await init.governor(setup);
-    await init.proposer(setup);
 
     AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
     AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
@@ -53,10 +59,27 @@ describe("unit - Clone Factory", function () {
     user1 = setup.roles.user1;
     user2 = setup.roles.user2;
 
-
     CONTROLLERXGUILD = setup.controller;
     GOVERNORXGUILD = setup.governor;
     AVATARXGUILD = setup.avatars.avatar;
+
+    BEACON_AMOR = await init.beacon(AMOR_TOKEN.address, METADAO.address);
+    BEACON_AMOR_GUILD_TOKEN = await init.beacon(AMOR_GUILD_TOKEN.address, METADAO.address);
+    BEACON_DAMOR = await init.beacon(DAMOR_GUILD_TOKEN.address, METADAO.address);
+    BEACON_FXAMOR = await init.beacon(FX_AMOR_TOKEN.address, METADAO.address);
+    BEACON_CONTROLLER = await init.beacon(CONTROLLERXGUILD.address, METADAO.address);
+    BEACON_GOVERNOR = await init.beacon(GOVERNORXGUILD.address, METADAO.address);
+    BEACON_AVATAR = await init.beacon(AVATARXGUILD.address, METADAO.address);
+
+    setup.b_amorGuildToken = BEACON_AMOR_GUILD_TOKEN;
+    setup.b_damor = BEACON_DAMOR;
+    setup.b_fxamor = BEACON_FXAMOR;
+    setup.b_controller = BEACON_CONTROLLER;
+    setup.b_governor = BEACON_GOVERNOR;
+    setup.b_avatar = BEACON_AVATAR;
+
+    await init.getGuildFactory(setup);
+    CLONE_FACTORY = setup.factory;
     /// Note: Using `root` as Avatar address
     await METADAO.init(AMOR_TOKEN.address, CLONE_FACTORY.address, root.address);
   });
@@ -67,17 +90,15 @@ describe("unit - Clone Factory", function () {
 
   context("function: deployGuildContracts", () => {
     it("Should deploy the Guild Token Contracts", async function () {
-      await expect(METADAO.createGuild(user1.address, user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0])).
-        to.emit(CLONE_FACTORY, "GuildCreated");
+      await METADAO.createGuild(user1.address, user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
 
-      this.guildOneControllerxGuild = await METADAO.guilds(ONE_ADDRESS);
-
-      guild = await CLONE_FACTORY.guilds(this.guildOneControllerxGuild);
+      guildOneControllerxGuild = await METADAO.guilds(ONE_ADDRESS);
+      guild = await CLONE_FACTORY.guilds(guildOneControllerxGuild);
 
       GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(guild.AmorGuildToken);
       GUILD_ONE_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(guild.DAmorxGuild);
       GUILD_ONE_FXAMORXGUILD = FX_AMOR_TOKEN.attach(guild.FXAmorxGuild);
-      GUILD_ONE_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(this.guildOneControllerxGuild);
+      GUILD_ONE_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(guildOneControllerxGuild);
       GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(guild.GovernorxGuild);
       GUILD_ONE_AVATARXGUILD = AVATARXGUILD.attach(guild.AvatarxGuild);
     });
@@ -101,12 +122,12 @@ describe("unit - Clone Factory", function () {
   context("Constructor", ()=> {
     it("Should return the implementation addresses", async function () {
       expect(await CLONE_FACTORY.amorToken()).to.equal(AMOR_TOKEN.address);
-      expect(await CLONE_FACTORY.amorxGuildToken()).to.equal(AMOR_GUILD_TOKEN.address);
-      expect(await CLONE_FACTORY.dAmorxGuild()).to.equal(DAMOR_GUILD_TOKEN.address);
-      expect(await CLONE_FACTORY.fXAmorxGuild()).to.equal(FX_AMOR_TOKEN.address);
-      expect(await CLONE_FACTORY.controllerxGuild()).to.equal(CONTROLLERXGUILD.address);
-      expect(await CLONE_FACTORY.governorxGuild()).to.equal(GOVERNORXGUILD.address);
-      expect(await CLONE_FACTORY.avatarxGuild()).to.equal(AVATARXGUILD.address);
+      expect(await CLONE_FACTORY.amorxGuildToken()).to.equal(BEACON_AMOR_GUILD_TOKEN.address);
+      expect(await CLONE_FACTORY.dAmorxGuild()).to.equal(BEACON_DAMOR.address);
+      expect(await CLONE_FACTORY.fXAmorxGuild()).to.equal(BEACON_FXAMOR.address);
+      expect(await CLONE_FACTORY.controllerxGuild()).to.equal(BEACON_CONTROLLER.address);
+      expect(await CLONE_FACTORY.governorxGuild()).to.equal(BEACON_GOVERNOR.address);
+      expect(await CLONE_FACTORY.avatarxGuild()).to.equal(BEACON_AVATAR.address);
     })
   });
 

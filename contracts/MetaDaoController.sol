@@ -40,6 +40,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./interfaces/ICloneFactory.sol";
 import "./interfaces/IGuildController.sol";
 import "./interfaces/IMetaDaoController.sol";
+import "./interfaces/IDoinGudBeacon.sol";
 
 contract MetaDaoController is IMetaDaoController, Ownable {
     using SafeERC20 for IERC20;

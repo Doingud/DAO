@@ -106,7 +106,6 @@ contract AvatarxGuild is IAvatarxGuild {
             revert AlreadyInitialized();
         }
         governor = newGovernor;
-        emit GovernorSet(newGovernor);
     }
 
     /// @dev Allows to add a module to the whitelist.
