@@ -203,7 +203,10 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
         // setup reality.eth
         // RealityModuleERC20
+        
+        // output node, aka GnosisSafe Avatar
         const Avatar = await hre.ethers.getContractFactory("TestAvatar");
+        // as GnosisSafe Avatar is the contract that interacts with our Avatar
         avatar = await Avatar.deploy();
         console.log("realityModule avatar.address is %s", avatar.address);
         console.log("DOINGUD_AVATAR.address is %s", DOINGUD_AVATAR.address);
@@ -211,7 +214,8 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         const mock = await Mock.deploy();
         const oracle = await hre.ethers.getContractAt("RealitioV3ERC20", mock.address);
         console.log("Oracle address is %s", oracle.address);
-                  
+        
+        // middle node
         let realityModule = await ethers.getContractFactory("RealityModuleERC20")
         const module = await realityModule.deploy(
             DOINGUD_AVATAR.address,
@@ -250,6 +254,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         const safe = GnosisSafeL2.attach(template);
         safe.setup([safeSigner.address], 1, ZERO_ADDRESS, '0x', ZERO_ADDRESS, ZERO_ADDRESS, 0, ZERO_ADDRESS);
 
+        // input node, as users will be interacting with our contracts via Snapshot
         const SnapshotXContract = await ethers.getContractFactory('SnapshotXL1Executor');
 
         //deploying singleton master contract
