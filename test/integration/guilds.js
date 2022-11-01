@@ -210,8 +210,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         avatar = await Avatar.deploy();
         console.log("realityModule avatar.address is %s", avatar.address);
         console.log("DOINGUD_AVATAR.address is %s", DOINGUD_AVATAR.address);
-        const Mock = await ethers.getContractFactory("MockContract");
-        const mock = await Mock.deploy();
+        const mock = pool;
         const oracle = await hre.ethers.getContractAt("RealitioV3ERC20", mock.address);
         console.log("Oracle address is %s", oracle.address);
         
