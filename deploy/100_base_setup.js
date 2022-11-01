@@ -30,25 +30,27 @@ async function main() {
 
     // await MetaDaoController.createGuild(reality, initialGuardian, 'MetaDao GUILD 1', 'MG1'); // must be via avatar
 
-    // governor executeProposal --> avatar.executeProposal --> MetaDaoController.createGuild
-    // // generate data to create first guild
-    let proposal = MetaDaoController.interface.encodeFunctionData('createGuild', [reality, initialGuardian, 'MetaDaoV1 GUILD 1', 'MG1V1']);
-    // proposal = MetaDaoController.interface.encodeFunctionData('addExternalGuild', [GuildController_]);
-    let toAvatar = AvatarxGuild.interface.encodeFunctionData('executeProposal', [MetaDaoController.address, 0, proposal, 0]);
+    // avatar.executeProposal --> governor executeProposal --> MetaDaoController.createGuild
+
+    /// Setup Guild
+    let proposal = MetaDaoController.interface.encodeFunctionData("createGuild", [reality, initialGuardian, 'MetaDaoV1 GUILD 11', 'MG1V11']);
+    TARGETS = [MetaDaoController.address];
+    VALUES = [0];
+    PROPOSALS = [proposal];
 
     console.log(1);
-    // await AvatarxGuild.proposeAfterVote([AvatarxGuild.address], [0], [toAvatar]);
-    let proposalId = await Governor.hashProposal([AvatarxGuild.address], [0], [toAvatar]);
+    // await AvatarxGuild.proposeAfterVote(TARGETS, VALUES, PROPOSALS);
 
+    let proposalId = await Governor.hashProposal(TARGETS, VALUES, PROPOSALS);
 
     // await Governor.castVote(proposalId, true);
-    console.log(2);
+    // console.log(2);
 
 
     // let tx = await Governor.state(proposalId);
     // console.log("tx is %s", tx);
-    await Governor.execute([MetaDaoController.address], [0], [proposal]);
-    console.log(3);
+    // await Governor.execute(TARGETS, VALUES, PROPOSALS);
+    // console.log(3);
 
     // let data = MetaDaoController.interface.encodeFunctionData('addExternalGuild', [GuildController_.address]);
     // console.log("data to create first guild is %s", data);

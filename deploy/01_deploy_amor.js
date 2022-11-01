@@ -24,7 +24,7 @@ async function main() {
     //verify
     await hre.run("verify:verify", {
       address: AMOR.address,
-      contract: "contracts/AMORToken.sol:AMORToken", //Filename.sol:ClassName
+      contract: "contracts/tokens/AMOR.sol:AMORToken", //Filename.sol:ClassName
     });
   }
   

@@ -25,7 +25,7 @@ async function main() {
     //verify
     await hre.run("verify:verify", {
       address: FXAMORxGuild.address,
-      contract: "contracts/FXAMORxGuildToken.sol:FXAMORxGuild", //Filename.sol:ClassName
+      contract: "contracts/tokens/FXAMORxGuild.sol:FXAMORxGuild", //Filename.sol:ClassName
     });
   }
   

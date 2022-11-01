@@ -15,9 +15,9 @@ async function main() {
     let DoinGudProxy = await b.deployed();
     console.log("DoinGudProxy address:", DoinGudProxy.address);
 
-    let tx = await DoinGudProxy.initProxy(AMOR);
-    console.log("tx is %s", tx);
-    console.log("DoinGudProxy address:", DoinGudProxy.address);
+    // let tx = await DoinGudProxy.initProxy(AMOR);
+    // console.log("tx is %s", tx);
+    // console.log("DoinGudProxy address:", DoinGudProxy.address);
 }
   
   main()
