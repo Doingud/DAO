@@ -33,9 +33,8 @@ pragma solidity 0.8.15;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *
  */
-import "./utils/interfaces/IAvatarxGuild.sol";
-import "./utils/interfaces/IGovernor.sol";
-import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
+import "./interfaces/IAvatarxGuild.sol";
+import "./interfaces/IGovernor.sol";
 
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -109,13 +108,19 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @notice Initializes the Governor contract
     /// @param  AMORxGuild_ the address of the AMORxGuild token
     /// @param  avatarAddress_ the address of the Avatar
-    function init(address AMORxGuild_, address avatarAddress_) external returns (bool) {
+    /// @param  initialGuardian the user responsible for the guardian actions
+    function init(
+        address AMORxGuild_,
+        address avatarAddress_,
+        address initialGuardian
+    ) external returns (bool) {
         if (_initialized) {
             revert AlreadyInitialized();
         }
 
         // person who inflicted the creation of the contract is set as the only guardian of the system
-        guardians.push(msg.sender);
+        guardians.push(initialGuardian);
+        weights[initialGuardian] = 1;
         AMORxGuild = IERC20(AMORxGuild_);
         avatarAddress = avatarAddress_;
 

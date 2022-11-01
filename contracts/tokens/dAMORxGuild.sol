@@ -44,7 +44,7 @@ pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./utils/ERC20Base.sol";
+import "../utils/ERC20Base.sol";
 
 contract dAMORxGuild is ERC20Base, Ownable {
     using SafeERC20 for IERC20;
@@ -198,8 +198,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
         amountDelegated[msg.sender] = 0;
 
-        stakesAMOR[msg.sender] = 0;
         AMORxGuild.safeTransfer(msg.sender, unstakeAMORAmount);
+        stakesAMOR[msg.sender] = 0;
 
         if (delegation[msg.sender].length != 0) {
             undelegateAll();

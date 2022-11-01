@@ -40,8 +40,10 @@ interface IMetaDaoController {
     /// @param guildOwner address that will control the functions of the guild
     /// @param name the name for the guild
     /// @param tokenSymbol the symbol for the Guild's token
+    /// @param initialGuardian the user responsible for the initial Guardian actions
     function createGuild(
         address guildOwner,
+        address initialGuardian,
         string memory name,
         string memory tokenSymbol
     ) external;
@@ -73,7 +75,5 @@ interface IMetaDaoController {
 
     /// @notice Allows DoinGud to update the fee index used
     /// @param  weights an array of the guild weights
-    /// @param  index the index location
-    /// @return uint256 location of the index created in the index array
     function updateIndex(bytes[] calldata weights, uint256 index) external returns (uint256);
 }

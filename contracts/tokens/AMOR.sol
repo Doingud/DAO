@@ -3,7 +3,7 @@
 pragma solidity 0.8.15;
 
 /**
- * @title  DoinGud: AMORToken.sol
+ * @title  DoinGud: AMOR.sol
  * @author Daoism Systems
  * @notice ERC20 implementation for DoinGudDAO
  * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
@@ -43,7 +43,7 @@ pragma solidity 0.8.15;
  *
  */
 
-import "./utils/ERC20Base.sol";
+import "../utils/ERC20Base.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 

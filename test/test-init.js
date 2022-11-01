@@ -1,6 +1,5 @@
 //  Init the test environment
 
-//const { ZERO_ADDRESS } = require('@openzeppelin/test-helpers/src/constants');
 const { ethers } = require('hardhat');
 const { TAX_RATE,
         AMOR_TOKEN_NAME, 
@@ -140,7 +139,7 @@ const avatar = async (setup) => {
   const module = await moduleFactory.deploy(avatar.address, avatar.address);
 
   await avatar.init(
-    setup.roles.root.address, // owner
+    setup.roles.root.address, // reality
     setup.roles.authorizer_adaptor.address // governor Address
   );
 
@@ -175,7 +174,8 @@ const governor = async (setup) => {
 
   await governor.init(
     setup.tokens.AmorGuildToken.address, //AMORxGuild
-    setup.avatars.avatar.address // Avatar Address
+    setup.avatars.avatar.address, // Avatar Address
+    setup.roles.root.address
   );
 
   setup.governor = governor;
@@ -186,26 +186,17 @@ const governor = async (setup) => {
 const getGuildFactory = async (setup) => {
   const cloneFactory = await ethers.getContractFactory("GuildFactory");
   const amorStorage = setup.amor_storage ? setup.amor_storage.address : setup.tokens.AmorTokenImplementation.address;
-  const amorGuildToken = setup.b_amorGuildToken ? setup.b_amorGuildToken.address : setup.tokens.AmorGuildToken.address;
-  const fxamor =  setup.b_fxamor ? setup.b_fxamor.address : setup.tokens.FXAMORxGuild.address;
-  const damor =  setup.b_damor ? setup.b_damor.address : setup.tokens.dAMORxGuild.address;
-  const controller = setup.b_controller ? setup.b_controller.address : setup.controller.address;
-  const governor = setup.b_governor ? setup.b_governor.address : setup.governor.address;
-  const avatar = setup.b_avatar ? setup.b_avatar.address : setup.avatars.avatar.address;
-  const proposer = setup.b_proposer ? setup.b_proposer.address : setup.roles.authorizer_adaptor.address;
-  const metadao = setup.metadao_proxy ? setup.metadao_proxy.address : setup.metadao.address;
 
   const guildFactory = await cloneFactory.deploy(
     amorStorage,
-    amorGuildToken,
-    fxamor,
-    damor,
+    setup.tokens.AmorGuildToken.address,
+    setup.tokens.FXAMORxGuild.address,
+    setup.tokens.dAMORxGuild.address,
     setup.tokens.AmorTokenProxy.address,
-    controller,
-    governor,
-    avatar,
-    metadao, // metaDaoController
-    proposer // snapshot address
+    setup.controller.address,
+    setup.governor.address,
+    setup.avatars.avatar.address,
+    setup.metadao.address // metaDaoController
   );
 
   const factory = guildFactory;
@@ -256,16 +247,14 @@ const beacon = async(logic, metadao) => {
 }
 
 module.exports = {
-  controller,
-  getTokens,
-  initialize,
   avatar,
-  vestingContract,
+  controller,
   getGuildFactory,
+  getTokens,
   governor,
+  initialize,
   metadao,
   metadaoMock,
   proxy,
-  proposer,
-  beacon
+  vestingContract
 }; 

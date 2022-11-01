@@ -19,6 +19,7 @@ let METADAO;
 let USDC;
 let user1;
 let user2;
+let user3;
 let CONTROLLER;
 let FACTORY;
 let FX_AMOR_TOKEN;
@@ -30,18 +31,8 @@ let PROPOSER;
 let GUILD_CONTROLLER_ONE;
 let GUILD_CONTROLLER_TWO;
 
-let BEACON_AMOR_GUILD_TOKEN;
-let BEACON_DAMOR;
-let BEACON_FXAMOR;
-let BEACON_CONTROLLER;
-let BEACON_GOVERNOR;
-let BEACON_AVATAR;
-let BEACON_PROPOSER;
-
 let encodedIndex;
 let encodedIndex2;
-
-//const FEE_INDEX = ethers.utils.keccak256(toUtf8Bytes("FEE_INDEX"));
 
 describe("unit - MetaDao", function () {
 
@@ -103,8 +94,8 @@ describe("unit - MetaDao", function () {
     beforeEach('setup', async function() {
         await setupTests();
         /// Setup the guilds through the METADAO
-        await METADAO.createGuild(user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
-        await METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
+        await METADAO.createGuild(user2.address, user3.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
+        await METADAO.createGuild(user1.address, user3.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
         GUILD_CONTROLLER_ONE = await METADAO.guilds(ONE_ADDRESS);
         GUILD_CONTROLLER_ONE = CONTROLLER.attach(GUILD_CONTROLLER_ONE);
         GUILD_CONTROLLER_TWO = await METADAO.guilds(GUILD_CONTROLLER_ONE.address);
@@ -152,12 +143,12 @@ describe("unit - MetaDao", function () {
 
     context('function: addGuild()', () => {
         it('Should fail to add guilds if not an admin address', async function () {
-            await expect(METADAO.connect(user1).createGuild(user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0])).
+            await expect(METADAO.connect(user1).createGuild(user2.address, user3.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0])).
                 to.be.revertedWith('Ownable');
         });
 
         it('Should create a new guild if tx sent by admin', async function () {
-            await METADAO.createGuild(user3.address, MOCK_GUILD_NAMES[2], MOCK_GUILD_SYMBOLS[2]);
+            await METADAO.createGuild(user3.address, user3.address, MOCK_GUILD_NAMES[2], MOCK_GUILD_SYMBOLS[2]);
             expect(await METADAO.guilds(GUILD_CONTROLLER_TWO.address)).to.not.equal(ONE_ADDRESS);
         });
 
@@ -256,37 +247,13 @@ describe("unit - MetaDao", function () {
             await init.avatar(setup);
             await init.governor(setup);
             CONTROLLER2 = setup.controller;
-            await init.proposer(setup);
-            FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
-            DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
-            CONTROLLERXGUILD = setup.controller;
-            GOVERNORXGUILD = setup.governor;
-            AVATARXGUILD = setup.avatars.avatar;
-            PROPOSER = setup.proposer;
-    
-            BEACON_AMOR = await init.beacon(AMOR_TOKEN.address, METADAO.address);
-            BEACON_AMOR_GUILD_TOKEN = await init.beacon(AMOR_GUILD_TOKEN.address, METADAO.address);
-            BEACON_DAMOR = await init.beacon(DAMOR_GUILD_TOKEN.address, METADAO.address);
-            BEACON_FXAMOR = await init.beacon(FX_AMOR_TOKEN.address, METADAO.address);
-            BEACON_CONTROLLER = await init.beacon(CONTROLLERXGUILD.address, METADAO.address);
-            BEACON_GOVERNOR = await init.beacon(GOVERNORXGUILD.address, METADAO.address);
-            BEACON_AVATAR = await init.beacon(AVATARXGUILD.address, METADAO.address);
-            BEACON_PROPOSER = await init.beacon(PROPOSER.address, METADAO.address);
-          
-            setup.b_amorGuildToken = BEACON_AMOR_GUILD_TOKEN;
-            setup.b_damor = BEACON_DAMOR;
-            setup.b_fxamor = BEACON_FXAMOR;
-            setup.b_controller = BEACON_CONTROLLER;
-            setup.b_governor = BEACON_GOVERNOR;
-            setup.b_avatar = BEACON_AVATAR;
-            setup.b_proposer = BEACON_PROPOSER;
             await init.getGuildFactory(setup);
             FACTORY2 = setup.factory;
 
             await METADAO2.init(AMOR_TOKEN2.address, FACTORY2.address,  setup.roles.root.address);
 
             /// Setup the guilds through the METADAO
-            await METADAO2.createGuild(user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
+            await METADAO2.createGuild(user2.address, user1.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
             GUILD_CONTROLLER_ONE2 = await METADAO2.guilds(ZERO_ADDRESS);
             GUILD_CONTROLLER_ONE2 = CONTROLLER2.attach(GUILD_CONTROLLER_ONE2);
             GUILD_CONTROLLER_TWO2 = await METADAO2.guilds(GUILD_CONTROLLER_ONE2.address);

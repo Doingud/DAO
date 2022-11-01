@@ -15,9 +15,9 @@ pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./utils/interfaces/ICloneFactory.sol";
-import "./utils/interfaces/IMetadao.sol";
-import "./utils/interfaces/IGuildController.sol";
+import "../interfaces/ICloneFactory.sol";
+import "../interfaces/IMetadao.sol";
+import "../interfaces/IGuildController.sol";
 
 contract MetaDaoControllerMock is IMetadao, AccessControl {
     error InvalidGuild();

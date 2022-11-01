@@ -49,17 +49,19 @@ const getSqrt = function (value) {
     return y;
 }
 
-const metaHelper = async function (TARGETS, VALUES, PROPOSALS, guardians, reality, PROPOSER, GOVERNOR) {
-  let PROPOSER_CONTRACT = await ethers.getContractFactory("Proposer");
-  PROPOSER_CONTRACT = PROPOSER_CONTRACT.attach(PROPOSER);
+const metaHelper = async function (TARGETS, VALUES, PROPOSALS, guardians, reality, AVATAR, GOVERNOR) {
+  let AVATAR_CONTRACT = await ethers.getContractFactory("AvatarxGuild");
+  AVATAR_CONTRACT = AVATAR_CONTRACT.attach(AVATAR);
   let GOVERNOR_CONTRACT = await ethers.getContractFactory("DoinGudGovernor");
   GOVERNOR_CONTRACT = GOVERNOR_CONTRACT.attach(GOVERNOR);
-  await PROPOSER_CONTRACT.connect(reality).proposeAfterVote(TARGETS, VALUES, PROPOSALS, 0);
+  await AVATAR_CONTRACT.connect(reality).proposeAfterVote(TARGETS, VALUES, PROPOSALS);
   let proposalId = await GOVERNOR_CONTRACT.hashProposal(TARGETS, VALUES, PROPOSALS);
   await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
   time.increase(time.duration.days(5));
   await GOVERNOR_CONTRACT.connect(guardians[0]).castVote(proposalId, true);
-  await GOVERNOR_CONTRACT.connect(guardians[1]).castVote(proposalId, true);
+  if (guardians.length > 1) {
+    await GOVERNOR_CONTRACT.connect(guardians[1]).castVote(proposalId, true);
+  }
   await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
   time.increase(time.duration.days(10));
   await GOVERNOR_CONTRACT.execute(TARGETS, VALUES, PROPOSALS);

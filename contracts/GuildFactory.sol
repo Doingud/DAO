@@ -24,14 +24,13 @@ pragma solidity 0.8.15;
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "./utils/interfaces/IAmorGuildToken.sol";
-import "./utils/interfaces/ICloneFactory.sol";
-import "./utils/interfaces/IDoinGudProxy.sol";
-import "./utils/interfaces/IdAMORxGuild.sol";
-import "./utils/interfaces/IGuildController.sol";
-import "./utils/interfaces/IAvatarxGuild.sol";
-import "./utils/interfaces/IGovernor.sol";
-import "./utils/interfaces/IProposer.sol";
+import "./interfaces/IAMORxGuild.sol";
+import "./interfaces/ICloneFactory.sol";
+import "./interfaces/IDoinGudProxy.sol";
+import "./interfaces/IdAMORxGuild.sol";
+import "./interfaces/IGuildController.sol";
+import "./interfaces/IAvatarxGuild.sol";
+import "./interfaces/IGovernor.sol";
 
 contract GuildFactory is ICloneFactory, Ownable {
     /// The various guild components
@@ -41,7 +40,6 @@ contract GuildFactory is ICloneFactory, Ownable {
         address FXAmorxGuild;
         address AvatarxGuild;
         address GovernorxGuild;
-        address ProposerxGuild;
     }
 
     /// The Mastercopy/Implementation Addresses
@@ -51,8 +49,6 @@ contract GuildFactory is ICloneFactory, Ownable {
     address public amorxGuildToken;
     /// The MetaDaoController address
     address public immutable metaDaoController;
-    /// The Proposer module
-    address public immutable proposerModule;
     /// The DoinGud generic proxy contract (the target)
     address public immutable cloneTarget;
     address public immutable avatarxGuild;
@@ -71,6 +67,13 @@ contract GuildFactory is ICloneFactory, Ownable {
     /// The deployment was unsuccessful
     error Unsuccessful();
 
+    event GuildCreated(
+        address amorxGuildToken,
+        address dAMORxGuildToken,
+        address fxAMORxGuildToken,
+        address controllerxGuild
+    );
+
     constructor(
         address _amorToken,
         address _amorxGuildToken,
@@ -80,8 +83,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         address _controllerxGuild,
         address _governor,
         address _avatarxGuild,
-        address _metaDaoController,
-        address _proposer
+        address _metaDaoController
     ) {
         /// The AMOR Token address
         amorToken = _amorToken;
@@ -95,17 +97,16 @@ contract GuildFactory is ICloneFactory, Ownable {
         /// `_cloneTarget` refers to the DoinGud Proxy
         cloneTarget = _doinGudProxy;
         metaDaoController = _metaDaoController;
-        proposerModule = _proposer;
-        _transferOwnership(_metaDaoController);
     }
 
     /// @notice This deploys a new guild with it's associated tokens
     /// @dev    Takes the names and symbols and associates it to a guild
-    /// @param  module The address of the Reality.eth module linked to this guild's snapshot
+    /// @param  reality The address of the Reality.eth module linked to this guild's snapshot
     /// @param  _name The name of the Guild without the prefix "AMORx"
     /// @param  _symbol The symbol of the Guild
     function deployGuildContracts(
-        address module,
+        address reality,
+        address initialGuardian,
         string memory _name,
         string memory _symbol
     )
@@ -148,10 +149,9 @@ contract GuildFactory is ICloneFactory, Ownable {
         /// Deploy the Guild Governor
         guild.GovernorxGuild = _deployGovernor();
 
-        /// Deploy the Guild Proposer Module
-        guild.ProposerxGuild = _deployProposer();
+        _initGuildControls(controller, reality, initialGuardian);
 
-        _initGuildControls(controller, module);
+        emit GuildCreated(guild.AmorGuildToken, guild.DAmorxGuild, guild.FXAmorxGuild, controller);
 
         return (controller, guild.GovernorxGuild, guild.AvatarxGuild);
     }
@@ -236,29 +236,14 @@ contract GuildFactory is ICloneFactory, Ownable {
         return address(proxyContract);
     }
 
-    /// @notice Deploys the Proposer Module for the guild
-    /// @dev    This module is linked to a specific Reality.eth module
-    /// @return address of the deployed module
-    function _deployProposer() internal returns (address) {
-        IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
-        proxyContract.initProxy(proposerModule);
-
-        return address(proxyContract);
-    }
-
     /// @notice Initializes the Guild Control Structures
     /// @param  controller the avatar token address for this guild
-    /// @param  module address: The Reality.io address
-    function _initGuildControls(address controller, address module) internal {
-        /// Init the Proposer
-        bytes memory initParams = abi.encode(
-            guilds[controller].AvatarxGuild,
-            guilds[controller].GovernorxGuild,
-            module
-        );
-
-        IProposer(guilds[controller].ProposerxGuild).setUp(initParams);
-
+    /// @param  reality the Reality.io address
+    function _initGuildControls(
+        address controller,
+        address reality,
+        address initialGuardian
+    ) internal {
         /// Init the Guild Controller
         IGuildController(controller).init(
             guilds[controller].AvatarxGuild,
@@ -269,12 +254,13 @@ contract GuildFactory is ICloneFactory, Ownable {
         );
 
         /// Init the AvatarxGuild
-        IAvatarxGuild(guilds[controller].AvatarxGuild).init(module, guilds[controller].GovernorxGuild);
+        IAvatarxGuild(guilds[controller].AvatarxGuild).init(reality, guilds[controller].GovernorxGuild);
 
-        /// Init the AvatarxGuild
+        /// Init the GovernorxGuild
         IDoinGudGovernor(guilds[controller].GovernorxGuild).init(
             guilds[controller].AmorGuildToken,
-            guilds[controller].AvatarxGuild
+            guilds[controller].AvatarxGuild,
+            initialGuardian
         );
     }
 }

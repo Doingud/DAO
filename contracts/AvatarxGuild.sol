@@ -35,32 +35,33 @@ pragma solidity 0.8.15;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *
  */
-import "./Executor.sol";
-import "./utils/interfaces/IAvatarxGuild.sol";
-import "@gnosis.pm/safe-contracts/contracts/common/Enum.sol";
+import "./interfaces/IAvatarxGuild.sol";
+import "./interfaces/IGovernor.sol";
 
-contract AvatarxGuild is Executor, IAvatarxGuild {
+contract AvatarxGuild is IAvatarxGuild {
     event ExecutionFromGovernorSuccess(address governorAddress);
     event ExecutionFromGovernorFailure(address governorAddress);
     event Initialized(address owner, address governorAddress);
-    event GovernorSet(address newGovernor);
 
     address public governor;
-
+    address public reality;
     address internal constant SENTINEL_MODULES = address(0x1);
     bool private _initialized;
+    bool private guardiansSet;
 
     mapping(address => address) internal modules;
 
     /// Custom errors
-    /// Error if the AmorxGuild has already been initialized
+    /// Error if the AvatarxGuild has already been initialized
     error AlreadyInitialized();
     error NotWhitelisted();
     error NotEnabled();
     error NotDisabled();
     error InvalidParameters();
     error Unauthorized();
+    error AlreadySet();
 
+    /// Access Control Modifiers
     modifier onlyGovernor() {
         if (msg.sender != governor) {
             revert Unauthorized();
@@ -75,20 +76,28 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         _;
     }
 
+    modifier onlyReality() {
+        if (msg.sender != reality) {
+            revert Unauthorized();
+        }
+        _;
+    }
+
     /// @notice Initializes the Avatar contract
-    /// @param  initModule the address of the module which can execute transactions after Snaphsot
-    /// @param  governorAddress_ the address of the GovernorxGuild
+    /// @param  realityAddress the address of the oracle which can propose transactions after Snaphsot
+    /// @param  governorAddress the address of the GovernorxGuild
     /// @return bool initialization successful/unsuccessful
-    function init(address initModule, address governorAddress_) external returns (bool) {
+    function init(address realityAddress, address governorAddress) external returns (bool) {
         if (_initialized) {
             revert AlreadyInitialized();
         }
-        governor = governorAddress_;
+        governor = governorAddress;
+        reality = realityAddress;
         _initialized = true;
         /// Setup the first module provided by the MetaDAO
-        modules[initModule] = SENTINEL_MODULES;
-        modules[SENTINEL_MODULES] = initModule;
-        emit Initialized(initModule, governorAddress_);
+        //modules[address(0x02)] = SENTINEL_MODULES;
+        modules[SENTINEL_MODULES] = address(0x02);
+        emit Initialized(reality, governorAddress);
         return true;
     }
 
@@ -96,7 +105,6 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
         if (newGovernor == governor) {
             revert AlreadyInitialized();
         }
-
         governor = newGovernor;
         emit GovernorSet(newGovernor);
     }
@@ -249,5 +257,18 @@ contract AvatarxGuild is Executor, IAvatarxGuild {
             mstore(array, moduleCount)
         }
         return (array, next);
+    }
+
+    /// @notice Allows for on-chain execution of off-chain vote
+    /// @dev    Links to a `Reality`/`SnapSafe` module
+    /// @param  targets An array of proposed targets for proposed transactions
+    /// @param  values An array of values corresponding to proposed transactions
+    /// @param  data An array of encoded function calls with parameters corresponding to proposals
+    function proposeAfterVote(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] calldata data
+    ) external onlyReality {
+        IDoinGudGovernor(governor).propose(targets, values, data);
     }
 }

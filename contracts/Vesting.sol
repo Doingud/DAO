@@ -39,7 +39,7 @@ pragma solidity 0.8.15;
 import "@openzeppelin/contracts/access/Ownable.sol";
 /// Interfaces
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./utils/interfaces/IdAMORxGuild.sol";
+import "./interfaces/IdAMORxGuild.sol";
 
 contract Vesting is Ownable {
     /// Struct containing allocation details
