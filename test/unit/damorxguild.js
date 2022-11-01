@@ -133,7 +133,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
             expect(roundedNewRealAmount.toString()).to.be.gt(ethers.BigNumber.from(realAmount));
             expect(expectedAmount.toString()).to.be.gt(newRealAmount);
-            
+
             realAmount = newRealAmount;
         });
 
@@ -326,7 +326,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             time.increase(maxLockTime);
             await dAMORxGuild.connect(staker).withdraw();        
             const withdrawedTokens = (await AMORxGuild.balanceOf(staker.address)).toString();
-            
+
             expect(withdrawedTokens).to.equal(staked);
         });
     

@@ -67,8 +67,7 @@ describe("unit - Clone Factory", function () {
 
   context("function: deployGuildContracts", () => {
     it("Should deploy the Guild Token Contracts", async function () {
-      await expect(METADAO.createGuild(user1.address, user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0])).
-        to.emit(CLONE_FACTORY, "GuildCreated");
+      await METADAO.createGuild(user1.address, user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
 
       this.guildOneControllerxGuild = await METADAO.guilds(ONE_ADDRESS);
 

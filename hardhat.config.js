@@ -6,11 +6,13 @@ require("hardhat-deploy-ethers");
 require("solidity-coverage");
 require("@nomiclabs/hardhat-web3");
 require("hardhat-gas-reporter");
+require("@nomiclabs/hardhat-etherscan");
 
 const {
     INFURA_KEY,
     MNEMONIC,
     ETHERSCAN_API_KEY,
+    POLYGONSCAN_API_KEY,
     ARBISCAN_API_KEY,
     ALCHEMY_API_KEY,
     PK,
@@ -90,6 +92,15 @@ module.exports = {
             url: `https://eth-goerli.alchemyapi.io/v2/${ALCHEMY_API_KEY}`,
             saveDeployments: true,
         },
+        mumbai: {
+            ...sharedNetworkConfig,
+            blockGasLimit: 3000000000000, //10000000000000 //100000000, //ProviderError: exceeds block gas limit
+            gas: 3206979, // 2206979
+            // url: `https://polygon-mumbai.g.alch0.2071emy.com/v2/${ALCHEMY_API_KEY}`,       
+            url: "https://matic-mumbai.chainstacklabs.com",
+            // url: "https://rpc-mumbai.maticvigil.com",
+            saveDeployments: true,
+        },
         ganache: {
             ...sharedNetworkConfig,
             url: "http://127.0.0.1:7545",
@@ -114,6 +125,7 @@ module.exports = {
                 rinkeby: ETHERSCAN_API_KEY,
                 goerli: ETHERSCAN_API_KEY,
                 arbitrumOne: ARBISCAN_API_KEY,
+                polygonMumbai: POLYGONSCAN_API_KEY,
             },
         },
     },
@@ -137,6 +149,7 @@ module.exports = {
             rinkeby: ETHERSCAN_API_KEY,
             goerli: ETHERSCAN_API_KEY,
             arbitrumOne: ARBISCAN_API_KEY,
+            polygonMumbai: POLYGONSCAN_API_KEY,
         },
     },
     namedAccounts: {

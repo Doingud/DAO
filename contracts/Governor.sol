@@ -246,9 +246,11 @@ contract DoinGudGovernor is IDoinGudGovernor {
         if (!(targets.length == values.length && targets.length == calldatas.length)) {
             revert InvalidParameters();
         }
+
         if (targets.length == 0) {
             revert InvalidParameters();
         }
+
         if (targets.length > PROPOSAL_MAX_OPERATIONS) {
             revert InvalidParameters();
         }
