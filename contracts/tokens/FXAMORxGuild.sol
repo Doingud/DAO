@@ -72,10 +72,12 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     IERC20 public AMORxGuild;
 
     /// Events
+    event Initialized(address owner, address AMORxGuild);
     event AMORxGuildStakedToFXAMOR(address to, uint256 amount, uint256 time);
     event AMORxGuildWithdrawedFromFXAMOR(address to, uint256 amount, uint256 time);
     event FXAMORxGuildUndelegated(address from, address owner, uint256 amount);
     event FXAMORxGuildDelegated(address to, address owner, uint256 amount);
+    event FXAMORxGuildControllerUpdated(address newCollector);
 
     /// Errors
     error AlreadyInitialized();
@@ -112,7 +114,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         symbol = symbol_;
 
         _initialized = true;
-        emit Initialized(_initialized, initOwner_, AMORxGuild_);
+        emit Initialized(initOwner_, AMORxGuild_);
     }
 
     function setController(address _controller) external onlyAddress(_owner) {
@@ -120,6 +122,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             revert AddressZero();
         }
         controller = _controller;
+        emit FXAMORxGuildControllerUpdated(_controller);
     }
 
     modifier onlyAddress(address authorizedAddress) {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
-import "hardhat/console.sol";
+
 /**
  * @title   DoinGud: Governor.sol
  * @author  Daoism Systems
@@ -33,8 +33,8 @@ import "hardhat/console.sol";
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *
  */
-import "../utils/interfaces/IAvatarxGuild.sol";
-import "../utils/interfaces/IGovernor.sol";
+import "../interfaces/IAvatarxGuild.sol";
+import "../interfaces/IGovernor.sol";
 
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -335,7 +335,6 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
         uint256 proposalId = hashProposal(targets, values, calldatas);
 
         ProposalState status = state(proposalId);
-        console.log("uint256(status) is %s", uint256(status));
         if (status != ProposalState.Succeeded) {
             revert InvalidState();
         }

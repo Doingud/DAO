@@ -62,6 +62,8 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
     error AlreadyInitialized();
 
     event Initialized(bool success, address taxCollector, uint256 rate);
+    event AmorTaxChanged(uint256 newRate);
+    event AmorTaxControllerUpdated(address newTaxCollector);
 
     bool private _initialized;
 
@@ -86,9 +88,9 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         _transferOwnership(_multisig);
         //  Set the name and symbol
         _setTokenDetail(_name, _symbol);
-        decimals = 18;
+        _decimals = 18;
         //  Pre-mint to the multisig address
-        _mint(_multisig, 10000000 * 10**decimals);
+        _mint(_multisig, 10000000 * 10**_decimals);
         //  Set the tax collector address
         updateController(_initCollector);
         //  Set the tax rate
@@ -106,6 +108,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
             revert InvalidRate();
         }
         _setTaxRate(newRate);
+        emit AmorTaxChanged(newRate);
     }
 
     /// @notice Sets the address which receives taxes
@@ -121,6 +124,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
     /// @param  newTaxCollector address which must receive taxes
     function _updateController(address newTaxCollector) internal {
         taxController = newTaxCollector;
+        emit AmorTaxControllerUpdated(newTaxCollector);
     }
 
     /// @notice Sets the tax rate for transfer and transferFrom

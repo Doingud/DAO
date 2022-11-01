@@ -65,7 +65,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     // amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
 
-    event Initialized(bool success, address owner, address AMORxGuild, uint256 amount);
+    event Initialized(address owner, address AMORxGuild, uint256 amount);
     event AMORxGuildStakedToDAMOR(address from, uint256 amount, uint256 mintAmount, uint256 time);
     event AMORxGuildStakIncreasedToDAMOR(address from, uint256 amount, uint256 mintAmount, uint256 time);
     event AMORxGuildWithdrawedFromDAMOR(address to, uint256 burnedDAMORxGuild, uint256 returnedAMORxGuild);
@@ -74,7 +74,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
     bool private _initialized;
     uint256 public constant COEFFICIENT = 2;
-    uint256 public constant TIME_DENOMINATOR = 1000000000000000000;
+    uint256 public constant TIME_DENOMINATOR = 1_000_000_000_000_000_000; // 1 ether
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     uint256 public constant MIN_LOCK_TIME = 7 days; // 1 week is the time for the new deposided tokens to be locked until they can be withdrawn
 
@@ -95,8 +95,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
      *          It can only be run once.
      */
     function init(
-        string memory name,
-        string memory symbol,
+        string memory _name,
+        string memory _symbol,
         address initOwner,
         address _AMORxGuild,
         uint256 amount
@@ -107,10 +107,10 @@ contract dAMORxGuild is ERC20Base, Ownable {
         _transferOwnership(initOwner);
 
         AMORxGuild = IERC20(_AMORxGuild);
-        _setTokenDetail(name, symbol);
+        _setTokenDetail(_name, _symbol);
 
         _initialized = true;
-        emit Initialized(_initialized, initOwner, _AMORxGuild, amount);
+        emit Initialized(initOwner, _AMORxGuild, amount);
         return true;
     }
 

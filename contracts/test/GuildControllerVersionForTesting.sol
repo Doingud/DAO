@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
 
-import "../utils/interfaces/IAmorGuildToken.sol";
-import "../utils/interfaces/IFXAMORxGuild.sol";
-import "../utils/interfaces/IGuildController.sol";
-import "../utils/interfaces/IMetaDaoController.sol";
+import "../interfaces/IAMORxGuild.sol";
+import "../interfaces/IFXAMORxGuild.sol";
+import "../interfaces/IGuildController.sol";
+import "../interfaces/IMetaDaoController.sol";
 
 /// Advanced math functions for bonding curve
 import "@openzeppelin/contracts/access/Ownable.sol";
