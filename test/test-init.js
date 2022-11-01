@@ -199,11 +199,9 @@ const getGuildFactory = async (setup) => {
     setup.metadao.address // metaDaoController
   );
 
-  const factory = guildFactory;
+  setup.factory = guildFactory;
 
-  setup.factory = factory;
-
-  return factory;
+  return guildFactory;
 }
 
 const metadao = async(setup) => {

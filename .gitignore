@@ -104,5 +104,8 @@ dist
 # TernJS port file
 .tern-port
 
+# Zodiac Module files for integration testing
+zodiac-module-reality/
+
 # Intellij
 .idea
