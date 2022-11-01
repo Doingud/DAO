@@ -1,5 +1,6 @@
 const { ethers } = require("hardhat");
 const { use, expect } = require("chai");
+const { _TypedDataEncoder } =require('@ethersproject/hash');
 const { solidity } = require("ethereum-waffle");
 const init = require('../test-init.js');
 const { 
@@ -7,6 +8,7 @@ const {
     FIFTY_ETHER,
     MOCK_GUILD_NAMES,
     MOCK_GUILD_SYMBOLS,
+    ZERO_ADDRESS,
     BASIS_POINTS,
     TAX_RATE,
     GAURDIAN_THRESHOLD,
@@ -16,7 +18,30 @@ const {
     ONE_ADDRESS
 } = require('../helpers/constants.js');
 const { time } = require("@openzeppelin/test-helpers");
-const { metaHelper } = require("../helpers/helpers.js");
+const EIP712_TYPES = {
+    Transaction: [
+      {
+        name: 'to',
+        type: 'address',
+      },
+      {
+        name: 'value',
+        type: 'uint256',
+      },
+      {
+        name: 'data',
+        type: 'bytes',
+      },
+      {
+        name: 'operation',
+        type: 'uint8',
+      },
+      {
+        name: 'nonce',
+        type: 'uint256',
+      },
+    ],
+};
 
 use(solidity);
 
@@ -61,7 +86,7 @@ let DOINGUD_METADAO;
 
 
 /// The Newly Deployed Guilds
-// let GUILD_ONE_AMORXGUILD;
+let GUILD_ONE_AMORXGUILD;
 // let GUILD_ONE_DAMORXGUILD;
 let GUILD_ONE_CONTROLLERXGUILD;
 let GUILD_ONE_AVATARXGUILD;
@@ -86,7 +111,12 @@ let GUILD_TWO_FXAMORXGUILD;
 let IMPACT_MAKERS;
 let IMPACT_MAKERS_WEIGHTS;
 
+let domain;
+let snapshotModule;
+let GUILD_THREE_CONTROLLERXGUILD;
 let ControllerxTwo;
+let ControllerxThree;
+let avatar;
 
 describe("Integration: DoinGud guilds ecosystem", function () {
 
@@ -171,6 +201,80 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         CLONE_FACTORY = setup.factory;
         VESTING = setup.vesting;
 
+        // setup reality.eth
+        // RealityModuleERC20
+        
+        // output node, aka GnosisSafe Avatar
+        const Avatar = await hre.ethers.getContractFactory("TestAvatar");
+        // as GnosisSafe Avatar is the contract that interacts with our Avatar
+        avatar = await Avatar.deploy();
+        console.log("realityModule avatar.address is %s", avatar.address);
+        console.log("DOINGUD_AVATAR.address is %s", DOINGUD_AVATAR.address);
+        const mock = pool;
+        const oracle = await hre.ethers.getContractAt("RealitioV3ERC20", mock.address);
+        console.log("Oracle address is %s", oracle.address);
+        
+        // middle node
+        let realityModule = await ethers.getContractFactory("RealityModuleERC20")
+        const module = await realityModule.deploy(
+            DOINGUD_AVATAR.address,
+            avatar.address, // avatar Safe authorizer_adaptor.address
+            avatar.address, // target DOINGUD_AVATAR
+            oracle.address,
+            1, 10, 0, 0, 0,
+            authorizer_adaptor.address,
+            {
+                gasLimit: 10000000, // InvalidInputError: Transaction requires at least 279668 gas but got 100000
+            }
+        )
+        await module.deployTransaction.wait()
+        console.log("realityModule deployed to:", module.address);
+
+        let module_proxy = await init.proxy();
+        await module_proxy.initProxy(module.address);
+        realityModule = realityModule.attach(module_proxy.address);
+        
+        // setup Snapshot
+        const wallets = await ethers.getSigners();
+        const safeSigner = wallets[0]; // One 1 signer on the safe
+
+        const GnosisSafeL2 = await ethers.getContractFactory(
+          '@gnosis.pm/safe-contracts/contracts/GnosisSafeL2.sol:GnosisSafeL2'
+        );
+        const FactoryContract = await ethers.getContractFactory(
+          '@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol:GnosisSafeProxyFactory'
+        );
+        const singleton = await GnosisSafeL2.deploy();
+        const factory = await FactoryContract.deploy();
+
+        const template = await factory.callStatic.createProxy(singleton.address, '0x');
+        await factory.createProxy(singleton.address, '0x');
+
+        const safe = GnosisSafeL2.attach(template);
+        safe.setup([safeSigner.address], 1, ZERO_ADDRESS, '0x', ZERO_ADDRESS, ZERO_ADDRESS, 0, ZERO_ADDRESS);
+
+        // input node, as users will be interacting with our contracts via Snapshot
+        const SnapshotXContract = await ethers.getContractFactory('SnapshotXL1Executor');
+
+        //deploying singleton master contract
+        const masterzodiacModule = await SnapshotXContract.deploy(
+            DOINGUD_AVATAR.address,
+            realityModule.address, // avatar reality.eth
+            // avatar aka GnosisSafe Avatar as we need interaction user-input node and output-DOINGUD_AVATAR node
+            avatar.address, // target
+            DOINGUD_AVATAR.address,
+            1,
+            []
+        );
+
+        snapshotModule = masterzodiacModule;
+        await avatar.setModule(snapshotModule.address);
+
+        domain = {
+            chainId: ethers.BigNumber.from(network.config.chainId),
+            verifyingContract: snapshotModule.address,
+        };
+
         await DOINGUD_AMOR_TOKEN.init(
             AMOR_TOKEN_NAME, 
             AMOR_TOKEN_SYMBOL, 
@@ -202,7 +306,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         );
 
         await DOINGUD_CONTROLLER.init(
-            setup.roles.root.address, // owner
+            DOINGUD_AVATAR.address, // owner
             DOINGUD_AMOR_TOKEN.address,
             DOINGUD_AMOR_GUILD_TOKEN.address, // AMORxGuild
             DOINGUD_FXAMOR.address, // FXAMORxGuild
@@ -210,7 +314,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         );
 
         await DOINGUD_AVATAR.init(
-            authorizer_adaptor.address, // owner
+            avatar.address, // owner
             DOINGUD_GOVERNOR.address // governor Address
         );
 
@@ -228,20 +332,92 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
         /// Step 7: Set the Guardians for the MetaDAO
         /// Probably the first step after any new guild
-        let proposal = DOINGUD_GOVERNOR.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
-        await metaHelper([DOINGUD_GOVERNOR.address], [0], [proposal], [root], authorizer_adaptor, DOINGUD_AVATAR.address, DOINGUD_GOVERNOR.address);
+        let guardians = [user1.address, user2.address, user3.address];
+        let proposal = DOINGUD_GOVERNOR.interface.encodeFunctionData("setGuardians", [guardians]);
+        let TARGETS = [DOINGUD_GOVERNOR.address];
+        let VALUES = [0];
+        let PROPOSALS = [proposal];
+        
+        let dataToReality = DOINGUD_AVATAR.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+        let dataToSnapshot = avatar.interface.encodeFunctionData("exec", [DOINGUD_AVATAR.address, 0, dataToReality]);
+        let txToSnapshot = {
+            to: avatar.address,
+            value: 0,
+            data: dataToSnapshot,
+            operation: 1,
+            nonce: 0,
+        };
+        let txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+
+        let abiCoder = new ethers.utils.AbiCoder();
+        let executionHash = ethers.utils.keccak256(
+            abiCoder.encode(['bytes32[]'], [[txHash1]])
+        );
+        let proposal_outcome = 1;
+
+        await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+            txHash1,
+        ]);
+
+        expect(await snapshotModule.getNumOfTxInProposal(0)).to.equal(1);
+        await snapshotModule.executeProposalTx(0, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+
+        let proposalId = await DOINGUD_GOVERNOR.hashProposal(TARGETS, VALUES, PROPOSALS);
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(5));
+
+        await DOINGUD_GOVERNOR.connect(root).castVote(proposalId, true);
+
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(10));
+
+        expect(await DOINGUD_GOVERNOR.guardians(0)).to.equals(root.address);
+        await DOINGUD_GOVERNOR.execute(TARGETS, VALUES, PROPOSALS);
+        expect(await DOINGUD_GOVERNOR.guardians(0)).to.equals(user1.address);
+        expect(await DOINGUD_GOVERNOR.guardians(1)).to.equals(user2.address);
+
 
         /// Step 8: Propose to create a new guild
-        proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, root.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
-        await metaHelper(
-            [DOINGUD_METADAO.address],
-            [0],
-            [proposal],
-            [user1, user2, user3],
-            authorizer_adaptor,
-            DOINGUD_AVATAR.address,
-            DOINGUD_GOVERNOR.address
+        proposal = DOINGUD_METADAO.interface.encodeFunctionData("createGuild", [avatar.address, root.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
+
+        TARGETS = [DOINGUD_METADAO.address];
+        VALUES = [0];
+        PROPOSALS = [proposal];
+        
+        dataToReality = DOINGUD_AVATAR.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+        dataToSnapshot = avatar.interface.encodeFunctionData("exec", [DOINGUD_AVATAR.address, 0, dataToReality]);
+
+        txToSnapshot = {
+            to: avatar.address,
+            value: 0,
+            data: dataToSnapshot,
+            operation: 1,
+            nonce: 0,
+        };
+        txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+
+        abiCoder = new ethers.utils.AbiCoder();
+        executionHash = ethers.utils.keccak256(
+            abiCoder.encode(['bytes32[]'], [[txHash1]])
         );
+        proposal_outcome = 1;
+
+        await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+            txHash1,
+        ]);
+        await snapshotModule.executeProposalTx(1, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+
+        proposalId = await DOINGUD_GOVERNOR.hashProposal(TARGETS, VALUES, PROPOSALS);
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(5));
+
+        await DOINGUD_GOVERNOR.connect(user1).castVote(proposalId, true);
+        await DOINGUD_GOVERNOR.connect(user2).castVote(proposalId, true);
+
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(10));
+        await DOINGUD_GOVERNOR.execute(TARGETS, VALUES, PROPOSALS);
+
 
         /// Setup the first two Guilds
         let guildOne = await DOINGUD_METADAO.guilds(ONE_ADDRESS);
@@ -261,24 +437,126 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxOne);
 
         /// Setup the Impact Makers for the GuildController
-        proposal = GUILD_ONE_GOVERNORXGUILD.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
-        await metaHelper([GUILD_ONE_GOVERNORXGUILD.address], [0], [proposal], [root], authorizer_adaptor, GUILD_ONE_AVATARXGUILD.address, GUILD_ONE_GOVERNORXGUILD.address);
+        proposal = GUILD_ONE_GOVERNORXGUILD.interface.encodeFunctionData("setGuardians", [guardians]);
+
+        TARGETS = [GUILD_ONE_GOVERNORXGUILD.address];
+        VALUES = [0];
+        PROPOSALS = [proposal];
+        
+        dataToReality = GUILD_ONE_AVATARXGUILD.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+        dataToSnapshot = avatar.interface.encodeFunctionData("exec", [GUILD_ONE_AVATARXGUILD.address, 0, dataToReality]);
+
+        txToSnapshot = {
+            to: avatar.address,
+            value: 0,
+            data: dataToSnapshot,
+            operation: 1,
+            nonce: 0,
+        };
+        txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+
+        abiCoder = new ethers.utils.AbiCoder();
+        executionHash = ethers.utils.keccak256(
+            abiCoder.encode(['bytes32[]'], [[txHash1]])
+        );
+        proposal_outcome = 1;
+
+        await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+            txHash1,
+        ]);
+
+        await snapshotModule.executeProposalTx(2, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+        proposalId = await GUILD_ONE_GOVERNORXGUILD.hashProposal(TARGETS, VALUES, PROPOSALS);
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(5));
+
+        await GUILD_ONE_GOVERNORXGUILD.connect(root).castVote(proposalId, true);
+
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(10));
+        await GUILD_ONE_GOVERNORXGUILD.execute(TARGETS, VALUES, PROPOSALS);
+
+        
         IMPACT_MAKERS = [user2.address, user3.address, staker.address];
         IMPACT_MAKERS_WEIGHTS = [20, 20, 60];
-        let setImpactMakersData = CONTROLLERXGUILD.interface.encodeFunctionData("setImpactMakers", [IMPACT_MAKERS, IMPACT_MAKERS_WEIGHTS]);
-        await metaHelper([GUILD_ONE_CONTROLLERXGUILD.address], [0], [setImpactMakersData], [user1, user2], authorizer_adaptor, GUILD_ONE_AVATARXGUILD.address, GUILD_ONE_GOVERNORXGUILD.address)
+        let impactMakersData = GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData("setImpactMakers", [IMPACT_MAKERS, IMPACT_MAKERS_WEIGHTS]);
+        TARGETS = [GUILD_ONE_CONTROLLERXGUILD.address];
+        VALUES = [0];
+        PROPOSALS = [impactMakersData];
+
+        dataToReality = GUILD_ONE_AVATARXGUILD.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+        dataToSnapshot = avatar.interface.encodeFunctionData("exec", [GUILD_ONE_AVATARXGUILD.address, 0, dataToReality]);
+
+        txToSnapshot = {
+            to: avatar.address,
+            value: 0,
+            data: dataToSnapshot,
+            operation: 1,
+            nonce: 0,
+        };
+        txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+
+        abiCoder = new ethers.utils.AbiCoder();
+        executionHash = ethers.utils.keccak256(
+            abiCoder.encode(['bytes32[]'], [[txHash1]])
+        );
+        proposal_outcome = 1;
+
+        await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+            txHash1,
+        ]);
+        await snapshotModule.executeProposalTx(3, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+        proposalId = await GUILD_ONE_GOVERNORXGUILD.hashProposal(TARGETS, VALUES, PROPOSALS);
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(5));
+
+        await GUILD_ONE_GOVERNORXGUILD.connect(user1).castVote(proposalId, true);
+        await GUILD_ONE_GOVERNORXGUILD.connect(user2).castVote(proposalId, true);
+
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(10));
+        await GUILD_ONE_GOVERNORXGUILD.execute(TARGETS, VALUES, PROPOSALS);
 
         /// Setup Guild Two
-        proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, root.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
-        await metaHelper(
-            [DOINGUD_METADAO.address],
-            [0],
-            [proposal],
-            [user1, user2, user3],
-            authorizer_adaptor,
-            DOINGUD_AVATAR.address,
-            DOINGUD_GOVERNOR.address
+        proposal = DOINGUD_METADAO.interface.encodeFunctionData("createGuild", [avatar.address, root.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
+        TARGETS = [DOINGUD_METADAO.address];
+        VALUES = [0];
+        PROPOSALS = [proposal];
+        
+        dataToReality = DOINGUD_AVATAR.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+        dataToSnapshot = avatar.interface.encodeFunctionData("exec", [DOINGUD_AVATAR.address, 0, dataToReality]);
+
+        txToSnapshot = {
+            to: avatar.address,
+            value: 0,
+            data: dataToSnapshot,
+            operation: 1,
+            nonce: 0,
+        };
+        txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+
+        abiCoder = new ethers.utils.AbiCoder();
+        executionHash = ethers.utils.keccak256(
+            abiCoder.encode(['bytes32[]'], [[txHash1]])
         );
+        proposal_outcome = 1;
+
+        await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+            txHash1,
+        ]);
+
+        await snapshotModule.executeProposalTx(4, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+
+        proposalId = await DOINGUD_GOVERNOR.hashProposal(TARGETS, VALUES, PROPOSALS);
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(5));
+
+        await DOINGUD_GOVERNOR.connect(user1).castVote(proposalId, true);
+        await DOINGUD_GOVERNOR.connect(user2).castVote(proposalId, true);
+
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(10));
+        await DOINGUD_GOVERNOR.execute(TARGETS, VALUES, PROPOSALS);
 
         // await DOINGUD_METADAO.createGuild(user1.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
         let guildTwo = await DOINGUD_METADAO.guilds(ControllerxOne);
@@ -302,9 +580,85 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         GUILD_TWO_FXAMORXGUILD = FX_AMOR_TOKEN.attach(FXAmorxTwo);
         */
 
-        proposal = GUILD_TWO_GOVERNORXGUILD.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
-        await metaHelper([GUILD_TWO_GOVERNORXGUILD.address], [0], [proposal], [root], authorizer_adaptor, GUILD_TWO_AVATARXGUILD.address, GUILD_TWO_GOVERNORXGUILD.address);
-        await metaHelper([GUILD_TWO_CONTROLLERXGUILD.address], [0], [setImpactMakersData], [user1, user2], authorizer_adaptor, GUILD_TWO_AVATARXGUILD.address, GUILD_TWO_GOVERNORXGUILD.address)
+        // await metaHelper([GUILD_TWO_GOVERNORXGUILD.address], [0], [proposal], [root], authorizer_adaptor, GUILD_TWO_AVATARXGUILD.address, GUILD_TWO_GOVERNORXGUILD.address);
+        proposal = GUILD_TWO_GOVERNORXGUILD.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);                
+        TARGETS = [GUILD_TWO_GOVERNORXGUILD.address];
+        VALUES = [0];
+        PROPOSALS = [proposal];
+        
+        dataToReality = GUILD_TWO_AVATARXGUILD.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+        dataToSnapshot = avatar.interface.encodeFunctionData("exec", [GUILD_TWO_AVATARXGUILD.address, 0, dataToReality]);
+
+        txToSnapshot = {
+            to: avatar.address,
+            value: 0,
+            data: dataToSnapshot,
+            operation: 1,
+            nonce: 0,
+        };
+        txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+
+        abiCoder = new ethers.utils.AbiCoder();
+        executionHash = ethers.utils.keccak256(
+            abiCoder.encode(['bytes32[]'], [[txHash1]])
+        );
+        proposal_outcome = 1;
+
+        await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+            txHash1,
+        ]);
+
+        await snapshotModule.executeProposalTx(5, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+        proposalId = await GUILD_TWO_GOVERNORXGUILD.hashProposal(TARGETS, VALUES, PROPOSALS);
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(5));
+
+        await GUILD_TWO_GOVERNORXGUILD.connect(root).castVote(proposalId, true);
+
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(10));
+        await GUILD_TWO_GOVERNORXGUILD.execute(TARGETS, VALUES, PROPOSALS);
+
+
+        // await metaHelper([GUILD_TWO_CONTROLLERXGUILD.address], [0], [setImpactMakersData], [user1, user2], authorizer_adaptor, GUILD_TWO_AVATARXGUILD.address, GUILD_TWO_GOVERNORXGUILD.address)
+        impactMakersData = GUILD_TWO_CONTROLLERXGUILD.interface.encodeFunctionData("setImpactMakers", [IMPACT_MAKERS, IMPACT_MAKERS_WEIGHTS]);
+        TARGETS = [GUILD_TWO_CONTROLLERXGUILD.address];
+        VALUES = [0];
+        PROPOSALS = [impactMakersData];
+
+        dataToReality = GUILD_TWO_AVATARXGUILD.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+        dataToSnapshot = avatar.interface.encodeFunctionData("exec", [GUILD_TWO_AVATARXGUILD.address, 0, dataToReality]);
+        txToSnapshot = {
+            to: avatar.address,
+            value: 0,
+            data: dataToSnapshot,
+            operation: 1,
+            nonce: 0,
+        };
+        txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+
+        abiCoder = new ethers.utils.AbiCoder();
+        executionHash = ethers.utils.keccak256(
+            abiCoder.encode(['bytes32[]'], [[txHash1]])
+        );
+        proposal_outcome = 1;
+
+        await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+            txHash1,
+        ]);
+        await snapshotModule.executeProposalTx(6, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+        proposalId = await GUILD_TWO_GOVERNORXGUILD.hashProposal(TARGETS, VALUES, PROPOSALS);
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(5));
+
+        await GUILD_TWO_GOVERNORXGUILD.connect(user1).castVote(proposalId, true);
+        await GUILD_TWO_GOVERNORXGUILD.connect(user2).castVote(proposalId, true);
+
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(10));
+        await GUILD_TWO_GOVERNORXGUILD.execute(TARGETS, VALUES, PROPOSALS);
+
+
         /// Setup the initial Fee Index
         const abi = ethers.utils.defaultAbiCoder;
         let encodedIndex = abi.encode(
@@ -321,15 +675,262 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         );
 
         /// Setup the index for the MetaDAO
-        let transactionData = METADAO.interface.encodeFunctionData("updateIndex", [[encodedIndex, encodedIndex2], 0]);
-        await metaHelper([DOINGUD_METADAO.address], [0], [transactionData], [user1, user2], authorizer_adaptor, DOINGUD_AVATAR.address, DOINGUD_GOVERNOR.address);
+        // await metaHelper([DOINGUD_METADAO.address], [0], [transactionData], [user1, user2], authorizer_adaptor, DOINGUD_AVATAR.address, DOINGUD_GOVERNOR.address);
+        let transactionData = DOINGUD_METADAO.interface.encodeFunctionData("updateIndex", [[encodedIndex, encodedIndex2], 0]);
+        TARGETS = [DOINGUD_METADAO.address];
+        VALUES = [0];
+        PROPOSALS = [transactionData];
+
+        dataToReality = DOINGUD_AVATAR.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+        dataToSnapshot = avatar.interface.encodeFunctionData("exec", [DOINGUD_AVATAR.address, 0, dataToReality]);
+        txToSnapshot = {
+            to: avatar.address,
+            value: 0,
+            data: dataToSnapshot,
+            operation: 1,
+            nonce: 0,
+        };
+        txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+
+        abiCoder = new ethers.utils.AbiCoder();
+        executionHash = ethers.utils.keccak256(
+            abiCoder.encode(['bytes32[]'], [[txHash1]])
+        );
+        proposal_outcome = 1;
+
+        await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+            txHash1,
+        ]);
+        await snapshotModule.executeProposalTx(7, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+        proposalId = await DOINGUD_GOVERNOR.hashProposal(TARGETS, VALUES, PROPOSALS);
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(5));
+
+        await DOINGUD_GOVERNOR.connect(user1).castVote(proposalId, true);
+        await DOINGUD_GOVERNOR.connect(user2).castVote(proposalId, true);
+
+        await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+        time.increase(time.duration.days(10));
+        await DOINGUD_GOVERNOR.execute(TARGETS, VALUES, PROPOSALS);
     });
 
     beforeEach('setup', async function() {
         await setupTests();
     });
 
+    context('» Tests with MetaDAO', () => {
+
+        it("Creation of the guild independently out of MetaDAO: EXECUTE PROPOSAL FROM SNAPSHOT", async function () {
+            // Call deployGuildContracts at the GuildFactory.sol
+            expect(await CLONE_FACTORY.deployGuildContracts(authorizer_adaptor.address, user1.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0])).
+              to.not.equal(ZERO_ADDRESS);
+
+            // // Check that the guild was created with some custom(non-AMOR) token
+            let guildThree = await DOINGUD_METADAO.guilds(ControllerxTwo);
+            ControllerxThree = guildThree;
+            const token = guildThree.AmorGuildToken;
+            expect(token).to.not.equal(AMOR_GUILD_TOKEN.address);
+
+            // Try to stake token and receive AMORxGuild
+            // Stake it to receive AMORxGuild
+            await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
+            await DOINGUD_AMOR_TOKEN.connect(user1).approve(GUILD_ONE_AMORXGUILD.address, FIFTY_ETHER);
+
+            await GUILD_ONE_AMORXGUILD.connect(user1).stakeAmor(user1.address, FIFTY_ETHER);
+            expect(await GUILD_ONE_AMORXGUILD.balanceOf(DOINGUD_METADAO.address)).to.be.not.null; // tax controller
+            expect(await GUILD_ONE_AMORXGUILD.balanceOf(user1.address)).to.be.not.null;
+        });
+    });
+
     context('» Add guild to the MetaDAO', () => {
+
+        it("Should Add guild to the MetaDAO: ADD A PROPOSAL IN SNAPSHOT", async function () {
+            proposal = GUILD_ONE_AVATARXGUILD.interface.encodeFunctionData("enableModule", [authorizer_adaptor.address]);
+            let TARGETS = [GUILD_ONE_AVATARXGUILD.address];
+            let VALUES = [0];
+            let PROPOSALS = [proposal];
+    
+            dataToReality = GUILD_ONE_AVATARXGUILD.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+            dataToSnapshot = avatar.interface.encodeFunctionData("exec", [GUILD_ONE_AVATARXGUILD.address, 0, dataToReality]);
+            txToSnapshot = {
+                to: avatar.address,
+                value: 0,
+                data: dataToSnapshot,
+                operation: 1,
+                nonce: 0,
+            };
+            txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+    
+            abiCoder = new ethers.utils.AbiCoder();
+            executionHash = ethers.utils.keccak256(
+                abiCoder.encode(['bytes32[]'], [[txHash1]])
+            );
+            proposal_outcome = 1;
+    
+            await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+                txHash1,
+            ]);
+            await snapshotModule.executeProposalTx(8, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+            proposalId = await GUILD_ONE_GOVERNORXGUILD.hashProposal(TARGETS, VALUES, PROPOSALS);
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(5));
+    
+            await GUILD_ONE_GOVERNORXGUILD.connect(user1).castVote(proposalId, true);
+            await GUILD_ONE_GOVERNORXGUILD.connect(user2).castVote(proposalId, true);
+    
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(10));
+            await GUILD_ONE_GOVERNORXGUILD.execute(TARGETS, VALUES, PROPOSALS);
+
+            // Get a deployed guild with default AMOR token            
+            expect(await GUILD_ONE_CONTROLLERXGUILD.AMOR()).to.equals(DOINGUD_AMOR_TOKEN.address);
+            expect(await GUILD_ONE_CONTROLLERXGUILD.AMORxGuild()).to.equals(GUILD_ONE_AMORXGUILD.address);
+            expect(await GUILD_ONE_GOVERNORXGUILD.avatarAddress()).to.equals(GUILD_ONE_AVATARXGUILD.address);
+            expect(await GUILD_ONE_AVATARXGUILD.governor()).to.equals(GUILD_ONE_GOVERNORXGUILD.address);
+
+            // Add a proposal on the Snapshot to add guild to the Metadao
+            await DOINGUD_AMOR_TOKEN.connect(authorizer_adaptor).approve(GUILD_ONE_CONTROLLERXGUILD.address, TEST_TRANSFER);
+            expect(await GUILD_ONE_CONTROLLERXGUILD.AMOR()).to.equal(DOINGUD_AMOR_TOKEN.address);
+            // await DOINGUD_AMOR_TOKEN.connect(authorizer_adaptor).transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
+
+            proposal = DOINGUD_METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, user2.address, MOCK_GUILD_NAMES[2], MOCK_GUILD_SYMBOLS[2]]);
+            TARGETS = [DOINGUD_METADAO.address];
+            VALUES = [0];
+            PROPOSALS = [proposal];
+            
+            dataToReality = DOINGUD_AVATAR.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+            dataToSnapshot = avatar.interface.encodeFunctionData("exec", [DOINGUD_AVATAR.address, 0, dataToReality]);
+    
+            txToSnapshot = {
+                to: avatar.address,
+                value: 0,
+                data: dataToSnapshot,
+                operation: 1,
+                nonce: 0,
+            };
+            txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+    
+            abiCoder = new ethers.utils.AbiCoder();
+            executionHash = ethers.utils.keccak256(
+                abiCoder.encode(['bytes32[]'], [[txHash1]])
+            );
+            proposal_outcome = 1;
+    
+            // Add a proposal in guild’s snapshot to donate guild’s funds to the impact makers
+            await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+                txHash1,
+            ]);    
+            await snapshotModule.executeProposalTx(9, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+    
+            proposalId = await DOINGUD_GOVERNOR.hashProposal(TARGETS, VALUES, PROPOSALS);
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(5));
+    
+            await DOINGUD_GOVERNOR.connect(user1).castVote(proposalId, true);
+            await DOINGUD_GOVERNOR.connect(user2).castVote(proposalId, true);
+    
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(10));
+            await DOINGUD_GOVERNOR.execute(TARGETS, VALUES, PROPOSALS);
+
+            // Check that the guild was created with some custom(non-AMOR) token
+            let ControllerxFour = await DOINGUD_METADAO.guilds(ControllerxThree);
+            GUILD_THREE_CONTROLLERXGUILD = CONTROLLER.attach(ControllerxFour);
+            proposal = DOINGUD_METADAO.interface.encodeFunctionData("removeGuild", [GUILD_THREE_CONTROLLERXGUILD.address]);
+            TARGETS = [DOINGUD_METADAO.address];
+            VALUES = [0];
+            PROPOSALS = [proposal];
+            
+            dataToReality = DOINGUD_AVATAR.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+            dataToSnapshot = avatar.interface.encodeFunctionData("exec", [DOINGUD_AVATAR.address, 0, dataToReality]);
+    
+            txToSnapshot = {
+                to: avatar.address,
+                value: 0,
+                data: dataToSnapshot,
+                operation: 1,
+                nonce: 0,
+            };
+            txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+    
+            abiCoder = new ethers.utils.AbiCoder();
+            executionHash = ethers.utils.keccak256(
+                abiCoder.encode(['bytes32[]'], [[txHash1]])
+            );
+            proposal_outcome = 1;
+    
+            // Add a proposal in guild’s snapshot to donate guild’s funds to the impact makers
+            await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+                txHash1,
+            ]);    
+            await snapshotModule.executeProposalTx(10, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+    
+            proposalId = await DOINGUD_GOVERNOR.hashProposal(TARGETS, VALUES, PROPOSALS);
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(5));
+    
+            await DOINGUD_GOVERNOR.connect(user1).castVote(proposalId, true);
+            await DOINGUD_GOVERNOR.connect(user2).castVote(proposalId, true);
+    
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(10));
+            await DOINGUD_GOVERNOR.execute(TARGETS, VALUES, PROPOSALS);
+
+            expect(await DOINGUD_METADAO.guilds(GUILD_THREE_CONTROLLERXGUILD.address)).to.equal(ZERO_ADDRESS);
+
+            // // Add a proposal in guild’s snapshot to donate guild’s funds to the impact makers
+            // snapshot proposal to createGuild 
+            // -> Snapshot proposal passed
+            // -> Governor propose called via the Avatar 
+            // -> Guardians vote -> Guardians vote passes 
+            // -> execute called on Governor 
+            // -> Proposed transaction passed to Avatar and executed 
+            // -> createGuild called on MetaDAO via Avatar
+
+            proposal = DOINGUD_METADAO.interface.encodeFunctionData("addExternalGuild", [GUILD_THREE_CONTROLLERXGUILD.address]);
+            TARGETS = [DOINGUD_METADAO.address];
+            VALUES = [0];
+            PROPOSALS = [proposal];
+            
+            dataToReality = DOINGUD_AVATAR.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+            dataToSnapshot = avatar.interface.encodeFunctionData("exec", [DOINGUD_AVATAR.address, 0, dataToReality]);
+    
+            txToSnapshot = {
+                to: avatar.address,
+                value: 0,
+                data: dataToSnapshot,
+                operation: 1,
+                nonce: 0,
+            };
+            txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+    
+            abiCoder = new ethers.utils.AbiCoder();
+            executionHash = ethers.utils.keccak256(
+                abiCoder.encode(['bytes32[]'], [[txHash1]])
+            );
+            proposal_outcome = 1;
+    
+            // Add a proposal in guild’s snapshot to donate guild’s funds to the impact makers
+            await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+                txHash1,
+            ]);    
+            await snapshotModule.executeProposalTx(11, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+    
+            proposalId = await DOINGUD_GOVERNOR.hashProposal(TARGETS, VALUES, PROPOSALS);
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(5));
+    
+            await DOINGUD_GOVERNOR.connect(user1).castVote(proposalId, true);
+            await DOINGUD_GOVERNOR.connect(user2).castVote(proposalId, true);
+    
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(10));
+            await DOINGUD_GOVERNOR.execute(TARGETS, VALUES, PROPOSALS);
+
+
+            // Check that guild is added and functionning propperly
+            expect(await DOINGUD_METADAO.guilds(GUILD_THREE_CONTROLLERXGUILD.address)).to.not.equal(ZERO_ADDRESS);
+        });
 
         it("Gather taxes from the MetaDAO", async function () {
             // Transfer AMOR tokens between Accounts
@@ -357,6 +958,209 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
             // Check that guild treasury claimed the required fees
             expect(await DOINGUD_AMOR_TOKEN.balanceOf(GUILD_ONE_CONTROLLERXGUILD.address)).to.equal((guildAmor * 0.95).toString());
+        });
+
+        it("Transfer Guild’s fund from the Avatar contract: VOTE IN SNAPSHOT", async function () {
+            await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
+            const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(user3.address);
+
+            // Execute the proposal
+            proposal = DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('transfer', [user3.address, 20]);
+            TARGETS = [DOINGUD_AMOR_TOKEN.address];
+            VALUES = [0];
+            PROPOSALS = [proposal];            
+            dataToReality = GUILD_ONE_AVATARXGUILD.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+            dataToSnapshot = avatar.interface.encodeFunctionData("exec", [GUILD_ONE_AVATARXGUILD.address, 0, dataToReality]);
+            txToSnapshot = {
+                to: avatar.address,
+                value: 0,
+                data: dataToSnapshot,
+                operation: 1,
+                nonce: 0,
+            };
+            txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+    
+            abiCoder = new ethers.utils.AbiCoder();
+            executionHash = ethers.utils.keccak256(
+                abiCoder.encode(['bytes32[]'], [[txHash1]])
+            );
+            proposal_outcome = 1;
+            await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+                txHash1,
+            ]);    
+            await snapshotModule.executeProposalTx(8, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+    
+            proposalId = await GUILD_ONE_GOVERNORXGUILD.hashProposal(TARGETS, VALUES, PROPOSALS);
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(5));
+    
+            await GUILD_ONE_GOVERNORXGUILD.connect(user1).castVote(proposalId, true);
+            await GUILD_ONE_GOVERNORXGUILD.connect(user2).castVote(proposalId, true);
+    
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(10));
+            await GUILD_ONE_GOVERNORXGUILD.execute(TARGETS, VALUES, PROPOSALS);
+
+            const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(user3.address);
+            expect(balanceAfter).to.be.gt(balanceBefore);
+        });
+
+        it("Donate Guild’s fund from the Avatar contract: VOTE IN SNAPSHOT", async function () {  
+            await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
+
+            // Execute the proposal
+            proposal = DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('transfer', [user3.address, 20]);
+            TARGETS = [DOINGUD_AMOR_TOKEN.address];
+            VALUES = [0];
+            PROPOSALS = [proposal];            
+            dataToReality = GUILD_ONE_AVATARXGUILD.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+            dataToSnapshot = avatar.interface.encodeFunctionData("exec", [GUILD_ONE_AVATARXGUILD.address, 0, dataToReality]);
+            txToSnapshot = {
+                to: avatar.address,
+                value: 0,
+                data: dataToSnapshot,
+                operation: 1,
+                nonce: 0,
+            };
+            txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+            abiCoder = new ethers.utils.AbiCoder();
+            executionHash = ethers.utils.keccak256(
+                abiCoder.encode(['bytes32[]'], [[txHash1]])
+            );
+            proposal_outcome = 1;
+            await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+                txHash1,
+            ]);
+            await snapshotModule.executeProposalTx(8, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+            proposalId = await GUILD_ONE_GOVERNORXGUILD.hashProposal(TARGETS, VALUES, PROPOSALS);
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(5));
+            await GUILD_ONE_GOVERNORXGUILD.connect(user1).castVote(proposalId, true);
+            await GUILD_ONE_GOVERNORXGUILD.connect(user2).castVote(proposalId, true);
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(10));
+            await GUILD_ONE_GOVERNORXGUILD.execute(TARGETS, VALUES, PROPOSALS);
+            await DOINGUD_AMOR_TOKEN.transfer(authorizer_adaptor.address, ONE_HUNDRED_ETHER);
+            await DOINGUD_AMOR_TOKEN.connect(authorizer_adaptor).approve(GUILD_ONE_CONTROLLERXGUILD.address, TEST_TRANSFER);
+
+            expect(await GUILD_ONE_CONTROLLERXGUILD.AMOR()).to.equal(DOINGUD_AMOR_TOKEN.address);
+
+            await DOINGUD_AMOR_TOKEN.transfer(GUILD_ONE_AVATARXGUILD.address, ONE_HUNDRED_ETHER);
+
+            const balanceBeforeAvatar = await DOINGUD_AMOR_TOKEN.balanceOf(GUILD_ONE_AVATARXGUILD.address);
+            const balanceBefore = await DOINGUD_AMOR_TOKEN.balanceOf(GUILD_ONE_CONTROLLERXGUILD.address);
+
+            proposal = DOINGUD_AMOR_TOKEN.interface.encodeFunctionData('approve', [GUILD_ONE_CONTROLLERXGUILD.address, FIFTY_ETHER]);
+            TARGETS = [DOINGUD_AMOR_TOKEN.address];
+            VALUES = [0];
+            PROPOSALS = [proposal];            
+            dataToReality = GUILD_ONE_AVATARXGUILD.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+            dataToSnapshot = avatar.interface.encodeFunctionData("exec", [GUILD_ONE_AVATARXGUILD.address, 0, dataToReality]);
+            txToSnapshot = {
+                to: avatar.address,
+                value: 0,
+                data: dataToSnapshot,
+                operation: 1,
+                nonce: 0,
+            };
+            txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+            abiCoder = new ethers.utils.AbiCoder();
+            executionHash = ethers.utils.keccak256(
+                abiCoder.encode(['bytes32[]'], [[txHash1]])
+            );
+            proposal_outcome = 1;
+            await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+                txHash1,
+            ]);
+            await snapshotModule.executeProposalTx(9, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+            proposalId = await GUILD_ONE_GOVERNORXGUILD.hashProposal(TARGETS, VALUES, PROPOSALS);
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(5));
+            await GUILD_ONE_GOVERNORXGUILD.connect(user1).castVote(proposalId, true);
+            await GUILD_ONE_GOVERNORXGUILD.connect(user2).castVote(proposalId, true);
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(10));
+            await GUILD_ONE_GOVERNORXGUILD.execute(TARGETS, VALUES, PROPOSALS);
+
+
+            proposal = GUILD_ONE_CONTROLLERXGUILD.interface.encodeFunctionData('donate', [FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address]);
+            TARGETS = [GUILD_ONE_CONTROLLERXGUILD.address];
+            VALUES = [0];
+            PROPOSALS = [proposal];            
+            dataToReality = GUILD_ONE_AVATARXGUILD.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+            dataToSnapshot = avatar.interface.encodeFunctionData("exec", [GUILD_ONE_AVATARXGUILD.address, 0, dataToReality]);
+            txToSnapshot = {
+                to: avatar.address,
+                value: 0,
+                data: dataToSnapshot,
+                operation: 1,
+                nonce: 0,
+            };
+            txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+            abiCoder = new ethers.utils.AbiCoder();
+            executionHash = ethers.utils.keccak256(
+                abiCoder.encode(['bytes32[]'], [[txHash1]])
+            );
+            proposal_outcome = 1;
+            await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+                txHash1,
+            ]);
+            await snapshotModule.executeProposalTx(10, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+            proposalId = await GUILD_ONE_GOVERNORXGUILD.hashProposal(TARGETS, VALUES, PROPOSALS);
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(5));
+            await GUILD_ONE_GOVERNORXGUILD.connect(user1).castVote(proposalId, true);
+            await GUILD_ONE_GOVERNORXGUILD.connect(user2).castVote(proposalId, true);
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(10));
+            await GUILD_ONE_GOVERNORXGUILD.execute(TARGETS, VALUES, PROPOSALS);
+
+            const balanceAfterAvatar = await DOINGUD_AMOR_TOKEN.balanceOf(GUILD_ONE_AVATARXGUILD.address);
+            const balanceAfter = await DOINGUD_AMOR_TOKEN.balanceOf(GUILD_ONE_CONTROLLERXGUILD.address);
+
+            expect(balanceAfterAvatar).to.be.lt(balanceBeforeAvatar);
+            expect(balanceAfter).to.be.gt(balanceBefore);
+        });
+
+        it("Remove guild from the MetaDAO: VOTE IN SNAPSHOT", async function () {          
+            proposal = DOINGUD_METADAO.interface.encodeFunctionData('removeGuild', [GUILD_TWO_CONTROLLERXGUILD.address]);
+            TARGETS = [DOINGUD_METADAO.address];
+            VALUES = [0];
+            PROPOSALS = [proposal];
+            
+            dataToReality = DOINGUD_AVATAR.interface.encodeFunctionData("proposeAfterVote", [TARGETS, VALUES, PROPOSALS]);
+            dataToSnapshot = avatar.interface.encodeFunctionData("exec", [DOINGUD_AVATAR.address, 0, dataToReality]);
+            txToSnapshot = {
+                to: avatar.address,
+                value: 0,
+                data: dataToSnapshot,
+                operation: 1,
+                nonce: 0,
+            };
+            txHash1 = _TypedDataEncoder.hash(domain, EIP712_TYPES, txToSnapshot);
+            abiCoder = new ethers.utils.AbiCoder();
+            executionHash = ethers.utils.keccak256(
+                abiCoder.encode(['bytes32[]'], [[txHash1]])
+            );
+            proposal_outcome = 1;
+    
+            // Add a proposal in guild’s snapshot to donate guild’s funds to the impact makers
+            await snapshotModule.receiveProposalTest(authorizer_adaptor.address, executionHash, proposal_outcome, [
+                txHash1,
+            ]);
+            await snapshotModule.executeProposalTx(8, txToSnapshot.to, txToSnapshot.value, txToSnapshot.data, txToSnapshot.operation);
+            proposalId = await DOINGUD_GOVERNOR.hashProposal(TARGETS, VALUES, PROPOSALS);
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(5));
+    
+            await DOINGUD_GOVERNOR.connect(user1).castVote(proposalId, true);
+            await DOINGUD_GOVERNOR.connect(user2).castVote(proposalId, true);
+    
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+            time.increase(time.duration.days(10));
+            await DOINGUD_GOVERNOR.execute(TARGETS, VALUES, PROPOSALS);
+    
+            expect(await DOINGUD_METADAO.guilds(GUILD_TWO_CONTROLLERXGUILD.address)).to.equal(ZERO_ADDRESS);  
         });
 
         it("Add report to the Guild", async function () {          
@@ -405,6 +1209,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
             expect((await DOINGUD_CONTROLLER.queueReportsAuthors(0))).to.equal(operator.address);
         });
+
         it("Vote for the report at the Guild with FXAMOR", async function () {                    
             
             // Gain some amount of donations
@@ -452,6 +1257,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             expect(await DOINGUD_CONTROLLER.reportsVoting(0)).to.equals(3);
             expect(await DOINGUD_CONTROLLER.reportsWeight(0)).to.equals(5);
         });
+
         it("Finalize report vote for the Guild with no reports passing", async function () {          
             // Gain some amount of donations
             await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
@@ -515,6 +1321,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             const balanceAfter3 = amount * 3 / 2;
             expect((await DOINGUD_AMOR_GUILD_TOKEN.balanceOf(DOINGUD_CONTROLLER.address)).toString()).to.equal(balanceAfter3.toString());
         });
+
         it("Finalize report vote for the Guild with part of reports passing", async function () {          
             // Gain some amount of donations
             await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
@@ -659,6 +1466,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             const balanceAfter3 = balanceBefore3.add(fiftyToCreator);
             expect((await DOINGUD_AMOR_GUILD_TOKEN.balanceOf(operator.address)).toString()).to.equal(balanceAfter3.toString());
         });
+
         it("Finalize report vote for the Guild with all of the reports passing", async function () {          
             // Gain some amount of donations
             await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
