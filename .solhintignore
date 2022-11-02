@@ -1,2 +1,4 @@
 # test contracts
 contracts/test
+contracts/zodiac/
+contracts/snapshot/ethereum/

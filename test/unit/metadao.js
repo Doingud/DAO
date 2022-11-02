@@ -62,7 +62,6 @@ describe("unit - MetaDao", function () {
         /// Setup the MetaDao first
         await init.metadao(setup);
         METADAO = setup.metadao;
-        TEST_ZERO_METADAO = setup.metadao;
         ///   Setup the Controller
         await init.controller(setup);
         CONTROLLER = setup.controller;
@@ -90,7 +89,7 @@ describe("unit - MetaDao", function () {
         await init.getGuildFactory(setup);
         FACTORY = setup.factory;
 
-        await METADAO.init(AMOR_TOKEN.address, FACTORY.address, setup.roles.root.address);
+        await METADAO.init(AMOR_TOKEN.address, FACTORY.address, root.address);
     });
 
     beforeEach('setup', async function() {
@@ -167,11 +166,6 @@ describe("unit - MetaDao", function () {
     });
 
     context('function: removeGuild()', () => {
-        it('Should fail to remove guilds if not an admin address', async function () {
-            await expect(METADAO.connect(user1).removeGuild(GUILD_CONTROLLER_ONE.address)).
-                to.be.revertedWith('Ownable');
-        });
-
         it('Should fail to remove guilds if InvalidGuild', async function () {
             await expect(METADAO.removeGuild(METADAO.address)).
                 to.be.revertedWith('InvalidGuild');
@@ -243,6 +237,7 @@ describe("unit - MetaDao", function () {
             pool = setup.roles.pool;
             await init.avatar(setup);
             await init.governor(setup);
+            /// Setup the MetaDao first
             await init.metadao(setup);
             METADAO2 = setup.metadao;
             await init.controller(setup);
@@ -272,7 +267,7 @@ describe("unit - MetaDao", function () {
             await init.getGuildFactory(setup);
             FACTORY2 = setup.factory;
 
-            await METADAO2.init(AMOR_TOKEN2.address, FACTORY2.address,  setup.roles.root.address);
+            await METADAO2.init(AMOR_TOKEN2.address, FACTORY2.address, root.address);
 
             /// Setup the guilds through the METADAO
             await METADAO2.createGuild(user2.address, user1.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
