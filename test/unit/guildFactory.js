@@ -10,6 +10,7 @@ const init = require('../test-init.js');
 
 use(solidity);
 
+  /// Implementation Contracts
   let AMOR_TOKEN;
   let AMOR_GUILD_TOKEN;
   let CLONE_FACTORY;
@@ -18,6 +19,8 @@ use(solidity);
   let CONTROLLERXGUILD;
   let GOVERNORXGUILD;
   let AVATARXGUILD;
+
+  /// GUILD TESTING VARS
   let GUILD_ONE_AMORXGUILD;
   let GUILD_ONE_DAMORXGUILD;
   let GUILD_ONE_FXAMORXGUILD;
@@ -26,16 +29,18 @@ use(solidity);
   let GUILD_ONE_GOVERNORXGUILD;
   let METADAO;
   let guild;
-  let BEACON_AMOR;
+
+  /// BEACONS
   let BEACON_AMOR_GUILD_TOKEN;
   let BEACON_DAMOR;
   let BEACON_FXAMOR;
   let BEACON_CONTROLLER;
   let BEACON_GOVERNOR;
   let BEACON_AVATAR;
+
+  /// Users/Signers
   let user1;
   let user2;
-  let guildOneControllerxGuild;
 
 describe("unit - Clone Factory", function () {
 
@@ -63,7 +68,6 @@ describe("unit - Clone Factory", function () {
     GOVERNORXGUILD = setup.governor;
     AVATARXGUILD = setup.avatars.avatar;
 
-    BEACON_AMOR = await init.beacon(AMOR_TOKEN.address, METADAO.address);
     BEACON_AMOR_GUILD_TOKEN = await init.beacon(AMOR_GUILD_TOKEN.address, METADAO.address);
     BEACON_DAMOR = await init.beacon(DAMOR_GUILD_TOKEN.address, METADAO.address);
     BEACON_FXAMOR = await init.beacon(FX_AMOR_TOKEN.address, METADAO.address);
@@ -92,7 +96,7 @@ describe("unit - Clone Factory", function () {
     it("Should deploy the Guild Token Contracts", async function () {
       await METADAO.createGuild(user1.address, user2.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
 
-      guildOneControllerxGuild = await METADAO.guilds(ONE_ADDRESS);
+      let guildOneControllerxGuild = await METADAO.guilds(ONE_ADDRESS);
       guild = await CLONE_FACTORY.guilds(guildOneControllerxGuild);
 
       GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(guild.AmorGuildToken);

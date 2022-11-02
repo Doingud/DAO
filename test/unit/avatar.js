@@ -4,7 +4,6 @@ const { ZERO_ADDRESS, ONE_ADDRESS } = require("../helpers/constants.js");
 const init = require('../test-init.js');
 
 let avatar;
-let governor;
 let authorizer_adaptor;
 let operator;
 let mockModule;

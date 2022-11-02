@@ -28,7 +28,6 @@ describe("unit - DoinGudBeacon", function () {
     await init.avatar(setup);
     await init.controller(setup);
     await init.governor(setup);
-    await init.proposer(setup);
 
     AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
     AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;

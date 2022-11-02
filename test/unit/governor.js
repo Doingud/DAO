@@ -13,7 +13,8 @@ let governor;
 let mockModule;
 let mockAvatar;
 let mockGovernor;
-//let mockReality; To be used with MockModuleFactory
+let beaconGovernor;
+let beaconAvatar;
 
 let root;
 let authorizer_adaptor;
@@ -33,21 +34,6 @@ describe('unit - Contract: Governor', function () {
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(signers);
-        avatar = await init.proxy();
-        governor = await init.proxy();
-        await init.getTokens(setup);
-        AMORxGuild = setup.tokens.AmorGuildToken;
-        await init.avatar(setup);
-        await avatar.initProxy(setup.avatars.avatar.address);
-        let AVATAR = setup.avatars.avatar;
-        await init.governor(setup);
-        await governor.initProxy(setup.governor.address);
-        let GOVERNOR = setup.governor;
-        avatar = AVATAR.attach(avatar.address);
-        governor = GOVERNOR.attach(governor.address);
-        await avatar.init(setup.roles.root.address, governor.address);
-        await governor.init(AMORxGuild.address, setup.roles.authorizer_adaptor.address, setup.roles.root.address);
-        mockModule = setup.avatars.module;
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;
@@ -55,13 +41,32 @@ describe('unit - Contract: Governor', function () {
         user = setup.roles.user3;
         user2 = setup.roles.user2;
 
+        avatar = await init.proxy();
+        governor = await init.proxy();
+        await init.getTokens(setup);
+        AMORxGuild = setup.tokens.AmorGuildToken;
+        await init.avatar(setup);
+        let AVATAR = setup.avatars.avatar;
+        beaconAvatar = await init.beacon(AVATAR.address, root.address);
+
+        await avatar.initProxy(beaconAvatar.address);
+        await init.governor(setup);
+        let GOVERNOR = setup.governor;
+        beaconGovernor = await init.beacon(GOVERNOR.address, root.address);
+        await governor.initProxy(beaconGovernor.address);
+        avatar = AVATAR.attach(avatar.address);
+        governor = GOVERNOR.attach(governor.address);
+
+        await avatar.init(setup.roles.root.address, governor.address);
+        await governor.init(AMORxGuild.address, setup.roles.authorizer_adaptor.address, setup.roles.root.address);
+        mockModule = setup.avatars.module;
+
         mockAvatar = await init.proxy();
-        await mockAvatar.initProxy(AVATAR.address)
+        await mockAvatar.initProxy(beaconAvatar.address);
         mockAvatar = AVATAR.attach(mockAvatar.address);
-        
 
         mockGovernor = await init.proxy();
-        await mockGovernor.initProxy(GOVERNOR.address);
+        await mockGovernor.initProxy(beaconGovernor.address);
         mockGovernor = GOVERNOR.attach(mockGovernor.address);
         await mockAvatar.init(root.address, mockGovernor.address);
         await mockGovernor.init(AMORxGuild.address, mockAvatar.address, root.address);
@@ -160,8 +165,7 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it adds guardian', async function () {
-            let transactionData = governor.interface.encodeFunctionData("addGuardian", [user2.address]);
-            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
+            await governor.connect(authorizer_adaptor).addGuardian(user2.address);
             expect(await governor.guardians(3)).to.equals(user2.address);
         });
 
@@ -186,8 +190,7 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it changes guardian', async function () {
-            let transactionData = governor.interface.encodeFunctionData("changeGuardian", [1, root.address]);
-            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
+            await governor.connect(authorizer_adaptor).changeGuardian(1, root.address);
             expect(await governor.guardians(1)).to.equals(root.address);
         });
     });
@@ -305,9 +308,9 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to execute if UnderlyingTransactionReverted', async function () {
             // mine 64000 blocks
-
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(twoWeeks);
+
             /// Create fresh proposal
             let unSTargets = [mockModule.address];
             let unSValues = [0];
@@ -402,9 +405,7 @@ describe('unit - Contract: Governor', function () {
 
         it('it removes guardian', async function () {
             expect(await governor.guardians(3)).to.equals(user2.address);
-            let transactionData = governor.interface.encodeFunctionData("removeGuardian", [root.address]);
-            await avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, transactionData, 0);
-
+            await governor.connect(authorizer_adaptor).removeGuardian(root.address);
             expect(await governor.guardians(1)).to.equals(user2.address);
             await expect(governor.guardians(3)).to.be.reverted;
 

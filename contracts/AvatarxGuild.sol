@@ -39,27 +39,38 @@ import "./interfaces/IAvatarxGuild.sol";
 import "./interfaces/IGovernor.sol";
 
 contract AvatarxGuild is IAvatarxGuild {
+    /// Events
     event ExecutionFromGovernorSuccess(address governorAddress);
     event ExecutionFromGovernorFailure(address governorAddress);
     event Initialized(address owner, address governorAddress);
 
-    address public governor;
-    address public reality;
-    address internal constant SENTINEL_MODULES = address(0x1);
-    bool private _initialized;
-    bool private guardiansSet;
-
-    mapping(address => address) internal modules;
-
     /// Custom errors
     /// Error if the AvatarxGuild has already been initialized
     error AlreadyInitialized();
+    /// The calling address is not the Governor for this Avatar
     error NotWhitelisted();
+    /// Failed to enable module
     error NotEnabled();
+    /// Failed to disable module
     error NotDisabled();
+    /// Attempting to add invalid address as module
     error InvalidParameters();
+    /// Access controlled; ensure correct calling contract
     error Unauthorized();
-    error AlreadySet();
+
+    /// CONSTANTS
+    address internal constant SENTINEL_MODULES = address(0x1);
+
+    /// Linked Governor contract
+    address public governor;
+    /// The Reality.eth address connected to this Avatar
+    address public reality;
+
+    /// Initialized flag
+    bool private _initialized;
+
+    /// Modules enabled on this Avatar
+    mapping(address => address) internal modules;
 
     /// Access Control Modifiers
     modifier onlyGovernor() {

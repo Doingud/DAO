@@ -20,27 +20,23 @@ const { metaHelper } = require("../helpers/helpers.js");
 
 use(solidity);
 
-
+/// The Implementation Contracts
 let AMOR_TOKEN;
 let AMOR_GUILD_TOKEN;
 let FX_AMOR_TOKEN;
 let DAMOR_GUILD_TOKEN;
+let CLONE_FACTORY;
+let CONTROLLERXGUILD;
+let GOVERNORXGUILD;
+let AVATARXGUILD;
 
+/// Signers
 let root;
 let user1;
 let user2;
 let staker;
 let operator;
 let authorizer_adaptor;
-
-let CONTROLLER;
-let CLONE_FACTORY;
-let AVATAR;
-let GOVERNOR;
-
-let CONTROLLERXGUILD;
-let GOVERNORXGUILD;
-let AVATARXGUILD;
 
 /// The proxy for AMOR token
 let amor_proxy;
@@ -60,27 +56,14 @@ let DOINGUD_AVATAR;
 let DOINGUD_METADAO;
 
 
-/// The Newly Deployed Guilds
-// let GUILD_ONE_AMORXGUILD;
-// let GUILD_ONE_DAMORXGUILD;
+/// The Newly Deployed Guild 1
 let GUILD_ONE_CONTROLLERXGUILD;
 let GUILD_ONE_AVATARXGUILD;
-// let GUILD_ONE_FXAMORXGUILD;
 let GUILD_ONE_GOVERNORXGUILD;
-/*  The below variables are required in later integration
-let GUILD_ONE_FXAMORXGUILD;
-
-*/
-
+/// The Newly Deployed Guild 2
 let GUILD_TWO_CONTROLLERXGUILD;
 let GUILD_TWO_AVATARXGUILD;
 let GUILD_TWO_GOVERNORXGUILD;
-/*  The below variables are required in later integration
-let GUILD_TWO_AMORXGUILD;
-let GUILD_TWO_DAMORXGUILD;
-let GUILD_TWO_FXAMORXGUILD;
-*/
-
 
 /// Required variables
 let IMPACT_MAKERS;
@@ -110,11 +93,9 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         ///   DOINGUD ECOSYSTEM DEPLOYMENT
         ///   STEP 1: Deploy token implementations
         AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
-        AMOR_TOKEN_UPGRADE = setup.tokens.AmorTokenMockUpgrade;
         AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
         FX_AMOR_TOKEN = setup.tokens.FXAMORxGuild;
         DAMOR_GUILD_TOKEN = setup.tokens.dAMORxGuild;
-        ERC20_TOKEN = setup.tokens.ERC20Token;
 
         ///   STEP 2: Deploy DoinGud Control Structures
         await init.metadao(setup);
@@ -122,12 +103,9 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         await init.avatar(setup);
         await init.governor(setup);
 
-        CONTROLLER = setup.controller;
-        GOVERNOR = setup.governor;
-        AVATAR = setup.avatars.avatar;
+        AVATARXGUILD = setup.avatars.avatar;
         CONTROLLERXGUILD = setup.controller;
         GOVERNORXGUILD = setup.governor;
-        AVATARXGUILD = setup.avatars.avatar;
         METADAO = setup.metadao;
       
         ///   STEP 3: Deploy the proxies for the tokens and the control structures
@@ -142,19 +120,33 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         let controller_proxy = await init.proxy();
         let avatar_proxy = await init.proxy();
         let governor_proxy = await init.proxy();
-        let metadao_proxy = await init.proxy();
 
-        ///   STEP 4: Init the proxies to point to the correct implementation addresses
-        await amor_proxy.initProxy(AMOR_TOKEN.address);
-        await amor_guild_token_proxy.initProxy(AMOR_GUILD_TOKEN.address);
-        await dAmor_proxy.initProxy(DAMOR_GUILD_TOKEN.address);
-        await fxAmor_proxy.initProxy(FX_AMOR_TOKEN.address);
-        await controller_proxy.initProxy(CONTROLLER.address);
-        await avatar_proxy.initProxy(AVATAR.address);
-        await governor_proxy.initProxy(GOVERNOR.address);
-        await metadao_proxy.initProxy(METADAO.address);
+        /// STEP 4: Setup the Beacons
+        let BEACON_AMOR = await init.beacon(AMOR_TOKEN.address, METADAO.address);
+        let BEACON_AMOR_GUILD_TOKEN = await init.beacon(AMOR_GUILD_TOKEN.address, METADAO.address);
+        let BEACON_DAMOR = await init.beacon(DAMOR_GUILD_TOKEN.address, METADAO.address);
+        let BEACON_FXAMOR = await init.beacon(FX_AMOR_TOKEN.address, METADAO.address);
+        let BEACON_CONTROLLER = await init.beacon(CONTROLLERXGUILD.address, METADAO.address);
+        let BEACON_GOVERNOR = await init.beacon(GOVERNORXGUILD.address, METADAO.address);
+        let BEACON_AVATAR = await init.beacon(AVATARXGUILD.address, METADAO.address);
+  
+        setup.b_amorGuildToken = BEACON_AMOR_GUILD_TOKEN;
+        setup.b_damor = BEACON_DAMOR;
+        setup.b_fxamor = BEACON_FXAMOR;
+        setup.b_controller = BEACON_CONTROLLER;
+        setup.b_governor = BEACON_GOVERNOR;
+        setup.b_avatar = BEACON_AVATAR;
+
+        ///   STEP 5: Init the proxies to point to the correct beacon addresses
+        await amor_proxy.initProxy(BEACON_AMOR.address);
+        await amor_guild_token_proxy.initProxy(BEACON_AMOR_GUILD_TOKEN.address);
+        await dAmor_proxy.initProxy(BEACON_DAMOR.address);
+        await fxAmor_proxy.initProxy(BEACON_FXAMOR.address);
+        await controller_proxy.initProxy(BEACON_CONTROLLER.address);
+        await avatar_proxy.initProxy(BEACON_AVATAR.address);
+        await governor_proxy.initProxy(BEACON_GOVERNOR.address);
         
-        ///   STEP 5: Init the storage of the tokens and control contracts
+        ///   STEP 6: Init the storage of the tokens and control contracts
         DOINGUD_AMOR_TOKEN = AMOR_TOKEN.attach(amor_proxy.address);
         DOINGUD_AMOR_GUILD_TOKEN = AMOR_GUILD_TOKEN.attach(amor_guild_token_proxy.address);
         DOINGUD_DAMOR = DAMOR_GUILD_TOKEN.attach(dAmor_proxy.address);
@@ -162,8 +154,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         DOINGUD_AVATAR = AVATARXGUILD.attach(avatar_proxy.address);
         DOINGUD_CONTROLLER = CONTROLLERXGUILD.attach(controller_proxy.address);
         DOINGUD_GOVERNOR = GOVERNORXGUILD.attach(governor_proxy.address);
-        DOINGUD_METADAO = METADAO.attach(metadao_proxy.address);
-
+        DOINGUD_METADAO = setup.metadao;
         setup.metadao = DOINGUD_METADAO;
 
         await init.getGuildFactory(setup);
@@ -247,15 +238,9 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         let guildOne = await DOINGUD_METADAO.guilds(ONE_ADDRESS);
         let ControllerxOne = guildOne;
         guildOne = await CLONE_FACTORY.guilds(guildOne);
-        let AmorxOne = guildOne.AmorGuildToken;
-        let DAmorxOne = guildOne.DAmorxGuild;
-        let FXAmorxOne = guildOne.FXAmorxGuild;
         let AvatarxOne = guildOne.AvatarxGuild;
         let GovernorxOne = guildOne.GovernorxGuild;
 
-        GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(AmorxOne);
-        GUILD_ONE_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(DAmorxOne);
-        GUILD_ONE_FXAMORXGUILD = FX_AMOR_TOKEN.attach(FXAmorxOne);
         GUILD_ONE_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(ControllerxOne);
         GUILD_ONE_AVATARXGUILD = AVATARXGUILD.attach(AvatarxOne);
         GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxOne);

@@ -19,14 +19,6 @@ const { time } = require("@openzeppelin/test-helpers");
 
 use(solidity);
 
-/// The users
-let root;
-let user1;
-let user2;
-let user3; 
-let staker;
-let authorizer_adaptor;
-
 /// The implementation contracts
 let AMOR_TOKEN;
 let AMOR_GUILD_TOKEN;
@@ -40,6 +32,14 @@ let VESTING;
 let ERC20_TOKEN;
 let AMOR_TOKEN_UPGRADE;
 
+/// The users
+let root;
+let user1;
+let user2;
+let user3; 
+let staker;
+let authorizer_adaptor;
+
 /// The proxy for AMOR token
 let amor_proxy;
 let amor_guild_token_proxy;
@@ -49,7 +49,6 @@ let DOINGUD_AMOR_TOKEN;
 let DOINGUD_AMOR_GUILD_TOKEN;
 let DOINGUD_DAMOR;
 let DOINGUD_FXAMOR;
-let DOINGUD_CONTROLLER;
 
 /// The MetaDao Control Structures
 let METADAO;
@@ -57,28 +56,20 @@ let DOINGUD_GOVERNOR;
 let DOINGUD_AVATAR;
 let DOINGUD_METADAO;
 
+/// BEACON delcared globally to test `upgradeTo`
 let BEACON_AMOR;
 
-/// The Newly Deployed Guilds
+/// The Newly Deployed Guild 1
 let GUILD_ONE_AMORXGUILD;
 let GUILD_ONE_DAMORXGUILD;
 let GUILD_ONE_CONTROLLERXGUILD;
 let GUILD_ONE_AVATARXGUILD;
 let GUILD_ONE_FXAMORXGUILD;
 let GUILD_ONE_GOVERNORXGUILD;
-/*  The below variables are required in later integration
-let GUILD_ONE_FXAMORXGUILD;
-
-*/
-
+/// The Newly Deployed Guild 2
 let GUILD_TWO_CONTROLLERXGUILD;
 let GUILD_TWO_AVATARXGUILD;
 let GUILD_TWO_GOVERNORXGUILD;
-/*  The below variables are required in later integration
-let GUILD_TWO_AMORXGUILD;
-let GUILD_TWO_DAMORXGUILD;
-let GUILD_TWO_FXAMORXGUILD;
-*/
 
 /// Required variables
 let IMPACT_MAKERS;
@@ -89,8 +80,10 @@ describe("Integration: DoinGud token ecosystem", function () {
   const setupTests = deployments.createFixture(async () => {
     const signers = await ethers.getSigners();
     const setup = await init.initialize(signers);
+    ///   Setup token contracts
     await init.getTokens(setup);
-  
+
+    ///   Setup signer accounts
     root = setup.roles.root;
     multisig = setup.roles.doingud_multisig;
     user1 = setup.roles.user1;
@@ -164,7 +157,6 @@ describe("Integration: DoinGud token ecosystem", function () {
     DOINGUD_DAMOR = DAMOR_GUILD_TOKEN.attach(dAmor_proxy.address);
     DOINGUD_FXAMOR = FX_AMOR_TOKEN.attach(fxAmor_proxy.address);
     DOINGUD_AVATAR = AVATARXGUILD.attach(avatar_proxy.address);
-    DOINGUD_CONTROLLER = CONTROLLERXGUILD.attach(controller_proxy.address);
     DOINGUD_GOVERNOR = GOVERNORXGUILD.attach(governor_proxy.address);
     DOINGUD_METADAO = setup.metadao;
   
