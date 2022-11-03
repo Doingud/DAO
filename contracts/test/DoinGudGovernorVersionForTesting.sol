@@ -79,18 +79,18 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
     event ProposalCreated(
         uint256 proposalId,
         address proposer,
-        address[] targets,
-        uint256[] values,
+        // address[] targets,
+        // uint256[] values,
         // bytes[] calldatas,
         uint256 startBlock,
         uint256 endBlock
     );
     event ChangedGuardiansLimit(uint256 newLimit);
-    event GuardianSetted(address arrGuardians);
+    event GuardianSetted(address arrGuardians, address guild);
     // event GuardiansSetted(address[] arrGuardians);
-    event GuardianAdded(address newGuardian);
-    event GuardianRemoved(address guardian);
-    event GuardianChanged(uint256 oldGuardian, address newGuardian);
+    event GuardianAdded(address newGuardian, address guild);
+    event GuardianRemoved(address guardian, address guild);
+    event GuardianChanged(uint256 oldGuardian, address newGuardian, address guild);
     event VoteCasted(uint256 proposalId, bool support, address votedGuardian);
 
     bool private _initialized;
@@ -173,19 +173,19 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
                 delete weights[guardians[i]];
                 guardians[i] = arrGuardians[i];
                 weights[arrGuardians[i]] = 1;
-                emit GuardianSetted(arrGuardians[i]);
+                emit GuardianSetted(arrGuardians[i], address(this));
             }
             for (uint256 i = guardians.length; i < arrGuardians.length; i++) {
                 guardians.push(arrGuardians[i]);
                 weights[arrGuardians[i]] = 1;
-                emit GuardianSetted(arrGuardians[i]);
+                emit GuardianSetted(arrGuardians[i], address(this));
             }
         } else {
             for (uint256 i = 0; i < arrGuardians.length; i++) {
                 delete weights[guardians[i]];
                 guardians[i] = arrGuardians[i];
                 weights[arrGuardians[i]] = 1;
-                emit GuardianSetted(arrGuardians[i]);
+                emit GuardianSetted(arrGuardians[i], address(this));
             }
             for (uint256 i = arrGuardians.length; i < guardians.length; i++) {
                 delete guardians[i];
@@ -206,7 +206,7 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
         }
         guardians.push(guardian);
         weights[guardian] = 1;
-        emit GuardianAdded(guardian);
+        emit GuardianAdded(guardian, address(this));
     }
 
     /// @notice this function removes choosed guardian from the system
@@ -220,7 +220,7 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
                 break;
             }
         }
-        emit GuardianRemoved(guardian);
+        emit GuardianRemoved(guardian, address(this));
     }
 
     /// @notice this function changes guardian as a result of the vote (propose function)
@@ -236,7 +236,7 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
         guardians[current] = newGuardian;
         delete weights[guardians[current]];
         weights[newGuardian] = 1;
-        emit GuardianChanged(current, newGuardian);
+        emit GuardianChanged(current, newGuardian, address(this));
     }
 
     /// @notice this function changes guardians limit
@@ -290,8 +290,8 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
         emit ProposalCreated(
             proposalId,
             msg.sender, // proposer
-            targets,
-            values,
+            // targets,
+            // values,
             // calldatas,
             snapshot,
             deadline

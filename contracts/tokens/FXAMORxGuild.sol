@@ -73,8 +73,8 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
 
     /// Events
     event Initialized(address owner, address AMORxGuild);
-    event AMORxGuildStakedToFXAMOR(address to, uint256 amount, uint256 time);
-    event AMORxGuildWithdrawedFromFXAMOR(address to, uint256 amount, uint256 time);
+    event AMORxGuildStakedToFXAMOR(address to, uint256 amount, uint256 timeOfStake);
+    event AMORxGuildWithdrawedFromFXAMOR(address to, uint256 amount, uint256 timeOfWithdraw);
     event FXAMORxGuildUndelegated(address from, address owner, uint256 amount);
     event FXAMORxGuildDelegated(address to, address owner, uint256 amount);
     event FXAMORxGuildControllerUpdated(address newCollector);

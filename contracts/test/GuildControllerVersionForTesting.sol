@@ -59,9 +59,9 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
     event PercentToConvertUpdated(uint256 newPercent);
     event ImpactMakerSetted(address arrImpactMakers, uint256 arrWeight);
     // event ImpactMakersSetted(address[] arrImpactMakers, uint256[] arrWeight);
-    event ImpactMakersAdded(address newImpactMaker, uint256 weight);
-    event ImpactMakersRemoved(address ImpactMaker);
-    event ImpactMakersChanged(address ImpactMaker, uint256 weight);
+    event ImpactMakerAdded(address newImpactMaker, uint256 weight);
+    event ImpactMakerRemoved(address ImpactMaker);
+    event ImpactMakerChanged(address ImpactMaker, uint256 weight);
     event TokensClaimedByImpactMaker(address ImpactMaker, address token, uint256 amount);
 
     bool private _initialized;
@@ -440,7 +440,7 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
         impactMakers.push(impactMaker);
         weights[impactMaker] = weight;
         totalWeight += weight;
-        emit ImpactMakersAdded(impactMaker, weight);
+        emit ImpactMakerAdded(impactMaker, weight);
     }
 
     /// @notice allows to add change impactMaker weight
@@ -453,7 +453,7 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
             totalWeight -= weights[impactMaker] - weight;
         }
         weights[impactMaker] = weight;
-        emit ImpactMakersChanged(impactMaker, weight);
+        emit ImpactMakerChanged(impactMaker, weight);
     }
 
     /// @notice allows to remove impactMaker with specific address
@@ -468,7 +468,7 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
         }
         totalWeight -= weights[impactMaker];
         delete weights[impactMaker];
-        emit ImpactMakersRemoved(impactMaker);
+        emit ImpactMakerRemoved(impactMaker);
     }
 
     /// @notice allows to claim tokens for specific ImpactMaker address
