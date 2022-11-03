@@ -16,11 +16,12 @@ async function main() {
     let tx = await proxy.initProxy(dAMORxGuild.address);
     console.log("tx is %s", tx);
 
-    const UPDATED_dAMORxGuild = dAMORxGuild.attach(proxy.address);
-    console.log("UPDATED_dAMORxGuild address is %s", UPDATED_dAMORxGuild.address);
+    const PROXIED_dAMORxGuild = dAMORxGuild.attach(proxy.address);
+    console.log("PROXIED_dAMORxGuild address is %s", PROXIED_dAMORxGuild.address);
 
     //await for 5 block transactions to ensure deployment before verifying
     await dAMORxGuild.deployTransaction.wait(5);
+    console.log("PROXIED_dAMORxGuild_IMPLEMENTATION address is %s", await proxy.viewImplementation());
 
     //verify
     await hre.run("verify:verify", {

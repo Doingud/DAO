@@ -16,11 +16,12 @@ async function main() {
     let tx = await proxy.initProxy(GuildController.address);
     console.log("tx is %s", tx);
 
-    const UPDATED_GuildController = GuildController.attach(proxy.address);
-    console.log("UPDATED_GuildController address is %s", UPDATED_GuildController.address);
+    const PROXIED_GuildController = GuildController.attach(proxy.address);
+    console.log("PROXIED_GuildController address is %s", PROXIED_GuildController.address);
   
     //await for 5 block transactions to ensure deployment before verifying
     await GuildController.deployTransaction.wait(5);
+    console.log("PROXIED_GuildController_IMPLEMENTATION address is %s", await proxy.viewImplementation());
 
     //verify
     await hre.run("verify:verify", {

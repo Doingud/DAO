@@ -15,12 +15,12 @@ async function main() {
     let tx = await proxy.initProxy(DoinGudGovernor.address);
     console.log("tx is %s", tx);
 
-    const UPDATED_DoinGudGovernor = DoinGudGovernor.attach(proxy.address);
-    console.log("UPDATED_DoinGudGovernor address is %s", UPDATED_DoinGudGovernor.address);
-
+    const PROXIED_DoinGudGovernor = DoinGudGovernor.attach(proxy.address);
+    console.log("PROXIED_DoinGudGovernor address is %s", PROXIED_DoinGudGovernor.address);
 
     //await for 5 block transactions to ensure deployment before verifying
     await DoinGudGovernor.deployTransaction.wait(5);
+    console.log("PROXIED_DoinGudGovernor_IMPLEMENTATION address is %s", await proxy.viewImplementation());
 
     //verify
     await hre.run("verify:verify", {

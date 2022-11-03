@@ -4,10 +4,10 @@ const FXAMORxGuild = 'FXAMORxGuild';
 const dAMORxGuild = 'dAMORxGuild';
 const MetaDAOController = 'MetaDAOController';
 const GuildController = 'GuildController';
-const DoinGudProxy = 'DoinGudProxy';
-const GuildFactory = 'GuildFactory';
 const Governor = 'Governor';
 const Avatar = 'Avatar';
+const DoinGudProxy = 'DoinGudProxy';
+const GuildFactory = 'GuildFactory';
 const Vesting = 'Vesting';
 const taxController = 'taxController';
 const multisig = 'multisig';
@@ -17,6 +17,15 @@ const Snapshot = 'Snapshot';
 const Avatar_MetaDAOController = 'Avatar_MetaDAOController';
 const Governor_MetaDAOController = 'Governor_MetaDAOController';
 const dAMOR_MetaDAOController = 'dAMOR_MetaDAOController';
+
+const AMORTokenProxy = 'AMORTokenProxy';
+const AMORxGuildProxy = 'AMORxGuildProxy';
+const FXAMORxGuildProxy = 'FXAMORxGuildProxy';
+const dAMORxGuildProxy = 'dAMORxGuildProxy';
+const MetaDAOControllerProxy = 'MetaDAOControllerProxy';
+const GuildControllerProxy = 'GuildControllerProxy';
+const GovernorProxy = 'GovernorProxy';
+const AvatarProxy = 'AvatarProxy';
 
 const contractAddresses = {
     'mainnet': {
@@ -55,30 +64,30 @@ const contractAddresses = {
     'mumbai': {
         [DoinGudProxy]: '0xaD6150C12ec0248e9A974D13b3C2b2c1a005574B',
 
-        [AMOR]: '0xC80F7b592cdC7F08Ab39f2f0c68af197345e0080',
-        [AMORTokenProxy]: '',
-        [AMORxGuild]: '0x048dc84030793c5039818a854785d5DEa38BAD91',
-        [AMORxGuildProxy]: '0x048dc84030793c5039818a854785d5DEa38BAD91',
-        [GuildController]: '0xD3551853F909b639009b8c4cEaDe316926A5BBc7',
-        [GuildControllerProxy]: '0xD3551853F909b639009b8c4cEaDe316926A5BBc7',
+        [AMOR]: '0x9d94EC4d141bDafF7de353Cb1C28E8858210B6F1',
+        [AMORTokenProxy]: '0x9916f0986B8c50A0E2c714F9C5ADE134266f6438',
+        [AMORxGuild]: '0xE21ef1dd576dE0C2E43643f57b4adB5bB9FBE8Db',
+        [AMORxGuildProxy]: '0x983deb35c87d1CD6A5Ff3a7E4Add54C0dE78D32A',
 
-        [FXAMORxGuild]: '0x298Bd099c4Fb87c27031f3f39Ab113F2f3aF8cE7',
-        [FXAMORxGuildProxy]: '0x298Bd099c4Fb87c27031f3f39Ab113F2f3aF8cE7',
-        [Avatar]: '0x998287d5a9b4C122250784f4B11C3301e68dF67E',
-        [AvatarProxy]: '0x998287d5a9b4C122250784f4B11C3301e68dF67E',
+        [GuildController]: '0x9403ea93b730C5dB694Bf0733dC3e691BFD5E236',
+        [GuildControllerProxy]: '0x55b894dd06afe430921549825E7E58C40F25ADA6',
 
-        [dAMORxGuild]: '0x501211218ae8e4e29C277732994EdF1673c4868B',
-        [dAMORxGuildProxy]: '0x501211218ae8e4e29C277732994EdF1673c4868B',
-        [MetaDAOController]: '0xd797C72664e49a9a670D5098752c5bd46d48A6Fa',
-        [MetaDAOControllerProxy]: '0xd797C72664e49a9a670D5098752c5bd46d48A6Fa',
-        [Governor]: '0x001aF8eB1a281caBC61F5bd7Aefd5A07d0b460B8',
-        [GovernorProxy]: '0x001aF8eB1a281caBC61F5bd7Aefd5A07d0b460B8',
+        [FXAMORxGuild]: '0xa2268Aa8c14B97F13889439BDb1e129EcB896a91',
+        [FXAMORxGuildProxy]: '0x91327815F9a53ACA4430e11B6523CB20Ae61606B',
+        [Avatar]: '0x39062Bc754A2b11982424db0E0A7A6DcF6bA3a4E',
+        [AvatarProxy]: '0xf6eD7282dd6C505B75ceDF578707242ffA7a69A6',
 
-        [GuildFactory]: '0x3518d6C2893f13c9287c526bBe152e639cCC83bE',
-        [GuildFactoryProxy]: '0x3518d6C2893f13c9287c526bBe152e639cCC83bE',
-        [Vesting]: '0x1fb67Cf481de8DC7f802ad9947a9bbD2eF7E5DF6',
-        [VestingProxy]: '0x1fb67Cf481de8DC7f802ad9947a9bbD2eF7E5DF6',
+        [dAMORxGuild]: '0x4D1A2859eD29F5625083B99a95177121B4fa1dd4',
+        [dAMORxGuildProxy]: '0x5D0750C557958b4772EE675920834Ff0fEFcAa9D',
 
+        [MetaDAOController]: '0x22aD1414438e468842c5c8dFD21E2E755bc3795b',
+        [MetaDAOControllerProxy]: '0xdCcDFa26d92484A705647800b364e199E3962634',
+        [Governor]: '0x511845Ac349cb404D3dCb3472c83B17CEBE1548F',
+        [GovernorProxy]: '0x0408703335DaF71a70A6A5AE328209D2B2530536',
+//--
+        [GuildFactory]: '0xd3ff15f660764Cc78096350c5cDa5A2112536774',
+        [Vesting]: '0xa5A83CC9729cf10C9D6C4F349E6d3a8b39d3ccc1',
+//--
         [Snapshot]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
         [multisig]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', // Dev wallet
     },
