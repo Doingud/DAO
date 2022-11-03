@@ -3,7 +3,7 @@ const addresses = getAddresses();
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    const AMOR = addresses.AMOR;
+    // const AMOR = addresses.AMOR;
     const DoinGudProxy_ = addresses.DoinGudProxy;
 
     console.log("Deploying contracts with the account:", deployer.address);

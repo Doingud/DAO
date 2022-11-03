@@ -41,7 +41,7 @@ async function main() {
     console.log(1);
     // await AvatarxGuild.proposeAfterVote(TARGETS, VALUES, PROPOSALS);
 
-    let proposalId = await Governor.hashProposal(TARGETS, VALUES, PROPOSALS);
+    // let proposalId = await Governor.hashProposal(TARGETS, VALUES, PROPOSALS);
 
     // await Governor.castVote(proposalId, true);
     // console.log(2);
