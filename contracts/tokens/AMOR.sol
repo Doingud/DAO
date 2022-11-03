@@ -92,7 +92,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         //  Set the tax collector address
         updateController(_initCollector);
         //  Set the tax rate
-        setTaxRate(_initTaxRate);
+        _setTaxRate(_initTaxRate);
         _initialized = true;
         emit Initialized(_initialized, _initCollector, _initTaxRate);
         return true;
