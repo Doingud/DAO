@@ -97,8 +97,8 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     event DonatedToIndex(uint256 amount, address token, uint256 index, address sender);
     event FeesClaimed(address guild, uint256 guildFees);
     event FeesDistributed(address guild, uint256 guildFees);
-    event IndexAdded(uint256 index, string weights);
-    event IndexUpdated(uint256 index, string weights);
+    event IndexAdded(uint256 index, bytes32 weights);
+    event IndexUpdated(uint256 index, bytes32 weights);
 
     /// Errors
     /// The token is not whitelisted
@@ -336,7 +336,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         indexHashes.push(hashArray);
         _updateIndex(weights, indexHashes[indexHashes.length - 1]);
 
-        emit IndexAdded((indexHashes.length - 1), bytes32ToAsciiString(hashArray));
+        emit IndexAdded((indexHashes.length - 1), hashArray);
         return indexHashes.length - 1;
     }
 
@@ -353,7 +353,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
             indexHashes.push(key);
             return indexHashes.length;
         }
-        emit IndexUpdated(index, bytes32ToAsciiString(key));
+        emit IndexUpdated(index, key);
         return 0;
     }
 
@@ -380,26 +380,5 @@ contract MetaDaoController is IMetaDaoController, Ownable {
             index.creator = msg.sender;
         }
         return arrayHash;
-    }
-
-    function bytes32ToAsciiString(bytes32 _bytes)
-        internal
-        pure
-        returns (string memory)
-    {
-        bytes memory s = new bytes(64);
-        for (uint256 i = 0; i < 32; i++) {
-            uint8 b = uint8(bytes1(_bytes << (i * 8)));
-            uint8 hi = uint8(b) / 16;
-            uint8 lo = uint8(b) % 16;
-            s[2 * i] = char(hi);
-            s[2 * i + 1] = char(lo);
-        }
-        return string(s);
-    }
-
-    function char(uint8 b) internal pure returns (bytes1 c) {
-        if (b < 10) return bytes1(b + 0x30);
-        else return bytes1(b + 0x57);
     }
 }
