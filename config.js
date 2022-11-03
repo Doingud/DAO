@@ -80,13 +80,13 @@ const contractAddresses = {
         [dAMORxGuild]: '0x4D1A2859eD29F5625083B99a95177121B4fa1dd4',
         [dAMORxGuildProxy]: '0x5D0750C557958b4772EE675920834Ff0fEFcAa9D',
 
-        [MetaDAOController]: '0x22aD1414438e468842c5c8dFD21E2E755bc3795b',
-        [MetaDAOControllerProxy]: '0xdCcDFa26d92484A705647800b364e199E3962634',
+        [MetaDAOController]: '0x0699614f7a1D3f1ec3841884Bb87F3850C117a4b',
+        [MetaDAOControllerProxy]: '0xc6d0B20ccBaF7eA473bD819778904371C02E9c23',
         [Governor]: '0x511845Ac349cb404D3dCb3472c83B17CEBE1548F',
         [GovernorProxy]: '0x0408703335DaF71a70A6A5AE328209D2B2530536',
 //--
-        [GuildFactory]: '0xd3ff15f660764Cc78096350c5cDa5A2112536774',
-        [Vesting]: '0xa5A83CC9729cf10C9D6C4F349E6d3a8b39d3ccc1',
+        [GuildFactory]: '0x09FB9A0f05469AeEBc34D4c03eb76A058d70266E',
+        [Vesting]: '0x2c4008b7aE81D98ae0b0fDF970005634Da645593',
 //--
         [Snapshot]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
         [multisig]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', // Dev wallet
