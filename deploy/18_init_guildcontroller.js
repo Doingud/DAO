@@ -7,12 +7,12 @@ async function main() {
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
 
-    const AvatarxGuild = addresses.Avatar;
-    const MetaDao = addresses.MetaDAOController;
-    const AMORToken = addresses.AMOR;
-    const GuildController_ = addresses.GuildController;
-    const AMORxGuild_ = addresses.AMORxGuild;
-    const FXAMORxGuild_ = addresses.FXAMORxGuild;
+    const AvatarxGuild = addresses.AvatarProxy;
+    const MetaDao = addresses.MetaDAOControllerProxy;
+    const AMORToken = addresses.AMORTokenProxy;
+    const GuildController_ = addresses.GuildControllerProxy;
+    const AMORxGuild_ = addresses.AMORxGuildProxy;
+    const FXAMORxGuild_ = addresses.FXAMORxGuildProxy;
 
     // connect GuildController
     let a  = await ethers.getContractFactory('GuildControllerVersionForTesting')

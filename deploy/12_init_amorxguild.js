@@ -3,9 +3,9 @@ const addresses = getAddresses();
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    const MetaDao = addresses.MetaDAOController;
-    const AMOR_ = addresses.AMOR;
-    const AMORxGuild_ = addresses.AMORxGuild;
+    const MetaDao = addresses.MetaDAOControllerProxy;
+    const AMOR_ = addresses.AMORTokenProxy;
+    const AMORxGuild_ = addresses.AMORxGuildProxy;
 
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());

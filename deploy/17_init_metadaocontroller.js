@@ -3,14 +3,14 @@ const addresses = getAddresses();
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    const AvatarxGuild = addresses.Avatar;
+    const AvatarxGuild = addresses.AvatarProxy;
 
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
 
-    const MetaDao = addresses.MetaDAOController;
+    const MetaDao = addresses.MetaDAOControllerProxy;
     const GuildFactory = addresses.GuildFactory;
-    const AMORToken = addresses.AMOR;
+    const AMORToken = addresses.AMORTokenProxy;
 
     // connect MetaDaoController
     let a  = await ethers.getContractFactory('MetaDaoController')

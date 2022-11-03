@@ -3,9 +3,9 @@ const addresses = getAddresses();
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    const AMORxGuild_ = addresses.AMORxGuild;
-    const Avatar_ = addresses.Avatar;
-    const Governor_ = addresses.Governor;
+    const AMORxGuild_ = addresses.AMORxGuildProxy;
+    const Avatar_ = addresses.AvatarProxy;
+    const Governor_ = addresses.GovernorProxy;
     const initialGuardian = addresses.multisig;
 
     console.log("Deploying contracts with the account:", deployer.address);

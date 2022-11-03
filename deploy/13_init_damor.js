@@ -4,8 +4,8 @@ const addresses = getAddresses();
 async function main() {
     const [deployer] = await ethers.getSigners();
     const multisig_ = addresses.multisig; // 0xdd634602038eBf699581D34d6142a4FB5aa66Ff5
-    const AMORxGuild_ = addresses.AMORxGuild;
-    const dAMORxGuild_ = addresses.dAMORxGuild;
+    const AMORxGuild_ = addresses.AMORxGuildProxy;
+    const dAMORxGuild_ = addresses.dAMORxGuildProxy;
     const GUARDIAN_THRESHOLD = 10;
 
     console.log("Deploying contracts with the account:", deployer.address);
