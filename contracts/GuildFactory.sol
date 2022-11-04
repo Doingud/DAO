@@ -64,7 +64,7 @@ contract GuildFactory is ICloneFactory, Ownable {
     uint256 public constant DEFAULT_GUARDIAN_THRESHOLD = 10;
 
     /// EVENTS
-    event guildContractsCreated(
+    event GuildContractsCreated(
         address GuildController,
         address AmorGuildToken,
         address DAmorxGuild,
