@@ -4,6 +4,7 @@ const addresses = getAddresses();
 
 async function main() {
     const [deployer] = await ethers.getSigners();
+    // Set the implementation addresses
     const AMOR_ = addresses.AMOR;
     const AMORxGuild_ = addresses.AMORxGuild;
     const FXAMORxGuild_ = addresses.FXAMORxGuild;

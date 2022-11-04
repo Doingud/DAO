@@ -21,16 +21,14 @@ async function main() {
     console.log("tx is %s", tx);
     console.log("AMORxGuildToken address:", AMORxGuild.address);
 
-    // const tx = await AMORxGuild.setTax(10);
-    // console.log("tx is %s", tx);
-    // console.log("AMORxGuildToken address:", AMORxGuild.address);
-    // a  = await ethers.getContractFactory('AMORToken')
-    // b = await a.attach(AMOR_)
-    // AMORToken = await b.deployed();
-    // await AMORToken.approve(AMORxGuild.address, 10000)
+    // stake AMOR
+    a  = await ethers.getContractFactory('AMORToken')
+    b = await a.attach(AMOR_)
+    AMORToken = await b.deployed();
+    await AMORToken.approve(AMORxGuild.address, 10000)
 
-    // const multisig_ = addresses.multisig; // 0xdd634602038eBf699581D34d6142a4FB5aa66Ff5
-    // await AMORxGuild.stakeAmor(multisig_, 10000)
+    const multisig_ = addresses.multisig; // 0xdd634602038eBf699581D34d6142a4FB5aa66Ff5
+    await AMORxGuild.stakeAmor(multisig_, 10000)
 
   }
   

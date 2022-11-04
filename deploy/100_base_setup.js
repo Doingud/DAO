@@ -3,9 +3,9 @@ const addresses = getAddresses();
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    const AvatarxGuild_ = addresses.Avatar;
-    const Governor_ = addresses.Governor;
-    const MetaDao = addresses.MetaDAOController;
+    const AvatarxGuild_ = addresses.AvatarProxy;
+    const Governor_ = addresses.GovernorProxy;
+    const MetaDao = addresses.MetaDAOControllerProxy;
     const reality = addresses.multisig;
     const initialGuardian = addresses.multisig;
 
