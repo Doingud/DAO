@@ -159,7 +159,7 @@ contract GuildFactory is ICloneFactory, Ownable {
         guild.GovernorxGuild = _deployGovernor();
 
         _initGuildControls(controller, reality, initialGuardian);
-        emit guildContractsCreated(
+        emit GuildContractsCreated(
             controller,
             guild.AmorGuildToken,
             guild.DAmorxGuild,
