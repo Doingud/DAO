@@ -57,7 +57,7 @@ contract GuildController is IGuildController, Ownable {
     event VotedForTheReport(address voter, uint256 reportId, uint256 amount, bool sign);
     event VotingPeriodUpdated(uint256 newPeriod);
     event PercentToConvertUpdated(uint256 newPercent);
-    event ImpactMakersSetted(address[] arrImpactMakers, uint256[] arrWeight);
+    event ImpactMakersSet(address[] arrImpactMakers, uint256[] arrWeight);
     event ImpactMakersAdded(address newImpactMaker, uint256 weight);
     event ImpactMakersRemoved(address ImpactMaker);
     event ImpactMakersChanged(address ImpactMaker, uint256 weight);
@@ -423,7 +423,7 @@ contract GuildController is IGuildController, Ownable {
             weights[arrImpactMakers[i]] = arrWeight[i];
             totalWeight += arrWeight[i];
         }
-        emit ImpactMakersSetted(arrImpactMakers, arrWeight);
+        emit ImpactMakersSet(arrImpactMakers, arrWeight);
     }
 
     /// @notice allows to add impactMaker with a specific weight

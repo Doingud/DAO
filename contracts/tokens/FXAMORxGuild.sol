@@ -74,7 +74,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     /// Events
     event Initialized(address owner, address AMORxGuild);
     event AMORxGuildStakedToFXAMOR(address to, uint256 amount, uint256 timeOfStake);
-    event AMORxGuildWithdrawedFromFXAMOR(address to, uint256 amount, uint256 timeOfWithdraw);
+    event AMORxGuildWithdrawnFromFXAMOR(address to, uint256 amount, uint256 timeOfWithdraw);
     event FXAMORxGuildUndelegated(address from, address owner, uint256 amount);
     event FXAMORxGuildDelegated(address to, address owner, uint256 amount);
     event FXAMORxGuildControllerUpdated(address newCollector);
@@ -178,7 +178,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         _burn(account, amount);
         AMORxGuild.safeTransfer(controller, amount);
         stakes[account] -= amount;
-        emit AMORxGuildWithdrawedFromFXAMOR(account, amount, block.timestamp);
+        emit AMORxGuildWithdrawnFromFXAMOR(account, amount, block.timestamp);
     }
 
     /// @notice Allows some external account to vote with your FXAMORxGuild tokens

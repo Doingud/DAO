@@ -1,4 +1,4 @@
-const { getAddresses } = require('../config');
+const { getAddresses } = require('../../config');
 const addresses = getAddresses();
 
 async function main() {
@@ -23,11 +23,6 @@ async function main() {
 
     let tx = await Controller.init(AvatarxGuild, AMORToken, AMORxGuild_, FXAMORxGuild_, MetaDao);
     console.log("tx is %s", tx);
-
-
-    // await Controller.donate(1500, AMORToken)
-    // await Controller.donate(30, FXAMORxGuild_) 
-
   }
   
   main()

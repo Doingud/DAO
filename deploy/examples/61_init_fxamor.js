@@ -1,4 +1,4 @@
-const { getAddresses } = require('../config');
+const { getAddresses } = require('../../config');
 const addresses = getAddresses();
 
 async function main() {

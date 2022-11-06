@@ -20,10 +20,7 @@ const dAMOR_MetaDAOController = 'dAMOR_MetaDAOController';
 
 const AMORTokenProxy = 'AMORTokenProxy';
 const AMORxGuildProxy = 'AMORxGuildProxy';
-const FXAMORxGuildProxy = 'FXAMORxGuildProxy';
-const dAMORxGuildProxy = 'dAMORxGuildProxy';
 const MetaDAOControllerProxy = 'MetaDAOControllerProxy';
-const GuildControllerProxy = 'GuildControllerProxy';
 const GovernorProxy = 'GovernorProxy';
 const AvatarProxy = 'AvatarProxy';
 
@@ -64,30 +61,26 @@ const contractAddresses = {
     'mumbai': {
         [DoinGudProxy]: '0xaD6150C12ec0248e9A974D13b3C2b2c1a005574B',
 
-        [AMOR]: '0x9d94EC4d141bDafF7de353Cb1C28E8858210B6F1',
-        [AMORTokenProxy]: '0x9916f0986B8c50A0E2c714F9C5ADE134266f6438',
-        [AMORxGuild]: '0xE21ef1dd576dE0C2E43643f57b4adB5bB9FBE8Db',
-        [AMORxGuildProxy]: '0x983deb35c87d1CD6A5Ff3a7E4Add54C0dE78D32A',
+        [AMOR]: '0x05A26CABBf998Bf022C2a143f7Be9d88E4eE6312',
+        [AMORTokenProxy]: '0xAB099c84FEf3D0D8C8fb88F4618BA43Ff6Dd50ab',
+        [AMORxGuild]: '0x30Dfda66E665c7e10Ac0d0b9E4B896d4643C5BFA',
+        [AMORxGuildProxy]: '0xc7dB8CFaAcE215eA6839c53A2CC82e269507e9d8',
 
-        [GuildController]: '0x9403ea93b730C5dB694Bf0733dC3e691BFD5E236',
-        [GuildControllerProxy]: '0x55b894dd06afe430921549825E7E58C40F25ADA6',
+        [GuildController]: '0x4117e481665B6c945c0c29189294CE54A2bAA2C0',
+        [FXAMORxGuild]: '0x088c4cC7bE06215F401774435c2efb3de1094053',
+        [Avatar]: '0x6cf10199afbEf423a981ED4CD2B664E94E3F76A5',
+        [AvatarProxy]: '0x00D3d51B5AF6C46eA21AD4C2f599698F675D16a7',
 
-        [FXAMORxGuild]: '0xa2268Aa8c14B97F13889439BDb1e129EcB896a91',
-        [FXAMORxGuildProxy]: '0x91327815F9a53ACA4430e11B6523CB20Ae61606B',
-        [Avatar]: '0x39062Bc754A2b11982424db0E0A7A6DcF6bA3a4E',
-        [AvatarProxy]: '0xf6eD7282dd6C505B75ceDF578707242ffA7a69A6',
+        [dAMORxGuild]: '0x7861724125Dd8528515bBA5358bcaB13180E6983',
 
-        [dAMORxGuild]: '0x4D1A2859eD29F5625083B99a95177121B4fa1dd4',
-        [dAMORxGuildProxy]: '0x5D0750C557958b4772EE675920834Ff0fEFcAa9D',
+        [MetaDAOController]: '0x44fbbcA9Ac27CDd6259f0Ff263eaa986C55D3BdC',
+        [MetaDAOControllerProxy]: '0x59624102a5e95B30e12B320593e2F6240c65ABFB',
+        [Governor]: '0x67E76ECce47b76E2C6dc4C47b6C906f998234Db4',
+        [GovernorProxy]: '0xF69d431f8825cA43572E3ebb65CbEF28723991d2',
 
-        [MetaDAOController]: '0x0699614f7a1D3f1ec3841884Bb87F3850C117a4b',
-        [MetaDAOControllerProxy]: '0xc6d0B20ccBaF7eA473bD819778904371C02E9c23',
-        [Governor]: '0x511845Ac349cb404D3dCb3472c83B17CEBE1548F',
-        [GovernorProxy]: '0x0408703335DaF71a70A6A5AE328209D2B2530536',
-//--
-        [GuildFactory]: '0x09FB9A0f05469AeEBc34D4c03eb76A058d70266E',
-        [Vesting]: '0x2c4008b7aE81D98ae0b0fDF970005634Da645593',
-//--
+        [GuildFactory]: '0x47Cadd4258c0eEdCdee5DCFAFf245c8346BC2fC8',
+        [Vesting]: '0x66cEB098F767B491eCACbD73Cf5c692C2BD170Cd',
+
         [Snapshot]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
         [multisig]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', // Dev wallet
     },

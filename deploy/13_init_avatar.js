@@ -15,7 +15,6 @@ async function main() {
     let b = await a.attach(AvatarxGuild_)
     let AvatarxGuild = await b.deployed();
     console.log("AvatarxGuild address:", AvatarxGuild.address);
-    // console.log("AvatarxGuild owner is %s", await AvatarxGuild.owner());
 
     let tx = await AvatarxGuild.init(multisig_, Governor_);
     console.log("tx is %s", tx);
