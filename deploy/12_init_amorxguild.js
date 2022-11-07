@@ -27,7 +27,7 @@ async function main() {
     AMORToken = await b.deployed();
     await AMORToken.approve(AMORxGuild.address, 10000)
 
-    const multisig_ = addresses.multisig; // 0xdd634602038eBf699581D34d6142a4FB5aa66Ff5
+    const multisig_ = addresses.multisig;
     await AMORxGuild.stakeAmor(multisig_, 10000)
 
   }
