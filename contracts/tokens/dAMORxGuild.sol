@@ -191,7 +191,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
             revert InvalidAmount();
         }
         uint256 amount = stakes[msg.sender];
-        if (amount <= 0) {
+        if (amount == 0) {
             revert InvalidAmount();
         }
 
@@ -199,9 +199,9 @@ contract dAMORxGuild is ERC20Base, Ownable {
         _burn(msg.sender, amount);
         stakes[msg.sender] = 0;
 
-        address[] memory people = delegators[msg.sender];
-        for (uint256 i = 0; i < people.length; i++) {
-            delete delegations[msg.sender][people[i]];
+        uint256 peopleLength = delegators[msg.sender].length;
+        for (uint256 i = 0; i < peopleLength; i++) {
+            delete delegations[msg.sender][delegators[msg.sender][i]];
         }
         amountDelegated[msg.sender] = 0;
 

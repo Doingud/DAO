@@ -35,6 +35,8 @@ pragma solidity 0.8.15;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *
  */
+
+/// Custom contracts
 import "./interfaces/IAvatarxGuild.sol";
 import "./interfaces/IGovernor.sol";
 

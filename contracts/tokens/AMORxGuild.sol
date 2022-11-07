@@ -54,7 +54,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// Advanced math functions for bonding curve
 import "../utils/ABDKMath64x64.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
+/// Custom contracts
 import "../utils/ERC20Base.sol";
 import "../interfaces/IAMORxGuild.sol";
 
