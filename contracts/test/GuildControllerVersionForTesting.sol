@@ -109,9 +109,9 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
     }
 
     function setVotingPeriod(uint256 newTime) external onlyOwner {
-        if (newTime < 2 days) {
-            revert InvalidAmount();
-        }
+        // if (newTime < 2 days) {
+        //     revert InvalidAmount();
+        // }
         additionalVotingTime = newTime;
         emit VotingPeriodUpdated(newTime);
     }
@@ -376,7 +376,7 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
         }
 
         // check queque lenght. must be >= 10 reports
-        if (reportsQueue.length < 10) {
+        if (reportsQueue.length < 1) {//10) {
             revert InvalidAmount();
         }
 
