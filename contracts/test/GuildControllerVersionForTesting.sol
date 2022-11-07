@@ -257,7 +257,7 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
         uint256 id,
         uint256 amount,
         bool sign
-    ) public {
+    ) external {
         // check if tthe voting for this report has started
         if (trigger == false) {
             revert VotingNotStarted();

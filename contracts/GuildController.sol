@@ -135,7 +135,7 @@ contract GuildController is IGuildController, Ownable {
 
     /// @notice gathers donation from MetaDaoController in specific token
     /// and calles distribute function for the whole amount of gathered tokens
-    function gatherDonation(address token) public {
+    function gatherDonation(address token) external {
         // check if token in the whitelist of the MetaDaoController
         if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
@@ -256,7 +256,7 @@ contract GuildController is IGuildController, Ownable {
         uint256 id,
         uint256 amount,
         bool sign
-    ) public {
+    ) external {
         // check if tthe voting for this report has started
         if (trigger == false) {
             revert VotingNotStarted();

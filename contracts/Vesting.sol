@@ -87,7 +87,6 @@ contract Vesting is Ownable {
     constructor(address metaDao, address amor) {
         transferOwnership(metaDao);
         amorToken = IERC20(amor);
-        SENTINELOwner = address(0);
         beneficiaries[SENTINELOwner] = SENTINEL;
     }
 

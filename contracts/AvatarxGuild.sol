@@ -106,7 +106,7 @@ contract AvatarxGuild is IAvatarxGuild {
 
     /// @notice Changes Governor address
     /// @param newGovernor Address of the new Governor
-    function setGovernor(address newGovernor) external onlySelf {
+    function setGovernor(address newGovernor) public onlySelf {
         if (newGovernor == governor) {
             revert AlreadyInitialized();
         }
