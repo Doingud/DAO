@@ -46,8 +46,9 @@ pragma solidity 0.8.15;
 import "../utils/ERC20Base.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "../interfaces/IAMOR.sol";
 
-contract AMORToken is ERC20Base, Pausable, Ownable {
+contract AMORToken is IAmorToken, ERC20Base, Pausable, Ownable {
     //  Tax controller
     address public taxController;
     //  Tax Rate
