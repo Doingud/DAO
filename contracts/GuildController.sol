@@ -123,18 +123,19 @@ contract GuildController is IGuildController, Ownable {
     /// @notice called by donate and gatherDonation, distributes amount of tokens between
     /// all of the impact makers based on their weight.
     /// Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers
-    function distribute(uint256 amount, address token) internal returns (uint256) {
+    /// @param amount The amount to distribute
+    /// @param token Token in which to distribute
+    function distribute(uint256 amount, address token) internal {
         // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (amount * weights[impactMakers[i]]) / totalWeight;
             claimableTokens[impactMakers[i]][token] += amountToSendVoter;
         }
-
-        return amount;
     }
 
     /// @notice gathers donation from MetaDaoController in specific token
     /// and calles distribute function for the whole amount of gathered tokens
+    /// @param token Token in which to gatherDonation
     function gatherDonation(address token) external {
         // check if token in the whitelist of the MetaDaoController
         if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
@@ -155,6 +156,7 @@ contract GuildController is IGuildController, Ownable {
     // which are going to be owned by the user.
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     // Requires the msg.sender to `approve` amount prior to calling this function
+    /// @return amorxguildAmount The donated to the Guild AMORxGuild
     function donate(uint256 allAmount, address token) external returns (uint256) {
         // check if token in the whitelist of the MetaDaoController
         if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
