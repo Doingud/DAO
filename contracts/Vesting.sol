@@ -84,9 +84,9 @@ contract Vesting is Ownable {
     /// The tokens haven't vested with the beneficiary yet (cliff not yet reached)
     error NotVested();
 
-    constructor(address metaDao, address amor) {
+    constructor(address metaDao, IERC20 amor) {
         transferOwnership(metaDao);
-        amorToken = IERC20(amor);
+        amorToken = amor;
         beneficiaries[SENTINELOwner] = SENTINEL;
     }
 

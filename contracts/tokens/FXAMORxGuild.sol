@@ -43,7 +43,6 @@ pragma solidity 0.8.15;
  */
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// Advanced math functions for bonding curve
 import "../utils/ABDKMath64x64.sol";
@@ -98,7 +97,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         string memory name_,
         string memory symbol_,
         address initOwner_,
-        address AMORxGuild_
+        IERC20 AMORxGuild_
     ) external override {
         if (_initialized) {
             revert AlreadyInitialized();
@@ -108,13 +107,13 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
 
         _owner = initOwner_;
         controller = initOwner_;
-        AMORxGuild = IERC20(AMORxGuild_);
+        AMORxGuild = AMORxGuild_;
         //  Set the name and symbol
         name = name_;
         symbol = symbol_;
 
         _initialized = true;
-        emit Initialized(initOwner_, AMORxGuild_);
+        emit Initialized(initOwner_, address(AMORxGuild_));
     }
 
     function setController(address _controller) external onlyAddress(_owner) {

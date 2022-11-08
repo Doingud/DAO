@@ -69,6 +69,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
     mapping(uint256 => address[]) public voters; // voters mapping(uint proposal => address [] voters)
     mapping(uint256 => int256) public proposalVoting;
     mapping(uint256 => int256) public proposalWeight;
+    // proposal --> user --> voted or not
+    mapping(uint256 => mapping(address => uint256)) public votersCounter; // 0 if no, 1 if yes
 
     uint256 public guardiansLimit; // amount of guardians for contract to function propperly,
     // until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.
@@ -307,11 +309,9 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert InvalidState();
         }
 
-        for (uint256 i = 0; i < voters[proposalId].length; i++) {
-            if (voters[proposalId][i] == msg.sender) {
-                // this guardian already voted for this proposal
-                revert AlreadyVoted();
-            }
+        if (votersCounter[proposalId][msg.sender] != 0) {
+            // this guardian already voted for this proposal
+            revert AlreadyVoted();
         }
 
         proposalWeight[proposalId] += 1;
@@ -321,6 +321,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
 
         voters[proposalId].push(msg.sender);
+        votersCounter[proposalId][msg.sender] = 1;
         emit Voted(proposalId, support, msg.sender);
     }
 
@@ -355,6 +356,9 @@ contract DoinGudGovernor is IDoinGudGovernor {
         emit ProposalExecuted(proposalId);
 
         delete _proposals[proposalId];
+        for (uint256 i = 0; i < voters[proposalId].length; i++) {
+            delete votersCounter[proposalId][voters[proposalId][i]];
+        }
         delete voters[proposalId];
         delete proposalVoting[proposalId];
         delete proposalWeight[proposalId];
@@ -440,6 +444,10 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
         delete proposalWeight[proposalId];
         delete proposalVoting[proposalId];
+        for (uint256 i = 0; i < voters[proposalId].length; i++) {
+            delete votersCounter[proposalId][voters[proposalId][i]];
+        }
+        delete voters[proposalId];
         delete voters[proposalId];
         delete cancellers[proposalId];
         delete proposalCancelApproval[proposalId];
