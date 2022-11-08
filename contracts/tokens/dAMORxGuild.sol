@@ -44,10 +44,13 @@ pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+/// Custom contracts
 import "../utils/ERC20Base.sol";
+import "../utils/UintUtils.sol";
 
 contract dAMORxGuild is ERC20Base, Ownable {
     using SafeERC20 for IERC20;
+    using UintUtils for uint256;
 
     // staker => time staked for
     mapping(address => uint256) public stakesTimes;
@@ -200,7 +203,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         stakes[msg.sender] = 0;
 
         uint256 peopleLength = delegators[msg.sender].length;
-        for (uint256 i = 0; i < peopleLength; i++) {
+        for (uint256 i = 0; i < peopleLength; i.unsafeIncr()) {
             delete delegations[msg.sender][delegators[msg.sender][i]];
         }
         amountDelegated[msg.sender] = 0;
