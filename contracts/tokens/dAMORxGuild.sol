@@ -52,12 +52,21 @@ contract dAMORxGuild is ERC20Base, Ownable {
     using SafeERC20 for IERC20;
     using UintUtils for uint256;
 
-    // staker => time staked for
-    mapping(address => uint256) public stakesTimes;
-    // staker => all staker balance in dAMORxGuild
-    mapping(address => uint256) public stakes;
-    // staker => all staker balance in AMORxGuild
-    mapping(address => uint256) public stakesAMOR;
+    struct Stakes{
+        uint256 stakesTimes; // time staked for
+        uint256 stakes; // all staker balance in dAMORxGuild
+        uint256 stakesAMOR; //all staker balance in AMORxGuild
+    }
+    // // staker => time staked for
+    // mapping(address => uint256) public stakesTimes;
+    // // staker => all staker balance in dAMORxGuild
+    // mapping(address => uint256) public stakes;
+    // // staker => all staker balance in AMORxGuild
+    // mapping(address => uint256) public stakesAMOR;
+
+    mapping(address => Stakes) public _stakes;
+
+
     // those who delegated to a specific address
     mapping(address => address[]) public delegators;
     // staker => delegated to (many accounts) => amount
@@ -152,10 +161,12 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
         uint256 newAmount = _stake(amount, time);
 
-        stakesTimes[msg.sender] = block.timestamp + time;
-        stakes[msg.sender] += newAmount;
-        stakesAMOR[msg.sender] += amount;
-        emit AMORxGuildStakedToDAMOR(msg.sender, amount, newAmount, stakesTimes[msg.sender]);
+        Stakes storage userStake = _stakes[msg.sender];
+        userStake.stakesTimes = block.timestamp + time;
+        userStake.stakes += newAmount;
+        userStake.stakesAMOR += amount;
+        _stakes[msg.sender] = userStake;
+        emit AMORxGuildStakedToDAMOR(msg.sender, amount, newAmount, userStake.stakesTimes);
         return newAmount;
     }
 
@@ -169,13 +180,16 @@ contract dAMORxGuild is ERC20Base, Ownable {
         // send to AMORxGuild contract to stake
         AMORxGuild.safeTransferFrom(msg.sender, address(this), amount);
 
+        Stakes storage userStake = _stakes[msg.sender];
+
         // mint AMORxGuild tokens to staker
         // msg.sender receives funds, based on the amount of time remaining until the end of his stake
-        uint256 time = stakesTimes[msg.sender] - block.timestamp;
+        uint256 time = userStake.stakesTimes - block.timestamp;
 
         uint256 newAmount = _stake(amount, time);
 
-        stakes[msg.sender] += newAmount;
+        userStake.stakes += newAmount;
+        _stakes[msg.sender] = userStake;
 
         emit AMORxGuildStakIncreasedToDAMOR(msg.sender, amount, newAmount, time);
         return newAmount;
@@ -185,22 +199,24 @@ contract dAMORxGuild is ERC20Base, Ownable {
     /// @dev When this tokens are burned, staked AMORxGuild is being transfered
     ///      to the controller(contract that has a voting function)
     function withdraw() external returns (uint256) {
-        if (block.timestamp < stakesTimes[msg.sender]) {
+        Stakes storage userStake = _stakes[msg.sender];
+
+        if (block.timestamp < userStake.stakesTimes) {
             revert TimeTooSmall();
         }
 
-        uint256 unstakeAMORAmount = stakesAMOR[msg.sender];
+        uint256 unstakeAMORAmount = userStake.stakesAMOR;
         if (AMORxGuild.balanceOf(address(this)) < unstakeAMORAmount) {
             revert InvalidAmount();
         }
-        uint256 amount = stakes[msg.sender];
+        uint256 amount = userStake.stakes;
         if (amount == 0) {
             revert InvalidAmount();
         }
 
         //burn used dAMORxGuild tokens from staker
         _burn(msg.sender, amount);
-        stakes[msg.sender] = 0;
+        userStake.stakes = 0;
 
         uint256 peopleLength = delegators[msg.sender].length;
         for (uint256 i = 0; i < peopleLength; i.unsafeIncr()) {
@@ -209,11 +225,13 @@ contract dAMORxGuild is ERC20Base, Ownable {
         amountDelegated[msg.sender] = 0;
 
         AMORxGuild.safeTransfer(msg.sender, unstakeAMORAmount);
-        stakesAMOR[msg.sender] = 0;
+        userStake.stakesAMOR = 0;
 
         if (delegation[msg.sender].length != 0) {
             undelegateAll();
         }
+
+        _stakes[msg.sender] = userStake;
         emit AMORxGuildWithdrawnFromDAMOR(msg.sender, amount, unstakeAMORAmount);
         return amount;
     }
@@ -227,7 +245,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
 
         uint256 alreadyDelegated = amountDelegated[msg.sender];
-        uint256 availableAmount = stakes[msg.sender] - alreadyDelegated;
+        uint256 availableAmount = _stakes[msg.sender].stakes - alreadyDelegated;
         if (availableAmount < amount) {
             revert InvalidAmount();
         }
