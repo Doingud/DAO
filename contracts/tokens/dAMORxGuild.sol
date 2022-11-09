@@ -57,15 +57,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
         uint256 stakes; // all staker balance in dAMORxGuild
         uint256 stakesAMOR; //all staker balance in AMORxGuild
     }
-    // // staker => time staked for
-    // mapping(address => uint256) public stakesTimes;
-    // // staker => all staker balance in dAMORxGuild
-    // mapping(address => uint256) public stakes;
-    // // staker => all staker balance in AMORxGuild
-    // mapping(address => uint256) public stakesAMOR;
-
+    
     mapping(address => Stakes) public _stakes;
-
 
     // those who delegated to a specific address
     mapping(address => address[]) public delegators;
