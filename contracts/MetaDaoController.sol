@@ -119,7 +119,6 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     error InvalidClaim();
 
     /// @notice Initializes the MetaDaoController contract
-    /// @param  initOwner the address of the Avatar for this Guild
     /// @param  amor the address of the AMOR token
     /// @param  cloneFactory the address of the GuildFactory
     /// @param  avatar the address of the Avatar
