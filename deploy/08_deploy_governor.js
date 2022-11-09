@@ -4,7 +4,7 @@ async function main() {
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
       
-    const DoinGudGovernorFactory = await ethers.getContractFactory("DoinGudGovernorVersionForTesting");//DoinGudGovernor");
+    const DoinGudGovernorFactory = await ethers.getContractFactory("DoinGudGovernorVersionForTesting");
     const DoinGudGovernor = await DoinGudGovernorFactory.deploy();
     console.log("DoinGudGovernor address:", DoinGudGovernor.address);
 
@@ -26,7 +26,6 @@ async function main() {
     await hre.run("verify:verify", {
       address: DoinGudGovernor.address,
       contract: "contracts/test/DoinGudGovernorVersionForTesting.sol:DoinGudGovernorVersionForTesting", //Filename.sol:ClassName
-      // contract: "contracts/Governor.sol:DoinGudGovernor", //Filename.sol:ClassName
     });
   }
   

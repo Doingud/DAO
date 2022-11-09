@@ -3,7 +3,6 @@ const addresses = getAddresses();
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    // const AMOR = addresses.AMOR;
     const DoinGudProxy_ = addresses.DoinGudProxy;
 
     console.log("Deploying contracts with the account:", deployer.address);
@@ -14,10 +13,6 @@ async function main() {
     let b = await a.attach(DoinGudProxy_)
     let DoinGudProxy = await b.deployed();
     console.log("DoinGudProxy address:", DoinGudProxy.address);
-
-    // let tx = await DoinGudProxy.initProxy(AMOR);
-    // console.log("tx is %s", tx);
-    // console.log("DoinGudProxy address:", DoinGudProxy.address);
 }
   
   main()
