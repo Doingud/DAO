@@ -52,12 +52,11 @@ contract dAMORxGuild is ERC20Base, Ownable {
     using SafeERC20 for IERC20;
     using UintUtils for uint256;
 
-    struct Stakes{
+    struct Stakes {
         uint256 stakesTimes; // time staked for
         uint256 stakes; // all staker balance in dAMORxGuild
         uint256 stakesAMOR; //all staker balance in AMORxGuild
     }
-    
     mapping(address => Stakes) public _stakes;
 
     // those who delegated to a specific address
