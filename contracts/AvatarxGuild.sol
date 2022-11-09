@@ -184,6 +184,7 @@ contract AvatarxGuild is IAvatarxGuild {
     /// @param value Ether value of module transaction.
     /// @param data Data payload of module transaction.
     /// @param operation Operation type of module transaction.
+    /// @return returnData Returned data from executed module transaction.
     function execTransactionFromModuleReturnData(
         address to,
         uint256 value,

@@ -82,8 +82,15 @@ contract GuildController is IGuildController, Ownable {
     /// Invalid address to transfer. Needed `to` != msg.sender
     error InvalidSender();
 
+    /// @notice Initializes the GuildController contract
+    /// @param  initOwner the address of the Avatar for this Guild
+    /// @param  AMOR_ the address of the AMOR token
+    /// @param  AMORxGuild_ the address of the AMORxGuild token
+    /// @param  FXAMORxGuild_ the address of the FXAMORxGuild token
+    /// @param  MetaDaoController_ the MetaDaoController owning this token
+    /// @return bool Initialization successful/unsuccessful
     function init(
-        address initOwner, // The Avatar for this Guild
+        address initOwner,
         address AMOR_,
         address AMORxGuild_,
         address FXAMORxGuild_,
@@ -167,10 +174,10 @@ contract GuildController is IGuildController, Ownable {
             revert InvalidAmount();
         }
 
-        uint256 amount = (allAmount * percentToConvert) / FEE_DENOMINATOR; // 10% of tokens
+        uint256 amount = (allAmount * percentToConvert) / FEE_DENOMINATOR; // 10% of donated tokens
         uint256 amorxguildAmount = amount;
 
-        // 10% of the tokens in the impact pool are getting:
+        // 10% of donated tokens in the impact pool are getting:
         if (token == AMOR) {
             // convert AMOR to AMORxGuild
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
@@ -191,8 +198,7 @@ contract GuildController is IGuildController, Ownable {
             ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amorxguildAmount);
         } else {
             // if token != AMORxGuild && token != AMOR
-            // recieve tokens
-            amount = 0;
+            amount = 0; // for second part, decAmount, to be 100%
         }
 
         if (token == AMORxGuild || token == AMOR) {
@@ -201,7 +207,7 @@ contract GuildController is IGuildController, Ownable {
             ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);
             FXGFXAMORxGuild.stake(msg.sender, amorxguildAmount); // from address(this)
         }
-        uint256 decAmount = allAmount - amount; //decreased amount: other 90%
+        uint256 decAmount = allAmount - amount; //decreased amount: second part of donated tokens
 
         uint256 tokenBefore = IERC20(token).balanceOf(address(this));
 
@@ -209,7 +215,7 @@ contract GuildController is IGuildController, Ownable {
 
         uint256 decTaxCorrectedAmount = IERC20(token).balanceOf(address(this)) - tokenBefore;
 
-        distribute(decTaxCorrectedAmount, token); // distribute other 90%
+        distribute(decTaxCorrectedAmount, token); // distribute other donated tokens
 
         emit DonatedToGuild(allAmount, token, amorxguildAmount, msg.sender);
         return amorxguildAmount;

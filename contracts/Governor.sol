@@ -118,6 +118,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @param  AMORxGuild_ the address of the AMORxGuild token
     /// @param  avatarAddress_ the address of the Avatar
     /// @param  initialGuardian the user responsible for the guardian actions
+    /// @return bool Initialization successful/unsuccessful
     function init(
         address AMORxGuild_,
         address avatarAddress_,
