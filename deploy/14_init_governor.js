@@ -12,7 +12,7 @@ async function main() {
     console.log("Account balance:", (await deployer.getBalance()).toString());
 
     // connect Governor
-    let a  = await ethers.getContractFactory('DoinGudGovernorVersionForTesting');//DoinGudGovernor')
+    let a  = await ethers.getContractFactory('DoinGudGovernorVersionForTesting');
     let b = await a.attach(Governor_)
     let Governor = await b.deployed();
     console.log("Governor address:", Governor.address);
