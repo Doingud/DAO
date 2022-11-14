@@ -430,6 +430,12 @@ describe('unit - Contract: GuildController', function () {
 
     context('» claim testing', () => {
 
+        it('it fails to claim if not the owner', async function () {
+            await expect(controller.connect(user).claim(user2.address, [AMORxGuild.address])).to.be.revertedWith(
+                'Unauthorized()'
+            );
+        });
+
         it('it claims tokens', async function () {
             const balanceBefore = await AMORxGuild.balanceOf(impactMaker.address);
             expect(balanceBefore).to.equal(0);
@@ -439,7 +445,7 @@ describe('unit - Contract: GuildController', function () {
             expect((await controller.claimableTokens(impactMaker.address, FXAMORxGuild.address)).toString()).to.equal("0");
             expect((await FXAMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal("0");
 
-            await controller.connect(impactMaker).claim([AMORxGuild.address, FXAMORxGuild.address]);
+            await controller.connect(impactMaker).claim(impactMaker.address, [AMORxGuild.address, FXAMORxGuild.address]);
             expect((await AMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal(balanceAfter.toString());
             expect((await FXAMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal("0");
         });

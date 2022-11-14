@@ -70,7 +70,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
     mapping(address => mapping(address => address)) public delegation;
 
     struct DelegatorsList {
-        address who;
         address prev;
         address next;
     }
@@ -225,7 +224,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         _burn(msg.sender, amount);
         userStake.stakes = 0;
 
-        address user = delegators[msg.sender][SENTINEL].who;
+        address user = SENTINEL;
         for (uint256 i = 0; i < delegatorsCounter; i++) {
             delete delegations[msg.sender][user];
             user = delegators[msg.sender][user].prev;
@@ -259,8 +258,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
 
         // initialize for the first time
-        if (delegators[to][SENTINEL].who == address(0x00)) {
-            delegators[to][SENTINEL].who = SENTINEL;
+        if (delegators[to][SENTINEL].prev == address(0x00)) {
             delegators[to][SENTINEL].prev = address(0x02);
         }
 
@@ -268,11 +266,10 @@ contract dAMORxGuild is ERC20Base, Ownable {
             delegation[msg.sender][to] = delegation[msg.sender][SENTINEL];
             delegation[msg.sender][SENTINEL] = to;
 
-            delegators[to][msg.sender].who = msg.sender;
             delegators[to][msg.sender].prev = delegators[to][SENTINEL].prev;
-            delegators[to][msg.sender].next = delegators[to][SENTINEL].who;
+            delegators[to][msg.sender].next = SENTINEL;
 
-            delegators[to][SENTINEL].prev = delegators[to][msg.sender].who;
+            delegators[to][SENTINEL].prev = msg.sender;
             delegatorsCounter++;
         }
         delegations[msg.sender][to] += amount;
@@ -312,7 +309,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
             delegation[msg.sender][prevAccount] = delegation[msg.sender][account];
             delegation[msg.sender][account] = address(0);
 
-            delegators[account][msg.sender].who = msg.sender;
             delegators[account][delegators[account][msg.sender].next].prev = delegators[account][msg.sender].prev;
             delegators[account][delegators[account][msg.sender].prev].next = delegators[account][msg.sender].next;
 
@@ -345,7 +341,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
             emit dAMORxGuildUndelegated(account, msg.sender, delegations[msg.sender][account]);
 
-            delegators[account][msg.sender].who = msg.sender;
             delegators[account][delegators[account][msg.sender].next].prev = delegators[account][msg.sender].prev;
             delegators[account][delegators[account][msg.sender].prev].next = delegators[account][msg.sender].next;
 
@@ -353,7 +348,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
             delete delegators[msg.sender][account];
         }
 
-        delegators[msg.sender][SENTINEL].who == address(0x00);
+        delegators[msg.sender][SENTINEL].prev == address(0x00);
 
         delete amountDelegated[msg.sender];
     }

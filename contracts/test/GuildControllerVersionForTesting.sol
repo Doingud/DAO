@@ -471,9 +471,13 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
         emit ImpactMakerRemoved(impactMaker);
     }
 
-    /// @notice allows to claim tokens for ImpactMaker address
+    /// @notice allows to claim tokens for specific ImpactMaker address
+    /// @param impact Impact maker to to claim tokens from
     /// @param token Tokens addresess to claim
-    function claim(address[] memory token) external {
+    function claim(address impact, address[] memory token) external {
+        if (impact != msg.sender) {
+            revert Unauthorized();
+        }
         for (uint256 i = 0; i < token.length; i++) {
             IERC20(token[i]).safeTransfer(msg.sender, claimableTokens[msg.sender][token[i]]);
             emit TokensClaimedByImpactMaker(msg.sender, token[i], claimableTokens[msg.sender][token[i]]);

@@ -47,9 +47,10 @@ interface IGuildController {
     /// @param impactMaker Impact maker to be removed
     function removeImpactMaker(address impactMaker) external;
 
-    /// @notice allows to claim tokens for ImpactMaker address
+    /// @notice allows to claim tokens for specific ImpactMaker address
+    /// @param impact Impact maker to to claim tokens from
     /// @param token Tokens addresess to claim
-    function claim(address[] memory token) external;
+    function claim(address impact, address[] memory token) external;
 
     function gatherDonation(address token) external;
 }
