@@ -57,7 +57,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     }
     mapping(address => Stakes) public _stakes;
 
-    // // those who delegated to a specific address
+    // those who delegated to a specific address
     // mapping(address => address[]) public delegators;
     // staker => delegated to (many accounts) => amount
     // list of delegations from one address
