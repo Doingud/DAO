@@ -5,7 +5,7 @@ async function main() {
     console.log("Account balance:", (await deployer.getBalance()).toString());
 
     // deploy guild controller
-    const GuildControllerFactory = await ethers.getContractFactory("GuildControllerVersionForTesting");
+    const GuildControllerFactory = await ethers.getContractFactory("GuildController");
     const GuildController = await GuildControllerFactory.deploy();
     console.log("GuildController address:", GuildController.address);
 
@@ -26,7 +26,7 @@ async function main() {
     //verify
     await hre.run("verify:verify", {
       address: GuildController.address,
-      contract: "contracts/test/GuildControllerVersionForTesting.sol:GuildControllerVersionForTesting", //Filename.sol:ClassName
+      contract: "contracts/GuildController.sol:GuildController", //Filename.sol:ClassName
     });
   }
   
