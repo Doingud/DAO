@@ -170,7 +170,6 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             expect((await dAMORxGuild.amountDelegated(staker.address)).toString()).to.equal(realAmount.toString());
             expect(await dAMORxGuild.delegation(staker.address, operator.address)).to.equal(TWO_ADDRESS);
             let address = await dAMORxGuild.delegators(operator.address, staker.address);
-            // expect(address.who).to.equal(staker.address);
             expect(address.prev).to.equal(TWO_ADDRESS);
             expect((await dAMORxGuild.delegations(staker.address, operator.address)).toString()).to.equal(realAmount.toString());
         });
@@ -184,7 +183,6 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
             expect((await dAMORxGuild.amountDelegated(staker2.address)).toString()).to.equal(ethers.BigNumber.from(12).toString());
             let address = await dAMORxGuild.delegators(operator2.address, staker2.address);
-            // expect(address.who).to.equal(staker2.address);
             expect(address.prev).to.equal(TWO_ADDRESS);
 
             expect(await dAMORxGuild.delegation(staker2.address, operator2.address)).to.equal(TWO_ADDRESS);
@@ -194,7 +192,6 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
             expect((await dAMORxGuild.amountDelegated(staker2.address)).toString()).to.equal(ethers.BigNumber.from(26).toString());
             address = await dAMORxGuild.delegators(operator2.address, staker2.address);
-            // expect(address.who).to.equal(staker2.address);
             expect(address.prev).to.equal(TWO_ADDRESS);
             expect(await dAMORxGuild.delegation(staker2.address, operator2.address)).to.equal(TWO_ADDRESS);
             expect((await dAMORxGuild.delegations(staker2.address, operator2.address)).toString()).to.equal(ethers.BigNumber.from(26).toString());
@@ -221,14 +218,12 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             expect((await dAMORxGuild.delegations(staker.address, operator.address)).toString()).to.equal(realAmount.toString());
             expect((await dAMORxGuild.amountDelegated(staker.address)).toString()).to.equal(realAmount.toString());
             let address = await dAMORxGuild.delegators(operator.address, staker.address);
-            // expect(address.who).to.equal(staker.address);
             expect(address.prev).to.equal(TWO_ADDRESS);
             expect(await dAMORxGuild.delegation(staker.address, operator.address)).to.equal(TWO_ADDRESS);
 
             await dAMORxGuild.connect(staker).undelegate(ONE_ADDRESS, operator.address, 1);
 
             address = await dAMORxGuild.delegators(operator.address, staker.address);
-            // expect(address.who).to.equal(staker.address);
             expect(address.prev).to.equal(TWO_ADDRESS);
             expect(await dAMORxGuild.delegation(staker.address, operator.address)).to.equal(TWO_ADDRESS);
 
@@ -238,7 +233,6 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
         it('it undelegates dAMORxGuild tokens when undelegated amount > delegated amount', async function () {
             let address = await dAMORxGuild.delegators(operator.address, staker.address);
-            // expect(address.who).to.equal(staker.address);
             expect(address.prev).to.equal(TWO_ADDRESS);
             expect(await dAMORxGuild.delegation(staker.address, operator.address)).to.equal(TWO_ADDRESS);
 
