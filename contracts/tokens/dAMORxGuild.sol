@@ -169,7 +169,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
         userStake.stakesTimes = block.timestamp + time;
         userStake.stakes += newAmount;
         userStake.stakesAMOR += amount;
-        _stakes[msg.sender] = userStake;
 
         delegation[msg.sender][SENTINEL] = address(0x02);
         emit AMORxGuildStakedToDAMOR(msg.sender, amount, newAmount, userStake.stakesTimes);
