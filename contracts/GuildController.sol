@@ -481,9 +481,6 @@ contract GuildController is IGuildController, Ownable {
     /// @param impact Impact maker to to claim tokens from
     /// @param token Tokens addresess to claim
     function claim(address impact, address[] memory token) external {
-        if (impact != msg.sender) {
-            revert Unauthorized();
-        }
         for (uint256 i = 0; i < token.length; i++) {
             IERC20(token[i]).safeTransfer(impact, claimableTokens[impact][token[i]]);
             emit TokensClaimedByImpactMaker(impact, token[i], claimableTokens[impact][token[i]]);
