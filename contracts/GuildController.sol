@@ -52,7 +52,6 @@ contract GuildController is IGuildController, Ownable {
     uint256 public percentToConvert; //10%
 
     event Initialized(bool success, address owner, address AMORxGuild);
-    event VotingPeriodSet(uint256 newPeriod);
 
     bool private _initialized;
 
