@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
 
-import "./interfaces/IAMORxGuild.sol";
-import "./interfaces/IFXAMORxGuild.sol";
-import "./interfaces/IGuildController.sol";
-import "./interfaces/IMetaDaoController.sol";
+import "../interfaces/IAMORxGuild.sol";
+import "../interfaces/IFXAMORxGuild.sol";
+import "../interfaces/IGuildController.sol";
+import "../interfaces/IMetaDaoController.sol";
 
 /// Advanced math functions for bonding curve
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// @author Daoism Systems Team
 /// @notice GuildController contract controls the all of the deployed contracts of the guild
 
-contract GuildController is IGuildController, Ownable {
+contract GuildControllerVersionForTesting is IGuildController, Ownable {
     using SafeERC20 for IERC20;
 
     int256[] public reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
@@ -57,10 +57,11 @@ contract GuildController is IGuildController, Ownable {
     event VotedForTheReport(address voter, uint256 reportId, uint256 amount, bool sign);
     event VotingPeriodUpdated(uint256 newPeriod);
     event PercentToConvertUpdated(uint256 newPercent);
-    event ImpactMakersSet(address[] arrImpactMakers, uint256[] arrWeight);
-    event ImpactMakersAdded(address newImpactMaker, uint256 weight);
-    event ImpactMakersRemoved(address ImpactMaker);
-    event ImpactMakersChanged(address ImpactMaker, uint256 weight);
+    event ImpactMakerSetted(address arrImpactMakers, uint256 arrWeight);
+    // event ImpactMakersSetted(address[] arrImpactMakers, uint256[] arrWeight);
+    event ImpactMakerAdded(address newImpactMaker, uint256 weight);
+    event ImpactMakerRemoved(address ImpactMaker);
+    event ImpactMakerChanged(address ImpactMaker, uint256 weight);
     event TokensClaimedByImpactMaker(address ImpactMaker, address token, uint256 amount);
 
     bool private _initialized;
@@ -108,9 +109,9 @@ contract GuildController is IGuildController, Ownable {
     }
 
     function setVotingPeriod(uint256 newTime) external onlyOwner {
-        if (newTime < 2 days) {
-            revert InvalidAmount();
-        }
+        // if (newTime < 2 days) {
+        //     revert InvalidAmount();
+        // }
         additionalVotingTime = newTime;
         emit VotingPeriodUpdated(newTime);
     }
@@ -375,7 +376,7 @@ contract GuildController is IGuildController, Ownable {
         }
 
         // check queque lenght. must be >= 10 reports
-        if (reportsQueue.length < 10) {
+        if (reportsQueue.length < 1) {//10) {
             revert InvalidAmount();
         }
 
@@ -422,8 +423,9 @@ contract GuildController is IGuildController, Ownable {
             impactMakers.push(arrImpactMakers[i]);
             weights[arrImpactMakers[i]] = arrWeight[i];
             totalWeight += arrWeight[i];
+            emit ImpactMakerSetted(arrImpactMakers[i], arrWeight[i]);
         }
-        emit ImpactMakersSet(arrImpactMakers, arrWeight);
+        // emit ImpactMakersSetted(arrImpactMakers, arrWeight);
     }
 
     /// @notice allows to add impactMaker with a specific weight
@@ -438,7 +440,7 @@ contract GuildController is IGuildController, Ownable {
         impactMakers.push(impactMaker);
         weights[impactMaker] = weight;
         totalWeight += weight;
-        emit ImpactMakersAdded(impactMaker, weight);
+        emit ImpactMakerAdded(impactMaker, weight);
     }
 
     /// @notice allows to add change impactMaker weight
@@ -451,7 +453,7 @@ contract GuildController is IGuildController, Ownable {
             totalWeight -= weights[impactMaker] - weight;
         }
         weights[impactMaker] = weight;
-        emit ImpactMakersChanged(impactMaker, weight);
+        emit ImpactMakerChanged(impactMaker, weight);
     }
 
     /// @notice allows to remove impactMaker with specific address
@@ -466,7 +468,7 @@ contract GuildController is IGuildController, Ownable {
         }
         totalWeight -= weights[impactMaker];
         delete weights[impactMaker];
-        emit ImpactMakersRemoved(impactMaker);
+        emit ImpactMakerRemoved(impactMaker);
     }
 
     /// @notice allows to claim tokens for specific ImpactMaker address
