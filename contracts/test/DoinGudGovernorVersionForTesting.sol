@@ -33,13 +33,13 @@ pragma solidity 0.8.15;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *
  */
-import "./interfaces/IAvatarxGuild.sol";
-import "./interfaces/IGovernor.sol";
+import "../interfaces/IAvatarxGuild.sol";
+import "../interfaces/IGovernor.sol";
 
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract DoinGudGovernor is IDoinGudGovernor {
+contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
     using SafeCast for uint256;
 
     struct ProposalCore {
@@ -79,18 +79,19 @@ contract DoinGudGovernor is IDoinGudGovernor {
     event ProposalCreated(
         uint256 proposalId,
         address proposer,
-        address[] targets,
-        uint256[] values,
-        bytes[] calldatas,
+        // address[] targets,
+        // uint256[] values,
+        // bytes[] calldatas,
         uint256 startBlock,
         uint256 endBlock
     );
     event ChangedGuardiansLimit(uint256 newLimit);
-    event GuardiansSet(address[] arrGuardians);
-    event GuardianAdded(address newGuardian);
-    event GuardianRemoved(address guardian);
-    event GuardianChanged(uint256 oldGuardian, address newGuardian);
-    event Voted(uint256 proposalId, bool support, address votedGuardian);
+    event GuardianSetted(address arrGuardians, address guild);
+    // event GuardiansSetted(address[] arrGuardians);
+    event GuardianAdded(address newGuardian, address guild);
+    event GuardianRemoved(address guardian, address guild);
+    event GuardianChanged(uint256 oldGuardian, address newGuardian, address guild);
+    event VoteCasted(uint256 proposalId, bool support, address votedGuardian);
 
     bool private _initialized;
 
@@ -130,7 +131,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
         _initialized = true;
         _votingDelay = 1;
-        _votingPeriod = 2 weeks;
+        _votingPeriod = 5 minutes;
         guardiansLimit = 1;
 
         emit Initialized(avatarAddress_);
@@ -172,23 +173,26 @@ contract DoinGudGovernor is IDoinGudGovernor {
                 delete weights[guardians[i]];
                 guardians[i] = arrGuardians[i];
                 weights[arrGuardians[i]] = 1;
+                emit GuardianSetted(arrGuardians[i], address(this));
             }
             for (uint256 i = guardians.length; i < arrGuardians.length; i++) {
                 guardians.push(arrGuardians[i]);
                 weights[arrGuardians[i]] = 1;
+                emit GuardianSetted(arrGuardians[i], address(this));
             }
         } else {
             for (uint256 i = 0; i < arrGuardians.length; i++) {
                 delete weights[guardians[i]];
                 guardians[i] = arrGuardians[i];
                 weights[arrGuardians[i]] = 1;
+                emit GuardianSetted(arrGuardians[i], address(this));
             }
             for (uint256 i = arrGuardians.length; i < guardians.length; i++) {
                 delete guardians[i];
                 delete weights[guardians[i]];
             }
         }
-        emit GuardiansSet(arrGuardians);
+        // emit GuardiansSetted(arrGuardians);
     }
 
     /// @notice this function adds new guardian to the system
@@ -202,7 +206,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
         guardians.push(guardian);
         weights[guardian] = 1;
-        emit GuardianAdded(guardian);
+        emit GuardianAdded(guardian, address(this));
     }
 
     /// @notice this function removes choosed guardian from the system
@@ -216,7 +220,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
                 break;
             }
         }
-        emit GuardianRemoved(guardian);
+        emit GuardianRemoved(guardian, address(this));
     }
 
     /// @notice this function changes guardian as a result of the vote (propose function)
@@ -232,7 +236,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         guardians[current] = newGuardian;
         delete weights[guardians[current]];
         weights[newGuardian] = 1;
-        emit GuardianChanged(current, newGuardian);
+        emit GuardianChanged(current, newGuardian, address(this));
     }
 
     /// @notice this function changes guardians limit
@@ -254,9 +258,11 @@ contract DoinGudGovernor is IDoinGudGovernor {
         if (!(targets.length == values.length && targets.length == calldatas.length)) {
             revert InvalidParameters();
         }
+
         if (targets.length == 0) {
             revert InvalidParameters();
         }
+
         if (targets.length > PROPOSAL_MAX_OPERATIONS) {
             revert InvalidParameters();
         }
@@ -284,9 +290,9 @@ contract DoinGudGovernor is IDoinGudGovernor {
         emit ProposalCreated(
             proposalId,
             msg.sender, // proposer
-            targets,
-            values,
-            calldatas,
+            // targets,
+            // values,
+            // calldatas,
             snapshot,
             deadline
         );
@@ -318,7 +324,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
 
         voters[proposalId].push(msg.sender);
-        emit Voted(proposalId, support, msg.sender);
+        emit VoteCasted(proposalId, support, msg.sender);
     }
 
     /// @notice function allows anyone to execute specific proposal, based on the vote.

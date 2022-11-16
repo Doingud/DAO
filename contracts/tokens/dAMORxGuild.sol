@@ -65,11 +65,16 @@ contract dAMORxGuild is ERC20Base, Ownable {
     // amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
 
-    event Initialized(bool success, address owner, address AMORxGuild, uint256 amount);
+    event Initialized(address owner, address AMORxGuild, uint256 amount);
+    event AMORxGuildStakedToDAMOR(address from, uint256 amount, uint256 mintAmount, uint256 timeStakedFor);
+    event AMORxGuildStakIncreasedToDAMOR(address from, uint256 amount, uint256 mintAmount, uint256 timeStakedFor);
+    event AMORxGuildWithdrawnFromDAMOR(address to, uint256 burnedDAMORxGuild, uint256 returnedAMORxGuild);
+    event dAMORxGuildUndelegated(address from, address owner, uint256 amount);
+    event dAMORxGuildDelegated(address to, address owner, uint256 amount);
 
     bool private _initialized;
     uint256 public constant COEFFICIENT = 2;
-    uint256 public constant TIME_DENOMINATOR = 1000000000000000000;
+    uint256 public constant TIME_DENOMINATOR = 1_000_000_000_000_000_000; // 1 ether
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     uint256 public constant MIN_LOCK_TIME = 7 days; // 1 week is the time for the new deposided tokens to be locked until they can be withdrawn
 
@@ -90,8 +95,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
      *          It can only be run once.
      */
     function init(
-        string memory name,
-        string memory symbol,
+        string memory _name,
+        string memory _symbol,
         address initOwner,
         address _AMORxGuild,
         uint256 amount
@@ -102,10 +107,10 @@ contract dAMORxGuild is ERC20Base, Ownable {
         _transferOwnership(initOwner);
 
         AMORxGuild = IERC20(_AMORxGuild);
-        _setTokenDetail(name, symbol);
+        _setTokenDetail(_name, _symbol);
 
         _initialized = true;
-        emit Initialized(_initialized, initOwner, _AMORxGuild, amount);
+        emit Initialized(initOwner, _AMORxGuild, amount);
         return true;
     }
 
@@ -147,6 +152,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         stakesTimes[msg.sender] = block.timestamp + time;
         stakes[msg.sender] += newAmount;
         stakesAMOR[msg.sender] += amount;
+        emit AMORxGuildStakedToDAMOR(msg.sender, amount, newAmount, stakesTimes[msg.sender]);
         return newAmount;
     }
 
@@ -168,6 +174,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
         stakes[msg.sender] += newAmount;
 
+        emit AMORxGuildStakIncreasedToDAMOR(msg.sender, amount, newAmount, time);
         return newAmount;
     }
 
@@ -204,6 +211,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         if (delegation[msg.sender].length != 0) {
             undelegateAll();
         }
+        emit AMORxGuildWithdrawnFromDAMOR(msg.sender, amount, unstakeAMORAmount);
         return amount;
     }
 
@@ -228,6 +236,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
         delegations[msg.sender][to] += amount;
         amountDelegated[msg.sender] += amount;
+        emit dAMORxGuildDelegated(to, msg.sender, amount);
     }
 
     /// @notice Undelegate your dAMORxGuild to the address `account`
@@ -247,7 +256,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
             delegations[msg.sender][account] -= amount;
             amountDelegated[msg.sender] -= amount;
         } else {
-            amountDelegated[msg.sender] -= delegations[msg.sender][account];
+            amount = delegations[msg.sender][account];
+            amountDelegated[msg.sender] -= amount;
             delete delegations[msg.sender][account];
 
             for (uint256 j = 0; j < delegation[msg.sender].length; j++) {
@@ -266,6 +276,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
                 }
             }
         }
+        emit dAMORxGuildUndelegated(account, msg.sender, amount);
     }
 
     /// @notice Undelegate all your dAMORxGuild
@@ -278,9 +289,12 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
 
         address account;
+        uint256 delegatedTo;
         for (uint256 i = 0; i < accounts.length; i++) {
             account = accounts[i];
+            delegatedTo = delegations[msg.sender][account];
             delete delegations[msg.sender][account];
+            emit dAMORxGuildUndelegated(account, msg.sender, delegations[msg.sender][account]);
 
             // clear msg.sender delegation from list of delegators to `account` address
             for (uint256 j = 0; j < delegators[account].length; j++) {

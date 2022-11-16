@@ -80,6 +80,11 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     /// Co-efficient
     uint256 private constant COEFFICIENT = 10**9;
 
+    /// Events
+    event AmorxGuildTaxChanged(uint256 newRate);
+    event AmorStaked(address to, uint256 amount, uint256 mintAmount, uint256 timeOfStake);
+    event AmorWithdrawed(address to, uint256 amorxguildAmount, uint256 amorReturned, uint256 timeOfWithdraw);
+
     /// Custom errors
     /// Error if the AmorxGuild has already been initialized
     error AlreadyInitialized();
@@ -91,12 +96,12 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     /// @notice Initializes the AMORxGuild contract
     /// @dev    Sets the token details as well as the required addresses for token logic
     /// @param  amorAddress the address of the AMOR token proxy
-    /// @param  name the token name (e.g AMORxIMPACT)
-    /// @param  symbol the token symbol
+    /// @param  _name the token name (e.g AMORxIMPACT)
+    /// @param  _symbol the token symbol
     /// @param  controller the GuildController owning this token
     function init(
-        string memory name,
-        string memory symbol,
+        string memory _name,
+        string memory _symbol,
         address amorAddress,
         address controller
     ) external override {
@@ -104,11 +109,11 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
             revert AlreadyInitialized();
         }
         tokenAmor = IERC20(amorAddress);
-        _setTokenDetail(name, symbol);
+        _setTokenDetail(_name, _symbol);
         guildController = controller;
         _initialized = true;
         /// Proxy storage requires BASIS_POINTS and COEFFICIENT to be initialized in the init function
-        emit Initialized(name, symbol, amorAddress);
+        emit Initialized(_name, _symbol, amorAddress);
     }
 
     /// @notice Sets the tax on staking AMORxGuild
@@ -120,6 +125,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         }
 
         stakingTaxRate = newRate;
+        emit AmorxGuildTaxChanged(newRate);
     }
 
     /// @notice Allows a user to stake their AMOR and receive AMORxGuild in return
@@ -146,6 +152,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         mintAmount = (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS;
         _mint(to, mintAmount);
 
+        emit AmorStaked(to, amount, mintAmount, block.timestamp);
         return mintAmount;
     }
 
@@ -165,6 +172,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         //  Correct for the tax on transfer
         //  Transfer AMOR to the tx.origin, but note: this is taxed!
         tokenAmor.safeTransfer(msg.sender, amorReturned);
+        emit AmorWithdrawed(msg.sender, amount, amorReturned, block.timestamp);
         //  Return the amount of AMOR returned to the user
         return amorReturned;
     }

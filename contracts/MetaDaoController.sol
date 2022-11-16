@@ -82,6 +82,24 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     bytes32[] public indexHashes;
     bytes32 public constant FEES_INDEX = keccak256("FEES_INDEX");
 
+    /// Events
+    event GuildCreated(
+        address realityModule,
+        address initialGuardian,
+        string name,
+        string tokenSymbol,
+        address guildController,
+        uint256 guildCounter
+    );
+    event GuildAdded(address guildController, uint256 guildCounter);
+    event GuildRemoved(address guildController, uint256 guildCounter);
+    event TokenWhitelisted(address token);
+    event DonatedToIndex(uint256 amount, address token, uint256 index, address sender);
+    event FeesClaimed(address guild, uint256 guildFees);
+    event FeesDistributed(address guild, uint256 guildFees);
+    event IndexAdded(uint256 index, bytes32 weights);
+    event IndexUpdated(uint256 index, bytes32 weights);
+
     /// Errors
     /// The token is not whitelisted
     error NotListed();
@@ -148,6 +166,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
             IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
             allocateByIndex(token, amount, index);
         }
+        emit DonatedToIndex(amount, token, index, msg.sender);
     }
 
     /// @notice Allocates donated funds by the index specified
@@ -200,6 +219,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
                 guildFees[guilds[endOfList]] += amountToDistribute;
             }
             endOfList = guilds[endOfList];
+            emit FeesDistributed(guilds[endOfList], amountToDistribute);
         }
     }
 
@@ -211,6 +231,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         }
         amorToken.safeTransfer(guild, guildFees[guild]);
         delete guildFees[guild];
+        emit FeesClaimed(guild, guildFees[guild]);
     }
 
     /// @notice use this funtion to create a new guild via the guild factory
@@ -238,6 +259,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         unchecked {
             guildCounter += 1;
         }
+        emit GuildCreated(realityModule, initialGuardian, name, tokenSymbol, controller, guildCounter);
     }
 
     /// @notice Adds an external guild to the registry
@@ -253,6 +275,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         unchecked {
             guildCounter += 1;
         }
+        emit GuildAdded(guildAddress, guildCounter);
     }
 
     /// @notice adds token to whitelist
@@ -262,6 +285,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         whitelist[sentinelWhitelist] = _token;
         sentinelWhitelist = _token;
         whitelist[sentinelWhitelist] = SENTINEL;
+        emit TokenWhitelisted(_token);
     }
 
     /// @notice removes guild based on id
@@ -288,6 +312,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         unchecked {
             guildCounter -= 1;
         }
+        emit GuildRemoved(controller, guildCounter);
     }
 
     /// @notice Checks that a token is whitelisted
@@ -311,6 +336,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         indexHashes.push(hashArray);
         _updateIndex(weights, indexHashes[indexHashes.length - 1]);
 
+        emit IndexAdded((indexHashes.length - 1), hashArray);
         return indexHashes.length - 1;
     }
 
@@ -327,6 +353,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
             indexHashes.push(key);
             return indexHashes.length;
         }
+        emit IndexUpdated(index, key);
         return 0;
     }
 

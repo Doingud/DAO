@@ -61,7 +61,9 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
 
     error AlreadyInitialized();
 
-    event Initialized(bool success, address taxCollector, uint256 rate);
+    event Initialized(address taxCollector, uint256 rate);
+    event AmorTaxChanged(uint256 newRate);
+    event AmorTaxControllerUpdated(address newTaxCollector);
 
     bool private _initialized;
 
@@ -97,7 +99,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         }
         taxRate = _initTaxRate;
         _initialized = true;
-        emit Initialized(_initialized, _initCollector, _initTaxRate);
+        emit Initialized(_initCollector, _initTaxRate);
         return true;
     }
 
@@ -108,6 +110,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         if (newRate > 500) {
             revert InvalidRate();
         }
+        emit AmorTaxChanged(newRate);
         taxRate = newRate;
     }
 
@@ -118,6 +121,7 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
             revert InvalidTaxCollector();
         }
         taxController = newTaxCollector;
+        emit AmorTaxControllerUpdated(newTaxCollector);
     }
 
     /// @notice This transfer function overrides the normal _transfer from ERC20Base
