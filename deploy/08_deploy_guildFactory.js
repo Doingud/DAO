@@ -4,7 +4,7 @@ const addresses = getAddresses();
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    // Set the implementation addresses
+    const snapshot_ = addresses.Snapshot; // 0xdd634602038eBf699581D34d6142a4FB5aa66Ff5
     const AMOR_ = addresses.AMOR;
     const AMORxGuild_ = addresses.AMORxGuild;
     const FXAMORxGuild_ = addresses.FXAMORxGuild;
@@ -29,7 +29,8 @@ async function main() {
         GuildController_,
         Governor_,
         AvatarxGuild_,
-        MetaDAOController_
+        MetaDAOController_,
+        snapshot_,
     );
 
     console.log("guildFactory address:", guildFactory.address);
@@ -50,7 +51,8 @@ async function main() {
         GuildController_,
         Governor_,
         AvatarxGuild_,
-        MetaDAOController_
+        MetaDAOController_,
+        snapshot_,
       ],
     });
   }

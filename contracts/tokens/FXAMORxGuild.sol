@@ -71,15 +71,6 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
 
     IERC20 public AMORxGuild;
 
-    /// Events
-    event Initialized(address owner, address AMORxGuild);
-    event AMORxGuildStakedToFXAMOR(address to, uint256 amount, uint256 timeOfStake);
-    event AMORxGuildWithdrawnFromFXAMOR(address to, uint256 amount, uint256 timeOfWithdraw);
-    event FXAMORxGuildUndelegated(address from, address owner, uint256 amount);
-    event FXAMORxGuildDelegated(address to, address owner, uint256 amount);
-    event FXAMORxGuildControllerUpdated(address newCollector);
-
-    /// Errors
     error AlreadyInitialized();
     error Unauthorized();
     error EmptyArray();
@@ -114,7 +105,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         symbol = symbol_;
 
         _initialized = true;
-        emit Initialized(initOwner_, AMORxGuild_);
+        emit Initialized(_initialized, initOwner_, AMORxGuild_);
     }
 
     function setController(address _controller) external onlyAddress(_owner) {
@@ -122,7 +113,6 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             revert AddressZero();
         }
         controller = _controller;
-        emit FXAMORxGuildControllerUpdated(_controller);
     }
 
     modifier onlyAddress(address authorizedAddress) {
@@ -161,7 +151,6 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
 
         stakes[to] += amount;
 
-        emit AMORxGuildStakedToFXAMOR(to, amount, block.timestamp);
         return amount;
     }
 
@@ -178,7 +167,6 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         _burn(account, amount);
         AMORxGuild.safeTransfer(controller, amount);
         stakes[account] -= amount;
-        emit AMORxGuildWithdrawnFromFXAMOR(account, amount, block.timestamp);
     }
 
     /// @notice Allows some external account to vote with your FXAMORxGuild tokens
@@ -200,7 +188,6 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         delegators[to].push(msg.sender);
         delegations[msg.sender][to] += amount;
         amountDelegated[msg.sender] += amount;
-        emit FXAMORxGuildDelegated(to, msg.sender, amount);
     }
 
     /// @notice Unallows some external account to vote with your delegated FXAMORxGuild tokens
@@ -223,6 +210,5 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             delegations[msg.sender][account] = 0;
             amountDelegated[msg.sender] = 0;
         }
-        emit FXAMORxGuildUndelegated(account, msg.sender, amount);
     }
 }

@@ -51,17 +51,7 @@ contract GuildController is IGuildController, Ownable {
     uint256 public constant FEE_DENOMINATOR = 1000;
     uint256 public percentToConvert; //10% // FEE_DENOMINATOR/100*10
 
-    event Initialized(address owner, address AMORxGuild);
-    event DonatedToGuild(uint256 amount, address token, uint256 givenAmorxguild, address sender);
-    event ReportAdded(uint256 newReportId, bytes32 report);
-    event VotedForTheReport(address voter, uint256 reportId, uint256 amount, bool sign);
-    event VotingPeriodUpdated(uint256 newPeriod);
-    event PercentToConvertUpdated(uint256 newPercent);
-    event ImpactMakersSet(address[] arrImpactMakers, uint256[] arrWeight);
-    event ImpactMakersAdded(address newImpactMaker, uint256 weight);
-    event ImpactMakersRemoved(address ImpactMaker);
-    event ImpactMakersChanged(address ImpactMaker, uint256 weight);
-    event TokensClaimedByImpactMaker(address ImpactMaker, address token, uint256 amount);
+    event Initialized(bool success, address owner, address AMORxGuild);
 
     bool private _initialized;
 
@@ -103,7 +93,7 @@ contract GuildController is IGuildController, Ownable {
 
         percentToConvert = 100;
         _initialized = true;
-        emit Initialized(initOwner, AMORxGuild_);
+        emit Initialized(_initialized, initOwner, AMORxGuild_);
         return true;
     }
 
@@ -112,12 +102,10 @@ contract GuildController is IGuildController, Ownable {
             revert InvalidAmount();
         }
         additionalVotingTime = newTime;
-        emit VotingPeriodUpdated(newTime);
     }
 
     function setPercentToConvert(uint256 newPercentToConvert) external onlyOwner {
         percentToConvert = newPercentToConvert;
-        emit PercentToConvertUpdated(newPercentToConvert);
     }
 
     /// @notice called by donate and gatherDonation, distributes amount of tokens between
@@ -191,6 +179,7 @@ contract GuildController is IGuildController, Ownable {
             // if token != AMORxGuild && token != AMOR
             // recieve tokens
             amount = 0;
+            // TODO: allow to mint FXAMOR tokend based on
         }
 
         if (token == AMORxGuild || token == AMOR) {
@@ -209,7 +198,6 @@ contract GuildController is IGuildController, Ownable {
 
         distribute(decTaxCorrectedAmount, token); // distribute other 90%
 
-        emit DonatedToGuild(allAmount, token, amorxguildAmount, msg.sender);
         return amorxguildAmount;
     }
 
@@ -227,6 +215,7 @@ contract GuildController is IGuildController, Ownable {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, report));
 
+        // ecrecover(bytes32 hash, uint8 v, bytes32 r, bytes32 s)
         address signer = ecrecover(prefixedHashMessage, v, r, s);
         if (signer != msg.sender) {
             revert Unauthorized();
@@ -242,7 +231,6 @@ contract GuildController is IGuildController, Ownable {
         // The vote starts for all of the untouched reports in the queue.
         // timeVoting == 0 --> for the first queue when there was no voting yet
         reportsQueue.push(newReportId);
-        emit ReportAdded(newReportId, report);
     }
 
     /// @notice burns the amount of FXTokens, and changes a report weight, based on a sign provided.
@@ -293,8 +281,6 @@ contract GuildController is IGuildController, Ownable {
             reportsVoting[id] -= int256(amount);
             votes[id][msg.sender] -= int256(amount);
         }
-
-        emit VotedForTheReport(msg.sender, id, amount, sign);
     }
 
     /// @notice distributes funds, depending on the report ids, for which votings were conducted
@@ -423,7 +409,6 @@ contract GuildController is IGuildController, Ownable {
             weights[arrImpactMakers[i]] = arrWeight[i];
             totalWeight += arrWeight[i];
         }
-        emit ImpactMakersSet(arrImpactMakers, arrWeight);
     }
 
     /// @notice allows to add impactMaker with a specific weight
@@ -438,7 +423,6 @@ contract GuildController is IGuildController, Ownable {
         impactMakers.push(impactMaker);
         weights[impactMaker] = weight;
         totalWeight += weight;
-        emit ImpactMakersAdded(impactMaker, weight);
     }
 
     /// @notice allows to add change impactMaker weight
@@ -451,7 +435,6 @@ contract GuildController is IGuildController, Ownable {
             totalWeight -= weights[impactMaker] - weight;
         }
         weights[impactMaker] = weight;
-        emit ImpactMakersChanged(impactMaker, weight);
     }
 
     /// @notice allows to remove impactMaker with specific address
@@ -466,7 +449,6 @@ contract GuildController is IGuildController, Ownable {
         }
         totalWeight -= weights[impactMaker];
         delete weights[impactMaker];
-        emit ImpactMakersRemoved(impactMaker);
     }
 
     /// @notice allows to claim tokens for specific ImpactMaker address
@@ -479,7 +461,6 @@ contract GuildController is IGuildController, Ownable {
 
         for (uint256 i = 0; i < token.length; i++) {
             IERC20(token[i]).safeTransfer(impact, claimableTokens[impact][token[i]]);
-            emit TokensClaimedByImpactMaker(impact, token[i], claimableTokens[impact][token[i]]);
             claimableTokens[impact][token[i]] = 0;
         }
     }

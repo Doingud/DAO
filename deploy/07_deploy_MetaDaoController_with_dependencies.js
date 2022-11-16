@@ -4,19 +4,7 @@ async function main() {
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
 
-    // deploy and init AMORx, Avatar, Governor for MetaDaoController
-    // AMORx
-    const AMORxGuildToken = await ethers.getContractFactory("AMORxGuildToken");
-    const AMORxGuild = await AMORxGuildToken.deploy();
-    console.log("AMORxGuild address:", AMORxGuild.address);
-    a  = await ethers.getContractFactory('DoinGudProxy')
-    proxy = await a.deploy();
-    console.log("proxy address:", proxy.address);
-    tx = await proxy.initProxy(AMORxGuild.address);
-    console.log("tx is %s", tx);
-    const PROXIED_AMORxGuild = AMORxGuild.attach(proxy.address);
-    console.log("PROXIED_AMORxGuild address is %s", PROXIED_AMORxGuild.address);
-
+    // deploy and init Avatar, dAMOR, Governor for MetaDaoController
     // Avatar
     const AvatarFactory = await ethers.getContractFactory("AvatarxGuild");
     const Avatar = await AvatarFactory.deploy();
@@ -26,8 +14,20 @@ async function main() {
     console.log("Avatar for MetaDaoController proxy address:", proxy.address);
     let tx = await proxy.initProxy(Avatar.address);
     console.log("tx is %s", tx);
-    const PROXIED_Avatar = Avatar.attach(proxy.address);
-    console.log("PROXIED_Avatar address is %s", PROXIED_Avatar.address);
+    const UPDATED_Avatar = Avatar.attach(proxy.address);
+    console.log("UPDATED_Avatar address is %s", UPDATED_Avatar.address);
+
+    // dAMOR
+    const dAMORToken = await ethers.getContractFactory("dAMORxGuild");
+    const dAMOR = await dAMORToken.deploy();
+    console.log("dAMOR for MetaDaoController address:", dAMOR.address);
+    a  = await ethers.getContractFactory('DoinGudProxy')
+    proxy = await a.deploy();
+    console.log("dAMOR for MetaDaoController proxy address:", proxy.address);
+    tx = await proxy.initProxy(dAMOR.address);
+    console.log("tx is %s", tx);
+    const UPDATED_dAMOR = dAMOR.attach(proxy.address);
+    console.log("UPDATED_dAMOR for MetaDaoController address is %s", UPDATED_dAMOR.address);
 
     // Governor
     const DoinGudGovernorFactory = await ethers.getContractFactory("DoinGudGovernor");
@@ -38,8 +38,8 @@ async function main() {
     console.log("proxy address:", proxy.address);
     tx = await proxy.initProxy(DoinGudGovernor.address);
     console.log("tx is %s", tx);
-    const PROXIED_DoinGudGovernor = DoinGudGovernor.attach(proxy.address);
-    console.log("PROXIED_DoinGudGovernor address is %s", PROXIED_DoinGudGovernor.address);
+    const UPDATED_DoinGudGovernor = DoinGudGovernor.attach(proxy.address);
+    console.log("UPDATED_DoinGudGovernor address is %s", UPDATED_DoinGudGovernor.address);
 
 
     // deploy MetaDaoController
@@ -54,12 +54,11 @@ async function main() {
     tx = await proxy.initProxy(MetaDaoController.address);
     console.log("tx is %s", tx);
 
-    const PROXIED_METADAO = MetaDaoController.attach(proxy.address);
-    console.log("PROXIED_METADAO address is %s", PROXIED_METADAO.address);
+    const UPDATED_METADAO = MetaDaoController.attach(proxy.address);
+    console.log("UPDATED_METADAO address is %s", UPDATED_METADAO.address);
 
     //await for 5 block transactions to ensure deployment before verifying
     await MetaDaoController.deployTransaction.wait(5);
-    console.log("PROXIED_MetaDaoController_IMPLEMENTATION address is %s", await proxy.viewImplementation());
 
     //verify
     await hre.run("verify:verify", {

@@ -16,17 +16,16 @@ async function main() {
     let tx = await proxy.initProxy(FXAMORxGuild.address);
     console.log("tx is %s", tx);
 
-    const PROXIED_FXAMORxGuild = FXAMORxGuild.attach(proxy.address);
-    console.log("PROXIED_FXAMORxGuild address is %s", PROXIED_FXAMORxGuild.address);
+    const UPDATED_FXAMORxGuild = FXAMORxGuild.attach(proxy.address);
+    console.log("UPDATED_FXAMORxGuild address is %s", UPDATED_FXAMORxGuild.address);
   
     //await for 5 block transactions to ensure deployment before verifying
     await FXAMORxGuild.deployTransaction.wait(5);
-    console.log("PROXIED_FXAMORxGuild_IMPLEMENTATION address is %s", await proxy.viewImplementation());
 
     //verify
     await hre.run("verify:verify", {
       address: FXAMORxGuild.address,
-      contract: "contracts/tokens/FXAMORxGuild.sol:FXAMORxGuild", //Filename.sol:ClassName
+      contract: "contracts/FXAMORxGuildToken.sol:FXAMORxGuild", //Filename.sol:ClassName
     });
   }
   

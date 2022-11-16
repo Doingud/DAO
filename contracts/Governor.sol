@@ -86,11 +86,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
         uint256 endBlock
     );
     event ChangedGuardiansLimit(uint256 newLimit);
-    event GuardiansSet(address[] arrGuardians);
-    event GuardianAdded(address newGuardian);
-    event GuardianRemoved(address guardian);
-    event GuardianChanged(uint256 oldGuardian, address newGuardian);
-    event Voted(uint256 proposalId, bool support, address votedGuardian);
 
     bool private _initialized;
 
@@ -122,6 +117,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         if (_initialized) {
             revert AlreadyInitialized();
         }
+
         // person who inflicted the creation of the contract is set as the only guardian of the system
         guardians.push(initialGuardian);
         weights[initialGuardian] = 1;
@@ -188,7 +184,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
                 delete weights[guardians[i]];
             }
         }
-        emit GuardiansSet(arrGuardians);
     }
 
     /// @notice this function adds new guardian to the system
@@ -202,7 +197,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
         guardians.push(guardian);
         weights[guardian] = 1;
-        emit GuardianAdded(guardian);
     }
 
     /// @notice this function removes choosed guardian from the system
@@ -216,7 +210,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
                 break;
             }
         }
-        emit GuardianRemoved(guardian);
     }
 
     /// @notice this function changes guardian as a result of the vote (propose function)
@@ -232,7 +225,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
         guardians[current] = newGuardian;
         delete weights[guardians[current]];
         weights[newGuardian] = 1;
-        emit GuardianChanged(current, newGuardian);
     }
 
     /// @notice this function changes guardians limit
@@ -320,7 +312,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
 
         voters[proposalId].push(msg.sender);
-        emit Voted(proposalId, support, msg.sender);
     }
 
     /// @notice function allows anyone to execute specific proposal, based on the vote.
