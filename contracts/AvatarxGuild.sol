@@ -107,7 +107,6 @@ contract AvatarxGuild is IAvatarxGuild {
         governor = governorAddress;
         reality = realityAddress;
         _initialized = true;
-        /// Setup the first module provided by the MetaDAO
         modules[SENTINEL_MODULES] = address(0x02);
         emit Initialized(reality, governorAddress);
         return true;
