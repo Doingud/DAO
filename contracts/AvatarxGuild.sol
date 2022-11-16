@@ -1,12 +1,14 @@
-// SPDX-License-Identifier: LGPL-3.0-only
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
 
 /**
  * @title  DoinGud: AvatarxGuild.sol
  * @author Daoism Systems
  * @notice Avatar Implementation for DoinGud Guilds
- * @custom:security-contact arseny@daoism.systems || konstantin@daoism.systems
- * @dev Implementation of an Avatar Interface
+ * @custom:security-contact security@daoism.systems
+ * @dev Implementation of an Avatar Interface for DoinGud
+ *
+ *
  *
  * AvatarxGuild contract is needed to manage the funds of the guild,
  * receive and execute the proposals, attach modules and interact with
@@ -39,6 +41,7 @@ import "./interfaces/IAvatarxGuild.sol";
 import "./interfaces/IGovernor.sol";
 
 contract AvatarxGuild is IAvatarxGuild {
+    /// Events
     event ExecutionFromGovernorSuccess(address governorAddress);
     event ExecutionFromGovernorFailure(address governorAddress);
     event Initialized(address owner, address governorAddress);
@@ -53,16 +56,23 @@ contract AvatarxGuild is IAvatarxGuild {
     mapping(address => address) internal modules;
 
     /// Custom errors
-    /// Error if the AvatarxGuild has already been initialized
+    /// AvatarxGuild has already been initialized
     error AlreadyInitialized();
+    /// The calling address is not a recoignized `Module`
     error NotWhitelisted();
+    /// The `enableModule` call did not complete successfully
     error NotEnabled();
+    /// The `disableModule` did not complete successfully
     error NotDisabled();
+    /// Invalid address provided for module
     error InvalidParameters();
+    /// The calling address is not authorized to call this
     error Unauthorized();
-    error AlreadySet();
+    /// `delegateCall` is not allowed due to security concerns
+    error DelegateCallPrevented();
 
     /// Access Control Modifiers
+    /// Access control: Governor
     modifier onlyGovernor() {
         if (msg.sender != governor) {
             revert Unauthorized();
@@ -70,6 +80,7 @@ contract AvatarxGuild is IAvatarxGuild {
         _;
     }
 
+    /// Access control: Avatar contract
     modifier onlySelf() {
         if (msg.sender != address(this)) {
             revert Unauthorized();
@@ -77,6 +88,7 @@ contract AvatarxGuild is IAvatarxGuild {
         _;
     }
 
+    /// Access control: Linked Reality module
     modifier onlyReality() {
         if (msg.sender != reality) {
             revert Unauthorized();
@@ -96,7 +108,6 @@ contract AvatarxGuild is IAvatarxGuild {
         reality = realityAddress;
         _initialized = true;
         /// Setup the first module provided by the MetaDAO
-        //modules[address(0x02)] = SENTINEL_MODULES;
         modules[SENTINEL_MODULES] = address(0x02);
         emit Initialized(reality, governorAddress);
         return true;
@@ -111,8 +122,7 @@ contract AvatarxGuild is IAvatarxGuild {
     }
 
     /// @dev Allows to add a module to the whitelist.
-    ///      This can only be done via a Safe transaction.
-    /// @notice Enables the module `module` for the Safe.
+    /// @notice Enables the module `module` for the Avatar.
     /// @param module Module to be whitelisted.
     function enableModule(address module) public onlySelf {
         // Module address cannot be null or sentinel.
@@ -129,8 +139,7 @@ contract AvatarxGuild is IAvatarxGuild {
     }
 
     /// @dev Allows to remove a module from the whitelist.
-    ///      This can only be done via a Safe transaction.
-    /// @notice Disables the module `module` for the Safe.
+    /// @notice Disables the module `module` for the Avatar.
     /// @param prevModule Module that pointed to the module to be removed in the linked list
     /// @param module Module to be removed.
     function disableModule(address prevModule, address module) public onlySelf {
@@ -162,11 +171,13 @@ contract AvatarxGuild is IAvatarxGuild {
         if (msg.sender == SENTINEL_MODULES || modules[msg.sender] == address(0)) {
             revert NotWhitelisted();
         }
-        emit ExecutionFromModuleSuccess(msg.sender);
+
         /// Enum resolves to 0 or 1
         /// 0: call; 1: delegatecall
-        if (uint8(operation) == 1) (success, ) = to.delegatecall(data);
-        else (success, ) = to.call{value: value}(data);
+        /// `delegateCall` is not allowed for security reasons
+        if (uint8(operation) == 1) {
+            revert DelegateCallPrevented();
+        } else (success, ) = to.call{value: value}(data);
 
         if (success) {
             emit ExecutionFromModuleSuccess(msg.sender);
@@ -187,15 +198,16 @@ contract AvatarxGuild is IAvatarxGuild {
         Enum.Operation operation
     ) public returns (bool success, bytes memory returnData) {
         /// Check that a module sent the transaction
-        if (modules[msg.sender] == address(0)) {
+        if (msg.sender == SENTINEL_MODULES || modules[msg.sender] == address(0)) {
             revert NotWhitelisted();
         }
         /// Enum resolves to 0 or 1
         /// 0: call; 1: delegatecall
-        if (uint8(operation) == 1) (success, ) = to.delegatecall(data);
-        else (success, returnData) = to.call{value: value}(data);
+        /// `delegateCall` is not allowed for security reasons
+        if (uint8(operation) == 1) {
+            revert DelegateCallPrevented();
+        } else (success, returnData) = to.call{value: value}(data);
 
-        /// Emit events
         if (success) {
             emit ExecutionFromModuleSuccess(msg.sender);
         } else {

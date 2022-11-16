@@ -157,18 +157,12 @@ describe('unit - Contract: Avatar', function () {
         });
 
         it('it emits success in execTransactionFromModule', async function () {
-            let encoded = "0x";
-
             let transactionCallData = avatar.interface.encodeFunctionData("enableModule", [root.address]);
 
             // call test
             await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(avatar.address, 0, transactionCallData, 0))
                 .to
                 .emit(avatar, "ExecutionFromModuleSuccess").withArgs(authorizer_adaptor.address);
-
-            // delegate call
-            await expect(avatar.connect(authorizer_adaptor).execTransactionFromModule(governor.address, 0, encoded, 1))
-                .to.emit(avatar, "ExecutionFromModuleSuccess").withArgs(authorizer_adaptor.address);
         });
     });
 
