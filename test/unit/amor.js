@@ -69,7 +69,7 @@ describe("unit - AMOR Token", function () {
 
   context("function: init()", () => {
     it("initializes the proxy's storage", async function () {
-        expect(await PROXY.init(
+        await expect(PROXY.init(
           AMOR_TOKEN_NAME,
           AMOR_TOKEN_SYMBOL,
           multisig.address,
