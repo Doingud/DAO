@@ -221,10 +221,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         )
         await module.deployTransaction.wait()
         console.log("realityModule deployed to:", module.address);
-
-        let module_proxy = await init.proxy();
-        await module_proxy.initProxy(module.address);
-        realityModule = realityModule.attach(module_proxy.address);
+        realityModule = module;
         
         // setup Snapshot
         const wallets = await ethers.getSigners();
@@ -417,7 +414,9 @@ describe("Integration: DoinGud guilds ecosystem", function () {
         guildOne = await CLONE_FACTORY.guilds(guildOne);
         let AvatarxOne = guildOne.AvatarxGuild;
         let GovernorxOne = guildOne.GovernorxGuild;
+        let AmorxGuildOne = guildOne.AmorGuildToken;
 
+        GUILD_ONE_AMORXGUILD = AMOR_GUILD_TOKEN.attach(AmorxGuildOne);
         GUILD_ONE_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(ControllerxOne);
         GUILD_ONE_AVATARXGUILD = AVATARXGUILD.attach(AvatarxOne);
         GUILD_ONE_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxOne);
@@ -821,7 +820,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
             // Check that the guild was created with some custom(non-AMOR) token
             let ControllerxFour = await DOINGUD_METADAO.guilds(ControllerxThree);
-            GUILD_THREE_CONTROLLERXGUILD = CONTROLLER.attach(ControllerxFour);
+            GUILD_THREE_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(ControllerxFour);
             proposal = DOINGUD_METADAO.interface.encodeFunctionData("removeGuild", [GUILD_THREE_CONTROLLERXGUILD.address]);
             TARGETS = [DOINGUD_METADAO.address];
             VALUES = [0];

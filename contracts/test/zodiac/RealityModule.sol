@@ -3,6 +3,8 @@ pragma solidity >=0.8.0;
 
 import "@gnosis.pm/zodiac/contracts/core/Module.sol";
 import "./RealitioV3.sol";
+import "@gnosis.pm/safe-contracts/contracts/GnosisSafeL2.sol";
+import "@gnosis.pm/safe-contracts/contracts/proxies/GnosisSafeProxyFactory.sol";
 
 abstract contract RealityModule is Module {
     bytes32 public constant INVALIDATED =
@@ -84,7 +86,7 @@ abstract contract RealityModule is Module {
         setUp(initParams);
     }
 
-    function setUp(bytes memory initParams) public override {
+    function setUp(bytes memory initParams) public override initializer() {
         (
             address _owner,
             address _avatar,

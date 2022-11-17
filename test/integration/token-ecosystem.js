@@ -124,7 +124,6 @@ describe("Integration: DoinGud token ecosystem", function () {
     let controller_proxy = await init.proxy();
     let avatar_proxy = await init.proxy();
     let governor_proxy = await init.proxy();
-    //let metadao_proxy = await init.proxy();
   
     /// STEP 4: Setup the Beacons
     BEACON_AMOR = await init.beacon(AMOR_TOKEN.address, METADAO.address);
