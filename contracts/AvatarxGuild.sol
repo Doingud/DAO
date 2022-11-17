@@ -43,6 +43,7 @@ contract AvatarxGuild is IAvatarxGuild {
     event ExecutionFromGovernorSuccess(address governorAddress);
     event ExecutionFromGovernorFailure(address governorAddress);
     event Initialized(address owner, address governorAddress);
+    event GovernorSet(address newGovernor);
 
     /// Custom errors
     /// Error if the AvatarxGuild has already been initialized
@@ -117,6 +118,7 @@ contract AvatarxGuild is IAvatarxGuild {
             revert AlreadyInitialized();
         }
         governor = newGovernor;
+        emit GovernorSet(newGovernor);
     }
 
     /// @dev Allows to add a module to the whitelist.

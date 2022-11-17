@@ -62,6 +62,16 @@ contract GuildFactory is ICloneFactory {
     /// CONSTANTS
     uint256 public constant DEFAULT_GUARDIAN_THRESHOLD = 10;
 
+    /// EVENTS
+    event GuildContractsCreated(
+        address GuildController,
+        address AmorGuildToken,
+        address DAmorxGuild,
+        address FXAmorxGuild,
+        address AvatarxGuild,
+        address GovernorxGuild
+    );
+
     /// ERRORS
     /// The deployment was unsuccessful
     error Unsuccessful();
@@ -148,9 +158,14 @@ contract GuildFactory is ICloneFactory {
         guild.GovernorxGuild = _deployGovernor();
 
         _initGuildControls(controller, reality, initialGuardian);
-
-        emit GuildCreated(guild.AmorGuildToken, guild.DAmorxGuild, guild.FXAmorxGuild, controller);
-
+        emit GuildContractsCreated(
+            controller,
+            guild.AmorGuildToken,
+            guild.DAmorxGuild,
+            guild.FXAmorxGuild,
+            guild.AvatarxGuild,
+            guild.GovernorxGuild
+        );
         return (controller, guild.GovernorxGuild, guild.AvatarxGuild);
     }
 

@@ -3,10 +3,10 @@ const addresses = getAddresses();
 
 async function main() {
     const [deployer] = await ethers.getSigners();
-    const multisig_ = addresses.multisig; // 0xdd634602038eBf699581D34d6142a4FB5aa66Ff5
-    const taxCollector = addresses.MetaDAOController;
-    const AMOR_ = addresses.AMOR;
-    const defaulTaxRate = 0;
+    const multisig_ = addresses.multisig;
+    const taxCollector = addresses.MetaDAOControllerProxy;
+    const AMOR_ = addresses.AMORTokenProxy;
+    const defaulTaxRate = 10;
 
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());

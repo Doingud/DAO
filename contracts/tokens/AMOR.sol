@@ -61,7 +61,9 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
 
     error AlreadyInitialized();
 
-    event Initialized(bool success, address taxCollector, uint256 rate);
+    event Initialized(address taxCollector, uint256 rate);
+    event AmorTaxChanged(uint256 newRate);
+    event AmorTaxControllerUpdated(address newTaxCollector);
 
     bool private _initialized;
 
@@ -90,11 +92,14 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         //  Pre-mint to the multisig address
         _mint(_multisig, 10000000 * 10**decimals);
         //  Set the tax collector address
-        updateController(_initCollector);
+        taxController = _initCollector;
         //  Set the tax rate
-        setTaxRate(_initTaxRate);
+        if (_initTaxRate > 500) {
+            revert InvalidRate();
+        }
+        taxRate = _initTaxRate;
         _initialized = true;
-        emit Initialized(_initialized, _initCollector, _initTaxRate);
+        emit Initialized(_initCollector, _initTaxRate);
         return true;
     }
 
@@ -105,7 +110,8 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         if (newRate > 500) {
             revert InvalidRate();
         }
-        _setTaxRate(newRate);
+        emit AmorTaxChanged(newRate);
+        taxRate = newRate;
     }
 
     /// @notice Sets the address which receives taxes
@@ -114,20 +120,8 @@ contract AMORToken is ERC20Base, Pausable, Ownable {
         if (newTaxCollector == address(this)) {
             revert InvalidTaxCollector();
         }
-        _updateController(newTaxCollector);
-    }
-
-    /// @notice Sets the address which receives taxes
-    /// @param  newTaxCollector address which must receive taxes
-    function _updateController(address newTaxCollector) internal {
         taxController = newTaxCollector;
-    }
-
-    /// @notice Sets the tax rate for transfer and transferFrom
-    /// @dev    Rate is expressed in basis points, this must be divided by 10 000 to equal desired rate
-    /// @param  newRate uint256 representing new tax rate, must be <= 500
-    function _setTaxRate(uint256 newRate) internal {
-        taxRate = newRate;
+        emit AmorTaxControllerUpdated(newTaxCollector);
     }
 
     /// @notice This transfer function overrides the normal _transfer from ERC20Base

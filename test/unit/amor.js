@@ -73,7 +73,7 @@ describe("unit - AMOR Token", function () {
 
   context("function: init()", () => {
     it("initializes the proxy's storage", async function () {
-        expect(await PROXY.init(
+        await expect(PROXY.init(
           AMOR_TOKEN_NAME,
           AMOR_TOKEN_SYMBOL,
           multisig.address,
@@ -81,7 +81,7 @@ describe("unit - AMOR Token", function () {
           root.address
           )).
            to.emit(PROXY, "Initialized")
-             .withArgs(true, multisig.address, TAX_RATE);
+             .withArgs(multisig.address, TAX_RATE);
       });
     it("does not allow multiple init() calls", async function () {
       await expect(PROXY.init(
