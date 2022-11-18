@@ -215,11 +215,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
             amountDelegated[msg.sender] = 0;
             undelegateAll();
         }
-        /*
-        address[] memory people = delegators[msg.sender];
-        for (uint256 i = 0; i < people.length; i++) {
-            delete delegations[people[i]][msg.sender];
-        }*/
 
         AMORxGuild.safeTransfer(msg.sender, unstakeAMORAmount);
 
@@ -246,7 +241,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
         if (delegations[msg.sender][to] == 0) {
             delegation[msg.sender].push(to);
-            //delegators[to].push(msg.sender);
         }
 
         delegations[msg.sender][to] += amount;
@@ -267,7 +261,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
             revert NotDelegatedAny();
         }
 
-        if (delegations[msg.sender][account] >= amount) {
+        if (delegations[msg.sender][account] > amount) {
             delegations[msg.sender][account] -= amount;
             amountDelegated[msg.sender] -= amount;
         } else {
@@ -302,21 +296,9 @@ contract dAMORxGuild is ERC20Base, Ownable {
             delegatedTo = delegations[msg.sender][account];
             delete delegations[msg.sender][account];
             emit dAMORxGuildUndelegated(account, msg.sender, delegations[msg.sender][account]);
-
-/*
-            // clear msg.sender delegation from list of delegators to `account` address
-            for (uint256 j = 0; j < delegators[account].length; j++) {
-                if (delegators[account][j] == msg.sender) {
-                    delegators[account][j] = delegators[account][delegators[account].length - 1];
-                    delegators[account].pop();
-                    break;
-                }
-            }
-            */
         }
 
         delete delegation[msg.sender];
-        //delete delegators[msg.sender];
         delete amountDelegated[msg.sender];
     }
 
