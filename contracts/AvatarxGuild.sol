@@ -171,12 +171,9 @@ contract AvatarxGuild is IAvatarxGuild {
             revert NotWhitelisted();
         }
 
-        /// Enum resolves to 0 or 1
-        /// 0: call; 1: delegatecall
-        /// `delegateCall` is not allowed for security reasons
-        if (uint8(operation) == 1) {
-            revert DelegateCallPrevented();
-        } else (success, ) = to.call{value: value}(data);
+        /// Process all calls to this function as a `call` operation
+        /// Note: this is done to minimize security risk
+        (success, ) = to.call{value: value}(data);
 
         if (success) {
             emit ExecutionFromModuleSuccess(msg.sender);
@@ -200,12 +197,10 @@ contract AvatarxGuild is IAvatarxGuild {
         if (msg.sender == SENTINEL_MODULES || modules[msg.sender] == address(0)) {
             revert NotWhitelisted();
         }
-        /// Enum resolves to 0 or 1
-        /// 0: call; 1: delegatecall
-        /// `delegateCall` is not allowed for security reasons
-        if (uint8(operation) == 1) {
-            revert DelegateCallPrevented();
-        } else (success, returnData) = to.call{value: value}(data);
+
+        /// Process all calls to this function as a `call` operation
+        /// Note: this is done to minimize security risk
+        (success, returnData) = to.call{value: value}(data);
 
         if (success) {
             emit ExecutionFromModuleSuccess(msg.sender);
