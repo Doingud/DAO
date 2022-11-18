@@ -337,6 +337,11 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert InvalidState();
         }
 
+        delete _proposals[proposalId];
+        delete voters[proposalId];
+        delete proposalVoting[proposalId];
+        delete proposalWeight[proposalId];
+
         for (uint256 i = 0; i < targets.length; ++i) {
             bool success = IAvatarxGuild(avatarAddress).executeProposal(
                 targets[i],
@@ -350,11 +355,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
 
         emit ProposalExecuted(proposalId);
-
-        delete _proposals[proposalId];
-        delete voters[proposalId];
-        delete proposalVoting[proposalId];
-        delete proposalWeight[proposalId];
 
         return proposalId;
     }
