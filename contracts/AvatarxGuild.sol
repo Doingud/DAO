@@ -64,10 +64,8 @@ contract AvatarxGuild is IAvatarxGuild {
     error NotDisabled();
     /// Invalid address provided for module
     error InvalidParameters();
-    /// The calling address is not authorized to call this
+    /// The calling address is not authorized to call this function
     error Unauthorized();
-    /// `delegateCall` is not allowed due to security concerns
-    error DelegateCallPrevented();
 
     /// Access Control Modifiers
     /// Access control: Governor
