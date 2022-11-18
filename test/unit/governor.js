@@ -22,6 +22,7 @@ let user;
 let user2;
 let staker;
 let guardians;
+let guardiansVersion;
 
 let targets;
 let values;
@@ -74,7 +75,10 @@ describe('unit - Contract: Governor', function () {
     context('» init testing', () => {
         it('initialized variables check', async function () {
             expect(await governor.avatarAddress()).to.equals(authorizer_adaptor.address);
-            expect(await governor.guardians(0)).to.equals(root.address);
+            //const abi = ethers.utils.defaultAbiCoder;
+            guardiansVersion = 0;
+            let encodedKey = ethers.utils.solidityKeccak256(["uint256","address"],[0,root.address]);
+            expect(await governor.guardians(encodedKey)).to.equals(true);
             expect((await governor.votingDelay())).to.equals(1);
             let weeks = 60 * 60 * 24 * 7 * 2;
             expect(await governor.votingPeriod()).to.equals(weeks);
@@ -98,8 +102,8 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it changes guardians limit from proposal', async function () {
-            expect(await governor.guardians(0)).to.equal(root.address);
-            guardians = [staker.address, operator.address, user.address];
+            //expect(await governor.guardians(0)).to.equal(root.address);
+            //guardians = [staker.address, operator.address, user.address];
             await governor.connect(authorizer_adaptor).changeGuardiansLimit(3);
             expect(await governor.guardiansLimit()).to.equals(3);
         });
@@ -131,21 +135,26 @@ describe('unit - Contract: Governor', function () {
         it('it sets guardians', async function () {
             guardians = [staker.address, operator.address, user.address];
             await governor.connect(authorizer_adaptor).setGuardians(guardians);
-            expect(await governor.guardians(0)).to.equals(staker.address);
-            expect(await governor.guardians(1)).to.equals(operator.address);
-            expect(await governor.guardians(2)).to.equals(user.address);
+            guardiansVersion++;
+            //let encodedKey = ethers.utils.solidityKeccak256(["uint256","address"],[1,guardians[0]]);
+            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,guardians[0]]))).to.be.true;
+            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,guardians[1]]))).to.be.true;
+            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,guardians[2]]))).to.be.true;
+            expect(await governor.guardiansCounter()).to.equal(3);
         });
 
         it('it sets guardians when list of the new guardians is less than before', async function () {
             guardians = [operator.address, staker.address];
             await governor.connect(authorizer_adaptor).setGuardians(guardians);
-            expect(await governor.guardians(0)).to.equals(operator.address);
-            expect(await governor.guardians(1)).to.equals(staker.address);
-            expect(await governor.guardians(2)).to.equals(ZERO_ADDRESS);
+            guardiansVersion++;
+            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,guardians[0]]))).to.be.true;
+            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,guardians[1]]))).to.be.true;
+            expect(await governor.guardiansCounter()).to.equal(2);
 
             // return previous user and guardians variables back
             guardians = [staker.address, operator.address, user.address];
             await governor.connect(authorizer_adaptor).setGuardians(guardians);
+            guardiansVersion++;
         });
     });
 
@@ -161,13 +170,12 @@ describe('unit - Contract: Governor', function () {
 
         it('it adds guardian', async function () {
             await governor.connect(authorizer_adaptor).addGuardian(user2.address);
-            expect(await governor.guardians(3)).to.equals(user2.address);
+            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,user2.address]))).to.be.true;
+            expect(await governor.guardiansCounter()).to.equal(4);
         });
 
         it('it fails to add guardian with the same address', async function () {
             await expect(governor.connect(authorizer_adaptor).addGuardian(user2.address)).to.be.revertedWith("InvalidParameters()");
-
-            await expect(governor.guardians(4)).to.be.reverted;
         });
     });
 

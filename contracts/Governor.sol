@@ -5,7 +5,7 @@ pragma solidity 0.8.15;
  * @title   DoinGud: Governor.sol
  * @author  Daoism Systems
  * @notice  Governor Implementation for DoinGud Guilds
- * @custom:security-contact arseny@daoism.systems || konstantin@daoism.systems
+ * @custom:security-contact security@daoism.systems
  * @dev     IGovernor IERC165 Pattern
  *
  * Governor contract will allow to Guardians to add and vote for the proposals
@@ -54,7 +54,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
     uint256 public constant PROPOSAL_MAX_OPERATIONS = 10;
     mapping(uint256 => ProposalCore) private _proposals;
-    mapping(uint256 => int256) public proposalCancelApproval;
+    mapping(uint256 => uint256) public proposalCancelApproval;
     mapping(uint256 => address[]) public cancellers; // cancellers mapping(uint proposal => address [] voters)
 
     // id in array --> Id of passed proposal from _proposals
@@ -63,21 +63,25 @@ contract DoinGudGovernor is IDoinGudGovernor {
     // which gets hashed and if hashes correspond, then the proposal is executed.
 
     mapping(uint256 => address[]) public voters; // voters mapping(uint proposal => address [] voters)
-    mapping(uint256 => int256) public proposalVoting;
-    mapping(uint256 => int256) public proposalWeight;
+    mapping(uint256 => uint256) public proposalVoting;
+    mapping(uint256 => uint256) public proposalWeight;
 
     uint256 public guardiansLimit; // amount of guardians for contract to function propperly,
     // until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.
 
-    address[] public guardians; // this is an array guardians who are allowed to vote for the proposals.
-    mapping(address => uint256) public weights; // weight of each specific guardian
+    //address[] public guardians; // this is an array guardians who are allowed to vote for the proposals.
+    //mapping(address => uint256) public weights; // weight of each specific guardian
+    /// input (version, address) => true
+    mapping(bytes32 => bool) public guardians;
+    uint256 public currentGuardianVersion;
+    uint256 public guardiansCounter;
 
     address public avatarAddress;
     IERC20 private AMORxGuild;
 
     event Initialized(address avatarAddress);
     event ProposalCreated(
-        uint256 proposalId,
+        uint256 indexed proposalId,
         address proposer,
         address[] targets,
         uint256[] values,
@@ -109,6 +113,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     error AlreadyVoted();
     error CancelNotApproved();
     error UnderlyingTransactionReverted();
+    error DuplicateAddress();
 
     /// @notice Initializes the Governor contract
     /// @param  AMORxGuild_ the address of the AMORxGuild token
@@ -123,8 +128,10 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert AlreadyInitialized();
         }
         // person who inflicted the creation of the contract is set as the only guardian of the system
-        guardians.push(initialGuardian);
-        weights[initialGuardian] = 1;
+        //guardians.push(initialGuardian);
+        //weights[initialGuardian] = 1;
+        guardians[keccak256(abi.encodePacked(currentGuardianVersion, initialGuardian))] = true;
+        guardiansCounter++;
         AMORxGuild = IERC20(AMORxGuild_);
         avatarAddress = avatarAddress_;
 
@@ -139,7 +146,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
     /// @notice this modifier is needed to validate that amount of the Guardians is sufficient to vote and approve the “Many” decision
     modifier GuardianLimitReached() {
-        if (guardians.length < guardiansLimit) {
+        if (guardiansCounter < guardiansLimit) {
             revert NotEnoughGuardians();
         }
         _;
@@ -153,7 +160,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     }
 
     modifier onlyGuardian() {
-        if (weights[msg.sender] == 0) {
+        if (!guardians[keccak256(abi.encodePacked(currentGuardianVersion, msg.sender))]) {
             revert Unauthorized();
         }
         _;
@@ -167,27 +174,16 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert InvalidParameters();
         }
 
-        if (guardians.length < arrGuardians.length) {
-            for (uint256 i = 0; i < guardians.length; i++) {
-                delete weights[guardians[i]];
-                guardians[i] = arrGuardians[i];
-                weights[arrGuardians[i]] = 1;
+        currentGuardianVersion++;
+        delete guardiansCounter;
+        for (uint256 i; i < arrGuardians.length; i++) {
+            if (guardians[keccak256(abi.encodePacked(currentGuardianVersion, arrGuardians[i]))]) {
+                revert DuplicateAddress();
             }
-            for (uint256 i = guardians.length; i < arrGuardians.length; i++) {
-                guardians.push(arrGuardians[i]);
-                weights[arrGuardians[i]] = 1;
-            }
-        } else {
-            for (uint256 i = 0; i < arrGuardians.length; i++) {
-                delete weights[guardians[i]];
-                guardians[i] = arrGuardians[i];
-                weights[arrGuardians[i]] = 1;
-            }
-            for (uint256 i = arrGuardians.length; i < guardians.length; i++) {
-                delete guardians[i];
-                delete weights[guardians[i]];
-            }
+            guardians[keccak256(abi.encodePacked(currentGuardianVersion, arrGuardians[i]))] = true;
+            guardiansCounter++;
         }
+
         emit GuardiansSet(arrGuardians);
     }
 
@@ -195,27 +191,35 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @param guardian New guardian to be added
     function addGuardian(address guardian) public onlyAvatar {
         // check that guardian won't be added twice
-        for (uint256 i = 0; i < guardians.length; i++) {
+        /*for (uint256 i = 0; i < guardians.length; i++) {
             if (guardian == guardians[i]) {
                 revert InvalidParameters();
             }
         }
         guardians.push(guardian);
-        weights[guardian] = 1;
+        weights[guardian] = 1; */
+        if (guardians[keccak256(abi.encodePacked(currentGuardianVersion, guardian))] == true) {
+            revert InvalidParameters();
+        } else {
+            guardians[keccak256(abi.encodePacked(currentGuardianVersion, guardian))] = true;
+            guardiansCounter++;
+        }
         emit GuardianAdded(guardian);
     }
 
     /// @notice this function removes choosed guardian from the system
     /// @param guardian Guardian to be removed
     function removeGuardian(address guardian) external onlyAvatar {
-        for (uint256 i = 0; i < guardians.length; i++) {
+/*        for (uint256 i = 0; i < guardians.length; i++) {
             if (guardians[i] == guardian) {
                 guardians[i] = guardians[guardians.length - 1];
                 guardians.pop();
                 weights[guardian] = 0;
                 break;
             }
-        }
+        } */
+        guardians[keccak256(abi.encodePacked(currentGuardianVersion, guardian))] = false;
+        guardiansCounter--;
         emit GuardianRemoved(guardian);
     }
 
@@ -224,14 +228,15 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @param newGuardian Guardian to be changed
     function changeGuardian(uint256 current, address newGuardian) external onlyAvatar {
         // check that guardian won't be added twice
-        for (uint256 i = 0; i < guardians.length; i++) {
+/*        for (uint256 i = 0; i < guardians.length; i++) {
             if (newGuardian == guardians[i]) {
                 revert InvalidParameters();
             }
         }
-        guardians[current] = newGuardian;
-        delete weights[guardians[current]];
-        weights[newGuardian] = 1;
+*/
+
+        delete guardians[keccak256(abi.encodePacked(currentGuardianVersion, current))];
+        guardians[keccak256(abi.encodePacked(currentGuardianVersion, newGuardian))];
         emit GuardianChanged(current, newGuardian);
     }
 
@@ -379,8 +384,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
         // Proposal should achieve at least 20% approval of all guardians, to be accepted.
         // Proposal should achieve at least 51% approval of voted guardians, to be accepted.
         if (
-            (int256(proposalVoting[proposalId] * 100) / int256(guardians.length) >= 20) &&
-            (int256(proposalVoting[proposalId] * 100) / proposalWeight[proposalId] >= 51)
+            ((proposalVoting[proposalId] * 100) / guardiansCounter >= 20) &&
+            ((proposalVoting[proposalId] * 100) / proposalWeight[proposalId] >= 51)
         ) {
             return ProposalState.Succeeded;
         } else {
@@ -421,7 +426,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
         // Proposal should achieve at least 20% approval for cancel from guardians, to be cancelled
         if (
-            proposalCancelApproval[proposalId] < int256((20 * guardians.length) / 100) ||
+            proposalCancelApproval[proposalId] < ((20 * guardiansCounter) / 100) ||
             proposalCancelApproval[proposalId] == 0
         ) {
             revert CancelNotApproved();
