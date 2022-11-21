@@ -333,29 +333,9 @@ describe("unit - MetaDao", function () {
             );
 
             let index = await METADAO.addIndex([newIndex0, newIndex1]);
-            index = await METADAO.indexes(0);
+            index = await METADAO.indexes(1);
             console.log(index);
             expect(index.indexDenominator).to.equal(200);
-        });
-
-        it("Should not allow a user to set a duplicate index", async function () {
-            const abi = ethers.utils.defaultAbiCoder;
-            let newIndex0 = abi.encode(
-                ["tuple(address, uint256)"],
-                [
-                [GUILD_CONTROLLER_ONE.address, 50]
-                ]
-            );
-            let newIndex1 = abi.encode(
-                ["tuple(address, uint256)"],
-                [
-                [GUILD_CONTROLLER_TWO.address, 150]
-                ]
-            );
-
-            await METADAO.addIndex([newIndex0, newIndex1]);
-            await expect(METADAO.addIndex([newIndex0, newIndex1])).
-                to.be.revertedWith("Exists()");
         });
     });
 
@@ -402,8 +382,7 @@ describe("unit - MetaDao", function () {
 
             await METADAO.updateIndex([newIndex0, newIndex1], 0);
 
-            let index = await METADAO.indexHashes(0);
-            index = await METADAO.indexes(index);
+            let index = await METADAO.indexes(0);
             expect(index.indexDenominator).to.equal(650);
         });
 

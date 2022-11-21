@@ -133,13 +133,12 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         whitelist[SENTINEL] = amor;
         /// Setup the fee index
         //indexHashes.push(FEES_INDEX);
-        Index storage index = indexes[0];
+        Index storage index = indexes[indexCounter];
         index.creator = avatar;
-        indexCounter++;
         /// Setup guilds linked list
         sentinelGuilds = address(0x01);
         guilds[sentinelGuilds] = SENTINEL;
-        //guilds[SENTINEL] = sentinelGuilds;
+        guilds[SENTINEL] = sentinelGuilds;
     }
 
     /// @notice Allows a user to donate a whitelisted asset
@@ -357,13 +356,15 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     /// @param  weights the encoded tuple of index values (`address`,`uint256`)
     /// @param  indexPosition keccak256 hash of the provided array
     function _updateIndex(bytes[] calldata weights, uint256 indexPosition) internal {
+        /// Check the caller is the owner
+        if (indexes[indexPosition].indexDenominator > 0 && indexes[indexPosition].creator != msg.sender) {
+            revert Unauthorized();
+        }
         delete indexes[indexPosition];
         /// Set the storage pointer
         Index storage index = indexes[indexPosition];
-        /// Check the caller is the owner
-        if (index.indexDenominator > 0 && index.creator != msg.sender) {
-            revert Unauthorized();
-        }
+        /// Reset the owner
+        index.creator = msg.sender;
 
         for (uint256 i; i < weights.length; i++) {
             (address guild, uint256 weight) = abi.decode(weights[i], (address, uint256));
