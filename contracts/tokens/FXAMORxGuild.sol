@@ -67,7 +67,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
 
     bool private _initialized;
 
-    address public controller; //contract that has a voting function
+    address public controller; // contract that has a voting function
 
     IERC20 public AMORxGuild;
 
@@ -105,7 +105,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             revert AlreadyInitialized();
         }
 
-        _transferOwnership(_initOwner); //GuildController
+        _transferOwnership(_initOwner); // GuildController
 
         controller = _initOwner;
         AMORxGuild = IERC20(_AMORxGuild);
@@ -172,6 +172,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             revert InvalidAmount();
         }
 
+        // undelegate all
         if (delegation[msg.sender].length != 0) {
             address[] memory accounts = delegation[msg.sender];
             address accountTo;
@@ -180,10 +181,11 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
                 accountTo = accounts[i];
                 delegatedTo = delegations[msg.sender][accountTo];
                 delete delegations[msg.sender][accountTo];
-                delete amountDelegated[msg.sender];
-                emit FXAMORxGuildUndelegated(accountTo, msg.sender, delegations[msg.sender][account]);
+                emit FXAMORxGuildUndelegated(accountTo, account, delegatedTo);
             }
         }
+        delete amountDelegated[msg.sender];
+
         //burn used FXAMORxGuild tokens from staker
         _burn(account, amount);
         AMORxGuild.safeTransfer(controller, amount);
@@ -234,6 +236,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             amountDelegated[msg.sender] -= amount;
         } else {
             amountDelegated[msg.sender] -= delegations[msg.sender][account];
+            amount = delegations[msg.sender][account];
             delete delegations[msg.sender][account];
 
             for (uint256 j = 0; j < delegation[msg.sender].length; j++) {

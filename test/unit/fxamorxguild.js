@@ -154,7 +154,7 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
         it('it undelegates FXAMORxGuild tokens if amount > balance FXAMORxGuild', async function () {
             await FXAMORxGuild.connect(staker).delegate(operator.address, FIFTY_ETHER);
             await FXAMORxGuild.connect(staker).undelegate(operator.address, TWO_HUNDRED_ETHER);
-            expect((await FXAMORxGuild.amountDelegated(staker.address)).toString()).to.equal(FIFTY_ETHER);
+            expect((await FXAMORxGuild.amountDelegated(staker.address)).toString()).to.equal("0");
         });
         
         it('it fails to undelegate FXAMORxGuild tokens if nothing to undelegate', async function () {
