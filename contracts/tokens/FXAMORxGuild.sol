@@ -246,4 +246,14 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         }
         emit FXAMORxGuildUndelegated(account, msg.sender, amount);
     }
+
+    /// @notice This token is non-transferable
+    function transfer() public pure returns (bool) {
+        return false;
+    }
+
+    /// @notice This token is non-transferable
+    function transferFrom() public pure returns (bool) {
+        return false;
+    }
 }
