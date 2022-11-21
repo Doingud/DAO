@@ -10,6 +10,7 @@ const {
     MOCK_GUILD_SYMBOLS,
     ZERO_ADDRESS
   } = require('../helpers/constants.js');
+const { int } = require("hardhat/internal/core/params/argumentTypes.js");
 
 use(solidity);
 
@@ -104,8 +105,7 @@ describe("unit - MetaDao", function () {
 
     context('function: addFeeIndex()', () => {
         it('Should have set the fee index correctly', async function () {
-            hash = await METADAO.indexHashes(0);
-            indexReturn = await METADAO.indexes(hash);
+            indexReturn = await METADAO.indexes(0);
             expect(indexReturn.indexDenominator).to.equal(200);
         });
     });
@@ -219,6 +219,8 @@ describe("unit - MetaDao", function () {
 
             /// Setup the guilds through the METADAO
             await METADAO2.createGuild(user2.address, user1.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
+            await METADAO2.createGuild(user2.address, user1.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
+
             GUILD_CONTROLLER_ONE2 = await METADAO2.guilds(ZERO_ADDRESS);
             GUILD_CONTROLLER_ONE2 = CONTROLLER2.attach(GUILD_CONTROLLER_ONE2);
             GUILD_CONTROLLER_TWO2 = await METADAO2.guilds(GUILD_CONTROLLER_ONE2.address);
@@ -227,24 +229,8 @@ describe("unit - MetaDao", function () {
             await METADAO2.addWhitelist(USDC2.address);
             await AMOR_TOKEN2.approve(METADAO2.address, ONE_HUNDRED_ETHER);
             await USDC2.approve(METADAO2.address, ONE_HUNDRED_ETHER);
-            const abi = ethers.utils.defaultAbiCoder;
-            let encodedIndex = abi.encode(
-                ["tuple(address, uint256)"],
-                [
-                [GUILD_CONTROLLER_ONE2.address, 0]
-                ]
-            );
-            let encodedIndex2 = abi.encode(
-                ["tuple(address, uint256)"],
-                [
-                [GUILD_CONTROLLER_TWO2.address, 0]
-                ]
-            );
-    
-            await METADAO2.updateIndex([encodedIndex, encodedIndex2], 0);
 
-            let hash = await METADAO2.indexHashes(0);
-            let indexReturn = await METADAO2.indexes(hash);
+            let indexReturn = await METADAO2.indexes(0);
             expect(indexReturn.indexDenominator).to.equal(0);
 
             await expect(METADAO2.donate(USDC2.address, ONE_HUNDRED_ETHER, 0)).
@@ -346,9 +332,9 @@ describe("unit - MetaDao", function () {
                 ]
             );
 
-            await METADAO.addIndex([newIndex0, newIndex1]);
-            let index = await METADAO.indexHashes(1);
-            index = await METADAO.indexes(index);
+            let index = await METADAO.addIndex([newIndex0, newIndex1]);
+            index = await METADAO.indexes(0);
+            console.log(index);
             expect(index.indexDenominator).to.equal(200);
         });
 

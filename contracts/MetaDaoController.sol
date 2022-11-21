@@ -5,7 +5,7 @@ pragma solidity 0.8.15;
  * @title  DoinGud: MetaDaoController.sol
  * @author Daoism Systems
  * @notice MetaDaoController implementation for DoinGudDAO
- * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
+ * @custom Security-contact security@daoism.systems
  *
  *  The MetaDAO creates new guilds and collects fees from AMOR token transfers.
  *  The collected funds can then be distributed and claimed by guilds.
@@ -78,9 +78,10 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     }
 
     /// Create an array to hold the different indexes
-    mapping(bytes32 => Index) public indexes;
-    bytes32[] public indexHashes;
-    bytes32 public constant FEES_INDEX = keccak256("FEES_INDEX");
+    mapping(uint256 => Index) public indexes;
+    uint256 public indexCounter;
+    //bytes32[] public indexHashes;
+    //bytes32 public constant FEES_INDEX = keccak256("FEES_INDEX");
 
     /// Events
     event GuildCreated(
@@ -97,14 +98,14 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     event DonatedToIndex(uint256 amount, address token, uint256 index, address sender);
     event FeesClaimed(address guild, uint256 guildFees);
     event FeesDistributed(address guild, uint256 guildFees);
-    event IndexAdded(uint256 index, bytes32 weights);
-    event IndexUpdated(uint256 index, bytes32 weights);
+    event IndexAdded(uint256 indexed index, address indexed owner);
+    event IndexUpdated(uint256 indexed index, address indexed owner);
 
     /// Errors
     /// The token is not whitelisted
     error NotListed();
-    /// The guild/index cannot be added because it already exists
-    error Exists();
+    /// The Caller is not the Owner
+    error Unauthorized();
     /// The guild doesn't exist
     error InvalidGuild();
     /// Not all guilds have weights!!
@@ -116,6 +117,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     error NoIndex();
     /// The guild has 0 funds to claim
     error InvalidClaim();
+    error Exists();
 
     function init(
         address amor,
@@ -130,13 +132,14 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         whitelist[sentinelWhitelist] = SENTINEL;
         whitelist[SENTINEL] = amor;
         /// Setup the fee index
-        indexHashes.push(FEES_INDEX);
-        Index storage index = indexes[FEES_INDEX];
-        index.creator = owner();
+        //indexHashes.push(FEES_INDEX);
+        Index storage index = indexes[0];
+        index.creator = avatar;
+        indexCounter++;
         /// Setup guilds linked list
         sentinelGuilds = address(0x01);
         guilds[sentinelGuilds] = SENTINEL;
-        guilds[SENTINEL] = sentinelGuilds;
+        //guilds[SENTINEL] = sentinelGuilds;
     }
 
     /// @notice Allows a user to donate a whitelisted asset
@@ -152,7 +155,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         if (this.isWhitelisted(token) == false) {
             revert NotListed();
         }
-        if (indexes[FEES_INDEX].indexDenominator == 0) {
+        if (indexes[0].indexDenominator == 0) {
             revert NoIndex();
         }
         if (token == address(amorToken)) {
@@ -180,7 +183,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         uint256 index
     ) internal {
         address endOfList = SENTINEL;
-        Index storage targetIndex = indexes[indexHashes[index]];
+        Index storage targetIndex = indexes[index];
         while (guilds[endOfList] != SENTINEL) {
             uint256 amountAllocated = (amount * targetIndex.indexWeights[guilds[endOfList]]) /
                 targetIndex.indexDenominator;
@@ -207,7 +210,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
 
     /// @notice Apportions collected AMOR fees
     function distributeFees() public {
-        Index storage index = indexes[FEES_INDEX];
+        Index storage index = indexes[0];
         address endOfList = SENTINEL;
         /// Determine amount of AMOR that has been collected from fees
         uint256 feesToBeDistributed = amorToken.balanceOf(address(this)) - donations[address(amorToken)];
@@ -255,9 +258,9 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         );
         guilds[sentinelGuilds] = controller;
         sentinelGuilds = controller;
-        guilds[sentinelGuilds] = SENTINEL;
+        guilds[controller] = SENTINEL;
         unchecked {
-            guildCounter += 1;
+            guildCounter++;
         }
         emit GuildCreated(realityModule, initialGuardian, name, tokenSymbol, controller, guildCounter);
     }
@@ -329,56 +332,46 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     function addIndex(bytes[] calldata weights) external returns (uint256) {
         /// This check becomes redundant
         /// Using the hash of the array allows a O(1) check if that index exists already
-        bytes32 hashArray = keccak256(abi.encode(weights));
-        if (indexes[hashArray].indexDenominator != 0) {
-            revert Exists();
-        }
-        indexHashes.push(hashArray);
-        _updateIndex(weights, indexHashes[indexHashes.length - 1]);
+        //bytes32 hashArray = keccak256(abi.encode(weights));
+        indexCounter++;
+        _updateIndex(weights, indexCounter);
 
-        emit IndexAdded((indexHashes.length - 1), hashArray);
-        return indexHashes.length - 1;
+        emit IndexAdded(indexCounter, msg.sender);
+        return indexCounter;
     }
 
     /// @notice Allows DoinGud to update the fee index used
     /// @param  weights an array of the guild weights
-    function updateIndex(bytes[] calldata weights, uint256 index) external returns (uint256) {
-        if (indexes[indexHashes[index]].creator != msg.sender) {
-            revert IndexError();
+    function updateIndex(bytes[] calldata weights, uint256 indexPosition) external {
+        if (indexes[indexPosition].creator != msg.sender) {
+            revert Unauthorized();
         }
-        bytes32 key = _updateIndex(weights, indexHashes[index]);
-        if (index > 0) {
-            indexHashes[index] = indexHashes[indexHashes.length - 1];
-            indexHashes.pop();
-            indexHashes.push(key);
-            return indexHashes.length;
-        }
-        emit IndexUpdated(index, key);
-        return 0;
+
+        _updateIndex(weights, indexPosition);
+
+        emit IndexUpdated(indexPosition, msg.sender);
     }
 
     /// @notice Adds a new index to the Index mapping
     /// @dev    Requires `weights` to be sorted prior to creating a new `Index` struct
     /// @param  weights the encoded tuple of index values (`address`,`uint256`)
-    /// @param  arrayHash keccak256 hash of the provided array
-    /// @return bool was the index update successful
-    function _updateIndex(bytes[] calldata weights, bytes32 arrayHash) internal returns (bytes32) {
-        /// Delete the previous index
-        /// Even a small change will create a very different hash
-        if (arrayHash != FEES_INDEX) {
-            delete indexes[arrayHash];
-            arrayHash = keccak256(abi.encode(weights));
-        }
+    /// @param  indexPosition keccak256 hash of the provided array
+    function _updateIndex(bytes[] calldata weights, uint256 indexPosition) internal {
+        delete indexes[indexPosition];
         /// Set the storage pointer
-        Index storage index = indexes[arrayHash];
+        Index storage index = indexes[indexPosition];
+        /// Check the caller is the owner
+        if (index.indexDenominator > 0 && index.creator != msg.sender) {
+            revert Unauthorized();
+        }
 
         for (uint256 i; i < weights.length; i++) {
             (address guild, uint256 weight) = abi.decode(weights[i], (address, uint256));
-            index.indexDenominator -= index.indexWeights[guild];
+            if (guilds[guild] == address(0) || weight == 0) {
+                revert InvalidGuild();
+            }
             index.indexWeights[guild] = weight;
             index.indexDenominator += weight;
-            index.creator = msg.sender;
         }
-        return arrayHash;
     }
 }
