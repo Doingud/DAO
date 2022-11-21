@@ -43,7 +43,6 @@ pragma solidity 0.8.15;
  */
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// Advanced math functions for bonding curve
 import "../utils/ABDKMath64x64.sol";
@@ -100,7 +99,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         string memory _name,
         string memory _symbol,
         address _initOwner,
-        address _AMORxGuild
+        IERC20 _AMORxGuild
     ) external override {
         if (_initialized) {
             revert AlreadyInitialized();
@@ -114,7 +113,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         _setTokenDetail(_name, _symbol);
 
         _initialized = true;
-        emit Initialized(_initOwner, _AMORxGuild);
+        emit Initialized(_initOwner, address(_AMORxGuild));
     }
 
     function setController(address _controller) external onlyOwner {
@@ -132,11 +131,10 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         _;
     }
 
-    //  receives ERC20 AMORxGuild tokens, which are getting locked
-    //  and generate FXAMORxGuild tokens in return.
-    //  Tokens are minted 1:1.
-
     /// @notice Stake AMORxGuild and receive FXAMORxGuild in return
+    ///         receives ERC20 AMORxGuild tokens, which are getting locked
+    ///         and generate FXAMORxGuild tokens in return.
+    ///         Tokens are minted 1:1.
     /// @dev    Front end must still call approve() on AMORxGuild token to allow safeTransferFrom()
     /// @param  to Address where FXAMORxGuild must be minted to
     /// @param  amount uint256 amount of AMORxGuild to be staked
