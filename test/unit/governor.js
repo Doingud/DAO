@@ -194,6 +194,7 @@ describe('unit - Contract: Governor', function () {
         it('it changes guardian', async function () {
             await governor.connect(authorizer_adaptor).changeGuardian(operator.address, root.address);
             //expect(await governor.guardians(1)).to.equals(root.address);
+            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,root.address]))).to.be.true;
         });
     });
 
@@ -319,13 +320,15 @@ describe('unit - Contract: Governor', function () {
             let unSCalldatas = [mockModule.interface.encodeFunctionData("testRevert", [])];
 
             await mockAvatar.connect(root).proposeAfterVote(unSTargets, unSValues, unSCalldatas);
+
             let proposalHash = await governor.hashProposal(unSTargets, unSValues, unSCalldatas);
-            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(time.duration.days(10));
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             /// Pass the Proposal
             await mockGovernor.castVote(proposalHash, true);
-            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(time.duration.days(5));
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+
             await expect(mockGovernor.connect(authorizer_adaptor).execute(unSTargets, unSValues, unSCalldatas))
                 .to.be.revertedWith(
                     'UnderlyingTransactionReverted()'
@@ -406,12 +409,11 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it removes guardian', async function () {
-            expect(await governor.guardians(3)).to.equals(user2.address);
+            //expect(await governor.guardians(3)).to.equals(user2.address);
             await governor.connect(authorizer_adaptor).removeGuardian(root.address);
-            expect(await governor.guardians(1)).to.equals(user2.address);
-            await expect(governor.guardians(3)).to.be.reverted;
+            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,root.address]))).to.be.false;
 
-            transactionData = governor.interface.encodeFunctionData("addGuardian", [root.address]);
+            //transactionData = governor.interface.encodeFunctionData("addGuardian", [root.address]);
             await governor.connect(authorizer_adaptor).addGuardian(root.address);
         });
     });
