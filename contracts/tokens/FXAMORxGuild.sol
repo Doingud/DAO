@@ -97,24 +97,24 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
      *          It can only be run once.
      */
     function init(
-        string memory name_,
-        string memory symbol_,
-        address initOwner_,
-        address AMORxGuild_
+        string memory _name,
+        string memory _symbol,
+        address _initOwner,
+        address _AMORxGuild
     ) external override {
         if (_initialized) {
             revert AlreadyInitialized();
         }
 
-        _transferOwnership(initOwner_); //GuildController
+        _transferOwnership(_initOwner); //GuildController
 
-        controller = initOwner_;
-        AMORxGuild = IERC20(AMORxGuild_);
+        controller = _initOwner;
+        AMORxGuild = IERC20(_AMORxGuild);
         //  Set the name and symbol
         _setTokenDetail(_name, _symbol);
 
         _initialized = true;
-        emit Initialized(initOwner_, AMORxGuild_);
+        emit Initialized(_initOwner, _AMORxGuild);
     }
 
     function setController(address _controller) external onlyOwner {
