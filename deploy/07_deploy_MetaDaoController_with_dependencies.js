@@ -4,42 +4,42 @@ async function main() {
     console.log("Deploying contracts with the account:", deployer.address);
     console.log("Account balance:", (await deployer.getBalance()).toString());
 
-    // deploy and init Avatar, dAMOR, Governor for MetaDaoController
-    // // Avatar
-    // const AvatarFactory = await ethers.getContractFactory("AvatarxGuild");
-    // const Avatar = await AvatarFactory.deploy();
-    // console.log("Avatar for MetaDaoController address:", Avatar.address);
-    // let a  = await ethers.getContractFactory('DoinGudProxy')
-    // let proxy = await a.deploy();
-    // console.log("Avatar for MetaDaoController proxy address:", proxy.address);
-    // let tx = await proxy.initProxy(Avatar.address);
-    // console.log("tx is %s", tx);
-    // const PROXIED_Avatar = Avatar.attach(proxy.address);
-    // console.log("PROXIED_Avatar address is %s", PROXIED_Avatar.address);
+    // deploy and init AMORx, Avatar, Governor for MetaDaoController
+    // AMORx
+    const AMORxGuildToken = await ethers.getContractFactory("AMORxGuildToken");
+    const AMORxGuild = await AMORxGuildToken.deploy();
+    console.log("AMORxGuild address:", AMORxGuild.address);
+    a  = await ethers.getContractFactory('DoinGudProxy')
+    proxy = await a.deploy();
+    console.log("proxy address:", proxy.address);
+    tx = await proxy.initProxy(AMORxGuild.address);
+    console.log("tx is %s", tx);
+    const PROXIED_AMORxGuild = AMORxGuild.attach(proxy.address);
+    console.log("PROXIED_AMORxGuild address is %s", PROXIED_AMORxGuild.address);
 
-    // // dAMOR
-    // const dAMORToken = await ethers.getContractFactory("dAMORxGuild");
-    // const dAMOR = await dAMORToken.deploy();
-    // console.log("dAMOR for MetaDaoController address:", dAMOR.address);
-    // a  = await ethers.getContractFactory('DoinGudProxy')
-    // proxy = await a.deploy();
-    // console.log("dAMOR for MetaDaoController proxy address:", proxy.address);
-    // tx = await proxy.initProxy(dAMOR.address);
-    // console.log("tx is %s", tx);
-    // const PROXIED_dAMOR = dAMOR.attach(proxy.address);
-    // console.log("PROXIED_dAMOR for MetaDaoController address is %s", PROXIED_dAMOR.address);
+    // Avatar
+    const AvatarFactory = await ethers.getContractFactory("AvatarxGuild");
+    const Avatar = await AvatarFactory.deploy();
+    console.log("Avatar for MetaDaoController address:", Avatar.address);
+    let a  = await ethers.getContractFactory('DoinGudProxy')
+    let proxy = await a.deploy();
+    console.log("Avatar for MetaDaoController proxy address:", proxy.address);
+    let tx = await proxy.initProxy(Avatar.address);
+    console.log("tx is %s", tx);
+    const PROXIED_Avatar = Avatar.attach(proxy.address);
+    console.log("PROXIED_Avatar address is %s", PROXIED_Avatar.address);
 
-    // // Governor
-    // const DoinGudGovernorFactory = await ethers.getContractFactory("DoinGudGovernor");
-    // const DoinGudGovernor = await DoinGudGovernorFactory.deploy();
-    // console.log("DoinGudGovernor for MetaDaoController address:", DoinGudGovernor.address);
-    // a  = await ethers.getContractFactory('DoinGudProxy')
-    // proxy = await a.deploy();
-    // console.log("proxy address:", proxy.address);
-    // tx = await proxy.initProxy(DoinGudGovernor.address);
-    // console.log("tx is %s", tx);
-    // const PROXIED_DoinGudGovernor = DoinGudGovernor.attach(proxy.address);
-    // console.log("PROXIED_DoinGudGovernor address is %s", PROXIED_DoinGudGovernor.address);
+    // Governor
+    const DoinGudGovernorFactory = await ethers.getContractFactory("DoinGudGovernor");
+    const DoinGudGovernor = await DoinGudGovernorFactory.deploy();
+    console.log("DoinGudGovernor for MetaDaoController address:", DoinGudGovernor.address);
+    a  = await ethers.getContractFactory('DoinGudProxy')
+    proxy = await a.deploy();
+    console.log("proxy address:", proxy.address);
+    tx = await proxy.initProxy(DoinGudGovernor.address);
+    console.log("tx is %s", tx);
+    const PROXIED_DoinGudGovernor = DoinGudGovernor.attach(proxy.address);
+    console.log("PROXIED_DoinGudGovernor address is %s", PROXIED_DoinGudGovernor.address);
 
 
     // deploy MetaDaoController

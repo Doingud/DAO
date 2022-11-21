@@ -16,7 +16,7 @@ const Snapshot = 'Snapshot';
 
 const Avatar_MetaDAOController = 'Avatar_MetaDAOController';
 const Governor_MetaDAOController = 'Governor_MetaDAOController';
-const dAMOR_MetaDAOController = 'dAMOR_MetaDAOController';
+const AMORx_MetaDAOController = 'dAMOR_MetaDAOController';
 
 const AMORTokenProxy = 'AMORTokenProxy';
 const AMORxGuildProxy = 'AMORxGuildProxy';
@@ -48,7 +48,7 @@ const contractAddresses = {
 
         [Avatar_MetaDAOController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', 
         [Governor_MetaDAOController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
-        [dAMOR_MetaDAOController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
+        [AMORx_MetaDAOController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
         [MetaDAOController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
 
         [GuildFactory]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
@@ -73,6 +73,10 @@ const contractAddresses = {
 
         [dAMORxGuild]: '0x7861724125Dd8528515bBA5358bcaB13180E6983',
 
+        [Avatar_MetaDAOController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5', 
+        [Governor_MetaDAOController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
+        [AMORx_MetaDAOController]: '0xdd634602038eBf699581D34d6142a4FB5aa66Ff5',
+        
         [MetaDAOController]: '0x44fbbcA9Ac27CDd6259f0Ff263eaa986C55D3BdC',
         [MetaDAOControllerProxy]: '0x59624102a5e95B30e12B320593e2F6240c65ABFB',
         [Governor]: '0x67E76ECce47b76E2C6dc4C47b6C906f998234Db4',

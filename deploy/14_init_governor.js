@@ -12,7 +12,7 @@ async function main() {
     console.log("Account balance:", (await deployer.getBalance()).toString());
 
     // connect Governor
-    let a  = await ethers.getContractFactory('DoinGudGovernorVersionForTesting');//DoinGudGovernor')
+    let a  = await ethers.getContractFactory('DoinGudGovernorVersionForTesting');
     let b = await a.attach(Governor_)
     let Governor = await b.deployed();
     console.log("Governor address:", Governor.address);
@@ -21,12 +21,6 @@ async function main() {
     let tx = await Governor.init(AMORxGuild_, Avatar_, initialGuardian);
     console.log("tx is %s", tx);
     console.log("Governor address:", Governor.address);
-
-
-    // IMPACT_MAKERS = [multisig_.address];
-    // IMPACT_MAKERS_WEIGHTS = [20];
-    // let setImpactMakersData = Governor.interface.encodeFunctionData("setImpactMakers", [IMPACT_MAKERS, IMPACT_MAKERS_WEIGHTS]);
-    // await metaHelper([Governor.address], [0], [setImpactMakersData], [user1, user2], authorizer_adaptor, Avatar_.address, GUILD_ONE_GOVERNORXGUILD.address)
 }
   
   main()

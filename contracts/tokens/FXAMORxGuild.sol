@@ -146,7 +146,6 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         if (to == address(0)) {
             revert AddressZero();
         }
-
         if (AMORxGuild.balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }
