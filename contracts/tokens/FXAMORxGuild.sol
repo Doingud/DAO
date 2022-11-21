@@ -202,7 +202,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             revert AddressZero();
         }
 
-        uint256 availableAmount = stakes[msg.sender] - amountDelegated[msg.sender];
+        uint256 availableAmount = balanceOf(msg.sender) - amountDelegated[msg.sender];
         if (availableAmount < amount) {
             revert InvalidAmount();
         }
@@ -229,12 +229,12 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             revert NotDelegatedAny();
         }
 
-        if (delegations[msg.sender][account] >= amount) {
+        if (delegations[msg.sender][account] > amount) {
             delegations[msg.sender][account] -= amount;
             amountDelegated[msg.sender] -= amount;
         } else {
-            delegations[msg.sender][account] = 0;
             amountDelegated[msg.sender] -= delegations[msg.sender][account];
+            delete delegations[msg.sender][account];
 
             for (uint256 j = 0; j < delegation[msg.sender].length; j++) {
                 if (delegation[msg.sender][j] == account) {
