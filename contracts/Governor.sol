@@ -69,8 +69,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
     uint256 public guardiansLimit; // amount of guardians for contract to function propperly,
     // until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.
 
-    //address[] public guardians; // this is an array guardians who are allowed to vote for the proposals.
-    //mapping(address => uint256) public weights; // weight of each specific guardian
     /// input (version, address) => true
     mapping(bytes32 => bool) public guardians;
     uint256 public currentGuardianVersion;
@@ -127,9 +125,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         if (_initialized) {
             revert AlreadyInitialized();
         }
-        // person who inflicted the creation of the contract is set as the only guardian of the system
-        //guardians.push(initialGuardian);
-        //weights[initialGuardian] = 1;
+
         guardians[_getGuardianKey(initialGuardian)] = true;
         guardiansCounter++;
         AMORxGuild = IERC20(AMORxGuild_);
@@ -197,14 +193,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @notice this function adds new guardian to the system
     /// @param guardian New guardian to be added
     function addGuardian(address guardian) public onlyAvatar {
-        // check that guardian won't be added twice
-        /*for (uint256 i = 0; i < guardians.length; i++) {
-            if (guardian == guardians[i]) {
-                revert InvalidParameters();
-            }
-        }
-        guardians.push(guardian);
-        weights[guardian] = 1; */
         if (isGuardian(guardian)) {
             revert InvalidParameters();
         }
@@ -218,14 +206,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @notice this function removes choosed guardian from the system
     /// @param guardian Guardian to be removed
     function removeGuardian(address guardian) external onlyAvatar {
-/*        for (uint256 i = 0; i < guardians.length; i++) {
-            if (guardians[i] == guardian) {
-                guardians[i] = guardians[guardians.length - 1];
-                guardians.pop();
-                weights[guardian] = 0;
-                break;
-            }
-        } */
         guardians[_getGuardianKey(guardian)] = false;
         guardiansCounter--;
         emit GuardianRemoved(guardian);
@@ -235,13 +215,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @param currentGuardian Guardian to be removed
     /// @param newGuardian Guardian to be added
     function changeGuardian(address currentGuardian, address newGuardian) external onlyAvatar {
-        // check that guardian won't be added twice
-/*        for (uint256 i = 0; i < guardians.length; i++) {
-            if (newGuardian == guardians[i]) {
-                revert InvalidParameters();
-            }
-        }
-*/
         if (isGuardian(newGuardian) || !isGuardian(currentGuardian)) {
             revert InvalidParameters();
         }
