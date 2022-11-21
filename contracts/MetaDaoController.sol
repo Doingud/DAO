@@ -299,7 +299,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         }
 
         if (donations[controller] > 0) {
-            
+
         }
         /// Transfer unclaimed funds to donations
         address endOfList = SENTINEL;
