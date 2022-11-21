@@ -7,10 +7,8 @@ const {
     FIFTY_ETHER,
     ONE_ADDRESS,
     MOCK_GUILD_NAMES,
-    MOCK_GUILD_SYMBOLS,
-    ZERO_ADDRESS
+    MOCK_GUILD_SYMBOLS
   } = require('../helpers/constants.js');
-const { int } = require("hardhat/internal/core/params/argumentTypes.js");
 
 use(solidity);
 
@@ -23,8 +21,6 @@ let user2;
 let user3;
 let CONTROLLER;
 let FACTORY;
-let GUILD_CONTROLLER_ONE;
-let GUILD_CONTROLLER_TWO;
 
 let encodedIndex;
 let encodedIndex2;
@@ -187,9 +183,6 @@ describe("unit - MetaDao", function () {
             let user2;
             let FACTORY2;
             let METADAO2;
-            let CONTROLLER2;
-            let GUILD_CONTROLLER_ONE2;
-            let GUILD_CONTROLLER_TWO2;
 
             const signers = await ethers.getSigners();
             const setup = await init.initialize(signers);
@@ -211,7 +204,6 @@ describe("unit - MetaDao", function () {
             await init.controller(setup);
             await init.avatar(setup);
             await init.governor(setup);
-            CONTROLLER2 = setup.controller;
             await init.getGuildFactory(setup);
             FACTORY2 = setup.factory;
 
@@ -221,10 +213,6 @@ describe("unit - MetaDao", function () {
             await METADAO2.createGuild(user2.address, user1.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]);
             await METADAO2.createGuild(user2.address, user1.address, MOCK_GUILD_NAMES[1], MOCK_GUILD_SYMBOLS[1]);
 
-            GUILD_CONTROLLER_ONE2 = await METADAO2.guilds(ZERO_ADDRESS);
-            GUILD_CONTROLLER_ONE2 = CONTROLLER2.attach(GUILD_CONTROLLER_ONE2);
-            GUILD_CONTROLLER_TWO2 = await METADAO2.guilds(GUILD_CONTROLLER_ONE2.address);
-            GUILD_CONTROLLER_TWO2 = CONTROLLER2.attach(GUILD_CONTROLLER_TWO2);
     
             await METADAO2.addWhitelist(USDC2.address);
             await AMOR_TOKEN2.approve(METADAO2.address, ONE_HUNDRED_ETHER);
@@ -334,7 +322,6 @@ describe("unit - MetaDao", function () {
 
             let index = await METADAO.addIndex([newIndex0, newIndex1]);
             index = await METADAO.indexes(1);
-            console.log(index);
             expect(index.indexDenominator).to.equal(200);
         });
     });
@@ -400,23 +387,17 @@ describe("unit - MetaDao", function () {
                 [GUILD_CONTROLLER_TWO.address, 200]
                 ]
             );
-            let newIndex2 = abi.encode(
-                ["tuple(address, uint256)"],
-                [
-                [METADAO.address, 1000]
-                ]
-            );
-            await METADAO.addIndex([newIndex0, newIndex1, newIndex2]);
+
+            await METADAO.addIndex([newIndex0, newIndex1]);
             await METADAO.updateIndex([newIndex0, newIndex1], 1);
 
-            let index = await METADAO.indexHashes(1);
-            index = await METADAO.indexes(index);
+            let index = await METADAO.indexes(1);
             expect(index.indexDenominator).to.equal(700);
         });
 
         it('Should fail to updateIndex if creator != msg.sender', async function () {
             await expect(METADAO.connect(user1).updateIndex([encodedIndex, encodedIndex2], 0)).
-                to.be.revertedWith("IndexError()");        
+                to.be.revertedWith("Unauthorized()");        
         });
 
         
