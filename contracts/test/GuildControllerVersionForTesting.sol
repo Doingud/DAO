@@ -257,7 +257,7 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
         uint256 id,
         uint256 amount,
         bool sign
-    ) public {
+    ) external {
         // check if tthe voting for this report has started
         if (trigger == false) {
             revert VotingNotStarted();
@@ -478,11 +478,10 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
         if (impact != msg.sender) {
             revert Unauthorized();
         }
-
         for (uint256 i = 0; i < token.length; i++) {
-            IERC20(token[i]).safeTransfer(impact, claimableTokens[impact][token[i]]);
-            emit TokensClaimedByImpactMaker(impact, token[i], claimableTokens[impact][token[i]]);
-            claimableTokens[impact][token[i]] = 0;
+            IERC20(token[i]).safeTransfer(msg.sender, claimableTokens[msg.sender][token[i]]);
+            emit TokensClaimedByImpactMaker(msg.sender, token[i], claimableTokens[msg.sender][token[i]]);
+            claimableTokens[msg.sender][token[i]] = 0;
         }
     }
 

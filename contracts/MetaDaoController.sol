@@ -37,6 +37,7 @@ pragma solidity 0.8.15;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+/// Custom contracts
 import "./interfaces/ICloneFactory.sol";
 import "./interfaces/IGuildController.sol";
 import "./interfaces/IMetaDaoController.sol";
@@ -117,6 +118,10 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     /// The guild has 0 funds to claim
     error InvalidClaim();
 
+    /// @notice Initializes the MetaDaoController contract
+    /// @param  amor the address of the AMOR token
+    /// @param  cloneFactory the address of the GuildFactory
+    /// @param  avatar the address of the Avatar
     function init(
         address amor,
         address cloneFactory,
@@ -191,7 +196,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
 
     /// @notice Distributes the specified token
     /// @param  token address of target token
-    function claimToken(address token) public {
+    function claimToken(address token) external {
         if (guilds[msg.sender] == address(0)) {
             revert InvalidGuild();
         }
@@ -206,7 +211,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     }
 
     /// @notice Apportions collected AMOR fees
-    function distributeFees() public {
+    function distributeFees() external {
         Index storage index = indexes[FEES_INDEX];
         address endOfList = SENTINEL;
         /// Determine amount of AMOR that has been collected from fees
@@ -225,7 +230,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
 
     /// @notice Allows a guild to transfer fees to the Guild
     /// @param  guild The target guild
-    function claimFees(address guild) public {
+    function claimFees(address guild) external {
         if (guilds[guild] == address(0)) {
             revert InvalidGuild();
         }
@@ -246,7 +251,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         address initialGuardian,
         string memory name,
         string memory tokenSymbol
-    ) public onlyOwner {
+    ) external onlyOwner {
         (address controller, , ) = ICloneFactory(guildFactory).deployGuildContracts(
             realityModule,
             initialGuardian,

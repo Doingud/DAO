@@ -54,7 +54,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// Advanced math functions for bonding curve
 import "../utils/ABDKMath64x64.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
+/// Custom contracts
 import "../utils/ERC20Base.sol";
 import "../interfaces/IAMORxGuild.sol";
 
@@ -131,7 +131,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     /// @notice Allows a user to stake their AMOR and receive AMORxGuild in return
     /// @param  to address where the AMORxGuild will be sent to
     /// @param  amount uint256 amount of AMOR to be staked
-    /// @return uint256 the amount of AMORxGuild received from staking
+    /// @return mintAmount uint256 amount of AMORxGuild received from staking
     function stakeAmor(address to, uint256 amount) external override whenNotPaused returns (uint256) {
         if (tokenAmor.balanceOf(msg.sender) < amount) {
             revert UnsufficientAmount();
@@ -158,7 +158,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
 
     /// @notice Allows the user to unstake their AMOR
     /// @param  amount uint256 amount of AMORxGuild to exchange for AMOR
-    /// @return uint256 the amount of AMOR returned from burning AMORxGuild
+    /// @return amorReturned uint256 amount of AMOR returned from burning AMORxGuild
     function withdrawAmor(uint256 amount) external override whenNotPaused returns (uint256) {
         if (amount > balanceOf(msg.sender)) {
             revert UnsufficientAmount();
