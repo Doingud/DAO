@@ -93,7 +93,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     event GuardiansSet(address[] arrGuardians);
     event GuardianAdded(address newGuardian);
     event GuardianRemoved(address guardian);
-    event GuardianChanged(uint256 oldGuardian, address newGuardian);
+    event GuardianChanged(address oldGuardian, address newGuardian);
     event Voted(uint256 proposalId, bool support, address votedGuardian);
 
     bool private _initialized;
@@ -200,10 +200,11 @@ contract DoinGudGovernor is IDoinGudGovernor {
         weights[guardian] = 1; */
         if (guardians[keccak256(abi.encodePacked(currentGuardianVersion, guardian))] == true) {
             revert InvalidParameters();
-        } else {
-            guardians[keccak256(abi.encodePacked(currentGuardianVersion, guardian))] = true;
-            guardiansCounter++;
         }
+
+        guardians[keccak256(abi.encodePacked(currentGuardianVersion, guardian))] = true;
+        guardiansCounter++;
+
         emit GuardianAdded(guardian);
     }
 
@@ -224,9 +225,9 @@ contract DoinGudGovernor is IDoinGudGovernor {
     }
 
     /// @notice this function changes guardian as a result of the vote (propose function)
-    /// @param current Current vote value
-    /// @param newGuardian Guardian to be changed
-    function changeGuardian(uint256 current, address newGuardian) external onlyAvatar {
+    /// @param currentGuardian Guardian to be removed
+    /// @param newGuardian Guardian to be added
+    function changeGuardian(address currentGuardian, address newGuardian) external onlyAvatar {
         // check that guardian won't be added twice
 /*        for (uint256 i = 0; i < guardians.length; i++) {
             if (newGuardian == guardians[i]) {
@@ -234,10 +235,13 @@ contract DoinGudGovernor is IDoinGudGovernor {
             }
         }
 */
+        if (guardians[keccak256(abi.encodePacked(currentGuardianVersion, newGuardian))]) {
+            revert InvalidParameters();
+        }
 
-        delete guardians[keccak256(abi.encodePacked(currentGuardianVersion, current))];
+        delete guardians[keccak256(abi.encodePacked(currentGuardianVersion, currentGuardian))];
         guardians[keccak256(abi.encodePacked(currentGuardianVersion, newGuardian))];
-        emit GuardianChanged(current, newGuardian);
+        emit GuardianChanged(currentGuardian, newGuardian);
     }
 
     /// @notice this function changes guardians limit

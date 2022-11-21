@@ -67,9 +67,9 @@ interface IDoinGudGovernor {
     function removeGuardian(address guardian) external;
 
     /// @notice this function changes guardian as a result of the vote (propose function)
-    /// @param current Current vote value
+    /// @param currentGuardian Current Guardian address
     /// @param newGuardian Guardian to be changed
-    function changeGuardian(uint256 current, address newGuardian) external;
+    function changeGuardian(address currentGuardian, address newGuardian) external;
 
     /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote.
     /// Only Avatar(as a result of the Snapshot) contract can add a proposal for voting.
