@@ -52,13 +52,10 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
     struct Stakes {
         uint256 stakesTimes; // time staked for
-        uint256 stakes; // all staker balance in dAMORxGuild
         uint256 stakesAMOR; //all staker balance in AMORxGuild
     }
     mapping(address => Stakes) public _stakes;
 
-    // those who delegated to a specific address
-    // mapping(address => address[]) public delegators;
     // staker => delegated to (many accounts) => amount
     // list of delegations from one address
     mapping(address => mapping(address => uint256)) public delegations;
@@ -167,7 +164,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
         Stakes storage userStake = _stakes[msg.sender];
         userStake.stakesTimes = block.timestamp + time;
-        userStake.stakes += newAmount;
         userStake.stakesAMOR += amount;
 
         delegation[msg.sender][SENTINEL] = address(0x02);
@@ -193,7 +189,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
         uint256 newAmount = _stake(amount, time);
 
-        userStake.stakes += newAmount;
         _stakes[msg.sender] = userStake;
 
         emit AMORxGuildStakIncreasedToDAMOR(msg.sender, amount, newAmount, time);
@@ -214,14 +209,13 @@ contract dAMORxGuild is ERC20Base, Ownable {
         if (AMORxGuild.balanceOf(address(this)) < unstakeAMORAmount) {
             revert InvalidAmount();
         }
-        uint256 amount = userStake.stakes;
+        uint256 amount = balanceOf(msg.sender);
         if (amount == 0) {
             revert InvalidAmount();
         }
 
         //burn used dAMORxGuild tokens from staker
         _burn(msg.sender, amount);
-        userStake.stakes = 0;
 
         address user = SENTINEL;
         for (uint256 i = 0; i < delegatorsCounter; i++) {
@@ -251,7 +245,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
 
         uint256 alreadyDelegated = amountDelegated[msg.sender];
-        uint256 availableAmount = _stakes[msg.sender].stakes - alreadyDelegated;
+        uint256 availableAmount = balanceOf(msg.sender) - alreadyDelegated;
         if (availableAmount < amount) {
             revert InvalidAmount();
         }
