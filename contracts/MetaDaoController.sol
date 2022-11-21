@@ -118,6 +118,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     /// The guild has 0 funds to claim
     error InvalidClaim();
     error Exists();
+    error UnclaimedDonations();
 
     function init(
         address amor,
@@ -290,18 +291,23 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         emit TokenWhitelisted(_token);
     }
 
-    /// @notice removes guild based on id
+    /// @notice removes guild based on guild controller address
     /// @param  controller the address of the guild controller to remove
     function removeGuild(address controller) external onlyOwner {
         if (guilds[controller] == address(0)) {
             revert InvalidGuild();
         }
+
+        if (donations[controller] > 0) {
+            
+        }
         /// Transfer unclaimed funds to donations
         address endOfList = SENTINEL;
         /// Loop through linked list
         while (whitelist[endOfList] != SENTINEL) {
-            donations[whitelist[endOfList]] += guildFunds[guilds[controller]][whitelist[endOfList]];
-            delete guildFunds[guilds[controller]][whitelist[endOfList]];
+            if (guildFunds[controller][whitelist[endOfList]] > 0) {
+                revert UnclaimedDonations();
+            }
             endOfList = whitelist[endOfList];
         }
 
@@ -312,7 +318,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         guilds[endOfList] = guilds[controller];
         delete guilds[controller];
         unchecked {
-            guildCounter -= 1;
+            guildCounter--;
         }
         emit GuildRemoved(controller, guildCounter);
     }
@@ -329,9 +335,6 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     /// @param  weights an array containing the weighting indexes for different guilds
     /// @return index of the new index in the `Index` array
     function addIndex(bytes[] calldata weights) external returns (uint256) {
-        /// This check becomes redundant
-        /// Using the hash of the array allows a O(1) check if that index exists already
-        //bytes32 hashArray = keccak256(abi.encode(weights));
         indexCounter++;
         _updateIndex(weights, indexCounter);
 
