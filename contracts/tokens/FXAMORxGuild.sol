@@ -111,9 +111,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         controller = initOwner_;
         AMORxGuild = IERC20(AMORxGuild_);
         //  Set the name and symbol
-        name = name_;
-        symbol = symbol_;
-        decimals = 18;
+        _setTokenDetail(_name, _symbol);
 
         _initialized = true;
         emit Initialized(initOwner_, AMORxGuild_);
@@ -238,7 +236,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             amountDelegated[msg.sender] -= amount;
         } else {
             delegations[msg.sender][account] = 0;
-            amountDelegated[msg.sender] = 0;
+            amountDelegated[msg.sender] -= delegations[msg.sender][account];
 
             for (uint256 j = 0; j < delegation[msg.sender].length; j++) {
                 if (delegation[msg.sender][j] == account) {
