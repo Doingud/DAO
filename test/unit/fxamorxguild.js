@@ -174,7 +174,7 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
 
         it('it fails to burn FXAMORxGuild tokens if not an owner', async function () {        
             await expect(FXAMORxGuild.connect(staker).burn(staker.address, TWO_HUNDRED_ETHER)).to.be.revertedWith(
-                'Unauthorized()'
+                'Ownable: caller is not the owner'
             ); 
         });
 

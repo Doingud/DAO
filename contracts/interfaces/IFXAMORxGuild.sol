@@ -11,7 +11,7 @@ pragma solidity 0.8.15;
 interface IFXAMORxGuild {
     /// Events
     /// Emitted once token has been initialized
-    event Initialized(bool success, address owner, address AMORxGuild);
+    event Initialized(address owner, address AMORxGuild);
 
     /// @notice Initializes the IFXAMORxGuild contract
     /// @dev    Sets the token details as well as the required addresses for token logic

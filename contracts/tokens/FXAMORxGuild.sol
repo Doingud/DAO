@@ -6,10 +6,10 @@ pragma solidity 0.8.15;
  * @title  DoinGud: FXAMORxGuild.sol
  * @author Daoism Systems
  * @notice ERC20 implementation for DoinGudDAO
- * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
+ * @custom Security-contact security@daoism.systems
  * @dev Implementation of the FXAMORXGuild token for DoinGud
  *
- *  The contract houses the token logic for FXAMORxGuild.
+ * The contract houses the token logic for FXAMORxGuild.
  *
  * This Token Implementation contract is intended to be referenced by a proxy contract.
  *
@@ -61,18 +61,18 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     mapping(address => address[]) public delegators;
     // list of delegations from one address
     mapping(address => mapping(address => uint256)) public delegations;
+    // those to whom tokens were delegated from a specific address
+    mapping(address => address[]) public delegation;
     // amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
 
     bool private _initialized;
 
-    address public _owner; //GuildController
     address public controller; //contract that has a voting function
 
     IERC20 public AMORxGuild;
 
     /// Events
-    event Initialized(address owner, address AMORxGuild);
     event AMORxGuildStakedToFXAMOR(address to, uint256 amount, uint256 timeOfStake);
     event AMORxGuildWithdrawnFromFXAMOR(address to, uint256 amount, uint256 timeOfWithdraw);
     event FXAMORxGuildUndelegated(address from, address owner, uint256 amount);
@@ -80,14 +80,16 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     event FXAMORxGuildControllerUpdated(address newCollector);
 
     /// Errors
+    /// Contract has been initialized already
     error AlreadyInitialized();
+    /// Access controlled
     error Unauthorized();
+    /// Invalid array provided
     error EmptyArray();
+    /// No delegated tokens
     error NotDelegatedAny();
-
     /// Invalid address. Needed address != address(0)
     error AddressZero();
-
     /// Invalid address to transfer. Needed `to` != msg.sender
     error InvalidSender();
 
@@ -104,20 +106,20 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             revert AlreadyInitialized();
         }
 
-        _transferOwnership(initOwner_);
+        _transferOwnership(initOwner_); //GuildController
 
-        _owner = initOwner_;
         controller = initOwner_;
         AMORxGuild = IERC20(AMORxGuild_);
         //  Set the name and symbol
         name = name_;
         symbol = symbol_;
+        decimals = 18;
 
         _initialized = true;
         emit Initialized(initOwner_, AMORxGuild_);
     }
 
-    function setController(address _controller) external onlyAddress(_owner) {
+    function setController(address _controller) external onlyOwner {
         if (_controller == address(0)) {
             revert AddressZero();
         }
@@ -169,9 +171,22 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     //       to the controller(contract that has a voting function)
     /// @param  account address from which must burn tokens
     /// @param  amount uint256 representing amount of burning tokens
-    function burn(address account, uint256 amount) external onlyAddress(_owner) {
+    function burn(address account, uint256 amount) external onlyOwner {
         if (stakes[account] < amount) {
             revert InvalidAmount();
+        }
+
+        if (delegation[msg.sender].length != 0) {
+            address[] memory accounts = delegation[msg.sender];
+            address accountTo;
+            uint256 delegatedTo;
+            for (uint256 i = 0; i < accounts.length; i++) {
+                accountTo = accounts[i];
+                delegatedTo = delegations[msg.sender][accountTo];
+                delete delegations[msg.sender][accountTo];
+                delete amountDelegated[msg.sender];
+                emit FXAMORxGuildUndelegated(accountTo, msg.sender, delegations[msg.sender][account]);
+            }
         }
         //burn used FXAMORxGuild tokens from staker
         _burn(account, amount);
@@ -196,6 +211,9 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             revert InvalidAmount();
         }
 
+        if (delegations[msg.sender][to] == 0) {
+            delegation[msg.sender].push(to);
+        }
         delegators[to].push(msg.sender);
         delegations[msg.sender][to] += amount;
         amountDelegated[msg.sender] += amount;
@@ -221,6 +239,14 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         } else {
             delegations[msg.sender][account] = 0;
             amountDelegated[msg.sender] = 0;
+
+            for (uint256 j = 0; j < delegation[msg.sender].length; j++) {
+                if (delegation[msg.sender][j] == account) {
+                    delegation[msg.sender][j] = delegation[msg.sender][delegation[msg.sender].length - 1];
+                    delegation[msg.sender].pop();
+                    break;
+                }
+            }
         }
         emit FXAMORxGuildUndelegated(account, msg.sender, amount);
     }
