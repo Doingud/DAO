@@ -6,7 +6,7 @@ pragma solidity 0.8.15;
  * @title  DoinGud: AMORxGuild.sol
  * @author Daoism Systems
  * @notice ERC20 implementation for DoinGudDAO
- * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
+ * @custom Security-contact sexurity@daoism.systems
  * @dev Implementation of the AMORXGuild token for DoinGud
  *
  *  The contract houses the token logic for AMORxGuild.
@@ -67,6 +67,9 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     /// The proxy contract address for AMOR
     IERC20 private tokenAmor;
 
+    /// Tracking the amount of AMOR staked in this contract
+    uint256 public stakedAmor;
+
     /// Tax on staking
     uint16 public stakingTaxRate;
     address public guildController;
@@ -85,7 +88,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     event AmorStaked(address to, uint256 amount, uint256 mintAmount, uint256 timeOfStake);
     event AmorWithdrawed(address to, uint256 amorxguildAmount, uint256 amorReturned, uint256 timeOfWithdraw);
 
-    /// Custom errors
+    /// Errors
     /// Error if the AmorxGuild has already been initialized
     error AlreadyInitialized();
     /// Error if unsufficient token amount for transfer
@@ -136,9 +139,6 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         if (tokenAmor.balanceOf(msg.sender) < amount) {
             revert UnsufficientAmount();
         }
-        //  Must calculate stakedAmor prior to transferFrom()
-        uint256 stakedAmor = tokenAmor.balanceOf(address(this));
-
         //  Must have enough AMOR to stake
         //  Note that this transferFrom() is taxed due to AMOR tax
         tokenAmor.safeTransferFrom(msg.sender, address(this), amount);
@@ -148,6 +148,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         uint256 taxCorrectedAmount = tokenAmor.balanceOf(address(this)) - stakedAmor;
         //  Note there is a tax on staking into AMORxGuild
         uint256 mintAmount = COEFFICIENT * ((taxCorrectedAmount + stakedAmor).sqrtu() - stakedAmor.sqrtu());
+        stakedAmor += taxCorrectedAmount;
         _mint(guildController, (mintAmount * stakingTaxRate) / BASIS_POINTS);
         mintAmount = (mintAmount * (BASIS_POINTS - stakingTaxRate)) / BASIS_POINTS;
         _mint(to, mintAmount);
@@ -169,9 +170,11 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         //  Burn the AMORxGuild of the tx.origin
         _burn(msg.sender, amount);
 
+        currentSupply = tokenAmor.balanceOf(address(this));
         //  Correct for the tax on transfer
         //  Transfer AMOR to the tx.origin, but note: this is taxed!
         tokenAmor.safeTransfer(msg.sender, amorReturned);
+        stakedAmor = stakedAmor - amorReturned;
         emit AmorWithdrawed(msg.sender, amount, amorReturned, block.timestamp);
         //  Return the amount of AMOR returned to the user
         return amorReturned;
