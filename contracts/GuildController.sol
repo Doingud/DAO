@@ -314,12 +314,18 @@ contract GuildController is IGuildController, Ownable {
             revert VotingTimeNotFinished();
         }
 
+        int256[] memory negativeReportsWeight = new int256[](reportsWeight.length);
+        uint256[] memory negativeReportsId = new uint256[](reportsWeight.length);
+        uint256 negativeArrayPointer = 0;
+        int256 passedReportsWeight = 0;
+
         for (uint256 id = 0; id < reportsWeight.length; id++) {
             // If report has positive voting weight (positive FX tokens) then report is accepted
             int256 fiftyPercent = (reportsWeight[id] * 50) / 100;
             address[] memory people = voters[id];
 
             if (reportsVoting[id] > 0) {
+                passedReportsWeight += reportsWeight[id];
                 // If report has positive voting weight, then funds go 50-50%,
                 // 50% go to the report creater,
                 ERC20AMORxGuild.safeTransfer(reportsAuthors[id], uint256(fiftyPercent));
@@ -329,38 +335,53 @@ contract GuildController is IGuildController, Ownable {
                     // if voted positively
                     if (votes[id][people[i]] > 0) {
                         // 50% * user weigth / all 100%
-                        int256 amountToSendVoter = (int256(fiftyPercent) * votes[id][people[i]]) / reportsWeight[id];
+                        int256 amountToSendVoter = (fiftyPercent * votes[id][people[i]]) / reportsWeight[id];
                         ERC20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
                     }
                     delete votes[id][people[i]];
                 }
-            } else {
-                // If report has negative voting weight, then
-                // 50% goes to the people who voted negatively,
-                for (uint256 i = 0; i < voters[id].length; i++) {
-                    // if voted negatively
-                    if (votes[id][people[i]] < 0) {
-                        // allAmountToDistribute(50%) * user weigth in % / all 100%
-                        int256 absVotes = abs(votes[id][people[i]]);
-                        int256 amountToSendVoter = (fiftyPercent * absVotes) / reportsWeight[id];
-                        ERC20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
-                    }
-                    delete votes[id][people[i]];
-                }
-                // and 50% gets redistributed between the passed reports based on their weights
-                for (uint256 i = 0; i < reportsWeight.length; i++) {
-                    // passed reports
-                    if (reportsVoting[i] > 0) {
-                        // allAmountToDistribute(50%) * report weigth in % / all 100%
-                        int256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / int256(totalReportsWeight);
-                        ERC20AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
-                    }
-                }
-            }
 
-            delete voters[id];
+                delete voters[id];
+            } else {
+                // add to array to track
+                negativeReportsWeight[negativeArrayPointer] = reportsWeight[id];
+                negativeReportsId[negativeArrayPointer] = id;
+                negativeArrayPointer += 1;
+            }
         }
 
+    if (passedReportsWeight == 0) {
+        // if there are no passed proposals at this round
+        savedFunds = 
+    } else {
+        for (uint256 id = 0; id < negativeArrayPointer; id++) {
+            int256 fiftyPercent = (negativeReportsWeight[id] * 50) / 100;
+            address[] memory people = voters[negativeReportsId[id]];
+    
+            // If report has negative voting weight, then
+            // 50% goes to the people who voted negatively,
+            for (uint256 i = 0; i < voters[negativeReportsId[id]].length; i++) {
+                // if voted negatively
+                if (votes[negativeReportsId[id]][people[i]] < 0) {
+                    // allAmountToDistribute(50%) * user weigth in % / all 100%
+                    int256 absVotes = abs(votes[negativeReportsId[id]][people[i]]);
+                    int256 amountToSendVoter = (fiftyPercent * absVotes) / negativeReportsWeight[id];
+                    ERC20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
+                }
+                delete votes[negativeReportsId[id]][people[i]];
+            }
+            // and 50% gets redistributed between the passed reports based on their weights
+            for (uint256 i = 0; i < negativeReportsWeight.length; i++) {
+                // passed reports
+                if (reportsVoting[i] > 0) {
+                    // allAmountToDistribute(50%) * report weigth in % / all 100%
+                    int256 amountToSendReport = (fiftyPercent * negativeReportsWeight[i]) / passedReportsWeight;
+                    ERC20AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
+                }
+            }
+            delete voters[id];
+        }
+    }
         for (uint256 i = 0; i < reportsWeight.length; i++) {
             delete reportsAuthors[i];
         }
