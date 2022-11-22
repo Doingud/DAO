@@ -8,8 +8,6 @@
  */
 pragma solidity 0.8.15;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
 interface IFXAMORxGuild {
     /// Events
     /// Emitted once token has been initialized
@@ -24,7 +22,7 @@ interface IFXAMORxGuild {
         string memory name,
         string memory symbol,
         address initOwner,
-        IERC20 AMORxGuild
+        address AMORxGuild
     ) external;
 
     /// @notice Stake AMORxGuild and receive FXAMORxGuild in return

@@ -44,36 +44,24 @@ pragma solidity 0.8.15;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-/// Custom contracts
 import "../utils/ERC20Base.sol";
 
 contract dAMORxGuild is ERC20Base, Ownable {
     using SafeERC20 for IERC20;
 
-    struct Stakes {
-        uint256 stakesTimes; // time staked for
-        uint256 stakesAMOR; //all staker balance in AMORxGuild
-    }
-    mapping(address => Stakes) public _stakes;
-
+    // staker => time staked for
+    mapping(address => uint256) public stakesTimes;
+    // staker => all staker balance in dAMORxGuild
+    mapping(address => uint256) public stakes;
+    // staker => all staker balance in AMORxGuild
+    mapping(address => uint256) public stakesAMOR;
+    // those who delegated to a specific address
+    mapping(address => address[]) public delegators;
     // staker => delegated to (many accounts) => amount
     // list of delegations from one address
     mapping(address => mapping(address => uint256)) public delegations;
-
-    /// Address mapping to keep track of the SENTINEL owner
-    /// Initialized as `SENTINEL`, updated in `delegate`, `undelegate`, `undelegateAll`
-    /// Linked list of all the delegation-s
     // those to whom tokens were delegated from a specific address
-    mapping(address => mapping(address => address)) public delegation;
-
-    struct DelegatorsList {
-        address prev;
-        address next;
-    }
-    // those who delegated to a specific address
-    mapping(address => mapping(address => DelegatorsList)) public delegators;
-    uint256 public delegatorsCounter;
-
+    mapping(address => address[]) public delegation;
     // amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
 
@@ -89,7 +77,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
     uint256 public constant TIME_DENOMINATOR = 1_000_000_000_000_000_000; // 1 ether
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     uint256 public constant MIN_LOCK_TIME = 7 days; // 1 week is the time for the new deposided tokens to be locked until they can be withdrawn
-    address public constant SENTINEL = address(0x1);
 
     IERC20 private AMORxGuild;
 
@@ -103,7 +90,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
     error InvalidSender();
     error TimeTooSmall();
     error TimeTooBig();
-    error InvalidParameters();
 
     /*  @dev    The init() function takes the place of the constructor.
      *          It can only be run once.
@@ -139,10 +125,11 @@ contract dAMORxGuild is ERC20Base, Ownable {
         return newAmount;
     }
 
+    //  receives ERC20 AMORxGuild tokens, which are getting locked
+    //  and generate dAMORxGuild tokens in return.
+    //  Tokens are minted following the formula
+
     /// @notice Stakes AMORxGuild and receive dAMORxGuild in return
-    ///  receives ERC20 AMORxGuild tokens, which are getting locked
-    ///  and generate dAMORxGuild tokens in return.
-    ///  Tokens are minted following the formula
     /// @dev    Front end must still call approve() on AMORxGuild token to allow transferFrom()
     /// @param  amount uint256 amount of dAMOR to be staked
     /// @param  time uint256
@@ -162,12 +149,10 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
         uint256 newAmount = _stake(amount, time);
 
-        Stakes storage userStake = _stakes[msg.sender];
-        userStake.stakesTimes = block.timestamp + time;
-        userStake.stakesAMOR += amount;
-
-        delegation[msg.sender][SENTINEL] = address(0x02);
-        emit AMORxGuildStakedToDAMOR(msg.sender, amount, newAmount, userStake.stakesTimes);
+        stakesTimes[msg.sender] = block.timestamp + time;
+        stakes[msg.sender] += newAmount;
+        stakesAMOR[msg.sender] += amount;
+        emit AMORxGuildStakedToDAMOR(msg.sender, amount, newAmount, stakesTimes[msg.sender]);
         return newAmount;
     }
 
@@ -181,15 +166,13 @@ contract dAMORxGuild is ERC20Base, Ownable {
         // send to AMORxGuild contract to stake
         AMORxGuild.safeTransferFrom(msg.sender, address(this), amount);
 
-        Stakes storage userStake = _stakes[msg.sender];
-
         // mint AMORxGuild tokens to staker
         // msg.sender receives funds, based on the amount of time remaining until the end of his stake
-        uint256 time = userStake.stakesTimes - block.timestamp;
+        uint256 time = stakesTimes[msg.sender] - block.timestamp;
 
         uint256 newAmount = _stake(amount, time);
 
-        _stakes[msg.sender] = userStake;
+        stakes[msg.sender] += newAmount;
 
         emit AMORxGuildStakIncreasedToDAMOR(msg.sender, amount, newAmount, time);
         return newAmount;
@@ -199,39 +182,35 @@ contract dAMORxGuild is ERC20Base, Ownable {
     /// @dev When this tokens are burned, staked AMORxGuild is being transfered
     ///      to the controller(contract that has a voting function)
     function withdraw() external returns (uint256) {
-        Stakes storage userStake = _stakes[msg.sender];
-
-        if (block.timestamp < userStake.stakesTimes) {
+        if (block.timestamp < stakesTimes[msg.sender]) {
             revert TimeTooSmall();
         }
 
-        uint256 unstakeAMORAmount = userStake.stakesAMOR;
+        uint256 unstakeAMORAmount = stakesAMOR[msg.sender];
         if (AMORxGuild.balanceOf(address(this)) < unstakeAMORAmount) {
             revert InvalidAmount();
         }
-        uint256 amount = balanceOf(msg.sender);
-        if (amount == 0) {
+        uint256 amount = stakes[msg.sender];
+        if (amount <= 0) {
             revert InvalidAmount();
         }
 
         //burn used dAMORxGuild tokens from staker
         _burn(msg.sender, amount);
+        stakes[msg.sender] = 0;
 
-        address user = SENTINEL;
-        for (uint256 i = 0; i < delegatorsCounter; i++) {
-            delete delegations[msg.sender][user];
-            user = delegators[msg.sender][user].prev;
+        address[] memory people = delegators[msg.sender];
+        for (uint256 i = 0; i < people.length; i++) {
+            delete delegations[msg.sender][people[i]];
         }
         amountDelegated[msg.sender] = 0;
 
         AMORxGuild.safeTransfer(msg.sender, unstakeAMORAmount);
-        userStake.stakesAMOR = 0;
+        stakesAMOR[msg.sender] = 0;
 
-        if (delegation[msg.sender][SENTINEL] != address(0x02)) {
+        if (delegation[msg.sender].length != 0) {
             undelegateAll();
         }
-
-        _stakes[msg.sender] = userStake;
         emit AMORxGuildWithdrawnFromDAMOR(msg.sender, amount, unstakeAMORAmount);
         return amount;
     }
@@ -245,26 +224,16 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
 
         uint256 alreadyDelegated = amountDelegated[msg.sender];
-        uint256 availableAmount = balanceOf(msg.sender) - alreadyDelegated;
+        uint256 availableAmount = stakes[msg.sender] - alreadyDelegated;
         if (availableAmount < amount) {
             revert InvalidAmount();
         }
 
-        // initialize for the first time
-        if (delegators[to][SENTINEL].prev == address(0x00)) {
-            delegators[to][SENTINEL].prev = address(0x02);
-        }
-
         if (delegations[msg.sender][to] == 0) {
-            delegation[msg.sender][to] = delegation[msg.sender][SENTINEL];
-            delegation[msg.sender][SENTINEL] = to;
-
-            delegators[to][msg.sender].prev = delegators[to][SENTINEL].prev;
-            delegators[to][msg.sender].next = SENTINEL;
-
-            delegators[to][SENTINEL].prev = msg.sender;
-            delegatorsCounter++;
+            delegation[msg.sender].push(to);
+            delegators[to].push(msg.sender);
         }
+
         delegations[msg.sender][to] += amount;
         amountDelegated[msg.sender] += amount;
         emit dAMORxGuildDelegated(to, msg.sender, amount);
@@ -273,11 +242,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     /// @notice Undelegate your dAMORxGuild to the address `account`
     /// @param  account address from which delegating will be taken away
     /// @param  amount uint256 representing amount of undelegating tokens
-    function undelegate(
-        address prevAccount,
-        address account,
-        uint256 amount
-    ) public {
+    function undelegate(address account, uint256 amount) public {
         if (account == msg.sender) {
             revert InvalidSender();
         }
@@ -285,10 +250,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
         //Nothing to undelegate
         if (delegations[msg.sender][account] == 0) {
             revert NotDelegatedAny();
-        }
-
-        if (delegation[msg.sender][prevAccount] != account) {
-            revert InvalidParameters();
         }
 
         if (delegations[msg.sender][account] >= amount) {
@@ -299,50 +260,54 @@ contract dAMORxGuild is ERC20Base, Ownable {
             amountDelegated[msg.sender] -= amount;
             delete delegations[msg.sender][account];
 
-            delegation[msg.sender][prevAccount] = delegation[msg.sender][account];
-            delegation[msg.sender][account] = address(0);
+            for (uint256 j = 0; j < delegation[msg.sender].length; j++) {
+                if (delegation[msg.sender][j] == account) {
+                    delegation[msg.sender][j] = delegation[msg.sender][delegation[msg.sender].length - 1];
+                    delegation[msg.sender].pop();
+                    break;
+                }
+            }
 
-            delegators[account][delegators[account][msg.sender].next].prev = delegators[account][msg.sender].prev;
-            delegators[account][delegators[account][msg.sender].prev].next = delegators[account][msg.sender].next;
-
-            delete delegators[account][msg.sender];
+            for (uint256 i = 0; i < delegators[account].length; i++) {
+                if (delegators[account][i] == msg.sender) {
+                    delegators[account][i] = delegators[account][delegators[account].length - 1];
+                    delegators[account].pop();
+                    break;
+                }
+            }
         }
         emit dAMORxGuildUndelegated(account, msg.sender, amount);
     }
 
     /// @notice Undelegate all your dAMORxGuild
     function undelegateAll() public {
-        if (delegation[msg.sender][SENTINEL] == address(0x02)) {
+        address[] memory accounts = delegation[msg.sender];
+
+        //Nothing to undelegate
+        if (accounts.length == 0) {
             revert NotDelegatedAny();
         }
 
         address account;
         uint256 delegatedTo;
-
-        address currentDelegation = delegation[msg.sender][SENTINEL];
-        while (currentDelegation != address(0x0) && currentDelegation != SENTINEL) {
-            account = delegation[msg.sender][SENTINEL];
+        for (uint256 i = 0; i < accounts.length; i++) {
+            account = accounts[i];
             delegatedTo = delegations[msg.sender][account];
             delete delegations[msg.sender][account];
-
-            currentDelegation = delegation[msg.sender][account];
-            delegation[msg.sender][SENTINEL] = delegation[msg.sender][account];
-            delegation[msg.sender][account] = address(0);
-            if (currentDelegation == address(0x0)) {
-                delegation[msg.sender][SENTINEL] = address(0x02);
-            }
-
             emit dAMORxGuildUndelegated(account, msg.sender, delegations[msg.sender][account]);
 
-            delegators[account][delegators[account][msg.sender].next].prev = delegators[account][msg.sender].prev;
-            delegators[account][delegators[account][msg.sender].prev].next = delegators[account][msg.sender].next;
-
-            delete delegators[account][msg.sender];
-            delete delegators[msg.sender][account];
+            // clear msg.sender delegation from list of delegators to `account` address
+            for (uint256 j = 0; j < delegators[account].length; j++) {
+                if (delegators[account][j] == msg.sender) {
+                    delegators[account][j] = delegators[account][delegators[account].length - 1];
+                    delegators[account].pop();
+                    break;
+                }
+            }
         }
 
-        delegators[msg.sender][SENTINEL].prev == address(0x00);
-
+        delete delegation[msg.sender];
+        delete delegators[msg.sender];
         delete amountDelegated[msg.sender];
     }
 

@@ -39,7 +39,6 @@ pragma solidity 0.8.15;
 import "@openzeppelin/contracts/access/Ownable.sol";
 /// Interfaces
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-/// Custom contracts
 import "./interfaces/IdAMORxGuild.sol";
 
 contract Vesting is Ownable {
@@ -84,9 +83,10 @@ contract Vesting is Ownable {
     /// The tokens haven't vested with the beneficiary yet (cliff not yet reached)
     error NotVested();
 
-    constructor(address metaDao, IERC20 amor) {
+    constructor(address metaDao, address amor) {
         transferOwnership(metaDao);
-        amorToken = amor;
+        amorToken = IERC20(amor);
+        SENTINELOwner = address(0);
         beneficiaries[SENTINELOwner] = SENTINEL;
     }
 

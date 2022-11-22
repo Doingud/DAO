@@ -430,6 +430,12 @@ describe('unit - Contract: GuildController', function () {
 
     context('» claim testing', () => {
 
+        it('it fails to claim if not the owner', async function () {
+            await expect(controller.connect(user).claim(user2.address, [AMORxGuild.address])).to.be.revertedWith(
+                'Unauthorized()'
+            );
+        });
+
         it('it claims tokens', async function () {
             const balanceBefore = await AMORxGuild.balanceOf(impactMaker.address);
             expect(balanceBefore).to.equal(0);
