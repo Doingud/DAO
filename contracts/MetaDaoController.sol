@@ -135,8 +135,8 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         sentinelWhitelist = amor;
         whitelist[sentinelWhitelist] = SENTINEL;
         whitelist[SENTINEL] = amor;
-        /// Setup the fee index
-        //indexHashes.push(FEES_INDEX);
+        /// Setup the fee index owner
+        /// The `Fee Index` is the default index maintained by DoinGud
         Index storage index = indexes[indexCounter];
         index.creator = avatar;
         /// Setup guilds linked list
@@ -240,8 +240,8 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         emit FeesClaimed(guild, guildFees[guild]);
     }
 
-    /// @notice use this funtion to create a new guild via the guild factory
-    /// @dev    only admin can all this funtion
+    /// @notice Create a new guild via the guild factory
+    /// @dev    Only callable by AvatarxMetaDAO
     /// @dev    NB: this function does not check that a guild `name` & `symbol` is unique
     /// @param  realityModule address that will control the functions of the guild
     /// @param  initialGuardian the user responsible for the initial Guardian actions
@@ -269,6 +269,8 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     }
 
     /// @notice Adds an external guild to the registry
+    /// @dev    External Guilds can also be independently created through calls to the GuildFactory
+    ///         But to participate in the DoinGud ecosystem need to be approved and added by MetaDAO
     /// @param  guildAddress the address of the external guild's controller
     function addExternalGuild(address guildAddress) external onlyOwner {
         /// Add check that guild address hasn't been added yet here
