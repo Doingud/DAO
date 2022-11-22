@@ -47,6 +47,10 @@ interface IAvatarxGuild {
     /// @return bool was the init call successfull
     function init(address initOwner, address governorAddress_) external returns (bool);
 
+    /// @notice Changes Governor address
+    /// @param newGovernor Address of the new Governor
+    function setGovernor(address newGovernor) external;
+
     /// @dev Enables a module on the avatar.
     /// @notice Can only be called by the avatar.
     /// @notice Modules should be stored as a linked list.
