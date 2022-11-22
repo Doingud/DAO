@@ -407,7 +407,11 @@ contract GuildController is IGuildController, Ownable {
         endTime = (endTime / DAY) * DAY;
         endTime += 12 * HOUR;
 
-        for (uint256 i = 0; i < reportsQueue.length; i++) {
+        uint256 length = 100;
+        if (reportsQueue.length < length) {
+            length = reportsQueue.length;
+        }
+        for (uint256 i = 0; i < length; i++) {
             reportsAuthors[i] = queueReportsAuthors[i];
             reportsWeight.push(0);
             reportsVoting.push(0);
@@ -416,18 +420,51 @@ contract GuildController is IGuildController, Ownable {
 
         timeVoting = endTime;
         trigger = true;
-        delete reportsQueue;
+
+        //  delete the reportsQueue only if it is empty
+        if (reportsQueue.length < 100) {
+            delete reportsQueue;
+        } else {
+            uint256[] storage tempReportsQueue = reportsQueue;
+            delete reportsQueue;
+            for (uint256 i = length; i < tempReportsQueue.length; i++) {
+                reportsQueue.push(tempReportsQueue[i]);
+            }
+        }
     }
 
     /// @notice removes impact makers, resets mapping and array, and creates new array, mapping, and sets weights
     /// @param arrImpactMakers The array of impact makers
     /// @param arrWeight The array of weights of impact makers
     function setImpactMakers(address[] memory arrImpactMakers, uint256[] memory arrWeight) external onlyOwner {
-        delete impactMakers;
-        for (uint256 i = 0; i < arrImpactMakers.length; i++) {
-            impactMakers.push(arrImpactMakers[i]);
-            weights[arrImpactMakers[i]] = arrWeight[i];
-            totalWeight += arrWeight[i];
+        totalWeight = 0;
+
+        if (arrImpactMakers.length > impactMakers.length) {
+            for (uint256 i = 0; i < impactMakers.length; i++) {
+                weights[impactMakers[i]] = 0;
+
+                impactMakers[i] = arrImpactMakers[i];
+                weights[impactMakers[i]] = arrWeight[i];
+                totalWeight += arrWeight[i];
+            }
+            for (uint256 i = impactMakers.length; i < arrImpactMakers.length; i++) {
+                impactMakers.push(arrImpactMakers[i]);
+                weights[impactMakers[i]] = arrWeight[i];
+                totalWeight += arrWeight[i];
+            }
+        } else {
+            address[] storage tempOldImpactMakers = impactMakers;
+            delete impactMakers;
+            for (uint256 i = 0; i < arrImpactMakers.length; i++) {
+                weights[tempOldImpactMakers[i]] = 0;
+
+                impactMakers[i] = arrImpactMakers[i];
+                weights[impactMakers[i]] = arrWeight[i];
+                totalWeight += arrWeight[i];
+            }
+            for (uint256 i = arrImpactMakers.length; i < impactMakers.length; i++) {
+                weights[tempOldImpactMakers[i]] = 0;
+            }
         }
         emit ImpactMakersSet(arrImpactMakers, arrWeight);
     }
