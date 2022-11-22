@@ -44,21 +44,23 @@ import "./interfaces/IMetaDaoController.sol";
 contract MetaDaoController is IMetaDaoController, Ownable {
     using SafeERC20 for IERC20;
     /// Guild-related variables
+    /// `guilds` contains all Guild Controller addresses
     mapping(address => address) public guilds;
     address public sentinelGuilds;
+    /// Counter to keep track of number of guilds
     uint32 public guildCounter;
+
+    /// Donation- and fee-related variables
+    /// Tracking the amount of tokens each guild has available to claim
     /// Mapping of guild --> token --> amount
     mapping(address => mapping(address => uint256)) public guildFunds;
-    /// The Avatar associated with a guildController
-    /// The fees distributed will go the AvatarxGuild
-    mapping(address => address) public guildAvatar;
     /// Keeping track of the AMOR fees apportioned to each guild
     mapping(address => uint256) public guildFees;
 
-    /// Donations variables
+    /// Mapping of tokens to amount donated
     mapping(address => uint256) public donations;
 
-    /// Token related variables
+    /// Donatable token related variables
     mapping(address => address) public whitelist;
     address public constant SENTINEL = address(0x01);
     address public sentinelWhitelist;
@@ -70,7 +72,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     IERC20 public amorToken;
 
     /// Indexes
-    /// Create the Index object
+    /// Index Struct
     struct Index {
         address creator;
         uint256 indexDenominator;
@@ -79,25 +81,24 @@ contract MetaDaoController is IMetaDaoController, Ownable {
 
     /// Create an array to hold the different indexes
     mapping(uint256 => Index) public indexes;
+    /// Counter to track number of indexes created
     uint256 public indexCounter;
-    //bytes32[] public indexHashes;
-    //bytes32 public constant FEES_INDEX = keccak256("FEES_INDEX");
 
     /// Events
     event GuildCreated(
         address realityModule,
-        address initialGuardian,
-        string name,
+        address indexed initialGuardian,
+        string indexed name,
         string tokenSymbol,
-        address guildController,
+        address indexed guildController,
         uint256 guildCounter
     );
-    event GuildAdded(address guildController, uint256 guildCounter);
-    event GuildRemoved(address guildController, uint256 guildCounter);
-    event TokenWhitelisted(address token);
-    event DonatedToIndex(uint256 amount, address token, uint256 index, address sender);
-    event FeesClaimed(address guild, uint256 guildFees);
-    event FeesDistributed(address guild, uint256 guildFees);
+    event GuildAdded(address  indexed guildController, uint256 guildCounter);
+    event GuildRemoved(address indexed guildController, uint256 guildCounter);
+    event TokenWhitelisted(address indexed token);
+    event DonatedToIndex(uint256 indexed amount, address indexed token, uint256 index, address indexed sender);
+    event FeesClaimed(address indexed guild, uint256 indexed guildFees);
+    event FeesDistributed(address indexed guild, uint256 indexed guildFees);
     event IndexAdded(uint256 indexed index, address indexed owner);
     event IndexUpdated(uint256 indexed index, address indexed owner);
 
@@ -117,7 +118,9 @@ contract MetaDaoController is IMetaDaoController, Ownable {
     error NoIndex();
     /// The guild has 0 funds to claim
     error InvalidClaim();
+    /// The guild already exists
     error Exists();
+    /// The guild has unclaimed donations and can't be removed
     error UnclaimedDonations();
 
     function init(
