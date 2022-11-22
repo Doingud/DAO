@@ -8,7 +8,8 @@ pragma solidity 0.8.15;
  * @custom:security-contact security@daoism.systems
  * @dev     IGovernor IERC165 Pattern
  *
- * Governor contract will allow to Guardians to add and vote for the proposals
+ * Governor for Guilds, allowing Guardians to vote for and execute proposals.
+ * It is intended to be used in conjunction with the DoinGud `AvatarxGuild`
  *
  * MIT License
  * ===========
@@ -186,6 +187,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
             guardians[_getGuardianKey(arrGuardians[i])] = true;
             guardiansCounter++;
+            }
         }
 
         emit GuardiansSet(arrGuardians);
