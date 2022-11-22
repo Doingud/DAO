@@ -93,7 +93,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         address indexed guildController,
         uint256 guildCounter
     );
-    event GuildAdded(address  indexed guildController, uint256 guildCounter);
+    event GuildAdded(address indexed guildController, uint256 guildCounter);
     event GuildRemoved(address indexed guildController, uint256 guildCounter);
     event TokenWhitelisted(address indexed token);
     event DonatedToIndex(uint256 indexed amount, address indexed token, uint256 index, address indexed sender);
