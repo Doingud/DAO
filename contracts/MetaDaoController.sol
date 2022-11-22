@@ -298,9 +298,6 @@ contract MetaDaoController is IMetaDaoController, Ownable {
             revert InvalidGuild();
         }
 
-        if (donations[controller] > 0) {
-
-        }
         /// Transfer unclaimed funds to donations
         address endOfList = SENTINEL;
         /// Loop through linked list
