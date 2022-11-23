@@ -37,7 +37,6 @@ contract GuildController is IGuildController, Ownable {
     IFXAMORxGuild private FXGFXAMORxGuild;
     address public AMOR;
     address public AMORxGuild;
-    address public dAMORxGuild;
     address public FXAMORxGuild;
     address public MetaDaoController;
 
@@ -198,6 +197,7 @@ contract GuildController is IGuildController, Ownable {
         } else {
             // if token != AMORxGuild && token != AMOR
             amount = 0; // for second part, decAmount, to be 100%
+            amorxguildAmount = 0;
         }
 
         if (token == AMORxGuild || token == AMOR) {
