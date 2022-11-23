@@ -95,6 +95,32 @@ describe('unit - Contract: GuildController', function () {
         });
 
         it('it sets ImpactMakers', async function () {
+            weigths = [887, 44, 234];
+            await controller.connect(root).setImpactMakers(impactMakers, weigths);
+            expect(await controller.impactMakers(0)).to.equals(staker.address);
+            expect(await controller.impactMakers(1)).to.equals(operator.address);
+            expect(await controller.impactMakers(2)).to.equals(impactMaker.address);
+            expect(await controller.weights(staker.address)).to.equals(887);
+            expect(await controller.weights(operator.address)).to.equals(44);
+            expect(await controller.weights(impactMaker.address)).to.equals(234);
+            expect(await controller.totalWeight()).to.equals(1165);
+        });
+
+        it('it resets ImpactMakers if new array < old array', async function () {
+            tempImpactMakers = [operator.address, staker.address];
+            weigths = [60, 50];
+            await controller.connect(root).setImpactMakers(tempImpactMakers, weigths);
+            expect(await controller.impactMakers(0)).to.equals(operator.address);
+            expect(await controller.impactMakers(1)).to.equals(staker.address);
+
+            expect(await controller.weights(operator.address)).to.equals(60);
+            expect(await controller.weights(staker.address)).to.equals(50);
+            expect(await controller.weights(impactMaker.address)).to.equals(0);
+            expect(await controller.totalWeight()).to.equals(110);
+        });
+
+        it('it resets ImpactMakers if new array > old array', async function () {
+            weigths = [20, 34, 923];
             await controller.connect(root).setImpactMakers(impactMakers, weigths);
             expect(await controller.impactMakers(0)).to.equals(staker.address);
             expect(await controller.impactMakers(1)).to.equals(operator.address);
@@ -102,6 +128,7 @@ describe('unit - Contract: GuildController', function () {
             expect(await controller.weights(staker.address)).to.equals(20);
             expect(await controller.weights(operator.address)).to.equals(34);
             expect(await controller.weights(impactMaker.address)).to.equals(923);
+            expect(await controller.totalWeight()).to.equals(977);
         });
     });
 
@@ -548,7 +575,7 @@ describe('unit - Contract: GuildController', function () {
             let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
             await AMORxGuild.connect(operator).stakeAmor(operator.address, nextAMORDeducted);
             await AMORxGuild.connect(operator).approve(controller.address, nextAMORDeducted);
-            await controller.connect(operator).donate(TEST_TRANSFER_SMALLER, AMORxGuild.address);        
+            await controller.connect(operator).donate(TEST_TRANSFER_SMALLER * 10, AMORxGuild.address);        
 
             const id = 0;
             const amount = 2;
@@ -618,7 +645,7 @@ describe('unit - Contract: GuildController', function () {
             const balanceBefore = await AMORxGuild.balanceOf(operator.address);
             time.increase(twoWeeks);
             await controller.connect(operator).finalizeVoting();
-            const balanceAfter = balanceBefore.add(2);
+            const balanceAfter = balanceBefore.add(3);
             expect((await AMORxGuild.balanceOf(operator.address)).toString()).to.equal(balanceAfter.toString());
         });
 
@@ -650,7 +677,7 @@ describe('unit - Contract: GuildController', function () {
             );
         });
 
-        it('it starts reports voting if finalizeVoting wasn not called', async function () {
+        it('it starts reports voting if finalizeVoting was not called', async function () {
             const timestamp = Date.now();
 
             // building hash has to come from system address
@@ -720,6 +747,83 @@ describe('unit - Contract: GuildController', function () {
             time.increase(time.duration.days(5));
             await controller.connect(authorizer_adaptor).startVoting();
             expect((await controller.reportsAuthors(9))).to.equal(user.address);
+        });
+
+        it('savedFunds usage', async function () {
+            await AMOR.connect(root).transfer(controller.address, TEST_TRANSFER);
+            await AMOR.connect(root).transfer(user.address, TEST_TRANSFER);
+            await AMOR.connect(user).approve(AMORxGuild.address, TEST_TRANSFER);
+            let AMORDeducted = ethers.BigNumber.from((TEST_TRANSFER*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
+            let nextAMORDeducted =  ethers.BigNumber.from((AMORDeducted*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
+            await AMORxGuild.connect(user).stakeAmor(user.address, nextAMORDeducted);
+            await AMORxGuild.connect(user).approve(controller.address, nextAMORDeducted);
+            await controller.connect(user).donate(TEST_TRANSFER_SMALLER * 10, AMORxGuild.address);        
+
+            let id = 9;
+            let amount = 9;
+            let sign = false;
+            await controller.connect(operator).voteForReport(id, amount, sign);
+            await controller.connect(user).voteForReport(id, 8, true);
+
+            id = 8;
+            await controller.connect(operator).voteForReport(id, amount, sign);
+            await controller.connect(user).voteForReport(id, 8, true);
+
+            id = 7;
+            await controller.connect(operator).voteForReport(id, amount, sign);
+            await controller.connect(user).voteForReport(id, 8, true);
+
+            let balanceBefore = await AMORxGuild.balanceOf(user.address);
+            time.increase(twoWeeks);
+            await controller.connect(operator).finalizeVoting();
+            // check that none was distributed
+            expect((await AMORxGuild.balanceOf(user.address)).toString()).to.equal(balanceBefore.toString());
+
+            const timestamp = Date.now();
+            let messageHash1 = ethers.utils.solidityKeccak256(
+                ["address", "uint", "string"],
+                [user2.address, timestamp, "next report info"]
+            );
+            let messageHashBinary1 = ethers.utils.arrayify(messageHash1);
+            let signature1 = await user2.signMessage(messageHashBinary1);
+            let r1 = signature1.slice(0, 66);
+            let s1 = "0x" + signature1.slice(66, 130);
+            let v1 = parseInt(signature1.slice(130, 132), 16);
+            let report1 = messageHash1;
+
+            await controller.connect(user).addReport(report, v, r, s); // 0
+            await controller.connect(user).addReport(report, v, r, s); // 1
+            await controller.connect(user).addReport(report, v, r, s); // 2
+            await controller.connect(user).addReport(report, v, r, s); // 3
+            await controller.connect(user).addReport(report, v, r, s); // 4
+            await controller.connect(user).addReport(report, v, r, s); // 5
+            await controller.connect(user).addReport(report, v, r, s); // 6
+            await controller.connect(user).addReport(report, v, r, s); // 7
+            await controller.connect(user2).addReport(report1, v1, r1, s1); // 8
+            await controller.connect(user).addReport(report, v, r, s); // 9
+
+            // test another else-path in SUNDAY-CHECK
+            time.increase(time.duration.days(5));
+            await controller.connect(authorizer_adaptor).startVoting();
+
+            id = 8;
+            amount = 12;
+            sign = true;
+            await controller.connect(operator).voteForReport(id, amount, sign);
+            await controller.connect(user).voteForReport(id, amount, sign);
+
+            id = 6;
+            sign = false;
+            await controller.connect(operator).voteForReport(id, amount, sign);
+            await controller.connect(user).voteForReport(id, 2, true);
+
+            time.increase(twoWeeks);
+            balanceBefore = await AMORxGuild.balanceOf(user2.address);
+
+            await controller.connect(operator).finalizeVoting();
+
+            const balanceAfter = balanceBefore.add(43);
+            expect((await AMORxGuild.balanceOf(user2.address)).toString()).to.equal(balanceAfter.toString());           
         });
     });
 
