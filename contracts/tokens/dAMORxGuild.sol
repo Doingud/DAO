@@ -234,10 +234,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     /// @notice Undelegate your dAMORxGuild to the address `account`
     /// @param  account address from which delegating will be taken away
     /// @param  amount uint256 representing amount of undelegating tokens
-    function undelegate(
-        address account,
-        uint256 amount
-    ) public {
+    function undelegate(address account, uint256 amount) public {
         if (account == msg.sender) {
             revert InvalidSender();
         }
@@ -246,7 +243,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
         if (delegations[msg.sender][account] == 0) {
             revert NotDelegatedAny();
         }
-
 
         if (delegations[msg.sender][account] > amount) {
             delegations[msg.sender][account] -= amount;

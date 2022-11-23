@@ -1,7 +1,12 @@
 const { time } = require("@openzeppelin/test-helpers");
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { FIFTY_ETHER, ONE_HUNDRED_ETHER, TWO_HUNDRED_ETHER, MOCK_GUILD_NAMES, MOCK_GUILD_SYMBOLS, TWO_ADDRESS, ONE_ADDRESS } = require('../helpers/constants.js');
+const { FIFTY_ETHER,
+        ONE_HUNDRED_ETHER,
+        TWO_HUNDRED_ETHER,
+        MOCK_GUILD_NAMES,
+        MOCK_GUILD_SYMBOLS
+    } = require('../helpers/constants.js');
 const init = require('../test-init.js');
 
 // const MIN_LOCK_TIME = 604800; // 1 week
@@ -208,7 +213,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
         });
 
         it('it undelegates dAMORxGuild tokens when undelegated amount < delegated amount', async function () {
-            expect((await dAMORxGuild.delegations(staker.address, operator.address)).toString()).to.equal(realAmount.toString());
+            expect(await dAMORxGuild.delegations(staker.address, operator.address)).to.equal(realAmount);
             expect((await dAMORxGuild.amountDelegated(staker.address)).toString()).to.equal(realAmount.toString());
             expect(await dAMORxGuild.delegatedTo(staker.address, 0)).to.equal(operator.address);
 
@@ -236,11 +241,11 @@ describe('unit - Contract: dAMORxGuild Token', function () {
             expect((await dAMORxGuild.amountDelegated(staker.address)).toString()).to.equal(realAmount.toString());
 
             let delagatedToBefore = await dAMORxGuild.delegatedTo(staker.address, 0);
-
             expect(delagatedToBefore).to.equal(operator.address);
 
-            expect((await dAMORxGuild.amountDelegated(staker.address)).toString()).to.equal("0");
+            await dAMORxGuild.connect(staker).undelegate(operator.address, TWO_HUNDRED_ETHER);
 
+            expect((await dAMORxGuild.amountDelegated(staker.address)).toString()).to.equal("0");
             await expect(dAMORxGuild.delegatedTo(staker.address, 0)).to.be.reverted;
             await expect(dAMORxGuild.delegatedTo(staker.address, 1)).to.be.reverted; 
             expect((await dAMORxGuild.delegations(staker.address, operator.address)).toString()).to.equal("0");
@@ -253,9 +258,6 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
         it('it undelegates all dAMORxGuild tokens', async function () {
             let balanceStaker = await dAMORxGuild.balanceOf(staker.address);
-            //let amountDelegated = await dAMORxGuild.amountDelegated(staker.address);
-            //let stakes = await dAMORxGuild.stakes(staker.address);
-           // console.log("Staker bal: %s; Delegated: %s; Stakes: %s", balanceStaker, amountDelegated, stakes);
             await dAMORxGuild.connect(staker).delegate(operator.address, (balanceStaker/3).toString());
             await dAMORxGuild.connect(staker).delegate(operator2.address, (balanceStaker/3).toString());
 
