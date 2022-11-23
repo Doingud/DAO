@@ -380,17 +380,12 @@ contract GuildController is IGuildController, Ownable {
                 // and 50% gets redistributed between the passed reports based on their weights
                 int256 amountToPositiveReports = savedFunds + fiftyPercent;
                 int256 amountToSendReport;
-                // for (uint256 i = 0; i < reportsWeight.length; i++) {
                 for (uint256 i = 0; i < positiveArrayPointer; i++) {
                     // passed reports
-                    if (reportsVoting[i] > 0) {
-                        // if there were passed proposals at this round then we also distributing saved funds from previous rounds
-                        // (savedFunds + allAmountToDistribute(50%)) * negative report weigth in % / all 100%
-                        // amountToSendReport = (amountToPositiveReports * negativeReportsWeight[i]) / passedReportsWeight;
-                        amountToSendReport = (amountToPositiveReports * negativeReportsWeight[positiveReportsId[i]]) / passedReportsWeight;
-
-                        ERC20AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
-                    }
+                    // if there were passed proposals at this round then we also distributing saved funds from previous rounds
+                    // (savedFunds + allAmountToDistribute(50%)) * negative report weight in % / all 100% of passed reports weights
+                    amountToSendReport = (amountToPositiveReports * negativeReportsWeight[positiveReportsId[i]]) / passedReportsWeight;
+                    ERC20AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
                 }
             }
             delete voters[id];
