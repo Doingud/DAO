@@ -23,6 +23,7 @@ contract GuildController is IGuildController, Ownable {
     int256[] public reportsVoting; // results of the vote for the report with spe
     mapping(uint256 => address) public reportsAuthors;
     uint256 public totalReportsWeight; // total Weight of all of reports
+    int256 public savedFunds;
 
     address[] public impactMakers; // list of impactMakers of this DAO
 
@@ -318,6 +319,8 @@ contract GuildController is IGuildController, Ownable {
         uint256[] memory negativeReportsId = new uint256[](reportsWeight.length);
         uint256 negativeArrayPointer = 0;
         int256 passedReportsWeight = 0;
+        uint256[] memory positiveReportsId = new uint256[](reportsWeight.length);
+        uint256 positiveArrayPointer = 0;
 
         for (uint256 id = 0; id < reportsWeight.length; id++) {
             // If report has positive voting weight (positive FX tokens) then report is accepted
@@ -340,20 +343,18 @@ contract GuildController is IGuildController, Ownable {
                     }
                     delete votes[id][people[i]];
                 }
+                positiveReportsId[positiveArrayPointer] = id;
+                positiveArrayPointer += 1;
 
                 delete voters[id];
             } else {
-                // add to array to track
+                // add to an array to track
                 negativeReportsWeight[negativeArrayPointer] = reportsWeight[id];
                 negativeReportsId[negativeArrayPointer] = id;
                 negativeArrayPointer += 1;
             }
         }
 
-    if (passedReportsWeight == 0) {
-        // if there are no passed proposals at this round
-        savedFunds = 
-    } else {
         for (uint256 id = 0; id < negativeArrayPointer; id++) {
             int256 fiftyPercent = (negativeReportsWeight[id] * 50) / 100;
             address[] memory people = voters[negativeReportsId[id]];
@@ -370,18 +371,36 @@ contract GuildController is IGuildController, Ownable {
                 }
                 delete votes[negativeReportsId[id]][people[i]];
             }
-            // and 50% gets redistributed between the passed reports based on their weights
-            for (uint256 i = 0; i < negativeReportsWeight.length; i++) {
-                // passed reports
-                if (reportsVoting[i] > 0) {
-                    // allAmountToDistribute(50%) * report weigth in % / all 100%
-                    int256 amountToSendReport = (fiftyPercent * negativeReportsWeight[i]) / passedReportsWeight;
-                    ERC20AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
+
+            if (passedReportsWeight == 0) {
+                // if there were no passed proposals at this round save amountToSendReport
+                // allAmountToDistribute(50%) * report weigth in % / all 100%
+                savedFunds += fiftyPercent * negativeReportsWeight[id];
+            } else {
+                // and 50% gets redistributed between the passed reports based on their weights
+                int256 amountToPositiveReports = savedFunds + fiftyPercent;
+                int256 amountToSendReport;
+                // for (uint256 i = 0; i < reportsWeight.length; i++) {
+                for (uint256 i = 0; i < positiveArrayPointer; i++) {
+                    // passed reports
+                    if (reportsVoting[i] > 0) {
+                        // if there were passed proposals at this round then we also distributing saved funds from previous rounds
+                        // (savedFunds + allAmountToDistribute(50%)) * negative report weigth in % / all 100%
+                        // amountToSendReport = (amountToPositiveReports * negativeReportsWeight[i]) / passedReportsWeight;
+                        amountToSendReport = (amountToPositiveReports * negativeReportsWeight[positiveReportsId[i]]) / passedReportsWeight;
+
+                        ERC20AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
+                    }
                 }
             }
             delete voters[id];
         }
-    }
+
+        if (passedReportsWeight != 0) {
+            // empty saved funds if they were distributed
+            savedFunds = 0;
+        }
+
         for (uint256 i = 0; i < reportsWeight.length; i++) {
             delete reportsAuthors[i];
         }
