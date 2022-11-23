@@ -204,7 +204,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
         _burn(msg.sender, amount);
 
         AMORxGuild.safeTransfer(msg.sender, unstakeAMORAmount);
-
         emit AMORxGuildWithdrawnFromDAMOR(msg.sender, amount, unstakeAMORAmount);
         return amount;
     }
@@ -217,8 +216,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
             revert InvalidSender();
         }
 
-        //uint256 alreadyDelegated = amountDelegated[msg.sender];
         uint256 availableAmount = balanceOf(msg.sender) - amountDelegated[msg.sender];
+
         if (availableAmount < amount) {
             revert InvalidAmount();
         }
@@ -236,7 +235,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
     /// @param  account address from which delegating will be taken away
     /// @param  amount uint256 representing amount of undelegating tokens
     function undelegate(
-        //address prevAccount,
         address account,
         uint256 amount
     ) public {
@@ -248,6 +246,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         if (delegations[msg.sender][account] == 0) {
             revert NotDelegatedAny();
         }
+
 
         if (delegations[msg.sender][account] > amount) {
             delegations[msg.sender][account] -= amount;
