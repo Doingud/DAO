@@ -118,7 +118,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
     error UnderlyingTransactionReverted();
     error DuplicateAddress();
 
-
     /// @notice This modifier is needed to validate that amount of the Guardians is sufficient to vote and approve the “Many” decision
     modifier GuardianLimitReached() {
         if (guardiansCounter < guardiansLimit) {
