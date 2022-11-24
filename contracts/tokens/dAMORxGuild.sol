@@ -9,7 +9,7 @@ pragma solidity 0.8.15;
  * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
  * @dev Implementation of the dAMORXGuild token for DoinGud
  *
- *  The contract houses the token logic for dAMOR and dAMORxGuild.
+ * The contract houses the token logic for dAMOR and dAMORxGuild.
  *
  * This Token Implementation contract is intended to be referenced by a proxy contract.
  *
@@ -54,26 +54,29 @@ contract dAMORxGuild is ERC20Base, Ownable {
         uint256 stakesTimes; // time staked for
         uint256 stakesAMOR; //all staker balance in AMORxGuild
     }
+
     mapping(address => Stakes) public _stakes;
 
-    // staker => delegated to (many accounts) => amount
-    // list of delegations from one address
+    /// List of delegations from one address
+    /// Staker => delegated to (many accounts) => amount
     mapping(address => mapping(address => uint256)) public delegations;
     /// An array of addresses that have been delegated to by a specified address
     mapping(address => address[]) public delegatedTo;
-    // amount of all delegated tokens from staker
+    /// Amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
     /// Amount of tokens delegated to this address
     mapping(address => uint256) public votingPower;
 
     event Initialized(address owner, address AMORxGuild, uint256 amount);
-    event AMORxGuildStakedToDAMOR(address from, uint256 amount, uint256 mintAmount, uint256 timeStakedFor);
-    event AMORxGuildStakIncreasedToDAMOR(address from, uint256 amount, uint256 mintAmount, uint256 timeStakedFor);
-    event AMORxGuildWithdrawnFromDAMOR(address to, uint256 burnedDAMORxGuild, uint256 returnedAMORxGuild);
-    event dAMORxGuildUndelegated(address from, address owner, uint256 amount);
-    event dAMORxGuildDelegated(address to, address owner, uint256 amount);
+    event AMORxGuildStakedToDAMOR(address from, uint256 indexed amount, uint256 indexed mintAmount, uint256 indexed timeStakedFor);
+    event AMORxGuildStakIncreasedToDAMOR(address from, uint256 indexed amount, uint256 indexed mintAmount, uint256 indexed timeStakedFor);
+    event AMORxGuildWithdrawnFromDAMOR(address to, uint256 indexed burnedDAMORxGuild, uint256 indexed returnedAMORxGuild);
+    event dAMORxGuildUndelegated(address indexed from, address owner, uint256 indexed amount);
+    event dAMORxGuildDelegated(address indexed to, address owner, uint256 indexed amount);
 
     bool private _initialized;
+
+    /// Constants
     uint256 public constant COEFFICIENT = 2;
     uint256 public constant TIME_DENOMINATOR = 1_000_000_000_000_000_000; // 1 ether
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
@@ -82,17 +85,21 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
     IERC20 private AMORxGuild;
 
+    /// Errors
+    /// The contract has already been initialized
     error AlreadyInitialized();
+    /// Caller does not have access
     error Unauthorized();
-    error EmptyArray();
+    /// No tokens to undelegate
     error NotDelegatedAny();
     /// Invalid address. Needed address != address(0)
     error AddressZero();
     /// Invalid address to transfer. Needed `to` != msg.sender
     error InvalidSender();
+    /// Staking time provided is less than minimum
     error TimeTooSmall();
+    /// Staking time provided is larger than maximum
     error TimeTooBig();
-    error InvalidParameters();
 
     /*  @dev    The init() function takes the place of the constructor.
      *          It can only be run once.
@@ -107,20 +114,21 @@ contract dAMORxGuild is ERC20Base, Ownable {
         if (_initialized) {
             revert AlreadyInitialized();
         }
+
         _transferOwnership(initOwner);
 
         AMORxGuild = IERC20(_AMORxGuild);
         _setTokenDetail(_name, _symbol);
-
         _initialized = true;
+
         emit Initialized(initOwner, _AMORxGuild, amount);
         return true;
     }
 
     /// @notice Mint AMORxGuild tokens to staker
-    /// @dev    Tokens are by following formula: NdAMOR =  k * f(t)^2 * nAMOR
-    /// @param  amount uint256 amount of AMORxGuild to be staked
-    /// @param  time uint256 time how long tokens wll be staked
+    /// @dev Tokens are by following formula: NdAMOR =  k * f(t)^2 * nAMOR
+    /// @param amount The amount of AMORxGuild to be staked
+    /// @param time The period of time the tokens wll be staked
     function _stake(uint256 amount, uint256 time) internal returns (uint256) {
         uint256 koef = (time * TIME_DENOMINATOR) / MAX_LOCK_TIME;
         uint256 newAmount = (COEFFICIENT * (koef * koef) * amount) / (TIME_DENOMINATOR * TIME_DENOMINATOR);
@@ -129,24 +137,27 @@ contract dAMORxGuild is ERC20Base, Ownable {
     }
 
     /// @notice Stakes AMORxGuild and receive dAMORxGuild in return
-    ///  receives ERC20 AMORxGuild tokens, which are getting locked
-    ///  and generate dAMORxGuild tokens in return.
-    ///  Tokens are minted following the formula
-    /// @dev    Front end must still call approve() on AMORxGuild token to allow transferFrom()
-    /// @param  amount uint256 amount of dAMOR to be staked
-    /// @param  time uint256
-    /// @return uint256 the amount of dAMORxGuild received from staking
+    /// Receives ERC20 AMORxGuild tokens, which are getting locked
+    /// and generate dAMORxGuild tokens in return.
+    /// Note: Tokens are minted following the formula
+    /// @dev Front end must still call approve() on AMORxGuild token to allow transferFrom()
+    /// @param  amount The amount of AMORxGuild/AMOR to be staked
+    /// @param  time The period of time (in seconds) to stake for
+    /// @return uint256 The amount of dAMORxGuild received from staking
     function stake(uint256 amount, uint256 time) external returns (uint256) {
         if (time < MIN_LOCK_TIME) {
             revert TimeTooSmall();
         }
+    
         if (time > MAX_LOCK_TIME) {
             revert TimeTooBig();
         }
+
         if (AMORxGuild.balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }
-        // send to AMORxGuild contract to stake
+
+        /// Send to AMORxGuild contract to stake
         AMORxGuild.safeTransferFrom(msg.sender, address(this), amount);
 
         uint256 newAmount = _stake(amount, time);
@@ -166,13 +177,14 @@ contract dAMORxGuild is ERC20Base, Ownable {
         if (AMORxGuild.balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }
-        // send to AMORxGuild contract to stake
+
+        /// Send to AMORxGuild contract to stake
         AMORxGuild.safeTransferFrom(msg.sender, address(this), amount);
 
         Stakes storage userStake = _stakes[msg.sender];
 
-        // mint AMORxGuild tokens to staker
-        // msg.sender receives funds, based on the amount of time remaining until the end of his stake
+        /// Mint AMORxGuild tokens to staker
+        /// msg.sender receives funds, based on the amount of time remaining until the end of his stake
         uint256 time = userStake.stakesTimes - block.timestamp;
         uint256 newAmount = _stake(amount, time);
         userStake.stakesAMOR += amount;
@@ -182,8 +194,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
     }
 
     /// @notice Withdraws AMORxGuild tokens; burns dAMORxGuild
-    /// @dev When this tokens are burned, staked AMORxGuild is being transfered
-    ///      to the controller(contract that has a voting function)
+    /// @dev When the tokens are burned, staked AMORxGuild is being transfered back to the msg.sender
     function withdraw() external returns (uint256) {
         Stakes storage userStake = _stakes[msg.sender];
 
@@ -196,6 +207,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         if (amount == 0) {
             revert InvalidAmount();
         }
+
         if (amountDelegated[msg.sender] > 0) {
             undelegateAll();
         }
@@ -209,8 +221,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
     }
 
     /// @notice Delegate your dAMORxGuild to the address `account`
-    /// @param  to address to which delegate users FXAMORxGuild
-    /// @param  amount uint256 representing amount of delegating tokens
+    /// @param  to Address to which delegate users FXAMORxGuild
+    /// @param  amount The amount of tokens to delegate
     function delegate(address to, uint256 amount) external {
         if (to == msg.sender) {
             revert InvalidSender();
@@ -228,12 +240,13 @@ contract dAMORxGuild is ERC20Base, Ownable {
 
         delegations[msg.sender][to] += amount;
         amountDelegated[msg.sender] += amount;
+
         emit dAMORxGuildDelegated(to, msg.sender, amount);
     }
 
     /// @notice Undelegate your dAMORxGuild to the address `account`
-    /// @param  account address from which delegating will be taken away
-    /// @param  amount uint256 representing amount of undelegating tokens
+    /// @param  account The address from which delegating will be taken away
+    /// @param  amount The amount of tokens to undelegate
     function undelegate(address account, uint256 amount) public {
         if (account == msg.sender) {
             revert InvalidSender();
