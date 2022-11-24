@@ -66,16 +66,21 @@ contract DoinGudGovernor is IDoinGudGovernor {
     mapping(uint256 => uint256) public proposalVoting;
     mapping(uint256 => uint256) public proposalWeight;
 
-    uint256 public guardiansLimit; // amount of guardians for contract to function propperly,
-    // until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.
+    uint256 public guardiansLimit; // Amount of guardians for contract to function propperly,
+    // Until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.
 
-    /// input (version, address) => true
+    /// The `guardians` mapping is responsible for maintaining a list of current guardians
+    /// Guardians are elected in `seasons` which is handled by the front-end
+    /// By updating the `currentGuardianVersion` the `guardians` mapping is effectively cleared.
+    /// (version, address) => true
     mapping(bytes32 => bool) public guardians;
+    /// The current version of `guardians`
+    /// Note: Updated during `setGuardians`
     uint256 public currentGuardianVersion;
+    /// The number of currently active guardians 
     uint256 public guardiansCounter;
 
     address public avatarAddress;
-    IERC20 private AMORxGuild;
 
     event Initialized(address avatarAddress);
     event ProposalCreated(
@@ -84,15 +89,15 @@ contract DoinGudGovernor is IDoinGudGovernor {
         address[] targets,
         uint256[] values,
         bytes[] calldatas,
-        uint256 startBlock,
-        uint256 endBlock
+        uint256 indexed startBlock,
+        uint256 indexed endBlock
     );
-    event ChangedGuardiansLimit(uint256 newLimit);
-    event GuardiansSet(address[] arrGuardians);
-    event GuardianAdded(address newGuardian);
-    event GuardianRemoved(address guardian);
-    event GuardianChanged(address oldGuardian, address newGuardian);
-    event Voted(uint256 proposalId, bool support, address votedGuardian);
+    event ChangedGuardiansLimit(uint256 indexed newLimit);
+    event GuardiansSet(address[] indexed arrGuardians);
+    event GuardianAdded(address indexed newGuardian);
+    event GuardianRemoved(address indexed guardian);
+    event GuardianChanged(address indexed oldGuardian, address indexed newGuardian);
+    event Voted(uint256 indexed proposalId, bool indexed support, address votedGuardian);
 
     bool private _initialized;
 
@@ -113,10 +118,35 @@ contract DoinGudGovernor is IDoinGudGovernor {
     error UnderlyingTransactionReverted();
     error DuplicateAddress();
 
+
+    /// @notice This modifier is needed to validate that amount of the Guardians is sufficient to vote and approve the “Many” decision
+    modifier GuardianLimitReached() {
+        if (guardiansCounter < guardiansLimit) {
+            revert NotEnoughGuardians();
+        }
+        _;
+    }
+
+    /// @notice Access control: Avatar for this guikd
+    modifier onlyAvatar() {
+        if (msg.sender != avatarAddress) {
+            revert Unauthorized();
+        }
+        _;
+    }
+
+    /// @notice Access control: Guild Guardian
+    modifier onlyGuardian() {
+        if (!isGuardian(msg.sender)) {
+            revert Unauthorized();
+        }
+        _;
+    }
+
     /// @notice Initializes the Governor contract
-    /// @param  AMORxGuild_ the address of the AMORxGuild token
-    /// @param  avatarAddress_ the address of the Avatar
-    /// @param  initialGuardian the user responsible for the guardian actions
+    /// @param  AMORxGuild_ The address of the AMORxGuild token
+    /// @param  avatarAddress_ The address of the Avatar
+    /// @param  initialGuardian The user responsible for the guardian actions
     function init(
         address AMORxGuild_,
         address avatarAddress_,
@@ -128,7 +158,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
         guardians[_getGuardianKey(initialGuardian)] = true;
         guardiansCounter++;
-        AMORxGuild = IERC20(AMORxGuild_);
+
         avatarAddress = avatarAddress_;
 
         _initialized = true;
@@ -138,28 +168,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
         emit Initialized(avatarAddress_);
         return true;
-    }
-
-    /// @notice this modifier is needed to validate that amount of the Guardians is sufficient to vote and approve the “Many” decision
-    modifier GuardianLimitReached() {
-        if (guardiansCounter < guardiansLimit) {
-            revert NotEnoughGuardians();
-        }
-        _;
-    }
-
-    modifier onlyAvatar() {
-        if (msg.sender != avatarAddress) {
-            revert Unauthorized();
-        }
-        _;
-    }
-
-    modifier onlyGuardian() {
-        if (!isGuardian(msg.sender)) {
-            revert Unauthorized();
-        }
-        _;
     }
 
     /// @notice Checks Guardian status
@@ -179,10 +187,12 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
         currentGuardianVersion++;
         delete guardiansCounter;
+
         for (uint256 i; i < arrGuardians.length; i++) {
             if (isGuardian(arrGuardians[i])) {
                 revert DuplicateAddress();
             }
+
             guardians[_getGuardianKey(arrGuardians[i])] = true;
             guardiansCounter++;
         }
@@ -190,7 +200,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         emit GuardiansSet(arrGuardians);
     }
 
-    /// @notice this function adds new guardian to the system
+    /// @notice Adds new guardian to the system
     /// @param guardian New guardian to be added
     function addGuardian(address guardian) public onlyAvatar {
         if (isGuardian(guardian)) {
@@ -203,15 +213,16 @@ contract DoinGudGovernor is IDoinGudGovernor {
         emit GuardianAdded(guardian);
     }
 
-    /// @notice this function removes choosed guardian from the system
+    /// @notice Removes target guardian from the system
     /// @param guardian Guardian to be removed
     function removeGuardian(address guardian) external onlyAvatar {
-        guardians[_getGuardianKey(guardian)] = false;
+        delete guardians[_getGuardianKey(guardian)];
         guardiansCounter--;
+
         emit GuardianRemoved(guardian);
     }
 
-    /// @notice this function changes guardian as a result of the vote (propose function)
+    /// @notice Swaps one guardian for another
     /// @param currentGuardian Guardian to be removed
     /// @param newGuardian Guardian to be added
     function changeGuardian(address currentGuardian, address newGuardian) external onlyAvatar {
@@ -221,20 +232,23 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
         delete guardians[_getGuardianKey(currentGuardian)];
         guardians[_getGuardianKey(newGuardian)] = true;
+
         emit GuardianChanged(currentGuardian, newGuardian);
     }
 
-    /// @notice this function changes guardians limit
-    /// Should be passed to the Avatar as a Governor contract proposal
+    /// @notice Modifies guardians limit
     /// @param newLimit New limit value
     function changeGuardiansLimit(uint256 newLimit) external onlyAvatar {
         guardiansLimit = newLimit;
+
         emit ChangedGuardiansLimit(newLimit);
     }
 
     /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote.
-    /// Only Avatar(as a result of the Snapshot) contract can add a proposal for voting.
-    /// Proposal execution will happen through the Avatar contract
+    /// Note: Only Avatar(as a result of the Snapshot) contract can add a proposal for voting.
+    /// @param targets The array of proposed target addresses
+    /// @param values The array of proposed transaction values
+    /// @param calldatas The array of proposed (encoded) function calls 
     function propose(
         address[] memory targets,
         uint256[] memory values,
@@ -243,12 +257,15 @@ contract DoinGudGovernor is IDoinGudGovernor {
         if (!(targets.length == values.length && targets.length == calldatas.length)) {
             revert InvalidParameters();
         }
+
         if (targets.length == 0) {
             revert InvalidParameters();
         }
+
         if (targets.length > PROPOSAL_MAX_OPERATIONS) {
             revert InvalidParameters();
         }
+
         /// Submit proposals uniquely identified by a proposalId and an array of txHashes,
         /// to create a Reality.eth question that validates the execution of the connected transactions
         uint256 proposalId = hashProposal(targets, values, calldatas);
@@ -283,8 +300,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
         return proposalId;
     }
 
-    /// @notice function allows guardian to vote for the proposal
-    /// Proposal should achieve at least 20% approval of guardians, to be accepted
+    /// @notice Guardian voting for an eligible proposal
+    /// Note: Proposal should achieve at least 20% approval of guardians, to be accepted
     /// @dev Internal vote casting mechanism: Check that the vote is pending, that it has not been cast yet
     /// @param proposalId ID of the proposal
     /// @param support Boolean value: true (for) or false (against) user is voting
@@ -307,10 +324,12 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
 
         voters[proposalId].push(msg.sender);
+
         emit Voted(proposalId, support, msg.sender);
     }
 
-    /// @notice function allows anyone to execute specific proposal, based on the vote.
+    /// @notice Execute passed proposals
+    /// Note: params should correspond to `propose`
     /// @param targets Target addresses for proposal calls
     /// @param values AMORxGuild values for proposal calls
     /// @param calldatas Calldatas for proposal calls
@@ -348,8 +367,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
         return proposalId;
     }
 
-    /// @notice function allows anyone to check state of the proposal
-    /// @param proposalId id of the proposal
+    /// @notice Return the proposal state
+    /// @param proposalId Unique proposal ID
     function state(uint256 proposalId) public view returns (ProposalState) {
         ProposalCore storage proposal = _proposals[proposalId];
 
@@ -377,8 +396,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
     }
 
-    /// @notice function allows guardian to vote for cancelling the proposal
-    /// Proposal should achieve at least 20% approval of guardians, to be cancelled
+    /// @notice  Vote to cancel an active proposal
+    /// Note: Cancel should achieve at least 20% support of guardians, to be cancelled
     /// @param proposalId ID of the proposal
     function castVoteForCancelling(uint256 proposalId) external onlyGuardian {
         ProposalState state = state(proposalId);
@@ -395,11 +414,11 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
 
         proposalCancelApproval[proposalId] += 1;
-
         cancellers[proposalId].push(msg.sender);
     }
 
     /// @notice Cancels a proposal
+    /// Note: Requires a succesful cancel action by Guardians
     /// @param proposalId The id of the proposal to cancel
     function cancel(uint256 proposalId) external {
         ProposalState status = state(proposalId);
@@ -408,7 +427,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert InvalidState();
         }
 
-        // Proposal should achieve at least 20% approval for cancel from guardians, to be cancelled
+        // Execution requires least 20% support from Guardians to cancel proposal
         if (
             proposalCancelApproval[proposalId] < ((20 * guardiansCounter) / 100) ||
             proposalCancelApproval[proposalId] == 0
@@ -418,7 +437,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
         _proposals[proposalId].canceled = true;
 
-        // clear mappings
+        // Clear mappings
         for (uint256 i = 0; i < proposals.length; i++) {
             if (proposals[i] == proposalId) {
                 proposals[i] = proposals[proposals.length - 1];
@@ -426,6 +445,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
                 break;
             }
         }
+
         delete proposalWeight[proposalId];
         delete proposalVoting[proposalId];
         delete voters[proposalId];
@@ -436,19 +456,23 @@ contract DoinGudGovernor is IDoinGudGovernor {
         emit ProposalCanceled(proposalId);
     }
 
+    /// @notice Getter function for `_votingDelay` variable
+    /// @return uint256 The time period, in seconds, between `propose` and ability to vote
     function votingDelay() external view returns (uint256) {
         return _votingDelay;
     }
 
+    /// @notice Getter function for `_votingPeriod` variable
+    /// @return uint256 The time period, in seconds, that a proposal is open for voting
     function votingPeriod() external view returns (uint256) {
         return _votingPeriod;
     }
 
     /// @notice Returns the unique proposal ID generated by the proposal params
-    /// @param  targets array of proposed target addresses
-    /// @param  values array of proposed transaction values
-    /// @param  calldatas array of encoded proposals (bytes32)
-    /// @return uint256 returns the unique hash of the proposal as an uint256
+    /// @param  targets The array of proposed target addresses
+    /// @param  values The array of proposed transaction values
+    /// @param  calldatas The array of encoded proposals (bytes32)
+    /// @return uint256 Returns the unique hash of the proposal as an uint256
     function hashProposal(
         address[] memory targets,
         uint256[] memory values,
@@ -460,7 +484,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @notice Returns the key to the mapping of the current Guardians version
     /// @param  guardian The address of the Guardian
     /// @return bytes32 The hash of the `currentGuardianVersion` and `guardian` address...
-    /// ...this resolves to a unique key for every version of the Guardians mapping
+    /// ...which resolves to a unique key for every version of the Guardians mapping
     function _getGuardianKey(address guardian) internal view returns (bytes32) {
         return keccak256(abi.encodePacked(currentGuardianVersion, guardian));
     }
