@@ -77,7 +77,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// The current version of `guardians`
     /// Note: Updated during `setGuardians`
     uint256 public currentGuardianVersion;
-    /// The number of currently active guardians 
+    /// The number of currently active guardians
     uint256 public guardiansCounter;
 
     address public avatarAddress;
@@ -247,7 +247,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// Note: Only Avatar(as a result of the Snapshot) contract can add a proposal for voting.
     /// @param targets The array of proposed target addresses
     /// @param values The array of proposed transaction values
-    /// @param calldatas The array of proposed (encoded) function calls 
+    /// @param calldatas The array of proposed (encoded) function calls
     function propose(
         address[] memory targets,
         uint256[] memory values,
