@@ -9,7 +9,7 @@ pragma solidity 0.8.15;
  *
  *  The MetaDAO creates new guilds and collects fees from AMOR token transfers.
  *  The collected funds can then be distributed and claimed by guilds.
- *  The MetaDAO governs high level donations and is intended to be used in 
+ *  The MetaDAO governs high level donations and is intended to be used in
  *  conjunction with a Governor and Avatar contract.
  *
  * MIT License
@@ -39,12 +39,13 @@ pragma solidity 0.8.15;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 /// Custom contracts
 import "./interfaces/ICloneFactory.sol";
 import "./interfaces/IGuildController.sol";
 import "./interfaces/IMetaDaoController.sol";
 
-contract MetaDaoController is IMetaDaoController, Ownable {
+contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
     /// Guild-related variables
     /// `guilds` contains all Guild Controller addresses
@@ -162,7 +163,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         address token,
         uint256 amount,
         uint256 index
-    ) external {
+    ) external nonReentrant {
         if (!isWhitelisted(token)) {
             revert NotListed();
         }
@@ -172,17 +173,14 @@ contract MetaDaoController is IMetaDaoController, Ownable {
             revert NoIndex();
         }
 
-        if (token == address(amorToken)) {
-            uint256 amorBalance = amorToken.balanceOf(address(this));
-            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
-            amorBalance = amorToken.balanceOf(address(this)) - amorBalance;
-            allocateByIndex(token, amorBalance, index);
-            donations[token] += amorBalance;
-        } else {
-            donations[token] += amount;
-            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
-            allocateByIndex(token, amount, index);
-        }
+        IERC20 tokenDonated = IERC20(token);
+        uint256 tokenBalance = tokenDonated.balanceOf(address(this));
+
+        tokenDonated.safeTransferFrom(msg.sender, address(this), amount);
+        tokenBalance = tokenDonated.balanceOf(address(this)) - tokenBalance;
+
+        allocateByIndex(token, tokenBalance, index);
+        donations[token] += tokenBalance;
 
         emit DonatedToIndex(amount, token, index, msg.sender);
     }
@@ -218,6 +216,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         if (amount == 0) {
             revert InvalidClaim();
         }
+
         /// Update donations for this token
         donations[token] -= amount;
         /// Clear this guild's token balance
@@ -286,9 +285,11 @@ contract MetaDaoController is IMetaDaoController, Ownable {
         guilds[sentinelGuilds] = controller;
         sentinelGuilds = controller;
         guilds[controller] = SENTINEL;
+
         unchecked {
             guildCounter++;
         }
+
         emit GuildCreated(realityModule, initialGuardian, name, tokenSymbol, controller, guildCounter);
     }
 
@@ -414,6 +415,7 @@ contract MetaDaoController is IMetaDaoController, Ownable {
             if (guilds[guild] == address(0) || weight == 0) {
                 revert InvalidGuild();
             }
+
             index.indexWeights[guild] = weight;
             index.indexDenominator += weight;
         }
