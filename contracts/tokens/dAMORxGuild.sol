@@ -68,9 +68,23 @@ contract dAMORxGuild is ERC20Base, Ownable {
     mapping(address => uint256) public votingPower;
 
     event Initialized(address owner, address AMORxGuild, uint256 amount);
-    event AMORxGuildStakedToDAMOR(address from, uint256 indexed amount, uint256 indexed mintAmount, uint256 indexed timeStakedFor);
-    event AMORxGuildStakIncreasedToDAMOR(address from, uint256 indexed amount, uint256 indexed mintAmount, uint256 indexed timeStakedFor);
-    event AMORxGuildWithdrawnFromDAMOR(address to, uint256 indexed burnedDAMORxGuild, uint256 indexed returnedAMORxGuild);
+    event AMORxGuildStakedToDAMOR(
+        address from,
+        uint256 indexed amount,
+        uint256 indexed mintAmount,
+        uint256 indexed timeStakedFor
+    );
+    event AMORxGuildStakIncreasedToDAMOR(
+        address from,
+        uint256 indexed amount,
+        uint256 indexed mintAmount,
+        uint256 indexed timeStakedFor
+    );
+    event AMORxGuildWithdrawnFromDAMOR(
+        address to,
+        uint256 indexed burnedDAMORxGuild,
+        uint256 indexed returnedAMORxGuild
+    );
     event dAMORxGuildUndelegated(address indexed from, address owner, uint256 indexed amount);
     event dAMORxGuildDelegated(address indexed to, address owner, uint256 indexed amount);
 
@@ -148,7 +162,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         if (time < MIN_LOCK_TIME) {
             revert TimeTooSmall();
         }
-    
+
         if (time > MAX_LOCK_TIME) {
             revert TimeTooBig();
         }
