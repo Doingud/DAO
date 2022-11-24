@@ -945,11 +945,11 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
             // Call distribute function in the MetaDAO controller        
             expect(await DOINGUD_METADAO.guildFees(GUILD_ONE_CONTROLLERXGUILD.address)).to.equal(0);
-            await DOINGUD_METADAO.distributeFees();
+            await DOINGUD_METADAO.distributeFees(DOINGUD_AMOR_TOKEN.address);
             expect(await DOINGUD_METADAO.guildFees(GUILD_ONE_CONTROLLERXGUILD.address)).to.equal((taxDeducted * 0.5).toString());
 
             // Call claimFees function in one of the guilds
-            await DOINGUD_METADAO.distributeFees();
+            await DOINGUD_METADAO.distributeFees(DOINGUD_AMOR_TOKEN.address);
             let guildAmor = await DOINGUD_METADAO.guildFees(GUILD_ONE_CONTROLLERXGUILD.address);
             await expect(DOINGUD_METADAO.claimFees(GUILD_ONE_CONTROLLERXGUILD.address)).
                 to.emit(DOINGUD_AMOR_TOKEN, "Transfer").

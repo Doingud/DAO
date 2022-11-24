@@ -277,13 +277,13 @@ describe("unit - MetaDao", function () {
         it('it distributes collected AMOR tokens from fees', async function () {    
             await AMOR_TOKEN.transfer(METADAO.address, ONE_HUNDRED_ETHER);
             expect(await METADAO.guildFees(GUILD_CONTROLLER_ONE.address)).to.equal(0);
-            await METADAO.distributeFees();
+            await METADAO.distributeFees(AMOR_TOKEN.address);
             expect(await METADAO.guildFees(GUILD_CONTROLLER_ONE.address)).to.equal((FIFTY_ETHER * 0.95).toString());
         });
 
         it('it distributes collected AMOR tokens from fees if amount = 0', async function () {    
             expect(await METADAO.guildFees(GUILD_CONTROLLER_ONE.address)).to.equal(0);
-            await METADAO.distributeFees();
+            await METADAO.distributeFees(AMOR_TOKEN.address);
             expect(await METADAO.guildFees(GUILD_CONTROLLER_ONE.address)).to.equal(0);
         });
     });
@@ -295,7 +295,7 @@ describe("unit - MetaDao", function () {
 
         it("it allows a guild to claim fees apportioned to it", async function () {
             await AMOR_TOKEN.transfer(METADAO.address, ONE_HUNDRED_ETHER);
-            await METADAO.distributeFees();
+            await METADAO.distributeFees(AMOR_TOKEN.address);
             let guildAmor = await METADAO.guildFees(GUILD_CONTROLLER_ONE.address);
             await expect(METADAO.claimFees(GUILD_CONTROLLER_ONE.address)).
                 to.emit(AMOR_TOKEN, "Transfer").

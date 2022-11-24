@@ -453,7 +453,7 @@ const setupTests = deployments.createFixture(async () => {
 
         /// Let the guilds gather fees
         expect(await DOINGUD_METADAO.guildFees(GUILD_ONE_CONTROLLERXGUILD.address)).to.be.equal(0);
-        await DOINGUD_METADAO.distributeFees();
+        await DOINGUD_METADAO.distributeFees(DOINGUD_AMOR_TOKEN.address);
         await expect(DOINGUD_METADAO.claimFees(GUILD_ONE_CONTROLLERXGUILD.address)).to.emit(DOINGUD_AMOR_TOKEN, "Transfer");
       });
     })

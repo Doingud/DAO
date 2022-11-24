@@ -28,8 +28,9 @@ interface IMetaDaoController {
 
     function claimToken(address token) external;
 
-    /// @notice Apportions collected AMOR fees
-    function distributeFees() external;
+    /// @notice Apportions collected funds
+    /// @param token The address of the token being distributed
+    function distributeFees(address token) external;
 
     /// @notice Transfers apportioned tokens from the metadao to the guild
     /// @param  guild target guild

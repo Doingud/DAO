@@ -225,11 +225,14 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     }
 
     /// @notice Apportions collected AMOR fees
-    function distributeFees() public {
+    /// @dev Allows excess tokens sent to the contract to be apportioned
+    /// @param token The address of the token to be apportioned
+    function distributeFees(address token) public {
         Index storage index = indexes[0];
         address endOfList = SENTINEL;
-        /// Determine amount of AMOR that has been collected from fees
-        uint256 feesToBeDistributed = amorToken.balanceOf(address(this)) - donations[address(amorToken)];
+        /// Determine amount of `token` that has been collected from fees or sent to the contract
+        IERC20 targetToken = IERC20(token);
+        uint256 feesToBeDistributed = targetToken.balanceOf(address(this)) - donations[address(targetToken)];
 
         while (guilds[endOfList] != SENTINEL) {
             uint256 amountToDistribute = (feesToBeDistributed * index.indexWeights[guilds[endOfList]]) /
