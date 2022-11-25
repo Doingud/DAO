@@ -74,7 +74,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         uint256 indexed mintAmount,
         uint256 indexed timeStakedFor
     );
-    event AMORxGuildStakIncreasedToDAMOR(
+    event AMORxGuildStakeIncreasedToDAMOR(
         address from,
         uint256 indexed amount,
         uint256 indexed mintAmount,
@@ -114,6 +114,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
     error TimeTooSmall();
     /// Staking time provided is larger than maximum
     error TimeTooBig();
+    /// Exceeded delegation limits
+    error ExceededDelegationLimit();
 
     /*  @dev    The init() function takes the place of the constructor.
      *          It can only be run once.
@@ -203,7 +205,7 @@ contract dAMORxGuild is ERC20Base, Ownable {
         uint256 newAmount = _stake(amount, time);
         userStake.stakesAMOR += amount;
 
-        emit AMORxGuildStakIncreasedToDAMOR(msg.sender, amount, newAmount, time);
+        emit AMORxGuildStakeIncreasedToDAMOR(msg.sender, amount, newAmount, time);
         return newAmount;
     }
 
@@ -240,6 +242,10 @@ contract dAMORxGuild is ERC20Base, Ownable {
     function delegate(address to, uint256 amount) external {
         if (to == msg.sender) {
             revert InvalidSender();
+        }
+
+        if (delegatedTo[msg.sender].length == 100) {
+            revert ExceededDelegationLimit();
         }
 
         uint256 availableAmount = balanceOf(msg.sender) - amountDelegated[msg.sender];
