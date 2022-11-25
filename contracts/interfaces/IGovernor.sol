@@ -94,7 +94,8 @@ interface IDoinGudGovernor {
     function execute(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas
+        bytes[] memory calldatas,
+        uint256 proposalCounter
     ) external returns (uint256);
 
     /// @notice function allows anyone to check state of the proposal
@@ -113,6 +114,7 @@ interface IDoinGudGovernor {
     function hashProposal(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas
+        bytes[] memory calldatas,
+        uint256 proposalCounter
     ) external returns (uint256);
 }

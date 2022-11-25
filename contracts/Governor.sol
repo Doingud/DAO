@@ -46,7 +46,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
         uint96 voteStart;
         uint96 voteEnd;
         bool executed;
-        bool canceled;
     }
 
     event ProposalCanceled(uint256 proposalId);
@@ -59,6 +58,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     mapping(uint256 => ProposalCore) private _proposals;
     mapping(uint256 => uint256) public proposalCancelApproval;
     mapping(uint256 => address[]) public cancellers; // cancellers mapping(uint proposal => address [] voters)
+    uint256 public proposalsCounter;
 
     // After proposal was voted for, an !executor provides a complete data about the proposal!,
     // which gets hashed and if hashes correspond, then the proposal is executed.
@@ -86,7 +86,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
         uint256[] values,
         bytes[] calldatas,
         uint256 startBlock,
-        uint256 endBlock
+        uint256 endBlock,
+        uint256 proposalCounter
     );
     event ChangedGuardiansLimit(uint256 newLimit);
     event GuardiansSet(address[] arrGuardians);
@@ -131,6 +132,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
         _initialized = true;
         guardiansLimit = 1;
+        proposalsCounter = 1;
 
         emit Initialized(avatarAddress_);
         return true;
@@ -245,10 +247,12 @@ contract DoinGudGovernor is IDoinGudGovernor {
         if (targets.length > PROPOSAL_MAX_OPERATIONS) {
             revert InvalidParameters();
         }
+
+        proposalsCounter++;
+
         /// Submit proposals uniquely identified by a proposalId and an array of txHashes,
         /// to create a Reality.eth question that validates the execution of the connected transactions
-        uint256 proposalId = hashProposal(targets, values, calldatas);
-
+        uint256 proposalId = hashProposal(targets, values, calldatas, proposalsCounter);
         ProposalCore storage proposal = _proposals[proposalId];
         if (proposal.voteStart != 0) {
             revert InvalidState();
@@ -272,7 +276,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
             values,
             calldatas,
             snapshot,
-            deadline
+            deadline,
+            proposalsCounter
         );
 
         return proposalId;
@@ -312,9 +317,10 @@ contract DoinGudGovernor is IDoinGudGovernor {
     function execute(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas
+        bytes[] memory calldatas,
+        uint256 proposalCounter
     ) external GuardianLimitReached returns (uint256) {
-        uint256 proposalId = hashProposal(targets, values, calldatas);
+        uint256 proposalId = hashProposal(targets, values, calldatas, proposalCounter);
 
         ProposalState status = state(proposalId);
         if (status != ProposalState.Succeeded) {
@@ -414,8 +420,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert CancelNotApproved();
         }
 
-        _proposals[proposalId].canceled = true;
-
         delete proposalWeight[proposalId];
         delete proposalVoting[proposalId];
         delete voters[proposalId];
@@ -434,9 +438,10 @@ contract DoinGudGovernor is IDoinGudGovernor {
     function hashProposal(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas
-    ) public pure returns (uint256) {
-        return uint256(keccak256(abi.encode(targets, values, calldatas)));
+        bytes[] memory calldatas,
+        uint256 proposalCounter
+    ) public view returns (uint256) {
+        return uint256(keccak256(abi.encode(targets, values, calldatas, proposalCounter)));
     }
 
     /// @notice Returns the key to the mapping of the current Guardians version

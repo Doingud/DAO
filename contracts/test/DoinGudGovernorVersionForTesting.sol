@@ -97,6 +97,7 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
 
     uint96 private _votingDelay;
     uint96 private _votingPeriod;
+    uint256 public proposalsCounter;
 
     error InvalidProposalId();
     error AlreadyInitialized();
@@ -266,9 +267,11 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
         if (targets.length > PROPOSAL_MAX_OPERATIONS) {
             revert InvalidParameters();
         }
+
+        proposalsCounter++;
         /// Submit proposals uniquely identified by a proposalId and an array of txHashes,
         /// to create a Reality.eth question that validates the execution of the connected transactions
-        uint256 proposalId = hashProposal(targets, values, calldatas);
+        uint256 proposalId = hashProposal(targets, values, calldatas, proposalsCounter);
 
         ProposalCore storage proposal = _proposals[proposalId];
         if (proposal.voteStart != 0) {
@@ -334,9 +337,10 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
     function execute(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas
+        bytes[] memory calldatas,
+        uint256 proposalCounter
     ) external GuardianLimitReached returns (uint256) {
-        uint256 proposalId = hashProposal(targets, values, calldatas);
+        uint256 proposalId = hashProposal(targets, values, calldatas, proposalCounter);
 
         ProposalState status = state(proposalId);
         if (status != ProposalState.Succeeded) {
@@ -464,8 +468,9 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
     function hashProposal(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas
+        bytes[] memory calldatas,
+        uint256 proposalCounter
     ) public pure returns (uint256) {
-        return uint256(keccak256(abi.encode(targets, values, calldatas)));
+        return uint256(keccak256(abi.encode(targets, values, calldatas, proposalCounter)));
     }
 }
