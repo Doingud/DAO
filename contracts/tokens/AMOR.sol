@@ -98,7 +98,6 @@ contract AMORToken is IAmorToken, ERC20Base, Pausable, Ownable {
         _setTaxRate(_initTaxRate);
         _initialized = true;
         emit Initialized(_initCollector, _initTaxRate);
-        return true;
     }
 
     /// @notice Sets the tax rate for transfer and transferFrom
