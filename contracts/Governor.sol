@@ -341,6 +341,9 @@ contract DoinGudGovernor is IDoinGudGovernor {
             }
         }
 
+        delete cancellers[proposalId];
+        delete proposalCancelApproval[proposalId];
+
         emit ProposalExecuted(proposalId);
 
         return proposalId;
