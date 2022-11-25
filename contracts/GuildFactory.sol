@@ -2,22 +2,43 @@
 
 pragma solidity 0.8.15;
 
-/// @title  Clone Factory for DoinGud Tokens
-/// @author Daoism Systems Team
-/// @dev    ERC1167 Pattern
-
-/*
- *  @dev https://eips.ethereum.org/EIPS/eip-1167[EIP 1167] is a standard for
- *  deploying minimal proxy contracts, also known as "clones".
+/**
+ * @title  Clone Factory for DoinGud Tokens
+ * @author Daoism Systems Team
+ * @custom Security-contact security@daoism.systems
  *
- *  The DoinGud GuildTokenFactory allows for the low-gas creation of Guilds and Guild-related tokens
- *  by using the minimal proxy, or "clone" pattern
+ * @dev https://eips.ethereum.org/EIPS/eip-1167[EIP 1167] is a standard for
+ * deploying minimal proxy contracts, also known as "clones".
  *
- *  DoinGud Guilds require a non-standard implementation of ERC1967Proxy from OpenZeppelin
- *  to allow the factory to initialize the ERC20 contracts without constructors.
+ * The DoinGud GuildTokenFactory allows for the low-gas creation of Guilds and Guild-related tokens
+ * by using the minimal proxy, or "clone" pattern
  *
- *  In conjunction with this, the token contracts are custom ERC20 implementations
- *  that use the ERC20Base.sol contracts developed for DoinGud.
+ * DoinGud Guilds require a non-standard implementation of ERC1967Proxy from OpenZeppelin
+ * to allow the factory to initialize the ERC20 contracts without constructors.
+ *
+ * In conjunction with this, the token contracts are custom ERC20 implementations
+ * that use the ERC20Base.sol contracts developed for DoinGud.
+ *
+ * MIT License
+ * ===========
+ *
+ * Copyright (c) 2022 DoinGud
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *
  */
 

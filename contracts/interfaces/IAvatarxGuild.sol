@@ -42,9 +42,9 @@ interface IAvatarxGuild {
     event ExecutionFromModuleFailure(address indexed module);
 
     /// @notice Initializes the AvatarxGuild module
-    /// @param  initOwner the address that owns this AvatarxGuild
-    /// @param  governorAddress_ the guild's governor
-    /// @return bool was the init call successfull
+    /// @param  initOwner The address that owns this AvatarxGuild
+    /// @param  governorAddress_ The guild's governor
+    /// @return bool Was the init call successfull
     function init(address initOwner, address governorAddress_) external returns (bool);
 
     /// @notice Changes Governor address
