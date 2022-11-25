@@ -6,7 +6,7 @@ pragma solidity 0.8.15;
  * @title  DoinGud: AMORxGuild.sol
  * @author Daoism Systems
  * @notice ERC20 implementation for DoinGudDAO
- * @custom Security-contact sexurity@daoism.systems
+ * @custom Security-contact security@daoism.systems
  * @dev Implementation of the AMORXGuild token for DoinGud
  *
  *  The contract houses the token logic for AMORxGuild.
