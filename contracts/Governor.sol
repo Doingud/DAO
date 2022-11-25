@@ -64,7 +64,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     // which gets hashed and if hashes correspond, then the proposal is executed.
 
     mapping(uint256 => address[]) public votersInfo; // voters mapping(uint proposal => address [] voters)
-    mapping(uint256 =>  mapping(address => bool)) public voters;
+    mapping(uint256 => mapping(address => bool)) public voters;
     mapping(uint256 => uint256) public proposalVoting;
     mapping(uint256 => uint256) public proposalWeight;
 
