@@ -50,10 +50,10 @@ pragma solidity 0.8.15;
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// Advanced math functions for bonding curve
 import "../utils/ABDKMath64x64.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 /// Custom contracts
 import "../utils/ERC20Base.sol";
 import "../interfaces/IAMORxGuild.sol";
@@ -79,7 +79,7 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     /// It allows fine-grained control over the tax rate
     /// 1 basis point change == 0.01% change in the tax rate
     /// Here it is the denominator for tax-related calculations
-    uint256 public constant BASIS_POINTS = 10000;
+    uint256 public constant BASIS_POINTS = 10_000;
     /// Co-efficient
     uint256 private constant COEFFICIENT = 10**9;
 
@@ -97,11 +97,11 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     error InvalidTaxRate();
 
     /// @notice Initializes the AMORxGuild contract
-    /// @dev    Sets the token details as well as the required addresses for token logic
-    /// @param  amorAddress the address of the AMOR token proxy
-    /// @param  _name the token name (e.g AMORxIMPACT)
-    /// @param  _symbol the token symbol
-    /// @param  controller the GuildController owning this token
+    /// @dev Sets the token details as well as the required addresses for token logic
+    /// @param amorAddress The address of the AMOR token proxy
+    /// @param _name The token name (e.g AMORxIMPACT)
+    /// @param _symbol The token symbol
+    /// @param controller The GuildController owning this token
     function init(
         string memory _name,
         string memory _symbol,
@@ -120,8 +120,8 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     }
 
     /// @notice Sets the tax on staking AMORxGuild
-    /// @dev    Requires the new tax rate in basis points, where each point equals 0.01% change
-    /// @param  newRate uint8 representing the new tax rate expressed in basis points.
+    /// @dev Requires the new tax rate in basis points, where each point equals 0.01% change
+    /// @param  newRate The new tax rate expressed in basis points.
     function setTax(uint16 newRate) external onlyOwner {
         if (newRate > 2000) {
             revert InvalidTaxRate();
@@ -132,9 +132,9 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
     }
 
     /// @notice Allows a user to stake their AMOR and receive AMORxGuild in return
-    /// @param  to address where the AMORxGuild will be sent to
-    /// @param  amount uint256 amount of AMOR to be staked
-    /// @return mintAmount uint256 amount of AMORxGuild received from staking
+    /// @param to The address where the AMORxGuild will be sent to
+    /// @param amount The amount of AMOR to be staked
+    /// @return mintAmount The amount of AMORxGuild received from staking
     function stakeAmor(address to, uint256 amount) external override whenNotPaused returns (uint256) {
         if (tokenAmor.balanceOf(msg.sender) < amount) {
             revert UnsufficientAmount();
