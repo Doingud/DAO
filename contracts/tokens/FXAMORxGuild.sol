@@ -204,6 +204,14 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             revert AddressZero();
         }
 
+        if (delegation[msg.sender].length >= 100) {
+            revert InvalidAmount();
+        }
+
+        if (delegators[to].length >= 100) {
+            revert InvalidAmount();
+        }
+
         uint256 availableAmount = balanceOf(msg.sender) - amountDelegated[msg.sender];
         if (availableAmount < amount) {
             revert InvalidAmount();
