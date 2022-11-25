@@ -341,7 +341,7 @@ describe('unit - Contract: Governor', function () {
 
             let proposal = mockModule.interface.encodeFunctionData("testInteraction", [2]);
             await mockAvatar.proposeAfterVote([mockModule.address], [0], [proposal]);
-            let proposalId = await mockGovernor.proposals(1);
+            let proposalId = web3.utils.hexToNumberString(ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode([ "address[]", "uint256[]", "bytes[]"], [[mockModule.address], [0], [proposal]])));
 
             expect(await mockModule.testValues()).to.equal(0);
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);

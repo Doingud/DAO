@@ -60,8 +60,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
     mapping(uint256 => uint256) public proposalCancelApproval;
     mapping(uint256 => address[]) public cancellers; // cancellers mapping(uint proposal => address [] voters)
 
-    // id in array --> Id of passed proposal from _proposals
-    uint256[] public proposals; // it’s an array of proposals hashes to execute.
     // After proposal was voted for, an !executor provides a complete data about the proposal!,
     // which gets hashed and if hashes correspond, then the proposal is executed.
 
@@ -266,7 +264,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
         proposalWeight[proposalId] = 0;
 
         _proposals[proposalId] = proposal;
-        proposals.push(proposalId);
 
         emit ProposalCreated(
             proposalId,
@@ -419,14 +416,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
         _proposals[proposalId].canceled = true;
 
-        // clear mappings
-        for (uint256 i = 0; i < proposals.length; i++) {
-            if (proposals[i] == proposalId) {
-                proposals[i] = proposals[proposals.length - 1];
-                proposals.pop();
-                break;
-            }
-        }
         delete proposalWeight[proposalId];
         delete proposalVoting[proposalId];
         delete voters[proposalId];
