@@ -95,7 +95,6 @@ contract dAMORxGuild is ERC20Base, Ownable {
     uint256 public constant TIME_DENOMINATOR = 1_000_000_000_000_000_000; // 1 ether
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     uint256 public constant MIN_LOCK_TIME = 7 days; // 1 week is the time for the new deposided tokens to be locked until they can be withdrawn
-    address public constant SENTINEL = address(0x1);
 
     IERC20 private AMORxGuild;
 
