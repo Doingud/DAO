@@ -210,7 +210,9 @@ contract dAMORxGuild is ERC20Base, Ownable {
     /// @notice Withdraws AMORxGuild tokens; burns dAMORxGuild
     /// @dev When the tokens are burned, staked AMORxGuild is being transfered back to the msg.sender
     function withdraw() external returns (uint256) {
-        if (block.timestamp < stakesTimes[msg.sender]) {
+        Stakes storage userStake = _stakes[msg.sender];
+
+        if (block.timestamp < userStake.stakesTimes) {
             revert TimeTooSmall();
         }
 
