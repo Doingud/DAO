@@ -237,7 +237,7 @@ describe("unit - MetaDao", function () {
             let amorMetaDaoBefore = await AMOR_TOKEN.balanceOf(METADAO.address);
             let amorControllerBefore = await AMOR_TOKEN.balanceOf(GUILD_CONTROLLER_ONE.address);
             await GUILD_CONTROLLER_ONE.gatherDonation(AMOR_TOKEN.address);
-            //await METADAO.claimToken(GUILD_CONTROLLER_ONE.address, AMOR_TOKEN.address);
+
             let metadaoAfter = await AMOR_TOKEN.balanceOf(METADAO.address);
             let controllerAfter = await AMOR_TOKEN.balanceOf(GUILD_CONTROLLER_ONE.address);
             expect((amorMetaDaoBefore - metadaoAfter)*0.95).to.equal(controllerAfter - amorControllerBefore);
@@ -245,15 +245,14 @@ describe("unit - MetaDao", function () {
             let usdcMetaDaoBefore = await USDC.balanceOf(METADAO.address);
             let usdcControllerBefore = await USDC.balanceOf(GUILD_CONTROLLER_ONE.address);
             await GUILD_CONTROLLER_ONE.gatherDonation(USDC.address);
-            // await METADAO.claimToken(GUILD_CONTROLLER_ONE.address, USDC.address);
-            // await GUILD_CONTROLLER_ONE.gatherDonation(USDC.address);
+
             let usdcMetaDaoAfter = await USDC.balanceOf(METADAO.address);
             let usdcControllerAfter = await USDC.balanceOf(GUILD_CONTROLLER_ONE.address);
             expect(usdcMetaDaoBefore - usdcMetaDaoAfter).to.equal(usdcControllerAfter - usdcControllerBefore);
         });
 
         it('Should revert if caller is InvalidGuild', async function () {
-            await expect(METADAO.claimToken(USDC.address)).
+            await expect(METADAO.claimToken(root.address, USDC.address)).
                 to.be.revertedWith("InvalidGuild()");
         });
 

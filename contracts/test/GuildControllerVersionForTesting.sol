@@ -142,7 +142,7 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
             revert NotWhitelistedToken();
         }
         uint256 amount = IMetaDaoController(MetaDaoController).guildFunds(address(this), token);
-        IMetaDaoController(MetaDaoController).claimToken(token);
+        IMetaDaoController(MetaDaoController).claimToken(address(this), token);
 
         // distribute those tokens
         distribute(amount, token);
