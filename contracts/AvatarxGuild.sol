@@ -41,28 +41,12 @@ import "./interfaces/IAvatarxGuild.sol";
 import "./interfaces/IGovernor.sol";
 
 contract AvatarxGuild is IAvatarxGuild {
-    /// Events
-    event ExecutionFromGovernorSuccess(address governorAddress);
-    event ExecutionFromGovernorFailure(address governorAddress);
-    event Initialized(address owner, address governorAddress);
-    event GovernorSet(address newGovernor);
-
     address internal constant SENTINEL_MODULES = address(0x1);
     address public governor;
     address public reality;
     bool private _initialized;
 
     mapping(address => address) internal modules;
-
-    /// Custom errors
-    /// AvatarxGuild has already been initialized
-    error AlreadyInitialized();
-    /// The calling address is not a recoignized `Module`
-    error NotWhitelisted();
-    /// Invalid address provided for module
-    error InvalidParameters();
-    /// The calling address is not authorized to call this function
-    error Unauthorized();
 
     /// Access Control Modifiers
     /// Access control: Governor
