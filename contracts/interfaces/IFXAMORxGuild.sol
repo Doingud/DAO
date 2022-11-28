@@ -51,10 +51,9 @@ interface IFXAMORxGuild {
     /// @param  amount uint256 representing amount of undelegating tokens
     function undelegate(address account, uint256 amount) external;
 
-
     function getDelegators(address user, uint256 index) external returns (address);
 
     function getDelegations(address from, address to) external returns (uint256);
 
-    function getAmountDelegatedAvailable(address user) external returns (uint256); 
+    function getAmountDelegatedAvailable(address user) external returns (uint256);
 }
