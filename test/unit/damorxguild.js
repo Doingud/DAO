@@ -245,7 +245,6 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
             await dAMORxGuild.connect(staker).undelegate(operator.address, TWO_HUNDRED_ETHER);
 
-            await dAMORxGuild.connect(staker).undelegate(operator.address, TWO_HUNDRED_ETHER);
             expect((await dAMORxGuild.amountDelegated(staker.address)).toString()).to.equal("0");
             await expect(dAMORxGuild.delegatedTo(staker.address, 0)).to.be.reverted;
             await expect(dAMORxGuild.delegatedTo(staker.address, 1)).to.be.reverted; 
