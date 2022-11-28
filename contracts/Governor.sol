@@ -328,7 +328,11 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @param targets Target addresses for proposal calls
     /// @param values AMORxGuild values for proposal calls
     /// @param calldatas Calldatas for proposal calls
-    function execute(address[] memory targets, uint256[] memory values, bytes[] memory calldatas) external GuardianLimitReached returns (uint256) {
+    function execute(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas
+    ) external GuardianLimitReached returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas);
 
         ProposalState status = state(proposalId);
@@ -337,11 +341,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
 
         for (uint256 i = 0; i < targets.length; ++i) {
-            bool success = IAvatarxGuild(avatarAddress).executeProposal(
-                targets[i],
-                values[i],
-                calldatas[i]
-            );
+            bool success = IAvatarxGuild(avatarAddress).executeProposal(targets[i], values[i], calldatas[i]);
             if (!success) {
                 revert UnderlyingTransactionReverted();
             }
