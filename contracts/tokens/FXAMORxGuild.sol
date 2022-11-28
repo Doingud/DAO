@@ -54,8 +54,6 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     using ABDKMath64x64 for uint256;
     using SafeERC20 for IERC20;
 
-    // staker => all staker balance
-    mapping(address => uint256) public stakes;
     // those who delegated to a specific address
     mapping(address => address[]) public delegators;
     // list of delegations from one address
@@ -156,8 +154,6 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         // Tokens are minted 1:1.
         _mint(to, amount);
 
-        stakes[to] += amount;
-
         emit AMORxGuildStakedToFXAMOR(to, amount, block.timestamp);
         return amount;
     }
@@ -168,7 +164,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     /// @param  account address from which must burn tokens
     /// @param  amount uint256 representing amount of burning tokens
     function burn(address account, uint256 amount) external onlyOwner {
-        if (stakes[account] < amount) {
+        if (balanceOf(account) < amount) {
             revert InvalidAmount();
         }
 
@@ -189,7 +185,6 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         //burn used FXAMORxGuild tokens from staker
         _burn(account, amount);
         AMORxGuild.safeTransfer(controller, amount);
-        stakes[account] -= amount;
         emit AMORxGuildWithdrawnFromFXAMOR(account, amount, block.timestamp);
     }
 
