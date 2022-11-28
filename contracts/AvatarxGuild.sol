@@ -167,7 +167,7 @@ contract AvatarxGuild is IAvatarxGuild {
         Enum.Operation operation
     ) external returns (bool success) {
         // Only whitelisted modules are allowed.
-        if (msg.sender == SENTINEL_MODULES || modules[msg.sender] == address(0)) {
+        if (modules[msg.sender] == address(0)) {
             revert NotWhitelisted();
         }
 
