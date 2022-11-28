@@ -305,7 +305,6 @@ contract GuildController is IGuildController, Ownable {
                     delegatedFXUsage = 0;
                 }
             }
-            // FXGFXAMORxGuild.burn(delegator, delegatedFXUsage);
         } else {
             FXGFXAMORxGuild.burn(msg.sender, amount);
         }

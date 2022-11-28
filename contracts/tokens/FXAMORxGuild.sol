@@ -269,15 +269,18 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         return false;
     }
 
-    function getDelegators(address user, uint256 index) public view returns (address) {
+    /// @notice Get delegators value
+    function getDelegators(address user, uint256 index) external view returns (address) {
         return delegators[user][index];
     }
 
-    function getDelegations(address from, address to) public view returns (uint256) {
+    /// @notice Get delegations value
+    function getDelegations(address from, address to) external view returns (uint256) {
         return delegations[from][to];
     }
 
-    function getAmountDelegatedAvailable(address user) public view returns (uint256) {
+    /// @notice Get amountDelegatedAvailable value
+    function getAmountDelegatedAvailable(address user) external view returns (uint256) {
         return amountDelegatedAvailable[user];
     }
 }
