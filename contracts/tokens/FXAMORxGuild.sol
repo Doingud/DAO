@@ -244,7 +244,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             amountDelegatedAvailable[msg.sender] -= amount;
         } else {
             amountDelegated[msg.sender] -= delegations[msg.sender][account];
-            amountDelegatedAvailable[msg.sender] -= delegations[msg.sender][account];
+            amountDelegatedAvailable[account] -= delegations[msg.sender][account];
             amount = delegations[msg.sender][account];
             delete delegations[msg.sender][account];
 
