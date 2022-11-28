@@ -248,7 +248,7 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
 
     /// @notice Allows a guild to transfer fees to the Guild
     /// @param guild The target guild
-    function claimFees(address guild) external {
+    function claimFees(address guild) public {
         if (guilds[guild] == address(0)) {
             revert InvalidGuild();
         }
@@ -344,6 +344,7 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
         while (whitelist[endOfList] != SENTINEL) {
             if (guildFunds[controller][whitelist[endOfList]] > 0) {
                 claimToken(controller, whitelist[endOfList]);
+                claimFees(guild);
             }
 
             endOfList = whitelist[endOfList];
