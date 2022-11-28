@@ -119,7 +119,7 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
         address AMORxGuild_,
         address avatarAddress_,
         address initialGuardian
-    ) external returns (bool) {
+    ) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -135,7 +135,6 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
         guardiansLimit = 1;
 
         emit Initialized(avatarAddress_);
-        return true;
     }
 
     /// @notice this modifier is needed to validate that amount of the Guardians is sufficient to vote and approve the “Many” decision

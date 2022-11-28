@@ -47,11 +47,10 @@ contract AvatarxGuild is IAvatarxGuild {
     event Initialized(address owner, address governorAddress);
     event GovernorSet(address newGovernor);
 
+    address internal constant SENTINEL_MODULES = address(0x1);
     address public governor;
     address public reality;
-    address internal constant SENTINEL_MODULES = address(0x1);
     bool private _initialized;
-    bool private guardiansSet;
 
     mapping(address => address) internal modules;
 
@@ -60,10 +59,6 @@ contract AvatarxGuild is IAvatarxGuild {
     error AlreadyInitialized();
     /// The calling address is not a recoignized `Module`
     error NotWhitelisted();
-    /// The `enableModule` call did not complete successfully
-    error NotEnabled();
-    /// The `disableModule` did not complete successfully
-    error NotDisabled();
     /// Invalid address provided for module
     error InvalidParameters();
     /// The calling address is not authorized to call this function
@@ -86,6 +81,15 @@ contract AvatarxGuild is IAvatarxGuild {
         _;
     }
 
+    // Access control: Only whitelisted module
+    modifier onlyModule() {
+        // Only whitelisted modules are allowed.
+        if (modules[msg.sender] == address(0)) {
+            revert NotWhitelisted();
+        }
+        _;
+    }
+
     /// Access control: Linked Reality module
     modifier onlyReality() {
         if (msg.sender != reality) {
@@ -97,8 +101,7 @@ contract AvatarxGuild is IAvatarxGuild {
     /// @notice Initializes the Avatar contract
     /// @param  realityAddress Address of the oracle which can propose transactions after Snaphsot
     /// @param  governorAddress Address of the GovernorxGuild
-    /// @return bool Initialization successful/unsuccessful
-    function init(address realityAddress, address governorAddress) external returns (bool) {
+    function init(address realityAddress, address governorAddress) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -107,7 +110,6 @@ contract AvatarxGuild is IAvatarxGuild {
         _initialized = true;
         modules[SENTINEL_MODULES] = address(0x02);
         emit Initialized(reality, governorAddress);
-        return true;
     }
 
     /// @notice Changes Governor address
@@ -126,7 +128,7 @@ contract AvatarxGuild is IAvatarxGuild {
     function enableModule(address module) public onlySelf {
         // Module address cannot be null or sentinel.
         if (module == address(0) || module == SENTINEL_MODULES) {
-            revert NotEnabled();
+            revert InvalidParameters();
         }
         // Module cannot be added twice.
         if (modules[module] != address(0)) {
@@ -144,11 +146,13 @@ contract AvatarxGuild is IAvatarxGuild {
     function disableModule(address prevModule, address module) public onlySelf {
         // Validate module address and check that it corresponds to module index.
         if (module == address(0) || module == SENTINEL_MODULES) {
-            revert NotDisabled();
+            revert InvalidParameters();
         }
+
         if (modules[prevModule] != module) {
             revert InvalidParameters();
         }
+
         modules[prevModule] = modules[module];
         modules[module] = address(0);
         emit DisabledModule(module);
@@ -159,18 +163,12 @@ contract AvatarxGuild is IAvatarxGuild {
     /// @param to Destination address of module transaction.
     /// @param value Ether value of module transaction.
     /// @param data Data payload of module transaction.
-    /// @param operation Operation type of module transaction.
     function execTransactionFromModule(
         address to,
         uint256 value,
         bytes calldata data,
-        Enum.Operation operation
-    ) external returns (bool success) {
-        // Only whitelisted modules are allowed.
-        if (modules[msg.sender] == address(0)) {
-            revert NotWhitelisted();
-        }
-
+        Enum.Operation
+    ) external onlyModule returns (bool success) {
         /// Process all calls to this function as a `call` operation
         /// Note: this is done to minimize security risk
         (success, ) = to.call{value: value}(data);
@@ -183,21 +181,17 @@ contract AvatarxGuild is IAvatarxGuild {
     }
 
     /// @dev Allows a Module to execute a Safe transaction without any further confirmations and return data
+    /// This function is the same as `execTransactionFromModule`
+    /// Leaving it for compatibility with Avatar/Zodiac modules
     /// @param to Destination address of module transaction.
     /// @param value Ether value of module transaction.
     /// @param data Data payload of module transaction.
-    /// @param operation Operation type of module transaction.
     function execTransactionFromModuleReturnData(
         address to,
         uint256 value,
         bytes calldata data,
-        Enum.Operation operation
-    ) public returns (bool success, bytes memory returnData) {
-        /// Check that a module sent the transaction
-        if (msg.sender == SENTINEL_MODULES || modules[msg.sender] == address(0)) {
-            revert NotWhitelisted();
-        }
-
+        Enum.Operation
+    ) external onlyModule returns (bool success, bytes memory returnData) {
         /// Process all calls to this function as a `call` operation
         /// Note: this is done to minimize security risk
         (success, returnData) = to.call{value: value}(data);
@@ -217,12 +211,16 @@ contract AvatarxGuild is IAvatarxGuild {
     function executeProposal(
         address target,
         uint256 value,
-        bytes memory proposal
+        bytes calldata proposal
     ) public onlyGovernor returns (bool success) {
         (success, ) = target.call{value: value}(proposal);
 
-        if (success) emit ExecutionFromGovernorSuccess(msg.sender);
-        else emit ExecutionFromGovernorFailure(msg.sender);
+        if (success) {
+            emit ExecutionFromGovernorSuccess(msg.sender);
+        } else {
+            emit ExecutionFromGovernorFailure(msg.sender);
+        }
+
         return success;
     }
 
@@ -238,11 +236,10 @@ contract AvatarxGuild is IAvatarxGuild {
     /// @param pageSize Maximum number of modules that should be returned.
     /// @return array Array of modules.
     /// @return next Start of the next page.
-    function getModulesPaginated(address start, uint256 pageSize)
-        external
-        view
-        returns (address[] memory array, address next)
-    {
+    function getModulesPaginated(
+        address start,
+        uint256 pageSize
+    ) external view returns (address[] memory array, address next) {
         // Init array with max page size
         array = new address[](pageSize);
 
@@ -269,8 +266,8 @@ contract AvatarxGuild is IAvatarxGuild {
     /// @param  values An array of values corresponding to proposed transactions
     /// @param  data An array of encoded function calls with parameters corresponding to proposals
     function proposeAfterVote(
-        address[] memory targets,
-        uint256[] memory values,
+        address[] calldata targets,
+        uint256[] calldata values,
         bytes[] calldata data
     ) external onlyReality {
         IDoinGudGovernor(governor).propose(targets, values, data);

@@ -39,8 +39,7 @@ interface IAvatarxGuild is IAvatar {
     /// @notice Initializes the AvatarxGuild module
     /// @param  initOwner the address that owns this AvatarxGuild
     /// @param  governorAddress_ the guild's governor
-    /// @return bool was the init call successfull
-    function init(address initOwner, address governorAddress_) external returns (bool);
+    function init(address initOwner, address governorAddress_) external;
 
     /// @notice Changes Governor address
     /// @param newGovernor Address of the new Governor
