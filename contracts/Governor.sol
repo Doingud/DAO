@@ -344,8 +344,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
             bool success = IAvatarxGuild(avatarAddress).executeProposal(
                 targets[i],
                 values[i],
-                calldatas[i],
-                Enum.Operation.Call
+                calldatas[i]
             );
             if (!success) {
                 revert UnderlyingTransactionReverted();

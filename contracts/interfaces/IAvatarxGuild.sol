@@ -109,12 +109,10 @@ interface IAvatarxGuild is IAvatar {
     /// @param  target Destination address of module transaction.
     /// @param  value Ether value of module transaction.
     /// @param  proposal Data payload of module transaction.
-    /// @param  operation Operation type of module transaction.
     function executeProposal(
         address target,
         uint256 value,
-        bytes memory proposal,
-        Enum.Operation operation
+        bytes memory proposal
     ) external returns (bool success);
 
     /// @notice Allows for on-chain execution of off-chain vote

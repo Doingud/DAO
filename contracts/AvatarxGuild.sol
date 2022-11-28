@@ -214,16 +214,12 @@ contract AvatarxGuild is IAvatarxGuild {
     /// @param  target Destination address of module transaction.
     /// @param  value Ether value of module transaction.
     /// @param  proposal Data payload of module transaction.
-    /// @param  operation Operation type of module transaction.
     function executeProposal(
         address target,
         uint256 value,
-        bytes memory proposal,
-        Enum.Operation operation
-    ) public onlyGovernor returns (bool) {
-        bool success;
-        if (uint8(operation) == 1) (success, ) = target.delegatecall(proposal);
-        else (success, ) = target.call{value: value}(proposal);
+        bytes memory proposal
+    ) public onlyGovernor returns (bool success) {
+        (success, ) = target.call{value: value}(proposal);
 
         if (success) emit ExecutionFromGovernorSuccess(msg.sender);
         else emit ExecutionFromGovernorFailure(msg.sender);
