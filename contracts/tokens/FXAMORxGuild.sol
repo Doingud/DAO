@@ -62,6 +62,8 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     mapping(address => address[]) public delegation;
     // amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
+    // amount of all delegated tokens to staker
+    mapping(address => uint256) public amountDelegatedAvailable;
 
     bool private _initialized;
 
@@ -180,6 +182,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
                 emit FXAMORxGuildUndelegated(accountTo, account, delegatedTo);
             }
         }
+        delete amountDelegatedAvailable[msg.sender];
         delete amountDelegated[msg.sender];
 
         //burn used FXAMORxGuild tokens from staker
@@ -218,6 +221,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         delegators[to].push(msg.sender);
         delegations[msg.sender][to] += amount;
         amountDelegated[msg.sender] += amount;
+        amountDelegatedAvailable[to] += amount;
         emit FXAMORxGuildDelegated(to, msg.sender, amount);
     }
 
@@ -237,8 +241,10 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         if (delegations[msg.sender][account] > amount) {
             delegations[msg.sender][account] -= amount;
             amountDelegated[msg.sender] -= amount;
+            amountDelegatedAvailable[msg.sender] -= amount;
         } else {
             amountDelegated[msg.sender] -= delegations[msg.sender][account];
+            amountDelegatedAvailable[msg.sender] -= delegations[msg.sender][account];
             amount = delegations[msg.sender][account];
             delete delegations[msg.sender][account];
 
@@ -261,5 +267,17 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     /// @notice This token is non-transferable
     function transferFrom() public pure returns (bool) {
         return false;
+    }
+
+    function getDelegators(address user, uint256 index) public view returns (address) {
+        return delegators[user][index];
+    }
+
+    function getDelegations(address from, address to) public view returns (uint256) {
+        return delegations[from][to];
+    }
+
+    function getAmountDelegatedAvailable(address user) public view returns (uint256) {
+        return amountDelegatedAvailable[user];
     }
 }

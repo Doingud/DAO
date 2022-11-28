@@ -282,11 +282,34 @@ contract GuildController is IGuildController, Ownable {
             revert VotingTimeExpired();
         }
 
-        if (IERC20(FXAMORxGuild).balanceOf(msg.sender) < amount) {
+        uint256 userFXAmount = IERC20(FXAMORxGuild).balanceOf(msg.sender);
+        if (userFXAmount + FXGFXAMORxGuild.getAmountDelegatedAvailable(msg.sender) < amount) {
             revert InvalidAmount();
         }
 
-        FXGFXAMORxGuild.burn(msg.sender, amount);
+        uint256 delegatedFXUsage;
+        if (userFXAmount < amount) {
+            delegatedFXUsage = amount - userFXAmount;
+            FXGFXAMORxGuild.burn(msg.sender, userFXAmount);
+            address delegator;
+            uint256 i;
+            uint256 burnAmount;
+            while (delegatedFXUsage > 0) {
+                burnAmount = FXGFXAMORxGuild.getDelegations(FXGFXAMORxGuild.getDelegators(msg.sender, i), msg.sender);
+                if (burnAmount <= delegatedFXUsage) {
+                    FXGFXAMORxGuild.burn(delegator, burnAmount);
+                    delegatedFXUsage -= burnAmount;
+                    i++;
+                } else {
+                    FXGFXAMORxGuild.burn(delegator, delegatedFXUsage);
+                    delegatedFXUsage = 0;
+                }
+            }
+            // FXGFXAMORxGuild.burn(delegator, delegatedFXUsage);
+        } else {
+            FXGFXAMORxGuild.burn(msg.sender, amount);
+        }
+
         voters[id].push(msg.sender);
 
         reportsWeight[id] += int256(amount);
