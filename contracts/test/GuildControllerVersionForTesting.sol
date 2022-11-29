@@ -89,7 +89,7 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
         address AMORxGuild_,
         address FXAMORxGuild_,
         address MetaDaoController_
-    ) external returns (bool) {
+    ) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -105,7 +105,6 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
         percentToConvert = 100;
         _initialized = true;
         emit Initialized(initOwner, AMORxGuild_);
-        return true;
     }
 
     function setVotingPeriod(uint256 newTime) external onlyOwner {

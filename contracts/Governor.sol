@@ -118,12 +118,11 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @param  AMORxGuild_ the address of the AMORxGuild token
     /// @param  avatarAddress_ the address of the Avatar
     /// @param  initialGuardian the user responsible for the guardian actions
-    /// @return bool Initialization successful/unsuccessful
     function init(
         address AMORxGuild_,
         address avatarAddress_,
         address initialGuardian
-    ) external returns (bool) {
+    ) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -137,7 +136,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
         guardiansLimit = 1;
 
         emit Initialized(avatarAddress_);
-        return true;
     }
 
     /// @notice this modifier is needed to validate that amount of the Guardians is sufficient to vote and approve the “Many” decision
@@ -341,12 +339,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
 
         for (uint256 i = 0; i < targets.length; ++i) {
-            bool success = IAvatarxGuild(avatarAddress).executeProposal(
-                targets[i],
-                values[i],
-                calldatas[i],
-                Enum.Operation.Call
-            );
+            bool success = IAvatarxGuild(avatarAddress).executeProposal(targets[i], values[i], calldatas[i]);
             if (!success) {
                 revert UnderlyingTransactionReverted();
             }

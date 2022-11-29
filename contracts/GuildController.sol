@@ -88,14 +88,13 @@ contract GuildController is IGuildController, Ownable {
     /// @param  AMORxGuild_ the address of the AMORxGuild token
     /// @param  FXAMORxGuild_ the address of the FXAMORxGuild token
     /// @param  MetaDaoController_ the MetaDaoController owning this token
-    /// @return bool Initialization successful/unsuccessful
     function init(
         address initOwner,
         address AMOR_,
         address AMORxGuild_,
         address FXAMORxGuild_,
         address MetaDaoController_
-    ) external returns (bool) {
+    ) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -111,7 +110,6 @@ contract GuildController is IGuildController, Ownable {
         percentToConvert = 100;
         _initialized = true;
         emit Initialized(initOwner, AMORxGuild_);
-        return true;
     }
 
     function setVotingPeriod(uint256 newTime) external onlyOwner {
