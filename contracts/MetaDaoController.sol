@@ -344,11 +344,12 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
         while (whitelist[endOfList] != SENTINEL) {
             if (guildFunds[controller][whitelist[endOfList]] > 0) {
                 claimToken(controller, whitelist[endOfList]);
-                claimFees(controller);
             }
 
             endOfList = whitelist[endOfList];
         }
+
+        claimFees(controller);
 
         /// Find the `owner` of `controller`
         endOfList = SENTINEL;
