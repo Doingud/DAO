@@ -167,19 +167,19 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
     context('» burn testing', () => {
 
         it('it fails to burn FXAMORxGuild tokens if not enough FXAMORxGuild', async function () {        
-            await expect(FXAMORxGuild.connect(operator).burn(operator.address, TWO_HUNDRED_ETHER)).to.be.revertedWith(
+            await expect(FXAMORxGuild.connect(operator).burn(operator.address, operator.address, TWO_HUNDRED_ETHER)).to.be.revertedWith(
                 'InvalidAmount()'
             ); 
         });
 
         it('it fails to burn FXAMORxGuild tokens if not an owner', async function () {        
-            await expect(FXAMORxGuild.connect(staker).burn(staker.address, TWO_HUNDRED_ETHER)).to.be.revertedWith(
+            await expect(FXAMORxGuild.connect(staker).burn(staker.address, staker.address, TWO_HUNDRED_ETHER)).to.be.revertedWith(
                 'Ownable: caller is not the owner'
             ); 
         });
 
         it('burn FXAMORxGuild tokens and returns AMORxGuild', async function () {        
-            await FXAMORxGuild.connect(operator).burn(staker.address, FIFTY_ETHER);    
+            await FXAMORxGuild.connect(operator).burn(staker.address, staker.address, FIFTY_ETHER);    
             expect((await AMORxGuild.balanceOf(authorizer_adaptor.address)).toString()).to.equal(FIFTY_ETHER.toString());
         });
     });

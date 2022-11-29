@@ -37,9 +37,11 @@ interface IFXAMORxGuild {
     /// @notice Burns FXAMORxGuild tokens if they are being used for voting
     /// @dev When this tokens are burned, staked AMORxGuild is being transfered
     //       to the controller(contract that has a voting function)
+    /// @param  whoUsedDelegated who used delegeted tokens that we must burn first
+    ///         whoUsedDelegated = account by default    
     /// @param  account address from which must burn tokens
     /// @param  amount uint256 representing amount of burning tokens
-    function burn(address account, uint256 amount) external;
+    function burn(address whoUsedDelegated, address account, uint256 amount) external;
 
     /// @notice Allows some external account to vote with your FXAMORxGuild tokens
     /// @param  to address to which delegate users FXAMORxGuild

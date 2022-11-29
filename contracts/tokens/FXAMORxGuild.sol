@@ -163,27 +163,53 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     /// @notice Burns FXAMORxGuild tokens if they are being used for voting
     /// @dev When this tokens are burned, staked AMORxGuild is being transfered
     //       to the controller(contract that has a voting function)
+    /// @param  whoUsedDelegated who used delegeted tokens that we must burn first
+    ///         whoUsedDelegated = account by default    
     /// @param  account address from which must burn tokens
     /// @param  amount uint256 representing amount of burning tokens
-    function burn(address account, uint256 amount) external onlyOwner {
+    function burn(address whoUsedDelegated, address account, uint256 amount) external onlyOwner {
         if (balanceOf(account) < amount) {
             revert InvalidAmount();
         }
 
-        // undelegate all
-        if (delegation[msg.sender].length != 0) {
-            address[] memory accounts = delegation[msg.sender];
-            address accountTo;
-            uint256 delegatedTo;
-            for (uint256 i = 0; i < accounts.length; i++) {
-                accountTo = accounts[i];
-                delegatedTo = delegations[msg.sender][accountTo];
-                delete delegations[msg.sender][accountTo];
-                emit FXAMORxGuildUndelegated(accountTo, account, delegatedTo);
+        if (whoUsedDelegated == account) {
+            // if owner is the one who using tokens
+            // no need to undelegate if burning amount less than non-delegated amount
+            if (delegation[account].length != 0 && amount > (balanceOf(account) - amountDelegated[account])) {
+                uint256 toUndelegate = amount - (balanceOf(account) - amountDelegated[account]); // get delegated burning tokens amount
+                address[] memory accounts = delegation[account];
+                address delegatedTo;
+                uint256 i;
+                uint256 undelegateAmount;
+
+                while (toUndelegate > 0) {
+                    delegatedTo = accounts[i];
+                    undelegateAmount = delegations[account][delegatedTo];
+
+                    if (undelegateAmount <= toUndelegate) {
+                        _undelegate(account, delegatedTo, undelegateAmount);
+                        toUndelegate -= undelegateAmount;
+                        amountDelegated[account] -= undelegateAmount;
+                        emit FXAMORxGuildUndelegated(delegatedTo, account, undelegateAmount);
+                        i++;
+                    } else {
+                        _undelegate(account, delegatedTo, toUndelegate);
+                        amountDelegated[account] -= toUndelegate;
+                        emit FXAMORxGuildUndelegated(delegatedTo, account, toUndelegate);
+                        toUndelegate = 0;
+                    }
+                }
             }
+        } else {
+            // if the delegatee is the one who using tokens
+            _undelegate(account, whoUsedDelegated, amount);
+            amountDelegated[account] -= amount;
+            emit FXAMORxGuildUndelegated(whoUsedDelegated, account, amount);
         }
-        delete amountDelegatedAvailable[msg.sender];
-        delete amountDelegated[msg.sender];
+
+        if (amount == balanceOf(account)) {
+            delete amountDelegated[account];
+        }
 
         //burn used FXAMORxGuild tokens from staker
         _burn(account, amount);
@@ -229,34 +255,42 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     /// @param  account address from which delegating will be taken away
     /// @param  amount uint256 representing amount of undelegating tokens
     function undelegate(address account, uint256 amount) public {
-        if (account == msg.sender) {
+        _undelegate(msg.sender, account, amount);
+    }
+
+    /// @notice Unallows some external account to vote with your delegated FXAMORxGuild tokens
+    /// @param  owner address undelegating tokens owner
+    /// @param  account address from which delegating will be taken away
+    /// @param  amount uint256 representing amount of undelegating tokens
+    function _undelegate(address owner, address account, uint256 amount) internal {
+        if (account == owner) {
             revert InvalidSender();
         }
 
         //Nothing to undelegate
-        if (delegations[msg.sender][account] == 0) {
+        if (delegations[owner][account] == 0) {
             revert NotDelegatedAny();
         }
 
-        if (delegations[msg.sender][account] > amount) {
-            delegations[msg.sender][account] -= amount;
-            amountDelegated[msg.sender] -= amount;
-            amountDelegatedAvailable[msg.sender] -= amount;
+        if (delegations[owner][account] > amount) {
+            delegations[owner][account] -= amount;
+            amountDelegated[owner] -= amount;
+            amountDelegatedAvailable[owner] -= amount;
         } else {
-            amountDelegated[msg.sender] -= delegations[msg.sender][account];
-            amountDelegatedAvailable[account] -= delegations[msg.sender][account];
-            amount = delegations[msg.sender][account];
-            delete delegations[msg.sender][account];
+            amountDelegated[owner] -= delegations[owner][account];
+            amountDelegatedAvailable[account] -= delegations[owner][account];
+            amount = delegations[owner][account];
+            delete delegations[owner][account];
 
-            for (uint256 j = 0; j < delegation[msg.sender].length; j++) {
-                if (delegation[msg.sender][j] == account) {
-                    delegation[msg.sender][j] = delegation[msg.sender][delegation[msg.sender].length - 1];
-                    delegation[msg.sender].pop();
+            for (uint256 j = 0; j < delegation[owner].length; j++) {
+                if (delegation[owner][j] == account) {
+                    delegation[owner][j] = delegation[owner][delegation[owner].length - 1];
+                    delegation[owner].pop();
                     break;
                 }
             }
         }
-        emit FXAMORxGuildUndelegated(account, msg.sender, amount);
+        emit FXAMORxGuildUndelegated(account, owner, amount);
     }
 
     /// @notice This token is non-transferable

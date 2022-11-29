@@ -290,23 +290,24 @@ contract GuildController is IGuildController, Ownable {
         uint256 delegatedFXUsage;
         if (userFXAmount < amount) {
             delegatedFXUsage = amount - userFXAmount;
-            FXGFXAMORxGuild.burn(msg.sender, userFXAmount);
+            FXGFXAMORxGuild.burn(msg.sender, msg.sender, userFXAmount);
             address delegator;
             uint256 i;
             uint256 burnAmount;
             while (delegatedFXUsage > 0) {
-                burnAmount = FXGFXAMORxGuild.getDelegations(FXGFXAMORxGuild.getDelegators(msg.sender, i), msg.sender);
+                delegator = FXGFXAMORxGuild.getDelegators(msg.sender, i);
+                burnAmount = FXGFXAMORxGuild.getDelegations(delegator, msg.sender);
                 if (burnAmount <= delegatedFXUsage) {
-                    FXGFXAMORxGuild.burn(delegator, burnAmount);
+                    FXGFXAMORxGuild.burn(msg.sender, delegator, burnAmount);
                     delegatedFXUsage -= burnAmount;
                     i++;
                 } else {
-                    FXGFXAMORxGuild.burn(delegator, delegatedFXUsage);
+                    FXGFXAMORxGuild.burn(msg.sender, delegator, delegatedFXUsage);
                     delegatedFXUsage = 0;
                 }
             }
         } else {
-            FXGFXAMORxGuild.burn(msg.sender, amount);
+            FXGFXAMORxGuild.burn(msg.sender, msg.sender, amount);
         }
 
         voters[id].push(msg.sender);
