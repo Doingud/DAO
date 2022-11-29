@@ -52,7 +52,7 @@ interface IDoinGudGovernor {
         address AMORxGuild_,
         address avatarAddress_,
         address initialGuardian
-    ) external returns (bool);
+    ) external;
 
     /// @notice this function resets guardians array, and adds new guardian to the system.
     /// @param arrGuardians The array of guardians

@@ -150,7 +150,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         address AMORxGuild_,
         address avatarAddress_,
         address initialGuardian
-    ) external returns (bool) {
+    ) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -166,7 +166,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
         guardiansLimit = 1;
 
         emit Initialized(avatarAddress_);
-        return true;
     }
 
     /// @notice Checks Guardian status
@@ -350,12 +349,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         delete proposalWeight[proposalId];
 
         for (uint256 i = 0; i < targets.length; ++i) {
-            bool success = IAvatarxGuild(avatarAddress).executeProposal(
-                targets[i],
-                values[i],
-                calldatas[i],
-                Enum.Operation.Call
-            );
+            bool success = IAvatarxGuild(avatarAddress).executeProposal(targets[i], values[i], calldatas[i]);
             if (!success) {
                 revert UnderlyingTransactionReverted();
             }

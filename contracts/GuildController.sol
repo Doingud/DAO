@@ -82,13 +82,19 @@ contract GuildController is IGuildController, Ownable {
     /// Invalid address to transfer. Needed `to` != msg.sender
     error InvalidSender();
 
+    /// @notice Initializes the GuildController contract
+    /// @param  initOwner the address of the Avatar for this Guild
+    /// @param  AMOR_ the address of the AMOR token
+    /// @param  AMORxGuild_ the address of the AMORxGuild token
+    /// @param  FXAMORxGuild_ the address of the FXAMORxGuild token
+    /// @param  MetaDaoController_ the MetaDaoController owning this token
     function init(
         address initOwner, // The Avatar for this Guild
         address AMOR_,
         address AMORxGuild_,
         address FXAMORxGuild_,
         address MetaDaoController_
-    ) external returns (bool) {
+    ) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -104,7 +110,6 @@ contract GuildController is IGuildController, Ownable {
         percentToConvert = 100;
         _initialized = true;
         emit Initialized(initOwner, AMORxGuild_);
-        return true;
     }
 
     function setVotingPeriod(uint256 newTime) external onlyOwner {
