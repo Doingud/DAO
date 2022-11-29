@@ -149,7 +149,7 @@ contract dAMORxGuild is IdAMORxGuild, ERC20Base, Ownable {
         }
 
         if (amountDelegated[msg.sender] > 0) {
-            undelegateAll();
+            revert InvalidAmount();
         }
 
         delete _stakes[msg.sender];
@@ -166,18 +166,10 @@ contract dAMORxGuild is IdAMORxGuild, ERC20Base, Ownable {
             revert InvalidSender();
         }
 
-        if (delegatedTo[msg.sender].length == 100) {
-            revert ExceededDelegationLimit();
-        }
-
         uint256 availableAmount = balanceOf(msg.sender) - amountDelegated[msg.sender];
 
         if (availableAmount < amount) {
             revert InvalidAmount();
-        }
-
-        if (delegations[msg.sender][to] == 0) {
-            delegatedTo[msg.sender].push(to);
         }
 
         delegations[msg.sender][to] += amount;
@@ -194,39 +186,35 @@ contract dAMORxGuild is IdAMORxGuild, ERC20Base, Ownable {
             revert NoDelegation();
         }
 
-        if (delegations[msg.sender][account] > amount) {
-            delegations[msg.sender][account] -= amount;
-            amountDelegated[msg.sender] -= amount;
-        } else {
-            amount = delegations[msg.sender][account];
-            amountDelegated[msg.sender] -= amount;
-            delete delegations[msg.sender][account];
-            address[] memory delegatees = delegatedTo[msg.sender];
-            for (uint256 i; i < delegatees.length; i++) {
-                if (delegatees[i] == account) {
-                    delegatedTo[msg.sender][i] = delegatees[delegatees.length - 1];
-                    delegatedTo[msg.sender].pop();
-                }
-            }
+        if (delegations[msg.sender][account] < amount) {
+            revert InvalidAmount();
         }
+
+        delegations[msg.sender][account] -= amount;
+        amountDelegated[msg.sender] -= amount;
 
         emit dAMORxGuildUndelegated(account, msg.sender, amount);
     }
 
     /// @inheritdoc IdAMORxGuild
-    function undelegateAll() public {
+    function undelegateAll(address[] memory delegatees) public {
         if (amountDelegated[msg.sender] == 0) {
             revert NoDelegation();
         }
 
-        address[] memory delegatees = delegatedTo[msg.sender];
+        uint256 checkDelegations;
 
         for (uint256 i; i < delegatees.length; i++) {
-            undelegate(delegatees[i], delegations[msg.sender][delegatees[i]]);
+            checkDelegations += delegations[msg.sender][delegatees[i]];
+            emit dAMORxGuildUndelegated(delegatees[i], msg.sender, delegations[msg.sender][delegatees[i]]);
+            delete delegations[msg.sender][delegatees[i]];
+        }
+
+        if (checkDelegations != amountDelegated[msg.sender]) {
+            revert InvalidAmount();
         }
 
         delete amountDelegated[msg.sender];
-        delete delegatedTo[msg.sender];
     }
 
     /// @notice This token is non-transferable

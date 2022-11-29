@@ -88,5 +88,6 @@ interface IdAMORxGuild {
     function undelegate(address account, uint256 amount) external;
 
     /// @notice Undelegate all of your dAMORxGuild
-    function undelegateAll() external;
+    /// @param delegatees Array of addresses delegated to
+    function undelegateAll(address[] memory delegatees) external;
 }
