@@ -164,10 +164,14 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     /// @dev When this tokens are burned, staked AMORxGuild is being transfered
     //       to the controller(contract that has a voting function)
     /// @param  whoUsedDelegated who used delegeted tokens that we must burn first
-    ///         whoUsedDelegated = account by default    
+    ///         whoUsedDelegated = account by default
     /// @param  account address from which must burn tokens
     /// @param  amount uint256 representing amount of burning tokens
-    function burn(address whoUsedDelegated, address account, uint256 amount) external onlyOwner {
+    function burn(
+        address whoUsedDelegated,
+        address account,
+        uint256 amount
+    ) external onlyOwner {
         if (balanceOf(account) < amount) {
             revert InvalidAmount();
         }
@@ -262,7 +266,11 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     /// @param  owner address undelegating tokens owner
     /// @param  account address from which delegating will be taken away
     /// @param  amount uint256 representing amount of undelegating tokens
-    function _undelegate(address owner, address account, uint256 amount) internal {
+    function _undelegate(
+        address owner,
+        address account,
+        uint256 amount
+    ) internal {
         if (account == owner) {
             revert InvalidSender();
         }
