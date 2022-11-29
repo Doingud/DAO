@@ -46,16 +46,10 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 /// Custom contracts
 import "../utils/ERC20Base.sol";
+import "../interfaces/IdAMORxGuild.sol";
 
-contract dAMORxGuild is ERC20Base, Ownable {
+contract dAMORxGuild is IdAMORxGuild, ERC20Base, Ownable {
     using SafeERC20 for IERC20;
-
-    struct Stakes {
-        uint256 stakesTimes; // time staked for
-        uint256 stakesAMOR; //all staker balance in AMORxGuild
-    }
-
-    mapping(address => Stakes) public _stakes;
 
     /// List of delegations from one address
     /// Staker => delegated to (many accounts) => amount
@@ -64,101 +58,35 @@ contract dAMORxGuild is ERC20Base, Ownable {
     mapping(address => address[]) public delegatedTo;
     /// Amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
-    /// Amount of tokens delegated to this address
-    mapping(address => uint256) public votingPower;
 
-    event Initialized(address owner, address AMORxGuild, uint256 amount);
-    event AMORxGuildStakedToDAMOR(
-        address from,
-        uint256 indexed amount,
-        uint256 indexed mintAmount,
-        uint256 indexed timeStakedFor
-    );
-    event AMORxGuildStakeIncreasedToDAMOR(
-        address from,
-        uint256 indexed amount,
-        uint256 indexed mintAmount,
-        uint256 indexed timeStakedFor
-    );
-    event AMORxGuildWithdrawnFromDAMOR(
-        address to,
-        uint256 indexed burnedDAMORxGuild,
-        uint256 indexed returnedAMORxGuild
-    );
-    event dAMORxGuildUndelegated(address indexed from, address owner, uint256 indexed amount);
-    event dAMORxGuildDelegated(address indexed to, address owner, uint256 indexed amount);
-
-    bool private _initialized;
+    mapping(address => Stakes) private _stakes;
 
     /// Constants
     uint256 public constant COEFFICIENT = 2;
-    uint256 public constant TIME_DENOMINATOR = 1_000_000_000_000_000_000; // 1 ether
+    uint256 public constant TIME_DENOMINATOR = 1 ether; // 10**18
     uint256 public constant MAX_LOCK_TIME = 365 days; // 1 year is the time for the new deposided tokens to be locked until they can be withdrawn
     uint256 public constant MIN_LOCK_TIME = 7 days; // 1 week is the time for the new deposided tokens to be locked until they can be withdrawn
 
-    IERC20 private AMORxGuild;
+    IERC20 private _amorXGuild;
 
-    /// Errors
-    /// The contract has already been initialized
-    error AlreadyInitialized();
-    /// Caller does not have access
-    error Unauthorized();
-    /// No tokens to undelegate
-    error NotDelegatedAny();
-    /// Invalid address. Needed address != address(0)
-    error AddressZero();
-    /// Invalid address to transfer. Needed `to` != msg.sender
-    error InvalidSender();
-    /// Staking time provided is less than minimum
-    error TimeTooSmall();
-    /// Staking time provided is larger than maximum
-    error TimeTooBig();
-    /// Exceeded delegation limits
-    error ExceededDelegationLimit();
-
-    /*  @dev    The init() function takes the place of the constructor.
-     *          It can only be run once.
-     */
+    /// @inheritdoc IdAMORxGuild
     function init(
         string memory _name,
         string memory _symbol,
         address initOwner,
-        address _AMORxGuild,
+        address amorXGuild,
         uint256 amount
-    ) external returns (bool) {
-        if (_initialized) {
-            revert AlreadyInitialized();
-        }
+    ) external {
+        // _setTokenDetail is preventing re-initialization
+        _setTokenDetail(_name, _symbol);
 
         _transferOwnership(initOwner);
 
-        AMORxGuild = IERC20(_AMORxGuild);
-        _setTokenDetail(_name, _symbol);
-        _initialized = true;
-
-        emit Initialized(initOwner, _AMORxGuild, amount);
-        return true;
+        _amorXGuild = IERC20(amorXGuild);
+        emit Initialized(initOwner, amorXGuild, amount);
     }
 
-    /// @notice Mint AMORxGuild tokens to staker
-    /// @dev Tokens are by following formula: NdAMOR =  k * f(t)^2 * nAMOR
-    /// @param amount The amount of AMORxGuild to be staked
-    /// @param time The period of time the tokens wll be staked
-    function _stake(uint256 amount, uint256 time) internal returns (uint256) {
-        uint256 koef = (time * TIME_DENOMINATOR) / MAX_LOCK_TIME;
-        uint256 newAmount = (COEFFICIENT * (koef * koef) * amount) / (TIME_DENOMINATOR * TIME_DENOMINATOR);
-        _mint(msg.sender, newAmount);
-        return newAmount;
-    }
-
-    /// @notice Stakes AMORxGuild and receive dAMORxGuild in return
-    /// Receives ERC20 AMORxGuild tokens, which are getting locked
-    /// and generate dAMORxGuild tokens in return.
-    /// Note: Tokens are minted following the formula
-    /// @dev Front end must still call approve() on AMORxGuild token to allow transferFrom()
-    /// @param  amount The amount of AMORxGuild/AMOR to be staked
-    /// @param  time The period of time (in seconds) to stake for
-    /// @return uint256 The amount of dAMORxGuild received from staking
+    /// @inheritdoc IdAMORxGuild
     function stake(uint256 amount, uint256 time) external returns (uint256) {
         if (time < MIN_LOCK_TIME) {
             revert TimeTooSmall();
@@ -168,58 +96,55 @@ contract dAMORxGuild is ERC20Base, Ownable {
             revert TimeTooBig();
         }
 
-        if (AMORxGuild.balanceOf(msg.sender) < amount) {
+        if (_amorXGuild.balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }
 
-        /// Send to AMORxGuild contract to stake
-        AMORxGuild.safeTransferFrom(msg.sender, address(this), amount);
+        _amorXGuild.safeTransferFrom(msg.sender, address(this), amount);
 
-        uint256 newAmount = _stake(amount, time);
+        // mints dAMORxGuildAmount to staker
+        uint256 dAMORxGuildAmount = _stake(amount, time);
 
         Stakes storage userStake = _stakes[msg.sender];
-        userStake.stakesTimes = block.timestamp + time;
+        uint256 endTime = block.timestamp + time;
+        userStake.stakesTimes = endTime;
         userStake.stakesAMOR += amount;
 
-        emit AMORxGuildStakedToDAMOR(msg.sender, amount, newAmount, userStake.stakesTimes);
-        return newAmount;
+        emit AMORxGuildStakedToDAMOR(msg.sender, amount, dAMORxGuildAmount, endTime);
+        return dAMORxGuildAmount;
     }
 
-    /// @notice Increases stake of already staken AMORxGuild and receive dAMORxGuild in return
-    /// @dev    Front end must still call approve() on AMORxGuild token to allow transferFrom()
-    /// @param  amount uint256 amount of dAMOR to be staked
+    /// @inheritdoc IdAMORxGuild
     function increaseStake(uint256 amount) external returns (uint256) {
-        if (AMORxGuild.balanceOf(msg.sender) < amount) {
+        if (_amorXGuild.balanceOf(msg.sender) < amount) {
             revert InvalidAmount();
         }
 
-        /// Send to AMORxGuild contract to stake
-        AMORxGuild.safeTransferFrom(msg.sender, address(this), amount);
+        _amorXGuild.safeTransferFrom(msg.sender, address(this), amount);
 
         Stakes storage userStake = _stakes[msg.sender];
 
         /// Mint AMORxGuild tokens to staker
         /// msg.sender receives funds, based on the amount of time remaining until the end of his stake
         uint256 time = userStake.stakesTimes - block.timestamp;
-        uint256 newAmount = _stake(amount, time);
+        uint256 dAMORxGuildAmount = _stake(amount, time);
         userStake.stakesAMOR += amount;
 
-        emit AMORxGuildStakeIncreasedToDAMOR(msg.sender, amount, newAmount, time);
-        return newAmount;
+        emit AMORxGuildStakeIncreasedToDAMOR(msg.sender, amount, dAMORxGuildAmount, time);
+        return dAMORxGuildAmount;
     }
 
-    /// @notice Withdraws AMORxGuild tokens; burns dAMORxGuild
-    /// @dev When the tokens are burned, staked AMORxGuild is being transfered back to the msg.sender
-    function withdraw() external returns (uint256) {
+    /// @inheritdoc IdAMORxGuild
+    function withdraw() external returns (uint256 dAMORxGuildBurned, uint256 AMORxGuildUnstaked) {
         Stakes storage userStake = _stakes[msg.sender];
 
         if (block.timestamp < userStake.stakesTimes) {
             revert TimeTooSmall();
         }
 
-        uint256 unstakeAMORAmount = userStake.stakesAMOR;
-        uint256 amount = balanceOf(msg.sender);
-        if (amount == 0) {
+        AMORxGuildUnstaked = userStake.stakesAMOR;
+        dAMORxGuildBurned = balanceOf(msg.sender);
+        if (dAMORxGuildBurned == 0) {
             revert InvalidAmount();
         }
 
@@ -228,16 +153,14 @@ contract dAMORxGuild is ERC20Base, Ownable {
         }
 
         delete _stakes[msg.sender];
-        _burn(msg.sender, amount);
+        _burn(msg.sender, dAMORxGuildBurned);
 
-        AMORxGuild.safeTransfer(msg.sender, unstakeAMORAmount);
-        emit AMORxGuildWithdrawnFromDAMOR(msg.sender, amount, unstakeAMORAmount);
-        return amount;
+        _amorXGuild.safeTransfer(msg.sender, AMORxGuildUnstaked);
+        emit AMORxGuildWithdrawnFromDAMOR(msg.sender, dAMORxGuildBurned, AMORxGuildUnstaked);
+        return (dAMORxGuildBurned, AMORxGuildUnstaked);
     }
 
-    /// @notice Delegate your dAMORxGuild to the address `account`
-    /// @param  to Address to which delegate users FXAMORxGuild
-    /// @param  amount The amount of tokens to delegate
+    /// @inheritdoc IdAMORxGuild
     function delegate(address to, uint256 amount) external {
         if (to == msg.sender) {
             revert InvalidSender();
@@ -267,13 +190,8 @@ contract dAMORxGuild is ERC20Base, Ownable {
     /// @param  account The address from which delegating will be taken away
     /// @param  amount The amount of tokens to undelegate
     function undelegate(address account, uint256 amount) public {
-        if (account == msg.sender) {
-            revert InvalidSender();
-        }
-
-        //Nothing to undelegate
         if (delegations[msg.sender][account] == 0) {
-            revert NotDelegatedAny();
+            revert NoDelegation();
         }
 
         if (delegations[msg.sender][account] > amount) {
@@ -295,10 +213,10 @@ contract dAMORxGuild is ERC20Base, Ownable {
         emit dAMORxGuildUndelegated(account, msg.sender, amount);
     }
 
-    /// @notice Undelegate all your dAMORxGuild
+    /// @inheritdoc IdAMORxGuild
     function undelegateAll() public {
         if (amountDelegated[msg.sender] == 0) {
-            revert NotDelegatedAny();
+            revert NoDelegation();
         }
 
         address[] memory delegatees = delegatedTo[msg.sender];
@@ -319,5 +237,17 @@ contract dAMORxGuild is ERC20Base, Ownable {
     /// @notice This token is non-transferable
     function transferFrom() public pure returns (bool) {
         return false;
+    }
+
+    /// @notice Mint AMORxGuild tokens to staker
+    /// @dev Tokens are by following formula: NdAMOR =  k * f(t)^2 * nAMOR
+    /// @param amount The amount of AMORxGuild to be staked
+    /// @param time The period of time the tokens wll be staked
+    /// @return amount of dAMORxGuildAmount tokens minted to staker
+    function _stake(uint256 amount, uint256 time) internal returns (uint256) {
+        uint256 koef = (time * TIME_DENOMINATOR) / MAX_LOCK_TIME;
+        uint256 dAMORxGuildAmount = (COEFFICIENT * (koef * koef) * amount) / (TIME_DENOMINATOR * TIME_DENOMINATOR);
+        _mint(msg.sender, dAMORxGuildAmount);
+        return dAMORxGuildAmount;
     }
 }

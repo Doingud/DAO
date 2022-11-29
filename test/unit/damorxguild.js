@@ -150,7 +150,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
         it('it fails to undelegate dAMORxGuild tokens if nothing to undelegate', async function () {
             await expect(dAMORxGuild.connect(staker).undelegate(operator.address, FIFTY_ETHER)).to.be.revertedWith(
-                'NotDelegatedAny()'
+                'NoDelegation()'
             ); 
         });
 
@@ -208,7 +208,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
         it('it fails to undelegate dAMORxGuild tokens if try to undelegate itself', async function () {
             await expect(dAMORxGuild.connect(staker).undelegate(staker.address, FIFTY_ETHER)).to.be.revertedWith(
-                'InvalidSender()'
+                'NoDelegation()'
             ); 
         });
 
@@ -275,7 +275,7 @@ describe('unit - Contract: dAMORxGuild Token', function () {
 
         it('it fails undelegates all if nothing to undelegate', async function () {
             await expect(dAMORxGuild.connect(staker).undelegateAll()).to.be.revertedWith(
-                'NotDelegatedAny()'
+                'NoDelegation()'
             ); 
         });
     });
