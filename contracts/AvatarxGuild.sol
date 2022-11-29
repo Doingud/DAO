@@ -35,6 +35,8 @@ pragma solidity 0.8.15;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *
  */
+
+/// Custom contracts
 import "./interfaces/IAvatarxGuild.sol";
 import "./interfaces/IGovernor.sol";
 
@@ -94,7 +96,9 @@ contract AvatarxGuild is IAvatarxGuild {
         emit Initialized(reality, governorAddress);
     }
 
-    function setGovernor(address newGovernor) external onlySelf {
+    /// @notice Changes Governor address
+    /// @param newGovernor Address of the new Governor
+    function setGovernor(address newGovernor) public onlySelf {
         if (newGovernor == governor) {
             revert AlreadyInitialized();
         }
@@ -205,6 +209,7 @@ contract AvatarxGuild is IAvatarxGuild {
     }
 
     /// @dev Returns if an module is enabled
+    /// @param module Address of module to check
     /// @return True if the module is enabled
     function isModuleEnabled(address module) public view returns (bool) {
         return SENTINEL_MODULES != module && modules[module] != address(0);
