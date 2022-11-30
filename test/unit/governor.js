@@ -77,8 +77,7 @@ describe('unit - Contract: Governor', function () {
             expect(await governor.avatarAddress()).to.equals(authorizer_adaptor.address);
             //const abi = ethers.utils.defaultAbiCoder;
             guardiansVersion = 0;
-            let encodedKey = ethers.utils.solidityKeccak256(["uint256","address"],[0,root.address]);
-            expect(await governor.guardians(encodedKey)).to.equals(true);
+            expect(await governor.guardians(0, root.address)).to.equals(true);
             expect((await governor.votingDelay())).to.equals(1);
             let weeks = 60 * 60 * 24 * 7 * 2;
             expect(await governor.votingPeriod()).to.equals(weeks);
@@ -102,8 +101,6 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it changes guardians limit from proposal', async function () {
-            //expect(await governor.guardians(0)).to.equal(root.address);
-            //guardians = [staker.address, operator.address, user.address];
             await governor.connect(authorizer_adaptor).changeGuardiansLimit(3);
             expect(await governor.guardiansLimit()).to.equals(3);
         });
@@ -113,7 +110,6 @@ describe('unit - Contract: Governor', function () {
             let transactionData = governor.interface.encodeFunctionData("setGuardians", [guardians]);
             await expect(governor.connect(authorizer_adaptor).propose([governor.address], [0], [transactionData])).to.be.revertedWith("NotEnoughGuardians()");
             expect(await governor.guardiansLimit()).to.equals(3);
-            await expect(governor.guardians(3)).to.be.reverted;
         });
 
     });
@@ -136,10 +132,9 @@ describe('unit - Contract: Governor', function () {
             guardians = [staker.address, operator.address, user.address];
             await governor.connect(authorizer_adaptor).setGuardians(guardians);
             guardiansVersion++;
-            //let encodedKey = ethers.utils.solidityKeccak256(["uint256","address"],[1,guardians[0]]);
-            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,guardians[0]]))).to.be.true;
-            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,guardians[1]]))).to.be.true;
-            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,guardians[2]]))).to.be.true;
+            expect(await governor.guardians(guardiansVersion, guardians[0])).to.be.true;
+            expect(await governor.guardians(guardiansVersion, guardians[1])).to.be.true;
+            expect(await governor.guardians(guardiansVersion, guardians[2])).to.be.true;
             expect(await governor.guardiansCounter()).to.equal(3);
         });
 
@@ -147,8 +142,8 @@ describe('unit - Contract: Governor', function () {
             guardians = [operator.address, staker.address];
             await governor.connect(authorizer_adaptor).setGuardians(guardians);
             guardiansVersion++;
-            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,guardians[0]]))).to.be.true;
-            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,guardians[1]]))).to.be.true;
+            expect(await governor.guardians(guardiansVersion, guardians[0])).to.be.true;
+            expect(await governor.guardians(guardiansVersion, guardians[1])).to.be.true;
             expect(await governor.guardiansCounter()).to.equal(2);
 
             // return previous user and guardians variables back
@@ -157,8 +152,6 @@ describe('unit - Contract: Governor', function () {
             guardiansVersion++;
         });
     });
-
-
 
     context('» addGuardian testing', () => {
 
@@ -170,7 +163,7 @@ describe('unit - Contract: Governor', function () {
 
         it('it adds guardian', async function () {
             await governor.connect(authorizer_adaptor).addGuardian(user2.address);
-            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,user2.address]))).to.be.true;
+            expect(await governor.guardians(guardiansVersion, user2.address)).to.be.true;
             expect(await governor.guardiansCounter()).to.equal(4);
         });
 
@@ -193,8 +186,7 @@ describe('unit - Contract: Governor', function () {
 
         it('it changes guardian', async function () {
             await governor.connect(authorizer_adaptor).changeGuardian(operator.address, root.address);
-            //expect(await governor.guardians(1)).to.equals(root.address);
-            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,root.address]))).to.be.true;
+            expect(await governor.guardians(guardiansVersion, root.address)).to.be.true;
         });
     });
 
@@ -409,11 +401,9 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it removes guardian', async function () {
-            //expect(await governor.guardians(3)).to.equals(user2.address);
             await governor.connect(authorizer_adaptor).removeGuardian(root.address);
-            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,root.address]))).to.be.false;
+            expect(await governor.guardians(guardiansVersion, root.address)).to.be.false;
 
-            //transactionData = governor.interface.encodeFunctionData("addGuardian", [root.address]);
             await governor.connect(authorizer_adaptor).addGuardian(root.address);
         });
     });

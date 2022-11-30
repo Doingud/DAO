@@ -73,7 +73,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// Guardians are elected in `seasons` which is handled by the front-end
     /// By updating the `currentGuardianVersion` the `guardians` mapping is effectively cleared.
     /// (version, address) => true
-    mapping(bytes32 => bool) public guardians;
+    //mapping(bytes32 => bool) public guardians;
+    mapping(uint256 => mapping(address => bool)) public guardians;
     /// The current version of `guardians`
     /// Note: Updated during `setGuardians`
     uint256 public currentGuardianVersion;
@@ -155,7 +156,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert AlreadyInitialized();
         }
 
-        guardians[_getGuardianKey(initialGuardian)] = true;
+        guardians[currentGuardianVersion][initialGuardian] = true;
         guardiansCounter++;
 
         avatarAddress = avatarAddress_;
@@ -172,7 +173,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @param  guardian Address to be checked
     /// @return bool Returns true if address is a Guardian
     function isGuardian(address guardian) public view returns (bool) {
-        return guardians[_getGuardianKey(guardian)];
+        return guardians[currentGuardianVersion][guardian];
     }
 
     /// @notice this function resets guardians array, and adds new guardian to the system.
@@ -191,7 +192,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
                 revert DuplicateAddress();
             }
 
-            guardians[_getGuardianKey(arrGuardians[i])] = true;
+            guardians[currentGuardianVersion][arrGuardians[i]] = true;
             guardiansCounter++;
         }
 
@@ -205,7 +206,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert InvalidParameters();
         }
 
-        guardians[_getGuardianKey(guardian)] = true;
+        guardians[currentGuardianVersion][guardian] = true;
         guardiansCounter++;
 
         emit GuardianAdded(guardian);
@@ -214,7 +215,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @notice Removes target guardian from the system
     /// @param guardian Guardian to be removed
     function removeGuardian(address guardian) external onlyAvatar {
-        delete guardians[_getGuardianKey(guardian)];
+        delete guardians[currentGuardianVersion][guardian];
         guardiansCounter--;
 
         emit GuardianRemoved(guardian);
@@ -228,8 +229,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert InvalidParameters();
         }
 
-        delete guardians[_getGuardianKey(currentGuardian)];
-        guardians[_getGuardianKey(newGuardian)] = true;
+        delete guardians[currentGuardianVersion][currentGuardian];
+        guardians[currentGuardianVersion][newGuardian] = true;
 
         emit GuardianChanged(currentGuardian, newGuardian);
     }
@@ -472,13 +473,5 @@ contract DoinGudGovernor is IDoinGudGovernor {
         bytes[] memory calldatas
     ) public pure returns (uint256) {
         return uint256(keccak256(abi.encode(targets, values, calldatas)));
-    }
-
-    /// @notice Returns the key to the mapping of the current Guardians version
-    /// @param  guardian The address of the Guardian
-    /// @return bytes32 The hash of the `currentGuardianVersion` and `guardian` address...
-    /// ...which resolves to a unique key for every version of the Guardians mapping
-    function _getGuardianKey(address guardian) internal view returns (bytes32) {
-        return keccak256(abi.encodePacked(currentGuardianVersion, guardian));
     }
 }
