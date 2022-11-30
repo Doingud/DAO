@@ -273,10 +273,6 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             }
         }
 
-        if (amount == balanceOf(owner)) {
-            delete amountDelegated[owner];
-        }
-
         emit FXAMORxGuildUndelegated(account, owner, amount);
     }
 
