@@ -57,6 +57,10 @@ interface IFXAMORxGuild {
     /// @param  amount uint256 representing amount of undelegating tokens
     function undelegate(address account, uint256 amount) external;
 
+    /// @notice Transfers FXAMORxGuild tokens if they are being used for voting
+    /// @param  amount uint256 representing amount of tokens to transfer to controller(contract that has a voting function)
+    function withdraw(uint256 amount) external;
+
     /// @notice Get delegators value
     function delegators(address user, uint256 index) external returns (address);
 

@@ -191,10 +191,15 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
 
         //burn used FXAMORxGuild tokens from staker
         _burn(account, amount);
-        // transfer of AMORxGuild is executed in the GuildController
-        AMORxGuild.approve(controller, amount);
+        // transfer of AMORxGuild is executed in the GuildController via call of withdraw()
 
         emit AMORxGuildWithdrawnFromFXAMOR(account, amount, block.timestamp);
+    }
+
+    /// @notice Transfers FXAMORxGuild tokens if they are being used for voting
+    /// @param  amount uint256 representing amount of tokens to transfer to controller(contract that has a voting function)
+    function withdraw(uint256 amount) external onlyOwner {
+        AMORxGuild.safeTransfer(controller, amount);
     }
 
     /// @notice Allows some external account to vote with your FXAMORxGuild tokens
