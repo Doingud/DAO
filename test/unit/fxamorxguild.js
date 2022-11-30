@@ -178,9 +178,10 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
             ); 
         });
 
-        it('burn FXAMORxGuild tokens and returns AMORxGuild', async function () {        
+        it('burn FXAMORxGuild tokens and returns AMORxGuild', async function () {    
+            expect((await FXAMORxGuild.balanceOf(staker.address)).toString()).to.equal(ONE_HUNDRED_ETHER.toString());    
             await FXAMORxGuild.connect(operator).burn(staker.address, staker.address, FIFTY_ETHER);    
-            expect((await AMORxGuild.balanceOf(authorizer_adaptor.address)).toString()).to.equal(FIFTY_ETHER.toString());
+            expect((await FXAMORxGuild.balanceOf(staker.address)).toString()).to.equal(FIFTY_ETHER.toString());
         });
     });
 
