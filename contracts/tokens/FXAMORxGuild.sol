@@ -207,12 +207,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         } else {
             // if the delegatee is the one who using tokens
             _undelegate(account, whoUsedDelegated, amount);
-            amountDelegated[account] -= amount;
             emit FXAMORxGuildUndelegated(whoUsedDelegated, account, amount);
-        }
-
-        if (amount == balanceOf(account)) {
-            delete amountDelegated[account];
         }
 
         //burn used FXAMORxGuild tokens from staker
@@ -298,6 +293,11 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
                 }
             }
         }
+
+        if (amount == balanceOf(owner)) {
+            delete amountDelegated[owner];
+        }
+
         emit FXAMORxGuildUndelegated(account, owner, amount);
     }
 
