@@ -176,36 +176,15 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             revert InvalidAmount();
         }
 
-        if (whoUsedDelegated == account) {
-            // if owner is the one who using tokens
-            // no need to undelegate if burning amount less than non-delegated amount
-            if (delegation[account].length != 0 && amount > (balanceOf(account) - amountDelegated[account])) {
-                uint256 toUndelegate = amount - (balanceOf(account) - amountDelegated[account]); // get delegated burning tokens amount
-                address[] memory accounts = delegation[account];
-                address delegatedTo;
-                uint256 i;
-                uint256 undelegateAmount;
+        if (whoUsedDelegated == account && amount > (balanceOf(account) - amountDelegated[account])) {
+            revert InvalidAmount();
+        }
 
-                while (toUndelegate > 0) {
-                    delegatedTo = accounts[i];
-                    undelegateAmount = delegations[account][delegatedTo];
-
-                    if (undelegateAmount <= toUndelegate) {
-                        _undelegate(account, delegatedTo, undelegateAmount);
-                        toUndelegate -= undelegateAmount;
-                        amountDelegated[account] -= undelegateAmount;
-                        emit FXAMORxGuildUndelegated(delegatedTo, account, undelegateAmount);
-                        i++;
-                    } else {
-                        _undelegate(account, delegatedTo, toUndelegate);
-                        amountDelegated[account] -= toUndelegate;
-                        emit FXAMORxGuildUndelegated(delegatedTo, account, toUndelegate);
-                        toUndelegate = 0;
-                    }
-                }
-            }
-        } else {
+        if (whoUsedDelegated != account) {
             // if the delegatee is the one who using tokens
+            if (delegations[account][whoUsedDelegated] > amount) {
+                revert InvalidAmount();
+            }
             _undelegate(account, whoUsedDelegated, amount);
             emit FXAMORxGuildUndelegated(whoUsedDelegated, account, amount);
         }
@@ -319,6 +298,11 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     /// @notice Get delegations value
     function getDelegations(address from, address to) external view returns (uint256) {
         return delegations[from][to];
+    }
+
+    /// @notice Get amountDelegated value
+    function getAmountDelegated(address user) external view returns (uint256) {
+        return amountDelegated[user];
     }
 
     /// @notice Get amountDelegatedAvailable value

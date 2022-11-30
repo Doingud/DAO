@@ -63,6 +63,9 @@ interface IFXAMORxGuild {
     /// @notice Get delegations value
     function getDelegations(address from, address to) external returns (uint256);
 
+    /// @notice Get amountDelegated value
+    function getAmountDelegated(address user) external returns (uint256);
+
     /// @notice Get amountDelegatedAvailable value
     function getAmountDelegatedAvailable(address user) external returns (uint256);
 }
