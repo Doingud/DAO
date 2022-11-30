@@ -14,30 +14,30 @@ interface IdAMORxGuild {
     error TimeTooSmall();
     /// Staking time provided is larger than maximum
     error TimeTooBig();
-    /// Exceeded delegation limits
-    error ExceededDelegationLimit();
+    /// There are still delegated tokens
+    error TokensDelegated();
 
     // Events
     event Initialized(address owner, address AMORxGuild, uint256 amount);
     event AMORxGuildStakedToDAMOR(
-        address from,
-        uint256 indexed amount,
-        uint256 indexed mintAmount,
+        address indexed from,
+        uint256 amount,
+        uint256 mintAmount,
         uint256 indexed timeStakedFor
     );
     event AMORxGuildStakeIncreasedToDAMOR(
-        address from,
-        uint256 indexed amount,
-        uint256 indexed mintAmount,
+        address indexed from,
+        uint256 amount,
+        uint256 mintAmount,
         uint256 indexed timeStakedFor
     );
     event AMORxGuildWithdrawnFromDAMOR(
-        address to,
-        uint256 indexed burnedDAMORxGuild,
-        uint256 indexed returnedAMORxGuild
+        address indexed to,
+        uint256 burnedDAMORxGuild,
+        uint256 returnedAMORxGuild
     );
-    event dAMORxGuildUndelegated(address indexed from, address owner, uint256 indexed amount);
-    event dAMORxGuildDelegated(address indexed to, address owner, uint256 indexed amount);
+    event dAMORxGuildUndelegated(address indexed from, address indexed owner, uint256 amount);
+    event dAMORxGuildDelegated(address indexed to, address indexed owner, uint256 amount);
 
     struct Stakes {
         uint256 stakesTimes; // time staked for
@@ -82,12 +82,13 @@ interface IdAMORxGuild {
     /// @param amount The amount of tokens to delegate
     function delegate(address to, uint256 amount) external;
 
-    /// @notice Undelegate your dAMORxGuild to the address `account`
-    /// @param  account The address from which delegating will be taken away
-    /// @param  amount The amount of tokens to undelegate
-    function undelegate(address account, uint256 amount) external;
-
     /// @notice Undelegate all of your dAMORxGuild
     /// @param delegatees Array of addresses delegated to
-    function undelegateAll(address[] memory delegatees) external;
+    function undelegate(address[] calldata delegatees) external;
+
+    /// @notice Undelegates and withdraws staked AMORxGuild in one transaction
+    /// @param delegatees Array of addresses delegated to
+    /// @return dAMORxGuildBurned amount of dAmorXGuild tokens burned
+    /// @return AMORxGuildUnstaked amount of AMORxGuild tokens unstaked
+    function undelegateAndWithdraw(address[] calldata delegatees) external returns(uint256 dAMORxGuildBurned, uint256 AMORxGuildUnstaked);
 }

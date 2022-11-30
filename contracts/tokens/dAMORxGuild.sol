@@ -54,8 +54,6 @@ contract dAMORxGuild is IdAMORxGuild, ERC20Base, Ownable {
     /// List of delegations from one address
     /// Staker => delegated to (many accounts) => amount
     mapping(address => mapping(address => uint256)) public delegations;
-    /// An array of addresses that have been delegated to by a specified address
-    mapping(address => address[]) public delegatedTo;
     /// Amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
 
@@ -135,7 +133,7 @@ contract dAMORxGuild is IdAMORxGuild, ERC20Base, Ownable {
     }
 
     /// @inheritdoc IdAMORxGuild
-    function withdraw() external returns (uint256 dAMORxGuildBurned, uint256 AMORxGuildUnstaked) {
+    function withdraw() public returns (uint256 dAMORxGuildBurned, uint256 AMORxGuildUnstaked) {
         Stakes storage userStake = _stakes[msg.sender];
 
         if (block.timestamp < userStake.stakesTimes) {
@@ -149,7 +147,7 @@ contract dAMORxGuild is IdAMORxGuild, ERC20Base, Ownable {
         }
 
         if (amountDelegated[msg.sender] > 0) {
-            revert InvalidAmount();
+            revert TokensDelegated();
         }
 
         delete _stakes[msg.sender];
@@ -178,43 +176,28 @@ contract dAMORxGuild is IdAMORxGuild, ERC20Base, Ownable {
         emit dAMORxGuildDelegated(to, msg.sender, amount);
     }
 
-    /// @notice Undelegate your dAMORxGuild to the address `account`
-    /// @param  account The address from which delegating will be taken away
-    /// @param  amount The amount of tokens to undelegate
-    function undelegate(address account, uint256 amount) public {
-        if (delegations[msg.sender][account] == 0) {
-            revert NoDelegation();
-        }
-
-        if (delegations[msg.sender][account] < amount) {
-            revert InvalidAmount();
-        }
-
-        delegations[msg.sender][account] -= amount;
-        amountDelegated[msg.sender] -= amount;
-
-        emit dAMORxGuildUndelegated(account, msg.sender, amount);
+    /// @inheritdoc IdAMORxGuild
+    function undelegateAndWithdraw(address[] calldata delegatees) external returns(uint256 dAMORxGuildBurned, uint256 AMORxGuildUnstaked) {
+        undelegate(delegatees);
+        return withdraw();
     }
 
     /// @inheritdoc IdAMORxGuild
-    function undelegateAll(address[] memory delegatees) public {
+    function undelegate(address[] calldata delegatees) public {
         if (amountDelegated[msg.sender] == 0) {
             revert NoDelegation();
         }
 
-        uint256 checkDelegations;
+        uint256 undelegated;
 
-        for (uint256 i; i < delegatees.length; i++) {
-            checkDelegations += delegations[msg.sender][delegatees[i]];
-            emit dAMORxGuildUndelegated(delegatees[i], msg.sender, delegations[msg.sender][delegatees[i]]);
+        for (uint256 i; i < delegatees.length; ++i) {
+            uint256 amount = delegations[msg.sender][delegatees[i]];
+            undelegated += amount;
+            emit dAMORxGuildUndelegated(delegatees[i], msg.sender, amount);
             delete delegations[msg.sender][delegatees[i]];
         }
 
-        if (checkDelegations != amountDelegated[msg.sender]) {
-            revert InvalidAmount();
-        }
-
-        delete amountDelegated[msg.sender];
+        amountDelegated[msg.sender] -= undelegated;
     }
 
     /// @notice This token is non-transferable
