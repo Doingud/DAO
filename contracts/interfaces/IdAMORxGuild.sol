@@ -8,14 +8,14 @@ interface IdAMORxGuild {
     /// Errors
     /// No tokens to undelegate
     error NoDelegation();
-    /// Invalid address to transfer. Needed `to` != msg.sender
-    error InvalidSender();
     /// Staking time provided is less than minimum
     error TimeTooSmall();
     /// Staking time provided is larger than maximum
     error TimeTooBig();
     /// There are still delegated tokens
     error TokensDelegated();
+    /// Array parity mismatch
+    error ArrayMismatch();
 
     // Events
     event Initialized(address owner, address AMORxGuild, uint256 amount);
@@ -31,11 +31,7 @@ interface IdAMORxGuild {
         uint256 mintAmount,
         uint256 indexed timeStakedFor
     );
-    event AMORxGuildWithdrawnFromDAMOR(
-        address indexed to,
-        uint256 burnedDAMORxGuild,
-        uint256 returnedAMORxGuild
-    );
+    event AMORxGuildWithdrawnFromDAMOR(address indexed to, uint256 burnedDAMORxGuild, uint256 returnedAMORxGuild);
     event dAMORxGuildUndelegated(address indexed from, address indexed owner, uint256 amount);
     event dAMORxGuildDelegated(address indexed to, address indexed owner, uint256 amount);
 
@@ -80,7 +76,7 @@ interface IdAMORxGuild {
     /// @notice Delegate your dAMORxGuild to the address `account`
     /// @param to Address to which delegate users FXAMORxGuild
     /// @param amount The amount of tokens to delegate
-    function delegate(address to, uint256 amount) external;
+    function delegate(address[] calldata to, uint256[] calldata amount) external;
 
     /// @notice Undelegate all of your dAMORxGuild
     /// @param delegatees Array of addresses delegated to
@@ -90,5 +86,7 @@ interface IdAMORxGuild {
     /// @param delegatees Array of addresses delegated to
     /// @return dAMORxGuildBurned amount of dAmorXGuild tokens burned
     /// @return AMORxGuildUnstaked amount of AMORxGuild tokens unstaked
-    function undelegateAndWithdraw(address[] calldata delegatees) external returns(uint256 dAMORxGuildBurned, uint256 AMORxGuildUnstaked);
+    function undelegateAndWithdraw(address[] calldata delegatees)
+        external
+        returns (uint256 dAMORxGuildBurned, uint256 AMORxGuildUnstaked);
 }

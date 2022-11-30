@@ -159,21 +159,29 @@ contract dAMORxGuild is IdAMORxGuild, ERC20Base, Ownable {
     }
 
     /// @inheritdoc IdAMORxGuild
-    function delegate(address to, uint256 amount) external {
-        if (to == msg.sender) {
-            revert InvalidSender();
+    function delegate(address[] calldata to, uint256[] calldata amount) external {
+        if (to.length != amount.length) {
+            revert ArrayMismatch();
         }
 
+        uint256 totalAmount;
         uint256 availableAmount = balanceOf(msg.sender) - amountDelegated[msg.sender];
 
-        if (availableAmount < amount) {
-            revert InvalidAmount();
+        for (uint256 i; i < to.length; i++) {
+            if (to[i] == msg.sender) {
+                revert InvalidAddress();
+            }
+
+            delegations[msg.sender][to[i]] += amount[i];
+            amountDelegated[msg.sender] += amount[i];
+            totalAmount += amount[i];
+
+            emit dAMORxGuildDelegated(to[i], msg.sender, amount[i]);
         }
 
-        delegations[msg.sender][to] += amount;
-        amountDelegated[msg.sender] += amount;
-
-        emit dAMORxGuildDelegated(to, msg.sender, amount);
+        if (availableAmount < totalAmount) {
+            revert InvalidAmount();
+        }
     }
 
     /// @inheritdoc IdAMORxGuild
