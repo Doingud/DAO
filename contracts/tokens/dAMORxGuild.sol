@@ -177,7 +177,10 @@ contract dAMORxGuild is IdAMORxGuild, ERC20Base, Ownable {
     }
 
     /// @inheritdoc IdAMORxGuild
-    function undelegateAndWithdraw(address[] calldata delegatees) external returns(uint256 dAMORxGuildBurned, uint256 AMORxGuildUnstaked) {
+    function undelegateAndWithdraw(address[] calldata delegatees)
+        external
+        returns (uint256 dAMORxGuildBurned, uint256 AMORxGuildUnstaked)
+    {
         undelegate(delegatees);
         return withdraw();
     }
