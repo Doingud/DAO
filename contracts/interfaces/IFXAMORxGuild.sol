@@ -58,14 +58,14 @@ interface IFXAMORxGuild {
     function undelegate(address account, uint256 amount) external;
 
     /// @notice Get delegators value
-    function getDelegators(address user, uint256 index) external returns (address);
+    function delegators(address user, uint256 index) external returns (address);
 
     /// @notice Get delegations value
-    function getDelegations(address from, address to) external returns (uint256);
+    function delegations(address from, address to) external returns (uint256);
 
     /// @notice Get amountDelegated value
-    function getAmountDelegated(address user) external returns (uint256);
+    function amountDelegated(address user) external returns (uint256);
 
     /// @notice Get amountDelegatedAvailable value
-    function getAmountDelegatedAvailable(address user) external returns (uint256);
+    function amountDelegatedAvailable(address user) external returns (uint256);
 }

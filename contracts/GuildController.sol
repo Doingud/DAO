@@ -283,8 +283,8 @@ contract GuildController is IGuildController, Ownable {
         }
 
         uint256 userFXAmount = IERC20(FXAMORxGuild).balanceOf(msg.sender) -
-            FXGFXAMORxGuild.getAmountDelegated(msg.sender);
-        if (userFXAmount + FXGFXAMORxGuild.getAmountDelegatedAvailable(msg.sender) < amount) {
+            FXGFXAMORxGuild.amountDelegated(msg.sender);
+        if (userFXAmount + FXGFXAMORxGuild.amountDelegatedAvailable(msg.sender) < amount) {
             revert InvalidAmount();
         }
 
@@ -296,8 +296,8 @@ contract GuildController is IGuildController, Ownable {
             uint256 i;
             uint256 burnAmount;
             while (delegatedFXUsage > 0) {
-                delegator = FXGFXAMORxGuild.getDelegators(msg.sender, i);
-                burnAmount = FXGFXAMORxGuild.getDelegations(delegator, msg.sender);
+                delegator = FXGFXAMORxGuild.delegators(msg.sender, i);
+                burnAmount = FXGFXAMORxGuild.delegations(delegator, msg.sender);
                 if (burnAmount <= delegatedFXUsage) {
                     FXGFXAMORxGuild.burn(msg.sender, delegator, burnAmount);
                     delegatedFXUsage -= burnAmount;
