@@ -282,8 +282,7 @@ contract GuildController is IGuildController, Ownable {
             revert VotingTimeExpired();
         }
 
-        uint256 userFXAmount = IERC20(FXAMORxGuild).balanceOf(msg.sender) -
-            FXGFXAMORxGuild.amountDelegated(msg.sender);
+        uint256 userFXAmount = IERC20(FXAMORxGuild).balanceOf(msg.sender) - FXGFXAMORxGuild.amountDelegated(msg.sender);
         if (userFXAmount + FXGFXAMORxGuild.amountDelegatedAvailable(msg.sender) < amount) {
             revert InvalidAmount();
         }
