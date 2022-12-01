@@ -660,7 +660,7 @@ describe("Integration: DoinGud guilds ecosystem", function () {
 
 
         /// Setup the initial Fee Index
-        const abi = ethers.utils.defaultAbiCoder;
+        /*const abi = ethers.utils.defaultAbiCoder;
         let encodedIndex = abi.encode(
             ["tuple(address, uint256)"],
             [
@@ -672,11 +672,13 @@ describe("Integration: DoinGud guilds ecosystem", function () {
             [
             [GUILD_TWO_CONTROLLERXGUILD.address, 100]
             ]
-        );
+        );*/
+        let guilds = [GUILD_ONE_CONTROLLERXGUILD.address, GUILD_TWO_CONTROLLERXGUILD.address];
+        let weights = [100, 100];
 
         /// Setup the index for the MetaDAO
         // await metaHelper([DOINGUD_METADAO.address], [0], [transactionData], [user1, user2], authorizer_adaptor, DOINGUD_AVATAR.address, DOINGUD_GOVERNOR.address);
-        let transactionData = DOINGUD_METADAO.interface.encodeFunctionData("updateIndex", [[encodedIndex, encodedIndex2], 0]);
+        let transactionData = DOINGUD_METADAO.interface.encodeFunctionData("updateIndex", [guilds, weights, 0]);
         TARGETS = [DOINGUD_METADAO.address];
         VALUES = [0];
         PROPOSALS = [transactionData];
