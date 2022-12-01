@@ -18,7 +18,7 @@ async function main() {
     let MetaDaoController = await b.deployed();
     console.log("MetaDaoController address:", MetaDaoController.address);
 
-    a  = await ethers.getContractFactory('DoinGudGovernorVersionForTesting');//DoinGudGovernor')
+    a  = await ethers.getContractFactory('DoinGudGovernor');//DoinGudGovernor')
     b = await a.attach(Governor_)
     Governor = await b.deployed();
     console.log("Governor address:", Governor.address);

@@ -37,13 +37,13 @@ async function main() {
     console.log("tx is %s", tx);
 
     // connect Governor
-    a  = await ethers.getContractFactory('DoinGudGovernorVersionForTesting');
+    a  = await ethers.getContractFactory('DoinGudGovernor');
     b = await a.attach(Governor_)
     let Governor = await b.deployed();
     console.log("Governor address:", Governor.address);
 
 
-    tx = await Governor.init(AMORxGuild_, Avatar_, initialGuardian);
+    tx = await Governor.init(Avatar_, initialGuardian);
     console.log("tx is %s", tx);
     console.log("Governor address:", Governor.address);
 

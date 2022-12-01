@@ -52,7 +52,7 @@ const getTokens = async (setup) => {
     //  Amor Tokens
     const AmorTokenImplementation = await AmorTokenFactory.deploy();
     const AmorTokenMockUpgrade = await AmorTokenFactory.deploy();
-    const AmorTokenProxy = await AmorTokenProxyFactory.deploy();
+    const AmorTokenProxy = await AmorTokenProxyFactory.deploy(AmorTokenImplementation.address);
     
     //  AmorGuild Tokens
     const AmorGuildToken = await AmorGuildTokenFactory.deploy();
@@ -71,9 +71,9 @@ const getTokens = async (setup) => {
     return tokens;
 };
 
-const proxy = async () => {
+const proxy = async (implementationAddress) => {
   const proxyFactory = await ethers.getContractFactory("DoinGudProxy");
-  const proxy = await proxyFactory.deploy();
+  const proxy = await proxyFactory.deploy(implementationAddress);
 
   return proxy;
 }
@@ -172,11 +172,10 @@ const governor = async (setup) => {
   const governorFactory = await ethers.getContractFactory('DoinGudGovernor');
   const governor = await governorFactory.deploy();
 
-  await governor.init(
-    setup.tokens.AmorGuildToken.address, //AMORxGuild
-    setup.avatars.avatar.address, // Avatar Address
-    setup.roles.root.address
-  );
+  // await governor.init(
+  //   avatarAddress,
+  //   initialGuardianAddress
+  // );
 
   setup.governor = governor;
 

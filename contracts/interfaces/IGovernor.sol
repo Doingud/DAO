@@ -34,7 +34,48 @@ pragma solidity 0.8.15;
  *
  */
 
+ import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
 interface IDoinGudGovernor {
+    event ProposalCanceled(uint256 indexed proposalId);
+    event ProposalExecuted(uint256 indexed proposalId);
+    event VotingDelayChanged(uint96 votingDelay);
+    event VotingPeriodChanged(uint96 votingDelay);
+
+    event ProposalCreated(
+        uint256 indexed proposalId,
+        address proposer,
+        address[] targets,
+        uint256[] values,
+        bytes[] calldatas,
+        uint256 indexed startBlock,
+        uint256 indexed endBlock
+    );
+    event ChangedGuardiansLimit(uint256 indexed newLimit);
+    event GuardianAdded(address indexed newGuardian);
+    event GuardianRemoved(address indexed guardian);
+    event GuardianChanged(address indexed oldGuardian, address indexed newGuardian);
+    event VotedFor(uint256 indexed proposalId, address guardian);
+    event VoteForCancelling(uint256 indexed proposalId, address guardian);
+
+    error InvalidProposalId();
+    error NotEnoughGuardians();
+    error Unauthorized();
+    error InvalidParameters();
+    error InvalidState();
+    error AlreadyVoted();
+    error UnderlyingTransactionReverted();
+    error InvalidGuardian();
+
+    struct Proposal {
+        uint96 voteStart;
+        uint96 voteEnd;
+        uint32 votesCount;
+        uint32 cancelVotesCount;
+        EnumerableSet.AddressSet voters;
+        EnumerableSet.AddressSet cancelVoters;
+    }
+
     enum ProposalState {
         Pending,
         Active,
@@ -45,12 +86,10 @@ interface IDoinGudGovernor {
     }
 
     /// @notice Initializes the Governor contract
-    /// @param  AMORxGuild_ the address of the AMORxGuild token
-    /// @param  avatarAddress_ the address of the Avatar
+    /// @param  avatar the address of the Avatar
     /// @param  initialGuardian the useer responsible for the initial guardian actions
     function init(
-        address AMORxGuild_,
-        address avatarAddress_,
+        address avatar,
         address initialGuardian
     ) external;
 
@@ -65,7 +104,7 @@ interface IDoinGudGovernor {
     /// @notice this function removes choosed guardian from the system
     /// @param guardian Guardian to be removed
     function removeGuardian(address guardian) external;
-
+    
     /// @notice this function changes guardian as a result of the vote (propose function)
     /// @param currentGuardian Current Guardian address
     /// @param newGuardian Guardian to be changed
@@ -84,8 +123,7 @@ interface IDoinGudGovernor {
     /// Proposal should achieve at least 20% approval of guardians, to be accepted
     /// @dev Internal vote casting mechanism: Check that the vote is pending, that it has not been cast yet
     /// @param proposalId ID of the proposal
-    /// @param support Boolean value: true (for) or false (against) user is voting
-    function castVote(uint256 proposalId, bool support) external;
+    function castVote(uint256 proposalId) external;
 
     /// @notice function allows anyone to execute specific proposal, based on the vote.
     /// @param targets Target addresses for proposal calls
@@ -102,18 +140,49 @@ interface IDoinGudGovernor {
     function state(uint256 proposalId) external view returns (ProposalState);
 
     /// @notice function allows guardian to vote for cancelling the proposal
+    /// It automatically cancels proposal if threshold is reached
     /// Proposal should achieve at least 20% approval of guardians, to be cancelled
     /// @param proposalId ID of the proposal
     function castVoteForCancelling(uint256 proposalId) external;
 
-    /// @notice Cancels a proposal
-    /// @param proposalId The id of the proposal to cancel
-    function cancel(uint256 proposalId) external;
+    /// @notice Changes guardians limit
+    /// @param limit is new guardian limit
+    function changeGuardiansLimit(uint256 limit) external;
 
+    /// @notice Returns voing delay
+    /// @return voting delay in seconds
     function votingDelay() external view returns (uint256);
 
+    /// @notice Checks Guardian status
+    /// @param  guardian Address to be checked
+    /// @return bool Returns true if address is a Guardian
+    function isGuardian(address guardian, uint256 setIndex) external view returns (bool);
+
+    /// @notice Returns guardians limit
+    /// @return number of guardians
+    function getGuardiansLimit() external view returns (uint256);
+
+    /// @notice Returns current set index
+    /// @return uint256 set index
+    function getSetIndex() external view returns (uint256);
+
+    /// @notice Returns voting period
+    /// @return voting period in seconds
     function votingPeriod() external view returns (uint256);
 
+    /// @notice Changes voting delay
+    /// @param votingDelay is new voting delay in seconds
+    function changeVotingDelay(uint96 votingDelay) external;
+
+    /// @notice Changes voting period
+    /// @param votingPeriod is new voting period in seconds
+    function changeVotingPeriod(uint96 votingPeriod) external;
+
+    /// @notice Hashes a proposal
+    /// @param targets - transaction targets
+    /// @param values - transaction values
+    /// @param calldatas - transaction calldatas
+    /// @return uint256 hash of a proposal
     function hashProposal(
         address[] memory targets,
         uint256[] memory values,

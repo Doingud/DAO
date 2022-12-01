@@ -33,7 +33,7 @@ describe('unit - Contract: Avatar', function () {
         avatar = AVATAR.attach(avatar.address);
         governor = GOVERNOR.attach(governor.address);
         await avatar.init(setup.roles.root.address, setup.roles.authorizer_adaptor.address);
-        await governor.init(AMORxGuild.address, avatar.address, setup.roles.user1.address);
+        await governor.init(avatar.address, setup.roles.user1.address);
         mockModule = setup.avatars.module;
         root = setup.roles.root;
         staker = setup.roles.staker;

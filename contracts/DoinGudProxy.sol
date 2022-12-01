@@ -44,42 +44,17 @@ pragma solidity 0.8.15;
  */
 
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import "@openzeppelin/contracts/proxy/Proxy.sol";
 
-contract DoinGudProxy is Proxy, ERC1967Upgrade {
-    bool private _initializedProxy;
+contract DoinGudProxy is ERC1967Proxy {
+    // bytes32(uint256(keccak256("owner_storage_slot")) - 1)
+    // bytes32 internal constant _OWNER_SLOT = 0x03f4233f2c8abdc632cf8faecc563540d9cf33cb4d9d958002bb71a3e5b77285;
 
-    error Initialized();
-
-    /**
-     * @dev Initializes the upgradeable proxy with an initial implementation specified by `_logic`.
-     *
-     * If `_data` is nonempty, it's used as data in a delegate call to `_logic`. This will typically be an encoded
-     * function call, and allows initializing the storage of the proxy like a Solidity constructor.
-     */
-    function initProxy(address logic) external payable {
-        if (_initializedProxy) {
-            revert Initialized();
-        }
-        _upgradeTo(logic);
-        _initializedProxy = true;
+    constructor(address logic) ERC1967Proxy(logic, "") {
+        // StorageSlot.getAddressSlot(_OWNER_SLOT).value = msg.sender;
     }
 
-    //  Uprade the token implementation
-    //  Still needs access control
-    function upgradeImplementation(address newImplementation) external {
-        _upgradeTo(newImplementation);
-    }
-
-    //  View the current implementation
-    function viewImplementation() external view returns (address) {
-        return _getImplementation();
-    }
-
-    /**
-     * @dev Returns the current implementation address.
-     */
-    function _implementation() internal view virtual override returns (address impl) {
-        return ERC1967Upgrade._getImplementation();
-    }
+    // function upgradeImplementation(address newImplementation) external {
+    //     require(msg.sender == StorageSlot.getAddressSlot(_OWNER_SLOT).value, "!owner");
+    //     _upgradeTo(newImplementation);
+    // }
 }

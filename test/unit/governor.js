@@ -29,26 +29,25 @@ let values;
 let calldatas;
 let cancelProposalId;
 
-describe('unit - Contract: Governor', function () {
+describe.only('unit - Contract: Governor', function () {
 
     const setupTests = deployments.createFixture(async () => {
         const signers = await ethers.getSigners();
         const setup = await init.initialize(signers);
-        avatar = await init.proxy();
-        governor = await init.proxy();
         await init.getTokens(setup);
-        AMORxGuild = setup.tokens.AmorGuildToken;
         await init.avatar(setup);
-        await avatar.initProxy(setup.avatars.avatar.address);
-        let AVATAR = setup.avatars.avatar;
-        await init.governor(setup);
-        await governor.initProxy(setup.governor.address);
-        let GOVERNOR = setup.governor;
-        avatar = AVATAR.attach(avatar.address);
-        governor = GOVERNOR.attach(governor.address);
-        await avatar.init(setup.roles.root.address, governor.address);
-        await governor.init(AMORxGuild.address, setup.roles.authorizer_adaptor.address, setup.roles.root.address);
-        mockModule = setup.avatars.module;
+        const avatarProxy = await init.proxy(setup.avatars.avatar.address);
+        const governorImplementation = await init.governor(setup);
+        const governorProxy = await init.proxy(governorImplementation.address);
+        AMORxGuild = setup.tokens.AmorGuildToken;
+        // await avatarProxy.initProxy(setup.avatars.avatar.address);
+        const avatar = setup.avatars.avatar.attach(avatarProxy.address);
+        // await governorProxy.initProxy(governorImplementation.address);
+        await avatar.init(setup.roles.root.address, governorProxy.address);
+        governor = governorImplementation.attach(governorProxy.address);
+        await governor.init(setup.roles.authorizer_adaptor.address, setup.roles.root.address);
+        // mockModule = setup.avatars.module;
+
         root = setup.roles.root;
         staker = setup.roles.staker;
         operator = setup.roles.operator;
@@ -56,29 +55,25 @@ describe('unit - Contract: Governor', function () {
         user = setup.roles.user3;
         user2 = setup.roles.user2;
 
-        mockAvatar = await init.proxy();
-        await mockAvatar.initProxy(AVATAR.address)
-        mockAvatar = AVATAR.attach(mockAvatar.address);
-        
+        // mockAvatar = await init.proxy();
+        // await mockAvatar.initProxy(AVATAR.address)
+        // mockAvatar = AVATAR.attach(mockAvatar.address);
 
-        mockGovernor = await init.proxy();
-        await mockGovernor.initProxy(GOVERNOR.address);
-        mockGovernor = GOVERNOR.attach(mockGovernor.address);
-        await mockAvatar.init(root.address, mockGovernor.address);
-        await mockGovernor.init(AMORxGuild.address, mockAvatar.address, root.address);
+        // mockGovernor = await init.proxy();
+        // await mockGovernor.initProxy(GOVERNOR.address);
+        // mockGovernor = GOVERNOR.attach(mockGovernor.address);
+        // await mockAvatar.init(root.address, mockGovernor.address);
+        // await mockGovernor.init(mockAvatar.address, root.address);
     });
 
-    before('>>> setup', async function () {
+    beforeEach('>>> setup', async function () {
         await setupTests();
     });
 
     context('» init testing', () => {
         it('initialized variables check', async function () {
-            expect(await governor.avatarAddress()).to.equals(authorizer_adaptor.address);
-            //const abi = ethers.utils.defaultAbiCoder;
-            guardiansVersion = 0;
-            let encodedKey = ethers.utils.solidityKeccak256(["uint256","address"],[0,root.address]);
-            expect(await governor.guardians(encodedKey)).to.equals(true);
+            expect(await governor.getAvatar()).to.equals(authorizer_adaptor.address);
+            expect(await governor.isGuardian(root.address, 0)).to.equals(true);
             expect((await governor.votingDelay())).to.equals(1);
             let weeks = 60 * 60 * 24 * 7 * 2;
             expect(await governor.votingPeriod()).to.equals(weeks);
@@ -86,10 +81,9 @@ describe('unit - Contract: Governor', function () {
 
         it("Should fail if called more than once", async function () {
             await expect(governor.init(
-                AMORxGuild.address, //AMORxGuild
                 authorizer_adaptor.address, // Avatar Address
                 user2.address
-            )).to.be.revertedWith("AlreadyInitialized()");
+            )).to.be.revertedWith("Initializable: contract is already initialized");
         });
     });
 
@@ -102,65 +96,60 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it changes guardians limit from proposal', async function () {
-            //expect(await governor.guardians(0)).to.equal(root.address);
-            //guardians = [staker.address, operator.address, user.address];
             await governor.connect(authorizer_adaptor).changeGuardiansLimit(3);
-            expect(await governor.guardiansLimit()).to.equals(3);
+            expect(await governor.getGuardiansLimit()).to.equals(3);
         });
 
         it('it fails to propose if Guardian Limit not Reached', async function () {
-            guardians = [staker.address, operator.address];
-            let transactionData = governor.interface.encodeFunctionData("setGuardians", [guardians]);
+            const guardians = [staker.address, operator.address];
+            await expect(governor.connect(authorizer_adaptor).changeGuardiansLimit(5))
+            const transactionData = governor.interface.encodeFunctionData("setGuardians", [guardians]);
             await expect(governor.connect(authorizer_adaptor).propose([governor.address], [0], [transactionData])).to.be.revertedWith("NotEnoughGuardians()");
-            expect(await governor.guardiansLimit()).to.equals(3);
-            await expect(governor.guardians(3)).to.be.reverted;
+            expect(await governor.getGuardiansLimit()).to.equals(5);
         });
 
     });
 
     context('» setGuardians testing', () => {
-
         it('it fails to set guardians if not the avatar', async function () {
-            guardians = [staker.address, operator.address, user.address];
+            const guardians = [staker.address, operator.address, user.address];
             await expect(governor.connect(user).setGuardians(guardians)).to.be.revertedWith(
                 'Unauthorized()'
             );
         });
 
         it('it fails to set guardians if no addresses in array', async function () {
-            guardians = [];
+            const guardians = [];
             await expect(governor.connect(authorizer_adaptor).setGuardians(guardians)).to.be.revertedWith("InvalidParameters()");
         });
 
-        it('it sets guardians', async function () {
-            guardians = [staker.address, operator.address, user.address];
-            await governor.connect(authorizer_adaptor).setGuardians(guardians);
-            guardiansVersion++;
-            //let encodedKey = ethers.utils.solidityKeccak256(["uint256","address"],[1,guardians[0]]);
-            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,guardians[0]]))).to.be.true;
-            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,guardians[1]]))).to.be.true;
-            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,guardians[2]]))).to.be.true;
-            expect(await governor.guardiansCounter()).to.equal(3);
+        it('it fails to set guardians if guardian is zero address', async function () {
+            const guardians = [ZERO_ADDRESS];
+            await expect(governor.connect(authorizer_adaptor).setGuardians(guardians)).to.be.revertedWith("InvalidGuardian()");
         });
 
-        it('it sets guardians when list of the new guardians is less than before', async function () {
-            guardians = [operator.address, staker.address];
+        it('it sets guardians', async function () {
+            await expect(governor.connect(authorizer_adaptor).changeGuardiansLimit(3))
+            const guardians = [staker.address, operator.address, user.address];
+            
+            const expectedSetIndex = await governor.getSetIndex() + 1
             await governor.connect(authorizer_adaptor).setGuardians(guardians);
-            guardiansVersion++;
-            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,guardians[0]]))).to.be.true;
-            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,guardians[1]]))).to.be.true;
-            expect(await governor.guardiansCounter()).to.equal(2);
 
-            // return previous user and guardians variables back
-            guardians = [staker.address, operator.address, user.address];
-            await governor.connect(authorizer_adaptor).setGuardians(guardians);
-            guardiansVersion++;
+            expect(await governor.getNumberOfGuardians()).to.equal(guardians.length);
+
+            for (const guardian of guardians) {
+                expect(await governor.isGuardian(guardian, expectedSetIndex)).to.equals(true);
+            }
+
+            expect(await governor.getSetIndex()).to.equals(expectedSetIndex)
         });
     });
 
-
-
     context('» addGuardian testing', () => {
+
+        beforeEach('increase guardians limit', async function () {
+            await governor.connect(authorizer_adaptor).changeGuardiansLimit(3)
+        });
 
         it('it fails to add guardian if not the avatar', async function () {
             await expect(governor.connect(user).addGuardian(user2.address)).to.be.revertedWith(
@@ -169,13 +158,14 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it adds guardian', async function () {
-            await governor.connect(authorizer_adaptor).addGuardian(user2.address);
-            expect(await governor.guardians(ethers.utils.solidityKeccak256(["uint256","address"],[guardiansVersion,user2.address]))).to.be.true;
-            expect(await governor.guardiansCounter()).to.equal(4);
+            await expect(governor.connect(authorizer_adaptor).addGuardian(user2.address)).to.emit(governor, 'GuardianAdded').withArgs(user2.address);
+            expect(await governor.getNumberOfGuardians()).to.equal(2);
         });
 
         it('it fails to add guardian with the same address', async function () {
-            await expect(governor.connect(authorizer_adaptor).addGuardian(user2.address)).to.be.revertedWith("InvalidParameters()");
+            await expect(governor.connect(authorizer_adaptor).addGuardian(user2.address)).to.emit(governor, 'GuardianAdded');
+            await expect(governor.connect(authorizer_adaptor).addGuardian(user2.address)).to.not.emit(governor, 'GuardianAdded');
+            expect(await governor.getNumberOfGuardians()).to.equal(2); // number of guardians is two
         });
     });
 

@@ -35,100 +35,36 @@ pragma solidity 0.8.15;
  */
 import "./interfaces/IAvatarxGuild.sol";
 import "./interfaces/IGovernor.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-import "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+contract DoinGudGovernor is IDoinGudGovernor, UUPSUpgradeable, Initializable {
+    using EnumerableSet for EnumerableSet.AddressSet;
 
-contract DoinGudGovernor is IDoinGudGovernor {
-    using SafeCast for uint256;
+    uint256 private constant _PROPOSAL_MAX_OPERATIONS = 10;
 
-    struct ProposalCore {
-        uint96 voteStart;
-        uint96 voteEnd;
-        bool executed;
-        bool canceled;
-    }
-
-    event ProposalCanceled(uint256 proposalId);
-    event ProposalExecuted(uint256 proposalId);
-
-    uint256 public constant PROPOSAL_MAX_OPERATIONS = 10;
-    mapping(uint256 => ProposalCore) private _proposals;
-    mapping(uint256 => uint256) public proposalCancelApproval;
-    mapping(uint256 => address[]) public cancellers; // cancellers mapping(uint proposal => address [] voters)
-
-    // id in array --> Id of passed proposal from _proposals
-    uint256[] public proposals; // it’s an array of proposals hashes to execute.
-    // After proposal was voted for, an !executor provides a complete data about the proposal!,
-    // which gets hashed and if hashes correspond, then the proposal is executed.
-
-    mapping(uint256 => address[]) public voters; // voters mapping(uint proposal => address [] voters)
-    mapping(uint256 => uint256) public proposalVoting;
-    mapping(uint256 => uint256) public proposalWeight;
-
-    uint256 public guardiansLimit; // Amount of guardians for contract to function propperly,
-    // Until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.
-
-    /// The `guardians` mapping is responsible for maintaining a list of current guardians
-    /// Guardians are elected in `seasons` which is handled by the front-end
-    /// By updating the `currentGuardianVersion` the `guardians` mapping is effectively cleared.
-    /// (version, address) => true
-    mapping(bytes32 => bool) public guardians;
-    /// The current version of `guardians`
-    /// Note: Updated during `setGuardians`
-    uint256 public currentGuardianVersion;
-    /// The number of currently active guardians
-    uint256 public guardiansCounter;
-
-    address public avatarAddress;
-
-    event Initialized(address avatarAddress);
-    event ProposalCreated(
-        uint256 indexed proposalId,
-        address proposer,
-        address[] targets,
-        uint256[] values,
-        bytes[] calldatas,
-        uint256 indexed startBlock,
-        uint256 indexed endBlock
-    );
-    event ChangedGuardiansLimit(uint256 indexed newLimit);
-    event GuardiansSet(address[] indexed arrGuardians);
-    event GuardianAdded(address indexed newGuardian);
-    event GuardianRemoved(address indexed guardian);
-    event GuardianChanged(address indexed oldGuardian, address indexed newGuardian);
-    event Voted(uint256 indexed proposalId, bool indexed support, address votedGuardian);
-
-    bool private _initialized;
-
+    address private _avatar;
     uint96 private _votingDelay;
     uint96 private _votingPeriod;
+    uint256 private _guardiansLimit; // Until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.
 
-    error InvalidProposalId();
-    error AlreadyInitialized();
-    error NotEnoughGuardians();
-    error Unauthorized();
-    error InvalidParameters();
-    error InvalidAmount();
-    error InvalidState();
-    error ProposalNotExists();
-    error VotingTimeExpired();
-    error AlreadyVoted();
-    error CancelNotApproved();
-    error UnderlyingTransactionReverted();
-    error DuplicateAddress();
+    mapping(uint256 => Proposal) private _proposals;
+
+    uint256 private _setIndex;
+    EnumerableSet.AddressSet[] private _guardians;
 
     /// @notice This modifier is needed to validate that amount of the Guardians is sufficient to vote and approve the “Many” decision
-    modifier GuardianLimitReached() {
-        if (guardiansCounter < guardiansLimit) {
+    modifier guardianLimitReached() {
+        if (EnumerableSet.length(_guardians[_setIndex]) < _guardiansLimit) {
             revert NotEnoughGuardians();
         }
         _;
     }
 
-    /// @notice Access control: Avatar for this guikd
+    /// @notice Access control: Avatar for this guild
     modifier onlyAvatar() {
-        if (msg.sender != avatarAddress) {
+        if (msg.sender != _avatar) {
             revert Unauthorized();
         }
         _;
@@ -136,122 +72,96 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
     /// @notice Access control: Guild Guardian
     modifier onlyGuardian() {
-        if (!isGuardian(msg.sender)) {
+        if (!isGuardian(msg.sender, _setIndex)) {
             revert Unauthorized();
         }
         _;
     }
 
-    /// @notice Initializes the Governor contract
-    /// @param  AMORxGuild_ The address of the AMORxGuild token
-    /// @param  avatarAddress_ The address of the Avatar
-    /// @param  initialGuardian The user responsible for the guardian actions
-    function init(
-        address AMORxGuild_,
-        address avatarAddress_,
-        address initialGuardian
-    ) external {
-        if (_initialized) {
-            revert AlreadyInitialized();
-        }
-
-        guardians[_getGuardianKey(initialGuardian)] = true;
-        guardiansCounter++;
-
-        avatarAddress = avatarAddress_;
-
-        _initialized = true;
-        _votingDelay = 1;
-        _votingPeriod = 2 weeks;
-        guardiansLimit = 1;
-
-        emit Initialized(avatarAddress_);
+    /// @inheritdoc IDoinGudGovernor
+    function init(address avatar, address initialGuardian) external initializer {
+        _avatar = avatar;
+        _guardians.push();
+        _addGuardian(initialGuardian);
+        _changeVotingDelay(1);
+        _changeVotingPeriod(2 weeks);
+        _changeGuardiansLimit(1);
     }
 
-    /// @notice Checks Guardian status
-    /// @param  guardian Address to be checked
-    /// @return bool Returns true if address is a Guardian
-    function isGuardian(address guardian) public view returns (bool) {
-        return guardians[_getGuardianKey(guardian)];
+    function _authorizeUpgrade(address) internal override onlyAvatar {}
+
+    function getAvatar() external view returns (address) {
+        return _avatar;
     }
 
-    /// @notice this function resets guardians array, and adds new guardian to the system.
-    /// @param arrGuardians The array of guardians
-    function setGuardians(address[] memory arrGuardians) external onlyAvatar {
-        // check that the array is not empty
-        if (arrGuardians.length == 0) {
+    function getNumberOfGuardians() external view returns(uint256) {
+        return EnumerableSet.length(_guardians[_setIndex]);
+    }
+
+    /// @inheritdoc IDoinGudGovernor
+    function getGuardiansLimit() external view returns (uint256) {
+        return _guardiansLimit;
+    }
+
+    /// @inheritdoc IDoinGudGovernor
+    function isGuardian(address guardian, uint256 setIndex) public view returns (bool) {
+        return EnumerableSet.contains(_guardians[setIndex], guardian);
+    }
+
+    /// @inheritdoc IDoinGudGovernor
+    function getSetIndex() external view returns (uint256) {
+        return _setIndex;
+    }
+
+    /// @inheritdoc IDoinGudGovernor
+    function setGuardians(address[] calldata guardians) external onlyAvatar {
+        if (guardians.length == 0) {
             revert InvalidParameters();
         }
 
-        currentGuardianVersion++;
-        delete guardiansCounter;
+        _guardians.push();
+        _setIndex++;
 
-        for (uint256 i; i < arrGuardians.length; i++) {
-            if (isGuardian(arrGuardians[i])) {
-                revert DuplicateAddress();
-            }
-
-            guardians[_getGuardianKey(arrGuardians[i])] = true;
-            guardiansCounter++;
+        // Add new guardians
+        for (uint256 i; i < guardians.length; ++i) {
+            _addGuardian(guardians[i]);
         }
-
-        emit GuardiansSet(arrGuardians);
     }
 
-    /// @notice Adds new guardian to the system
-    /// @param guardian New guardian to be added
-    function addGuardian(address guardian) public onlyAvatar {
-        if (isGuardian(guardian)) {
-            revert InvalidParameters();
-        }
-
-        guardians[_getGuardianKey(guardian)] = true;
-        guardiansCounter++;
-
-        emit GuardianAdded(guardian);
+    /// @inheritdoc IDoinGudGovernor
+    function addGuardian(address guardian) external onlyAvatar {
+        _addGuardian(guardian);
     }
-
-    /// @notice Removes target guardian from the system
-    /// @param guardian Guardian to be removed
+    
+    /// @inheritdoc IDoinGudGovernor
     function removeGuardian(address guardian) external onlyAvatar {
-        delete guardians[_getGuardianKey(guardian)];
-        guardiansCounter--;
-
-        emit GuardianRemoved(guardian);
+        _removeGuardian(guardian);
     }
 
-    /// @notice Swaps one guardian for another
-    /// @param currentGuardian Guardian to be removed
-    /// @param newGuardian Guardian to be added
+    /// @inheritdoc IDoinGudGovernor
     function changeGuardian(address currentGuardian, address newGuardian) external onlyAvatar {
-        if (isGuardian(newGuardian) || !isGuardian(currentGuardian)) {
+        uint256 setIndex = _setIndex;
+        if (isGuardian(newGuardian, setIndex) || !isGuardian(currentGuardian, setIndex)) {
             revert InvalidParameters();
         }
 
-        delete guardians[_getGuardianKey(currentGuardian)];
-        guardians[_getGuardianKey(newGuardian)] = true;
+        _removeGuardian(currentGuardian);
+        _addGuardian(newGuardian);
 
         emit GuardianChanged(currentGuardian, newGuardian);
     }
 
-    /// @notice Modifies guardians limit
-    /// @param newLimit New limit value
-    function changeGuardiansLimit(uint256 newLimit) external onlyAvatar {
-        guardiansLimit = newLimit;
-
-        emit ChangedGuardiansLimit(newLimit);
+    /// @inheritdoc IDoinGudGovernor
+    function changeGuardiansLimit(uint256 limit) external onlyAvatar {
+        _changeGuardiansLimit(limit);
     }
 
-    /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote.
-    /// Note: Only Avatar(as a result of the Snapshot) contract can add a proposal for voting.
-    /// @param targets The array of proposed target addresses
-    /// @param values The array of proposed transaction values
-    /// @param calldatas The array of proposed (encoded) function calls
+    /// @inheritdoc IDoinGudGovernor
     function propose(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas
-    ) external onlyAvatar GuardianLimitReached returns (uint256) {
+        address[] calldata targets,
+        uint256[] calldata values,
+        bytes[] calldata calldatas
+    ) external onlyAvatar guardianLimitReached returns (uint256) {
         if (!(targets.length == values.length && targets.length == calldatas.length)) {
             revert InvalidParameters();
         }
@@ -260,7 +170,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert InvalidParameters();
         }
 
-        if (targets.length > PROPOSAL_MAX_OPERATIONS) {
+        if (targets.length > _PROPOSAL_MAX_OPERATIONS) {
             revert InvalidParameters();
         }
 
@@ -268,7 +178,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         /// to create a Reality.eth question that validates the execution of the connected transactions
         uint256 proposalId = hashProposal(targets, values, calldatas);
 
-        ProposalCore storage proposal = _proposals[proposalId];
+        Proposal storage proposal = _proposals[proposalId];
         if (proposal.voteStart != 0) {
             revert InvalidState();
         }
@@ -278,12 +188,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
         proposal.voteStart = snapshot;
         proposal.voteEnd = deadline;
-
-        proposalVoting[proposalId] = 0;
-        proposalWeight[proposalId] = 0;
-
-        _proposals[proposalId] = proposal;
-        proposals.push(proposalId);
 
         emit ProposalCreated(
             proposalId,
@@ -298,58 +202,43 @@ contract DoinGudGovernor is IDoinGudGovernor {
         return proposalId;
     }
 
-    /// @notice Guardian voting for an eligible proposal
-    /// Note: Proposal should achieve at least 20% approval of guardians, to be accepted
-    /// @dev Internal vote casting mechanism: Check that the vote is pending, that it has not been cast yet
-    /// @param proposalId ID of the proposal
-    /// @param support Boolean value: true (for) or false (against) user is voting
-    function castVote(uint256 proposalId, bool support) external onlyGuardian GuardianLimitReached {
-        if (state(proposalId) != ProposalState.Active) {
+    /// @inheritdoc IDoinGudGovernor
+    function castVote(uint256 proposalId) external onlyGuardian guardianLimitReached {
+        Proposal storage proposal = _proposals[proposalId];
+
+        if (_state(proposal) != ProposalState.Active) {
             revert InvalidState();
         }
 
-        for (uint256 i = 0; i < voters[proposalId].length; i++) {
-            if (voters[proposalId][i] == msg.sender) {
-                // this guardian already voted for this proposal
-                revert AlreadyVoted();
-            }
+        // If we can't add voter to voters set
+        // that means that he already voted
+        if (!EnumerableSet.add(proposal.voters, msg.sender)) {
+            revert AlreadyVoted();
         }
 
-        proposalWeight[proposalId] += 1;
-
-        if (support == true) {
-            proposalVoting[proposalId] += 1;
-        }
-
-        voters[proposalId].push(msg.sender);
-
-        emit Voted(proposalId, support, msg.sender);
+        proposal.votesCount++;
+        emit VotedFor(proposalId, msg.sender);
     }
 
-    /// @notice Execute passed proposals
-    /// Note: params should correspond to `propose`
-    /// @param targets Target addresses for proposal calls
-    /// @param values AMORxGuild values for proposal calls
-    /// @param calldatas Calldatas for proposal calls
+    /// @inheritdoc IDoinGudGovernor
     function execute(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas
-    ) external GuardianLimitReached returns (uint256) {
+        address[] calldata targets,
+        uint256[] calldata values,
+        bytes[] calldata calldatas
+    ) external guardianLimitReached returns (uint256) {
         uint256 proposalId = hashProposal(targets, values, calldatas);
+        Proposal storage proposal = _proposals[proposalId];
 
-        ProposalState status = state(proposalId);
-        if (status != ProposalState.Succeeded) {
+        if (_state(proposal) != ProposalState.Succeeded) {
             revert InvalidState();
         }
 
+        _resetVotersSet(proposal);
+        _resetCancelersSet(proposal);
         delete _proposals[proposalId];
-        delete voters[proposalId];
-        delete proposalVoting[proposalId];
-        delete proposalWeight[proposalId];
 
         for (uint256 i = 0; i < targets.length; ++i) {
-            bool success = IAvatarxGuild(avatarAddress).executeProposal(targets[i], values[i], calldatas[i]);
+            bool success = IAvatarxGuild(_avatar).executeProposal(targets[i], values[i], calldatas[i]);
             if (!success) {
                 revert UnderlyingTransactionReverted();
             }
@@ -360,11 +249,108 @@ contract DoinGudGovernor is IDoinGudGovernor {
         return proposalId;
     }
 
-    /// @notice Return the proposal state
-    /// @param proposalId Unique proposal ID
+    /// @inheritdoc IDoinGudGovernor
     function state(uint256 proposalId) public view returns (ProposalState) {
-        ProposalCore storage proposal = _proposals[proposalId];
+        return _state(_proposals[proposalId]);
+    }
 
+    /// @inheritdoc IDoinGudGovernor
+    function castVoteForCancelling(uint256 proposalId) external onlyGuardian {
+        Proposal storage proposal = _proposals[proposalId];
+
+        if (_state(proposal) != ProposalState.Active) {
+            revert InvalidState();
+        }
+
+        // If we can't add voter to voters set
+        // that means that he already voted
+        if (!EnumerableSet.add(proposal.cancelVoters, msg.sender)) {
+            revert AlreadyVoted();
+        }
+
+        proposal.cancelVotesCount++;
+        emit VoteForCancelling(proposalId, msg.sender);
+
+        // If 20% of all guardians vote for cancel, cancel it
+        if (proposal.cancelVotesCount > ((20 * EnumerableSet.length(_guardians[_setIndex])) / 100)) {
+            _cancelProposal(proposal, proposalId);
+        }
+    }
+
+    /// @inheritdoc IDoinGudGovernor
+    function changeVotingDelay(uint96 votingDelay) external onlyAvatar {
+        _changeVotingDelay(votingDelay);
+    }
+
+    /// @inheritdoc IDoinGudGovernor
+    function changeVotingPeriod(uint96 votingPeriod) external onlyAvatar {
+        _changeVotingPeriod(votingPeriod);
+    }
+
+    /// @inheritdoc IDoinGudGovernor
+    function votingDelay() external view returns (uint256) {
+        return _votingDelay;
+    }
+    
+    /// @inheritdoc IDoinGudGovernor
+    function votingPeriod() external view returns (uint256) {
+        return _votingPeriod;
+    }
+
+    /// @inheritdoc IDoinGudGovernor
+    function hashProposal(
+        address[] calldata targets,
+        uint256[] calldata values,
+        bytes[] calldata calldatas
+    ) public pure returns (uint256) {
+        return uint256(keccak256(abi.encode(targets, values, calldatas)));
+    }
+
+    function _cancelProposal(Proposal storage proposal, uint256 proposalId) private {
+        _resetVotersSet(proposal);
+        _resetCancelersSet(proposal);
+        delete _proposals[proposalId];
+        emit ProposalCanceled(proposalId);
+    }
+
+    function _changeVotingDelay(uint96 votingDelay) private {
+        _votingDelay = votingDelay;
+        emit VotingDelayChanged(_votingDelay);
+    }
+
+    function _changeVotingPeriod(uint96 votingPeriod) private {
+        _votingPeriod = votingPeriod;
+        emit VotingPeriodChanged(votingPeriod);
+    }
+
+    function _addGuardian(address guardian) private {
+        if (guardian == address(0)) {
+            revert InvalidGuardian();
+        }
+        uint256 setIndex = _setIndex;
+
+        if (EnumerableSet.length(_guardians[setIndex]) > _guardiansLimit) {
+            revert InvalidParameters();
+        }
+
+        // Only if new guardian is added emit an event
+        if (EnumerableSet.add(_guardians[setIndex], guardian)) {
+            emit GuardianAdded(guardian);
+        }
+    }
+
+    function _changeGuardiansLimit(uint256 limit) private {
+        _guardiansLimit = limit;
+        emit ChangedGuardiansLimit(limit);
+    }
+
+    function _removeGuardian(address guardian) private {
+        if (EnumerableSet.remove(_guardians[_setIndex], guardian)) {
+            emit GuardianRemoved(guardian);
+        }
+    }
+
+    function _state(Proposal storage proposal) private view returns (ProposalState) {
         if (proposal.voteStart == 0) {
             revert InvalidProposalId();
         }
@@ -377,108 +363,31 @@ contract DoinGudGovernor is IDoinGudGovernor {
             return ProposalState.Active;
         }
 
-        // Proposal should achieve at least 20% approval of all guardians, to be accepted.
-        // Proposal should achieve at least 51% approval of voted guardians, to be accepted.
-        if (
-            (uint256(proposalVoting[proposalId] * 100) / (guardiansCounter) >= 20) &&
-            (uint256(proposalVoting[proposalId] * 100) / proposalWeight[proposalId] >= 51)
-        ) {
-            return ProposalState.Succeeded;
-        } else {
+        uint256 numberOfGuardians = EnumerableSet.length(_guardians[_setIndex]);
+        // 20% of all guardians is vote trehshold
+        if (proposal.votesCount < ((20 * numberOfGuardians) / 100)) {
             return ProposalState.Defeated;
         }
+
+        // Over the treshold
+        return ProposalState.Succeeded;
     }
 
-    /// @notice  Vote to cancel an active proposal
-    /// Note: Cancel should achieve at least 20% support of guardians, to be cancelled
-    /// @param proposalId ID of the proposal
-    function castVoteForCancelling(uint256 proposalId) external onlyGuardian {
-        ProposalState state = state(proposalId);
+    function _resetVotersSet(Proposal storage proposal) private {
+        uint256 votersLength = EnumerableSet.length(proposal.voters);
 
-        if (state != ProposalState.Active) {
-            revert InvalidState();
+        for (uint256 i; i < votersLength; ++i) {
+            address voter = EnumerableSet.at(proposal.voters, i);
+            require(EnumerableSet.remove(proposal.voters, voter), "FCK");
         }
+    }
 
-        for (uint256 i = 0; i < cancellers[proposalId].length; i++) {
-            if (cancellers[proposalId][i] == msg.sender) {
-                // this guardian already voted for this proposal
-                revert AlreadyVoted();
-            }
+    function _resetCancelersSet(Proposal storage proposal) private {
+        uint256 votersLength = EnumerableSet.length(proposal.cancelVoters);
+
+        for (uint256 i; i < votersLength; ++i) {
+            address voter = EnumerableSet.at(proposal.cancelVoters, i);
+            require(EnumerableSet.remove(proposal.cancelVoters, voter), "FCK");
         }
-
-        proposalCancelApproval[proposalId] += 1;
-        cancellers[proposalId].push(msg.sender);
-    }
-
-    /// @notice Cancels a proposal
-    /// Note: Requires a succesful cancel action by Guardians
-    /// @param proposalId The id of the proposal to cancel
-    function cancel(uint256 proposalId) external {
-        ProposalState status = state(proposalId);
-
-        if (status != ProposalState.Active) {
-            revert InvalidState();
-        }
-
-        // Execution requires least 20% support from Guardians to cancel proposal
-        if (
-            proposalCancelApproval[proposalId] < ((20 * guardiansCounter) / 100) ||
-            proposalCancelApproval[proposalId] == 0
-        ) {
-            revert CancelNotApproved();
-        }
-
-        _proposals[proposalId].canceled = true;
-
-        // Clear mappings
-        for (uint256 i = 0; i < proposals.length; i++) {
-            if (proposals[i] == proposalId) {
-                proposals[i] = proposals[proposals.length - 1];
-                proposals.pop();
-                break;
-            }
-        }
-
-        delete proposalWeight[proposalId];
-        delete proposalVoting[proposalId];
-        delete voters[proposalId];
-        delete cancellers[proposalId];
-        delete proposalCancelApproval[proposalId];
-        delete _proposals[proposalId];
-
-        emit ProposalCanceled(proposalId);
-    }
-
-    /// @notice Getter function for `_votingDelay` variable
-    /// @return uint256 The time period, in seconds, between `propose` and ability to vote
-    function votingDelay() external view returns (uint256) {
-        return _votingDelay;
-    }
-
-    /// @notice Getter function for `_votingPeriod` variable
-    /// @return uint256 The time period, in seconds, that a proposal is open for voting
-    function votingPeriod() external view returns (uint256) {
-        return _votingPeriod;
-    }
-
-    /// @notice Returns the unique proposal ID generated by the proposal params
-    /// @param  targets The array of proposed target addresses
-    /// @param  values The array of proposed transaction values
-    /// @param  calldatas The array of encoded proposals (bytes32)
-    /// @return uint256 Returns the unique hash of the proposal as an uint256
-    function hashProposal(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas
-    ) public pure returns (uint256) {
-        return uint256(keccak256(abi.encode(targets, values, calldatas)));
-    }
-
-    /// @notice Returns the key to the mapping of the current Guardians version
-    /// @param  guardian The address of the Guardian
-    /// @return bytes32 The hash of the `currentGuardianVersion` and `guardian` address...
-    /// ...which resolves to a unique key for every version of the Guardians mapping
-    function _getGuardianKey(address guardian) internal view returns (bytes32) {
-        return keccak256(abi.encodePacked(currentGuardianVersion, guardian));
     }
 }
