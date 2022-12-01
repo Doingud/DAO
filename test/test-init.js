@@ -42,29 +42,28 @@ const getTokens = async (setup) => {
       guardianThreshold
     ); 
 
-    const AmorTokenFactory = await ethers.getContractFactory('AMORToken', setup.roles.root);
-
-    const AmorTokenProxyFactory = await ethers.getContractFactory('DoinGudProxy', setup.roles.root);
-
-    // Constants for AmorGuild tokens - Still to be merged
-    const AmorGuildTokenFactory = await ethers.getContractFactory('AMORxGuildToken', setup.roles.root);
-
-    //  Amor Tokens
+    const AmorTokenFactory = await ethers.getContractFactory('AMOR', setup.roles.root);
     const AmorTokenImplementation = await AmorTokenFactory.deploy();
-    const AmorTokenMockUpgrade = await AmorTokenFactory.deploy();
-    const AmorTokenProxy = await AmorTokenProxyFactory.deploy(AmorTokenImplementation.address);
+    const amorBeacon = await beacon(AmorTokenImplementation.address, setup.roles.root.address)
     
-    //  AmorGuild Tokens
-    const AmorGuildToken = await AmorGuildTokenFactory.deploy();
-
+    const AmorTokenProxyFactory = await ethers.getContractFactory('DoinGudProxy', setup.roles.root);
+    const amorTokenProxy = await AmorTokenProxyFactory.deploy(amorBeacon.address);
+        
+    const AmorGuildTokenFactory = await ethers.getContractFactory('AMORxGuild', setup.roles.root);
+    const amorXGuildImplementation = await AmorGuildTokenFactory.deploy();
+    const amorXGuildBeacon = await beacon(amorXGuildImplementation.address, setup.roles.root.address)
+    const amorXGuildProxyFactory = await ethers.getContractFactory('DoinGudProxy', setup.roles.root);
+    const amorXGuildProxy = await amorXGuildProxyFactory.deploy(amorXGuildBeacon.address)
+    
     const tokens = {
       ERC20Token,
       FXAMORxGuild,
       dAMORxGuild,
       AmorTokenImplementation,
-      AmorTokenProxy,
-      AmorTokenMockUpgrade,
-      AmorGuildToken
+      amorBeacon,
+      amorXGuildBeacon,
+      amorTokenProxy,
+      AmorGuildToken: amorXGuildProxy
     };
 
     setup.tokens = tokens;
@@ -168,19 +167,19 @@ const avatar = async (setup) => {
   return avatars;
 };
 
-const governor = async (setup) => {
+const governorImplementation = async () => {
   const governorFactory = await ethers.getContractFactory('DoinGudGovernor');
   const governor = await governorFactory.deploy();
 
-  // await governor.init(
-  //   avatarAddress,
-  //   initialGuardianAddress
-  // );
-
-  setup.governor = governor;
-
   return governor;
 };
+
+const beacon = async(logic, beaconOwner) => {
+  const beaconFactory = await ethers.getContractFactory("DoinGudBeacon");
+  const beacon = await beaconFactory.deploy(logic, beaconOwner);
+
+  return beacon;
+}
 
 const getGuildFactory = async (setup) => {
   const cloneFactory = await ethers.getContractFactory("GuildFactory");
@@ -232,10 +231,11 @@ module.exports = {
   controller,
   getGuildFactory,
   getTokens,
-  governor,
   initialize,
   metadao,
   metadaoMock,
   proxy,
-  vestingContract
+  vestingContract,
+  governorImplementation,
+  beacon
 }; 

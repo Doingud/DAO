@@ -47,9 +47,9 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 /// Custom contracts
 import "../utils/ERC20Base.sol";
-import "../interfaces/IAMOR.sol";
+import "../interfaces/IAmor.sol";
 
-contract AMORToken is IAmorToken, ERC20Base, Pausable, Ownable {
+contract AMOR is IAmor, ERC20Base, Pausable, Ownable {
     //  Tax controller
     address public taxController;
     //  Tax Rate

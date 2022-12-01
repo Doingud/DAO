@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.15;
 
 /**
- * @title  DoinGud: DoinGudProxy.sol
+ * @title  DoinGud: DoinGudBeacon.sol
  * @author Daoism Systems
- * @notice Data storage contract for the DoingGud contracts.
+ * @notice Beacon Proxy contract for the DoingGud contracts.
  * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
  * @dev Implementation of a generic proxy contract for DoinGud
  *
- *  The contract houses the logic for proxy deployments through a clone-factory pattern.
+ *  The contract houses the logic for beacon proxy deployments through a clone-factory pattern.
  *
  * This Proxy Implementation contract is intended to be referenced by the
  * GuildFactory.sol contract.
@@ -43,8 +42,10 @@ pragma solidity 0.8.15;
  *
  */
 
-import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
+import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 
-contract DoinGudProxy is BeaconProxy {
-    constructor(address beacon) BeaconProxy(beacon, "") {} // solhint-disable-line no-empty-blocks
+contract DoinGudBeacon is UpgradeableBeacon {
+    constructor(address logic, address metadao) UpgradeableBeacon(logic) {
+        _transferOwnership(metadao);
+    }
 }

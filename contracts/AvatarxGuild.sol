@@ -38,7 +38,7 @@ pragma solidity 0.8.15;
 
 /// Custom contracts
 import "./interfaces/IAvatarxGuild.sol";
-import "./interfaces/IGovernor.sol";
+import "./interfaces/IDoinGudGovernor.sol";
 
 contract AvatarxGuild is IAvatarxGuild {
     address internal constant SENTINEL_MODULES = address(0x1);

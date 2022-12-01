@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @title  Interface for AmorToken.sol
 /// @author Daoism Systems Team
 
-interface IAmorToken is IERC20 {
+interface IAmor is IERC20 {
     /**
      * @dev Returns the tax rate of the AMOR token.
      */

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.15;
 
 /// @title  Clone Factory for DoinGud Tokens
@@ -30,7 +29,7 @@ import "./interfaces/IDoinGudProxy.sol";
 import "./interfaces/IdAMORxGuild.sol";
 import "./interfaces/IGuildController.sol";
 import "./interfaces/IAvatarxGuild.sol";
-import "./interfaces/IGovernor.sol";
+import "./interfaces/IDoinGudGovernor.sol";
 
 contract GuildFactory is ICloneFactory, Ownable {
     /// The various guild components

@@ -34,12 +34,12 @@ pragma solidity 0.8.15;
  *
  */
 import "./interfaces/IAvatarxGuild.sol";
-import "./interfaces/IGovernor.sol";
+import "./interfaces/IDoinGudGovernor.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-contract DoinGudGovernor is IDoinGudGovernor, UUPSUpgradeable, Initializable {
+contract DoinGudGovernor is IDoinGudGovernor, Initializable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     uint256 private constant _PROPOSAL_MAX_OPERATIONS = 10;
@@ -87,8 +87,6 @@ contract DoinGudGovernor is IDoinGudGovernor, UUPSUpgradeable, Initializable {
         _changeVotingPeriod(2 weeks);
         _changeGuardiansLimit(1);
     }
-
-    function _authorizeUpgrade(address) internal override onlyAvatar {}
 
     function getAvatar() external view returns (address) {
         return _avatar;
@@ -254,6 +252,22 @@ contract DoinGudGovernor is IDoinGudGovernor, UUPSUpgradeable, Initializable {
         return _state(_proposals[proposalId]);
     }
 
+    function getProposalEnd(uint256 proposalId) external view returns (uint256) {
+        return _proposals[proposalId].voteEnd;
+    }
+
+    function getProposalVotesCount(uint256 proposalId) external view returns (uint256) {
+        return _proposals[proposalId].votesCount;
+    }
+
+    function getProposalCancelVotesCount(uint256 proposalId) external view returns (uint256) {
+        return _proposals[proposalId].cancelVotesCount;
+    }
+
+    function getProposalVoteStart(uint256 proposalId) external view returns (uint256) {
+        return _proposals[proposalId].voteStart;
+    }
+
     /// @inheritdoc IDoinGudGovernor
     function castVoteForCancelling(uint256 proposalId) external onlyGuardian {
         Proposal storage proposal = _proposals[proposalId];
@@ -377,8 +391,8 @@ contract DoinGudGovernor is IDoinGudGovernor, UUPSUpgradeable, Initializable {
         uint256 votersLength = EnumerableSet.length(proposal.voters);
 
         for (uint256 i; i < votersLength; ++i) {
-            address voter = EnumerableSet.at(proposal.voters, i);
-            require(EnumerableSet.remove(proposal.voters, voter), "FCK");
+            address voter = EnumerableSet.at(proposal.voters, 0);
+            EnumerableSet.remove(proposal.voters, voter);
         }
     }
 
@@ -386,8 +400,8 @@ contract DoinGudGovernor is IDoinGudGovernor, UUPSUpgradeable, Initializable {
         uint256 votersLength = EnumerableSet.length(proposal.cancelVoters);
 
         for (uint256 i; i < votersLength; ++i) {
-            address voter = EnumerableSet.at(proposal.cancelVoters, i);
-            require(EnumerableSet.remove(proposal.cancelVoters, voter), "FCK");
+            address voter = EnumerableSet.at(proposal.cancelVoters, 0);
+            EnumerableSet.remove(proposal.cancelVoters, voter);
         }
     }
 }
