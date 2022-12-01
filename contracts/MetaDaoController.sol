@@ -114,19 +114,10 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     error Unauthorized();
     /// The guild doesn't exist
     error InvalidGuild();
-    /// Not all guilds have weights!!
-    /// Please ensure guild weights have been updated after adding new guild
-    error IndexError();
-    /// The supplied array of index weights does not match the number of guilds
-    error InvalidArray();
     /// The index array has not been set yet
     error NoIndex();
-    /// The guild has 0 funds to claim
-    error InvalidClaim();
     /// The address already exists in the mapping
     error Exists();
-    /// The guild has unclaimed donations and can't be removed
-    error UnclaimedDonations();
 
     /// @notice Initializes the MetaDaoController contract
     /// @param amor The address of the AMOR token

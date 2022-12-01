@@ -478,7 +478,7 @@ contract GuildController is IGuildController, Ownable {
     }
 
     /// @notice allows to claim tokens for specific ImpactMaker address
-    /// @param impact Impact maker to to claim tokens from
+    /// @param impact Impact maker to claim tokens from
     /// @param token Tokens addresess to claim
     function claim(address impact, address[] memory token) external {
         for (uint256 i = 0; i < token.length; i++) {

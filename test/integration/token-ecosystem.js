@@ -331,7 +331,7 @@ const setupTests = deployments.createFixture(async () => {
         await expect(GUILD_ONE_CONTROLLERXGUILD.connect(user1).donate(FIFTY_ETHER, DOINGUD_AMOR_TOKEN.address)).
           to.emit(DOINGUD_AMOR_TOKEN, "Transfer").
             to.emit(GUILD_ONE_FXAMORXGUILD, "Transfer");
-        await expect(GUILD_ONE_CONTROLLERXGUILD.connect(user2).claim([DOINGUD_AMOR_TOKEN.address])).
+        await expect(GUILD_ONE_CONTROLLERXGUILD.connect(user2).claim(user2.address, [DOINGUD_AMOR_TOKEN.address])).
           to.emit(DOINGUD_AMOR_TOKEN, "Transfer");
         expect(await DOINGUD_AMOR_TOKEN.balanceOf(user2.address)).to.equal(((FIFTY_ETHER * ((BASIS_POINTS-TAX_RATE)/BASIS_POINTS) * 0.9 * 0.2 * ((BASIS_POINTS-TAX_RATE)/BASIS_POINTS)).toString()));
       });
@@ -393,8 +393,7 @@ const setupTests = deployments.createFixture(async () => {
             ]
         );
         await DOINGUD_METADAO.addIndex([encodedIndex, encodedIndex2]);
-        let newIndex = await DOINGUD_METADAO.indexHashes(1);
-        let indexDetails = await DOINGUD_METADAO.indexes(newIndex);
+        let indexDetails = await DOINGUD_METADAO.indexes(1);
         expect(indexDetails.indexDenominator).to.equal(150);
       });
 
