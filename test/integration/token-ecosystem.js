@@ -283,7 +283,6 @@ const setupTests = deployments.createFixture(async () => {
   await metaHelper([GUILD_TWO_GOVERNORXGUILD.address], [0], [proposal], [root], authorizer_adaptor, GUILD_TWO_AVATARXGUILD.address, GUILD_TWO_GOVERNORXGUILD.address);
   await metaHelper([GUILD_TWO_CONTROLLERXGUILD.address], [0], [setImpactMakersData], [user1, user2], authorizer_adaptor, GUILD_TWO_AVATARXGUILD.address, GUILD_TWO_GOVERNORXGUILD.address)
   /// Setup the initial Fee Index
-  const abi = ethers.utils.defaultAbiCoder;
   let indexGuilds = [GUILD_ONE_CONTROLLERXGUILD.address, GUILD_TWO_CONTROLLERXGUILD.address];
   let indexWeights = [100, 100];
   /*abi.encode(
@@ -381,7 +380,6 @@ const setupTests = deployments.createFixture(async () => {
 
     context('Donate with custom index', () => {
       it("Should allow a user to set their own index", async function () {
-        const abi = ethers.utils.defaultAbiCoder;
         let indexGuilds = [GUILD_ONE_CONTROLLERXGUILD.address, GUILD_TWO_CONTROLLERXGUILD.address];
         let indexWeights = [50, 100];
         /*= abi.encode(

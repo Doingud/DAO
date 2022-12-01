@@ -381,7 +381,11 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     /// @notice Allows DoinGud to update the fee index used
     /// @param guilds The array of Guilds for this index
     /// @param weights The array of the guild weights
-    function updateIndex(address[] calldata guilds, uint256[] calldata weights, uint256 indexPosition) external {
+    function updateIndex(
+        address[] calldata guilds,
+        uint256[] calldata weights,
+        uint256 indexPosition
+    ) external {
         _updateIndex(guilds, weights, indexPosition);
 
         emit IndexUpdated(indexPosition, msg.sender);
@@ -391,7 +395,11 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     /// @param _guilds The array of guilds for this index
     /// @param _weights The array of weights for this index
     /// @param _indexPosition Location of index in the `indexes` mapping
-    function _updateIndex(address[] calldata _guilds, uint256[] calldata _weights, uint256 _indexPosition) internal {
+    function _updateIndex(
+        address[] calldata _guilds,
+        uint256[] calldata _weights,
+        uint256 _indexPosition
+    ) internal {
         /// Check the caller is the owner
         if (indexes[_indexPosition].indexDenominator > 0 && indexes[_indexPosition].creator != msg.sender) {
             revert Unauthorized();

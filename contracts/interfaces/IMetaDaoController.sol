@@ -81,5 +81,9 @@ interface IMetaDaoController {
     /// @param guilds The array of guilds addresses
     /// @param weights The array of the guild weights
     /// @param index The key for this index in the `indexes` mapping
-    function updateIndex(address[] calldata guilds, uint256[] calldata weights, uint256 index) external;
+    function updateIndex(
+        address[] calldata guilds,
+        uint256[] calldata weights,
+        uint256 index
+    ) external;
 }

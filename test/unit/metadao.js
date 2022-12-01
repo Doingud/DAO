@@ -22,9 +22,6 @@ let user3;
 let CONTROLLER;
 let FACTORY;
 
-let encodedIndex;
-let encodedIndex2;
-
 describe("unit - MetaDao", function () {
 
     const setupTests = deployments.createFixture(async () => {
