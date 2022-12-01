@@ -112,6 +112,8 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     error NotListed();
     /// The Caller is not the Owner
     error Unauthorized();
+    /// The provided arrays do not match in length
+    error InvalidArray();
     /// The guild doesn't exist
     error InvalidGuild();
     /// The index array has not been set yet
@@ -367,9 +369,9 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     /// @dev Requires an encoded array of SORTED tuples in (address, uint256) format
     /// @param weights An array containing the weighting indexes for different guilds
     /// @return index The newly created index in the `Index` array
-    function addIndex(bytes[] calldata weights) external returns (uint256) {
+    function addIndex(address[] calldata guilds, uint256[] calldata weights) external returns (uint256) {
         indexCounter++;
-        _updateIndex(weights, indexCounter);
+        _updateIndex(guilds, weights, indexCounter);
 
         emit IndexAdded(indexCounter, msg.sender);
 
@@ -377,41 +379,41 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     }
 
     /// @notice Allows DoinGud to update the fee index used
-    /// @param weights an array of the guild weights
-    function updateIndex(bytes[] calldata weights, uint256 indexPosition) external {
-        if (indexes[indexPosition].creator != msg.sender) {
-            revert Unauthorized();
-        }
-
-        _updateIndex(weights, indexPosition);
+    /// @param guilds The array of Guilds for this index
+    /// @param weights The array of the guild weights
+    function updateIndex(address[] calldata guilds, uint256[] calldata weights, uint256 indexPosition) external {
+        _updateIndex(guilds, weights, indexPosition);
 
         emit IndexUpdated(indexPosition, msg.sender);
     }
 
     /// @notice Adds a new index to the Index mapping
-    /// @dev Requires `weights` to be sorted prior to creating a new `Index` struct
-    /// @param weights the encoded tuple of index values (`address`,`uint256`)
-    /// @param indexPosition keccak256 hash of the provided array
-    function _updateIndex(bytes[] calldata weights, uint256 indexPosition) internal {
+    /// @param _guilds The array of guilds for this index
+    /// @param _weights The array of weights for this index
+    /// @param _indexPosition Location of index in the `indexes` mapping
+    function _updateIndex(address[] calldata _guilds, uint256[] calldata _weights, uint256 _indexPosition) internal {
         /// Check the caller is the owner
-        if (indexes[indexPosition].indexDenominator > 0 && indexes[indexPosition].creator != msg.sender) {
+        if (indexes[_indexPosition].indexDenominator > 0 && indexes[_indexPosition].creator != msg.sender) {
             revert Unauthorized();
         }
 
-        delete indexes[indexPosition];
+        if (_guilds.length != _weights.length) {
+            revert InvalidArray();
+        }
+
+        delete indexes[_indexPosition];
         /// Set the storage pointer
-        Index storage index = indexes[indexPosition];
+        Index storage index = indexes[_indexPosition];
         /// Reset the owner
         index.creator = msg.sender;
 
-        for (uint256 i; i < weights.length; i++) {
-            (address guild, uint256 weight) = abi.decode(weights[i], (address, uint256));
-            if (guilds[guild] == address(0) || weight == 0) {
+        for (uint256 i; i < _guilds.length; i++) {
+            if (guilds[_guilds[i]] == address(0) || _weights[i] == 0) {
                 revert InvalidGuild();
             }
 
-            index.indexWeights[guild] = weight;
-            index.indexDenominator += weight;
+            index.indexWeights[_guilds[i]] = _weights[i];
+            index.indexDenominator += _weights[i];
         }
     }
 }

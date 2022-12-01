@@ -70,7 +70,7 @@ describe("unit - MetaDao", function () {
         await METADAO.addWhitelist(USDC.address);
         await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
         await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
-        const abi = ethers.utils.defaultAbiCoder;
+        /*const abi = ethers.utils.defaultAbiCoder;
         encodedIndex = abi.encode(
             ["tuple(address, uint256)"],
             [
@@ -82,9 +82,12 @@ describe("unit - MetaDao", function () {
             [
             [GUILD_CONTROLLER_TWO.address, 100]
             ]
-        );
+        );*/
+        let guilds = [GUILD_CONTROLLER_ONE.address, GUILD_CONTROLLER_TWO.address];
+        let weights = [100, 100];
 
-        await METADAO.updateIndex([encodedIndex, encodedIndex2], 0);
+        await METADAO.updateIndex(guilds, weights, 0);
+        //await METADAO.updateIndex([encodedIndex, encodedIndex2], 0);
     });
 
     context("initialization", () => {
@@ -300,8 +303,10 @@ describe("unit - MetaDao", function () {
 
     context("function: addIndex()", () => {
         it("Should allow a user to set a custom index", async function () {
-            const abi = ethers.utils.defaultAbiCoder;
-            let newIndex0 = abi.encode(
+            let guilds = [GUILD_CONTROLLER_ONE.address, GUILD_CONTROLLER_TWO.address];
+            let weights = [50, 150];
+            //const abi = ethers.utils.defaultAbiCoder;
+            /*let newIndex0 = abi.encode(
                 ["tuple(address, uint256)"],
                 [
                 [GUILD_CONTROLLER_ONE.address, 50]
@@ -312,9 +317,9 @@ describe("unit - MetaDao", function () {
                 [
                 [GUILD_CONTROLLER_TWO.address, 150]
                 ]
-            );
+            );*/
 
-            let index = await METADAO.addIndex([newIndex0, newIndex1]);
+            let index = await METADAO.addIndex(guilds, weights);
             index = await METADAO.indexes(1);
             expect(index.indexDenominator).to.equal(200);
         });
@@ -322,7 +327,7 @@ describe("unit - MetaDao", function () {
 
     context("function: donate()", () => {
         it("Should allow a user to donate according to a custom index", async function () {
-            const abi = ethers.utils.defaultAbiCoder;
+            /*const abi = ethers.utils.defaultAbiCoder;
             let newIndex0 = abi.encode(
                 ["tuple(address, uint256)"],
                 [
@@ -334,9 +339,11 @@ describe("unit - MetaDao", function () {
                 [
                 [GUILD_CONTROLLER_TWO.address, 150]
                 ]
-            );
+            );*/
+            let guilds = [GUILD_CONTROLLER_ONE.address, GUILD_CONTROLLER_TWO.address];
+            let weights = [50, 150];
 
-            await METADAO.addIndex([newIndex0, newIndex1]);
+            await METADAO.addIndex(guilds, weights);
             await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
             await METADAO.donate(USDC.address, ONE_HUNDRED_ETHER, 1);
 
@@ -347,7 +354,7 @@ describe("unit - MetaDao", function () {
 
     context('function: updateIndex()', () => {
         it('Should updateIndex if index = 0', async function () {
-            const abi = ethers.utils.defaultAbiCoder;
+            /*const abi = ethers.utils.defaultAbiCoder;
             let newIndex0 = abi.encode(
                 ["tuple(address, uint256)"],
                 [
@@ -359,16 +366,18 @@ describe("unit - MetaDao", function () {
                 [
                 [GUILD_CONTROLLER_TWO.address, 150]
                 ]
-            );
+            );*/
+            let guilds = [GUILD_CONTROLLER_ONE.address, GUILD_CONTROLLER_TWO.address];
+            let weights = [500, 150];
 
-            await METADAO.updateIndex([newIndex0, newIndex1], 0);
+            await METADAO.updateIndex(guilds, weights, 0);
 
             let index = await METADAO.indexes(0);
             expect(index.indexDenominator).to.equal(650);
         });
 
         it('Should updateIndex if index > 0', async function () {
-            const abi = ethers.utils.defaultAbiCoder;
+            /*const abi = ethers.utils.defaultAbiCoder;
             let newIndex0 = abi.encode(
                 ["tuple(address, uint256)"],
                 [
@@ -380,18 +389,22 @@ describe("unit - MetaDao", function () {
                 [
                 [GUILD_CONTROLLER_TWO.address, 200]
                 ]
-            );
+            );*/
 
-            await METADAO.addIndex([newIndex0, newIndex1]);
-            await METADAO.updateIndex([newIndex0, newIndex1], 1);
+            let guilds = [GUILD_CONTROLLER_ONE.address, GUILD_CONTROLLER_TWO.address];
+            let weights = [500, 200];
+
+            await METADAO.updateIndex(guilds, weights, 1);
 
             let index = await METADAO.indexes(1);
             expect(index.indexDenominator).to.equal(700);
         });
 
         it('Should fail to updateIndex if creator != msg.sender', async function () {
-            await expect(METADAO.connect(user1).updateIndex([encodedIndex, encodedIndex2], 0)).
-                to.be.revertedWith("Unauthorized()");        
+            let guilds = [GUILD_CONTROLLER_ONE.address, GUILD_CONTROLLER_TWO.address];
+            let weights = [500, 200];
+            await expect(METADAO.connect(user1).updateIndex(guilds, weights, 0)).
+                to.be.revertedWith("Unauthorized()");
         });
 
         

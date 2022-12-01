@@ -72,12 +72,14 @@ interface IMetaDaoController {
     function isWhitelisted(address token) external view returns (bool);
 
     /// @notice Adds a new index to the `Index` array
-    /// @dev    Requires an encoded array of SORTED tuples in (address, uint256) format
-    /// @param  weights an array containing the weighting indexes for different guilds
+    /// @param guilds The array of guild addresses for this index
+    /// @param weights The array containing the weights for different guilds
     /// @return index of the new index in the `Index` array
-    function addIndex(bytes[] calldata weights) external returns (uint256);
+    function addIndex(address[] calldata guilds, uint256[] calldata weights) external returns (uint256);
 
     /// @notice Allows DoinGud to update the fee index used
-    /// @param  weights an array of the guild weights
-    function updateIndex(bytes[] calldata weights, uint256 index) external;
+    /// @param guilds The array of guilds addresses
+    /// @param weights The array of the guild weights
+    /// @param index The key for this index in the `indexes` mapping
+    function updateIndex(address[] calldata guilds, uint256[] calldata weights, uint256 index) external;
 }
