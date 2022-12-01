@@ -207,14 +207,10 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
 
     /// @notice Distributes the specified token
     /// @param token The address of target token
-    function claimToken(address guild, address token) public {
-        if (guilds[guild] == address(0)) {
-            revert InvalidGuild();
-        }
-
+    function claimToken(address guild, address token) public returns (uint256) {
         uint256 amount = guildFunds[guild][token];
         if (amount == 0) {
-            revert InvalidClaim();
+            return amount;
         }
 
         /// Update donations for this token
@@ -222,6 +218,8 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
         /// Clear this guild's token balance
         delete guildFunds[guild][token];
         IERC20(token).safeTransfer(guild, amount);
+
+        return amount;
     }
 
     /// @notice Apportions collected AMOR fees

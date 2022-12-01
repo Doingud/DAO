@@ -29,7 +29,7 @@ interface IMetaDaoController {
     /// @notice Claims specified token for specified guild
     /// @param guild The address of the target guild controller
     /// @param token The target token contract address
-    function claimToken(address guild, address token) external;
+    function claimToken(address guild, address token) external returns (uint256);
 
     /// @notice Apportions collected funds
     /// @param token The address of the token being distributed

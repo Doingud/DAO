@@ -251,11 +251,6 @@ describe("unit - MetaDao", function () {
             expect(usdcMetaDaoBefore - usdcMetaDaoAfter).to.equal(usdcControllerAfter - usdcControllerBefore);
         });
 
-        it('Should revert if caller is InvalidGuild', async function () {
-            await expect(METADAO.claimToken(root.address, USDC.address)).
-                to.be.revertedWith("InvalidGuild()");
-        });
-
         it('Should revert to claim NotListed token', async function () {
             await expect(GUILD_CONTROLLER_ONE.gatherDonation(GUILD_CONTROLLER_TWO.address)).
                 to.be.revertedWith("NotWhitelistedToken()");
@@ -268,7 +263,7 @@ describe("unit - MetaDao", function () {
 
         it('Should revert if called with no tokens allocated', async function () {
             await expect(GUILD_CONTROLLER_ONE.gatherDonation(USDC.address)).
-                to.be.revertedWith("InvalidClaim()");
+                to.be.revertedWith("InvalidAmount()");
         });
     });
 
