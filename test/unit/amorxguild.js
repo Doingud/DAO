@@ -26,7 +26,9 @@ describe("unit - AMORxGuild", function () {
     const setup = await init.initialize(signers);
     await init.getTokens(setup);
 
-    AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
+    const amorImpl = setup.tokens.AmorTokenImplementation;
+    const amorProxy = setup.tokens.amorTokenProxy;
+    AMOR_TOKEN = amorImpl.attach(amorProxy.address);
     AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
 
     root = setup.roles.root;
@@ -38,30 +40,18 @@ describe("unit - AMORxGuild", function () {
 
   before('Setup', async function() {
     await setupTests();
-    await AMOR_TOKEN.init(
-      AMOR_TOKEN_NAME, 
-      AMOR_TOKEN_SYMBOL, 
-      multisig.address, 
-      TAX_RATE, 
-      root.address
-    );
-
     await AMOR_TOKEN.approve(AMOR_GUILD_TOKEN.address, MOCK_TEST_AMOUNT);
+    
+    await AMOR_GUILD_TOKEN.init(
+      MOCK_GUILD_NAMES[0],
+      MOCK_GUILD_SYMBOLS[0],
+      AMOR_TOKEN.address,
+      user2.address
+    )
   });
 
   context("function: init()", () => {
     describe("initialization of token details", function () {
-      it("Should emit an Initialized event", async function () {
-        await expect(AMOR_GUILD_TOKEN.init(
-          MOCK_GUILD_NAMES[0],
-          MOCK_GUILD_SYMBOLS[0],
-          AMOR_TOKEN.address,
-          user2.address
-        )).
-          to.emit(AMOR_GUILD_TOKEN, "Initialized").
-            withArgs(MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0], AMOR_TOKEN.address);
-      });
-
       it("Should fail if called more than once", async function () {
         await expect(AMOR_GUILD_TOKEN.init(
           MOCK_GUILD_NAMES[0], 

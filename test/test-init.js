@@ -54,6 +54,7 @@ const getTokens = async (setup) => {
     const amorXGuildBeacon = await beacon(amorXGuildImplementation.address, setup.roles.root.address)
     const amorXGuildProxyFactory = await ethers.getContractFactory('DoinGudProxy', setup.roles.root);
     const amorXGuildProxy = await amorXGuildProxyFactory.deploy(amorXGuildBeacon.address)
+    const AmorGuildToken = amorXGuildImplementation.attach(amorXGuildProxy.address)
     
     const tokens = {
       ERC20Token,
@@ -63,7 +64,7 @@ const getTokens = async (setup) => {
       amorBeacon,
       amorXGuildBeacon,
       amorTokenProxy,
-      AmorGuildToken: amorXGuildProxy
+      AmorGuildToken
     };
 
     setup.tokens = tokens;
@@ -111,12 +112,12 @@ const controller = async (setup) => {
     setup.roles.root.address // the multisig address of the MetaDAO, which owns the token
   );
 
-  await setup.tokens.AmorGuildToken.init(
-    'GUILD_ONE', 
-    'TOKEN_ONE',
-    setup.tokens.AmorTokenImplementation.address,
-    controller.address //controller
-  );
+  // await setup.tokens.AmorGuildToken.init(
+  //   'GUILD_ONE', 
+  //   'TOKEN_ONE',
+  //   setup.tokens.AmorTokenImplementation.address,
+  //   controller.address //controller
+  // );
 
   await setup.tokens.FXAMORxGuild.init(
     "DoinGud MetaDAO", 
@@ -184,6 +185,8 @@ const beacon = async(logic, beaconOwner) => {
 const getGuildFactory = async (setup) => {
   const cloneFactory = await ethers.getContractFactory("GuildFactory");
   const amorStorage = setup.amor_storage ? setup.amor_storage.address : setup.tokens.AmorTokenImplementation.address;
+  const governor = governorImplementation();
+  setup.governor = governor;
 
   const guildFactory = await cloneFactory.deploy(
     amorStorage,

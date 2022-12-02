@@ -252,7 +252,7 @@ contract DoinGudGovernor is IDoinGudGovernor, Initializable {
         return _state(_proposals[proposalId]);
     }
 
-    function getProposalEnd(uint256 proposalId) external view returns (uint256) {
+    function getProposalVoteEnd(uint256 proposalId) external view returns (uint256) {
         return _proposals[proposalId].voteEnd;
     }
 
@@ -390,6 +390,8 @@ contract DoinGudGovernor is IDoinGudGovernor, Initializable {
     function _resetVotersSet(Proposal storage proposal) private {
         uint256 votersLength = EnumerableSet.length(proposal.voters);
 
+        // To remove all voters
+        // we need to remove 0-th element voterLength times
         for (uint256 i; i < votersLength; ++i) {
             address voter = EnumerableSet.at(proposal.voters, 0);
             EnumerableSet.remove(proposal.voters, voter);
@@ -399,6 +401,8 @@ contract DoinGudGovernor is IDoinGudGovernor, Initializable {
     function _resetCancelersSet(Proposal storage proposal) private {
         uint256 votersLength = EnumerableSet.length(proposal.cancelVoters);
 
+        // To remove all voters
+        // we need to remove 0-th element voterLength times
         for (uint256 i; i < votersLength; ++i) {
             address voter = EnumerableSet.at(proposal.cancelVoters, 0);
             EnumerableSet.remove(proposal.cancelVoters, voter);

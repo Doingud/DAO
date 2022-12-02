@@ -15,8 +15,6 @@ use(solidity);
 
 //  The contract with the execution logic
 let IMPLEMENTATION;
-//  Mock upgrade contract for proxy tests
-let MOCK_UPGRADE_IMPLEMENTATION;
 //  The contract with exposed ABI for proxy specific functions
 let PROXY_CONTRACT;
 //  The PROXY_CONTRACT with the implemenation
@@ -36,15 +34,13 @@ describe("unit - AMOR Token", function () {
     await init.getTokens(setup);
 
     IMPLEMENTATION = setup.tokens.AmorTokenImplementation;
-    MOCK_UPGRADE_IMPLEMENTATION = setup.tokens.AmorTokenMockUpgrade;
-    PROXY_CONTRACT = setup.tokens.AmorTokenProxy;
+    PROXY_CONTRACT = setup.tokens.amorTokenProxy;
     
     root = setup.roles.root;
     multisig = setup.roles.doingud_multisig;
     user1 = setup.roles.user1;
     user2 = setup.roles.user2;
     user3 = setup.roles.user3;
-    
   });
 
   before('Setup', async function() {
@@ -59,12 +55,6 @@ describe("unit - AMOR Token", function () {
         PROXY = IMPLEMENTATION.attach(PROXY_CONTRACT.address);
       });
       //  Make sure the proxy contract is linked to the implementation address
-  });
-
-  context("function: initProxy()", () => {
-    it("initializes the proxy's logic", async function () {
-      await PROXY_CONTRACT.initProxy(IMPLEMENTATION.address,[]);
-    });
   });
 
   context("function: init()", () => {
@@ -90,13 +80,6 @@ describe("unit - AMOR Token", function () {
       to.be.reverted;
     });
   });
-
-    context("function: viewImplementation()", () => {
-        it("retrieves the correct contract address", async function () {
-          expect(await PROXY_CONTRACT.viewImplementation()).
-            to.equal(IMPLEMENTATION.address);
-        });
-    });
 
     context("function: totalSupply()", () => {
       it("returns the total token supply", async function () {
@@ -200,18 +183,6 @@ describe("unit - AMOR Token", function () {
           to.equal(multisig.address);
       });
     });
-
-    context("function: upgradeTo()", () => {
-      it("upgrades the implementation used for the proxy", async function () {
-        expect(await PROXY_CONTRACT.upgradeImplementation(MOCK_UPGRADE_IMPLEMENTATION.address)).
-          to.emit(PROXY_CONTRACT, "Upgraded").
-            withArgs(MOCK_UPGRADE_IMPLEMENTATION.address);
-      });
-      it("returns the new implementation address", async function () {
-        expect(await PROXY_CONTRACT.viewImplementation()).
-          to.equal(MOCK_UPGRADE_IMPLEMENTATION.address);
-      });
-    })
 
     context("function: setTaxRate()", () => {
       it("sets new tax rate", async function () {

@@ -20,6 +20,9 @@ contract AvatarMock is IAvatarxGuild {
         uint256 value,
         bytes memory proposal
     ) external returns (bool success) {
+        if (target == address(0)) {
+            return false;
+        }
         return true;
     }
 
@@ -36,7 +39,7 @@ contract AvatarMock is IAvatarxGuild {
         
     }
 
-        function enableModule(address module) external {}
+    function enableModule(address module) external {}
 
     /// @dev Disables a module on the avatar.
     /// @notice Can only be called by the avatar.
