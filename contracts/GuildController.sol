@@ -310,7 +310,6 @@ contract GuildController is IGuildController, Ownable {
             FXGFXAMORxGuild.burn(msg.sender, msg.sender, amount);
         }
 
-        // ERC20AMORxGuild.safeTransferFrom(FXAMORxGuild, address(this), amount);
         FXGFXAMORxGuild.withdraw(amount);
 
         voters[id].push(msg.sender);
