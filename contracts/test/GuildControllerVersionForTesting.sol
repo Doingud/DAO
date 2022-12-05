@@ -280,7 +280,7 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
             revert InvalidAmount();
         }
 
-        FXGFXAMORxGuild.burn(msg.sender, amount);
+        FXGFXAMORxGuild.burn(msg.sender, msg.sender, amount);
         voters[id].push(msg.sender);
 
         reportsWeight[id] += int256(amount);

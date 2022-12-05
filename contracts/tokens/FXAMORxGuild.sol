@@ -6,10 +6,10 @@ pragma solidity 0.8.15;
  * @title  DoinGud: FXAMORxGuild.sol
  * @author Daoism Systems
  * @notice ERC20 implementation for DoinGudDAO
- * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
+ * @custom Security-contact security@daoism.systems
  * @dev Implementation of the FXAMORXGuild token for DoinGud
  *
- *  The contract houses the token logic for FXAMORxGuild.
+ * The contract houses the token logic for FXAMORxGuild.
  *
  * This Token Implementation contract is intended to be referenced by a proxy contract.
  *
@@ -54,24 +54,24 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     using ABDKMath64x64 for uint256;
     using SafeERC20 for IERC20;
 
-    // staker => all staker balance
-    mapping(address => uint256) public stakes;
     // those who delegated to a specific address
     mapping(address => address[]) public delegators;
     // list of delegations from one address
     mapping(address => mapping(address => uint256)) public delegations;
+    // those to whom tokens were delegated from a specific address
+    mapping(address => address[]) public delegation;
     // amount of all delegated tokens from staker
     mapping(address => uint256) public amountDelegated;
+    // amount of all delegated tokens to staker
+    mapping(address => uint256) public amountDelegatedAvailable;
 
     bool private _initialized;
 
-    address public _owner; //GuildController
-    address public controller; //contract that has a voting function
+    address public controller; // contract that has a voting function
 
     IERC20 public AMORxGuild;
 
     /// Events
-    event Initialized(address owner, address AMORxGuild);
     event AMORxGuildStakedToFXAMOR(address to, uint256 amount, uint256 timeOfStake);
     event AMORxGuildWithdrawnFromFXAMOR(address to, uint256 amount, uint256 timeOfWithdraw);
     event FXAMORxGuildUndelegated(address from, address owner, uint256 amount);
@@ -79,14 +79,16 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     event FXAMORxGuildControllerUpdated(address newCollector);
 
     /// Errors
+    /// Contract has been initialized already
     error AlreadyInitialized();
+    /// Access controlled
     error Unauthorized();
+    /// Invalid array provided
     error EmptyArray();
+    /// No delegated tokens
     error NotDelegatedAny();
-
     /// Invalid address. Needed address != address(0)
     error AddressZero();
-
     /// Invalid address to transfer. Needed `to` != msg.sender
     error InvalidSender();
 
@@ -94,29 +96,27 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
      *          It can only be run once.
      */
     function init(
-        string memory name_,
-        string memory symbol_,
-        address initOwner_,
-        IERC20 AMORxGuild_
+        string memory _name,
+        string memory _symbol,
+        address _initOwner,
+        IERC20 _AMORxGuild
     ) external override {
         if (_initialized) {
             revert AlreadyInitialized();
         }
 
-        _transferOwnership(initOwner_);
+        _transferOwnership(_initOwner); // GuildController
 
-        _owner = initOwner_;
-        controller = initOwner_;
-        AMORxGuild = AMORxGuild_;
+        controller = _initOwner;
+        AMORxGuild = IERC20(_AMORxGuild);
         //  Set the name and symbol
-        name = name_;
-        symbol = symbol_;
+        _setTokenDetail(_name, _symbol);
 
         _initialized = true;
-        emit Initialized(initOwner_, address(AMORxGuild_));
+        emit Initialized(_initOwner, address(_AMORxGuild));
     }
 
-    function setController(address _controller) external onlyAddress(_owner) {
+    function setController(address _controller) external onlyOwner {
         if (_controller == address(0)) {
             revert AddressZero();
         }
@@ -156,8 +156,6 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         // Tokens are minted 1:1.
         _mint(to, amount);
 
-        stakes[to] += amount;
-
         emit AMORxGuildStakedToFXAMOR(to, amount, block.timestamp);
         return amount;
     }
@@ -165,17 +163,43 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     /// @notice Burns FXAMORxGuild tokens if they are being used for voting
     /// @dev When this tokens are burned, staked AMORxGuild is being transfered
     //       to the controller(contract that has a voting function)
+    /// @param  whoUsedDelegated who used delegeted tokens that we must burn first
+    ///         whoUsedDelegated = account by default
     /// @param  account address from which must burn tokens
     /// @param  amount uint256 representing amount of burning tokens
-    function burn(address account, uint256 amount) external onlyAddress(_owner) {
-        if (stakes[account] < amount) {
+    function burn(
+        address whoUsedDelegated,
+        address account,
+        uint256 amount
+    ) external onlyOwner {
+        if (balanceOf(account) < amount) {
             revert InvalidAmount();
         }
+
+        if (whoUsedDelegated == account && amount > (balanceOf(account) - amountDelegated[account])) {
+            revert InvalidAmount();
+        }
+
+        if (whoUsedDelegated != account) {
+            // if the delegatee is the one who using tokens
+            if (delegations[account][whoUsedDelegated] > amount) {
+                revert InvalidAmount();
+            }
+            _undelegate(account, whoUsedDelegated, amount);
+            emit FXAMORxGuildUndelegated(whoUsedDelegated, account, amount);
+        }
+
         //burn used FXAMORxGuild tokens from staker
         _burn(account, amount);
-        AMORxGuild.safeTransfer(controller, amount);
-        stakes[account] -= amount;
+        // transfer of AMORxGuild is executed in the GuildController via call of withdraw()
+
         emit AMORxGuildWithdrawnFromFXAMOR(account, amount, block.timestamp);
+    }
+
+    /// @notice Transfers FXAMORxGuild tokens if they are being used for voting
+    /// @param  amount uint256 representing amount of tokens to transfer to controller(contract that has a voting function)
+    function withdraw(uint256 amount) external onlyOwner {
+        AMORxGuild.safeTransfer(controller, amount);
     }
 
     /// @notice Allows some external account to vote with your FXAMORxGuild tokens
@@ -189,14 +213,26 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             revert AddressZero();
         }
 
-        uint256 availableAmount = stakes[msg.sender] - amountDelegated[msg.sender];
+        if (delegation[msg.sender].length >= 100) {
+            revert InvalidAmount();
+        }
+
+        if (delegators[to].length >= 100) {
+            revert InvalidAmount();
+        }
+
+        uint256 availableAmount = balanceOf(msg.sender) - amountDelegated[msg.sender];
         if (availableAmount < amount) {
             revert InvalidAmount();
         }
 
+        if (delegations[msg.sender][to] == 0) {
+            delegation[msg.sender].push(to);
+        }
         delegators[to].push(msg.sender);
         delegations[msg.sender][to] += amount;
         amountDelegated[msg.sender] += amount;
+        amountDelegatedAvailable[to] += amount;
         emit FXAMORxGuildDelegated(to, msg.sender, amount);
     }
 
@@ -204,22 +240,56 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     /// @param  account address from which delegating will be taken away
     /// @param  amount uint256 representing amount of undelegating tokens
     function undelegate(address account, uint256 amount) public {
-        if (account == msg.sender) {
+        _undelegate(msg.sender, account, amount);
+    }
+
+    /// @notice Unallows some external account to vote with your delegated FXAMORxGuild tokens
+    /// @param  owner address undelegating tokens owner
+    /// @param  account address from which delegating will be taken away
+    /// @param  amount uint256 representing amount of undelegating tokens
+    function _undelegate(
+        address owner,
+        address account,
+        uint256 amount
+    ) internal {
+        if (account == owner) {
             revert InvalidSender();
         }
 
         //Nothing to undelegate
-        if (delegations[msg.sender][account] == 0) {
+        if (delegations[owner][account] == 0) {
             revert NotDelegatedAny();
         }
 
-        if (delegations[msg.sender][account] >= amount) {
-            delegations[msg.sender][account] -= amount;
-            amountDelegated[msg.sender] -= amount;
+        if (delegations[owner][account] > amount) {
+            delegations[owner][account] -= amount;
+            amountDelegated[owner] -= amount;
+            amountDelegatedAvailable[owner] -= amount;
         } else {
-            delegations[msg.sender][account] = 0;
-            amountDelegated[msg.sender] = 0;
+            amountDelegated[owner] -= delegations[owner][account];
+            amountDelegatedAvailable[account] -= delegations[owner][account];
+            amount = delegations[owner][account];
+            delete delegations[owner][account];
+
+            for (uint256 j = 0; j < delegation[owner].length; j++) {
+                if (delegation[owner][j] == account) {
+                    delegation[owner][j] = delegation[owner][delegation[owner].length - 1];
+                    delegation[owner].pop();
+                    break;
+                }
+            }
         }
-        emit FXAMORxGuildUndelegated(account, msg.sender, amount);
+
+        emit FXAMORxGuildUndelegated(account, owner, amount);
+    }
+
+    /// @notice This token is non-transferable
+    function transfer() public pure returns (bool) {
+        return false;
+    }
+
+    /// @notice This token is non-transferable
+    function transferFrom() public pure returns (bool) {
+        return false;
     }
 }
