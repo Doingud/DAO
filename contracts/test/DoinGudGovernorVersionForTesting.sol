@@ -232,8 +232,7 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
                 revert InvalidParameters();
             }
         }
-        //guardians[current] = newGuardian;
-        //delete weights[guardians[current]];
+
         weights[newGuardian] = 1;
         emit GuardianChanged(current, newGuardian);
     }
