@@ -223,12 +223,6 @@ describe('unit - Contract: Governor', function () {
             expect((await governor.proposalWeight(proposalId)).toString()).to.equals("0");
         });
 
-        // it('it fails to propose if proposal already exists', async function () {
-        //     let proposal = mockModule.interface.encodeFunctionData("testInteraction", [2]);
-
-        //     await expect(governor.connect(authorizer_adaptor).propose([mockModule.address], [0], [proposal])).to.be.revertedWith("InvalidState()");
-        // });
-
         it('it fails to propose if proposal function information arity mismatch', async function () {
             await expect(governor.connect(authorizer_adaptor).propose([avatar.address, governor.address], [0], ["0x"])).to.be.revertedWith("InvalidParameters()");
         });
