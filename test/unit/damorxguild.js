@@ -253,7 +253,9 @@ describe('unit - Contract: dAMORxGuild Token', function () {
                 .sub(ethers.BigNumber.from(difference.toString()));
 
             AMORxGuildBalanceBefore = await AMORxGuild.balanceOf(dAMORxGuild.address);
-            await dAMORxGuild.connect(staker).stake(ONE_HUNDRED_ETHER, normalTime);        
+            await dAMORxGuild.connect(staker).stake(ONE_HUNDRED_ETHER, normalTime);
+            staked = ethers.BigNumber.from(staked).add(ethers.BigNumber.from(ONE_HUNDRED_ETHER.toString()));
+
             realAmount = (await dAMORxGuild.balanceOf(staker.address)).toString();
             const roundedRealAmount = Math.round(realAmount * 100) / 100;
             
