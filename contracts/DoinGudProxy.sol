@@ -46,11 +46,12 @@ pragma solidity 0.8.15;
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "@openzeppelin/contracts/proxy/Proxy.sol";
 import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract DoinGudProxy is Proxy, ERC1967Upgrade {
-    error Initialized();
+contract DoinGudProxy is Proxy, ERC1967Upgrade, Initializable {
+    //error Initialized();
 
-    bool private _initializedProxy;
+    //bool private _initializedProxy;
 
     /**
      * @dev Initializes the upgradeable proxy with an initial implementation specified by `_logic`.
@@ -58,12 +59,8 @@ contract DoinGudProxy is Proxy, ERC1967Upgrade {
      * If `_data` is nonempty, it's used as data in a delegate call to `_logic`. This will typically be an encoded
      * function call, and allows initializing the storage of the proxy like a Solidity constructor.
      */
-    function initProxy(address logic) external payable {
-        if (_initializedProxy) {
-            revert Initialized();
-        }
+    function initProxy(address logic) external initializer {
         _upgradeBeaconToAndCall(logic, "", false);
-        _initializedProxy = true;
     }
 
     //  View the current implementation
