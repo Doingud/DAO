@@ -290,14 +290,16 @@ describe('unit - Contract: GuildController', function () {
 
         it('gathers donation in AMOR', async function () {
             await metadao.addExternalGuild(controller.address);
-            const abi = ethers.utils.defaultAbiCoder;
+            /*const abi = ethers.utils.defaultAbiCoder;
             let encodedIndex = abi.encode(
                 ["tuple(address, uint256)"],
                 [
                 [controller.address, 100]
                 ]
-            );
-            await metadao.updateIndex([encodedIndex], 0);
+            );*/
+            let guilds = [controller.address];
+            let weights = [100];
+            await metadao.updateIndex(guilds, weights, 0);
             await AMOR.transfer(controller.address, TEST_TRANSFER);
 
             // add some funds to MetaDaoController
