@@ -55,7 +55,7 @@ describe("unit - DoinGudProxy", function () {
 
       it("Should fail if called more than once", async function () {
         await expect(AMOR_TOKEN_PROXY.initProxy(AMOR_GUILD_TOKEN.address)).
-          to.be.revertedWith("Initialized");
+          to.be.revertedWith("Initializable: contract is already initialized");
       });
     });
 
