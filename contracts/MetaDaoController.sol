@@ -90,6 +90,7 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     uint256 public indexCounter;
 
     /// Events
+    event MetaDAOCreated(address indexed amorToken, address indexed guildfactory);
     event GuildCreated(
         address realityModule,
         address indexed initialGuardian,
@@ -145,6 +146,8 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
         sentinelGuilds = SENTINEL;
         guilds[sentinelGuilds] = SENTINEL;
         guilds[SENTINEL] = sentinelGuilds;
+
+        emit MetaDAOCreated(amor, cloneFactory);
     }
 
     /// @notice Allows a user to donate a whitelisted asset
