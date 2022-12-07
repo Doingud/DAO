@@ -22,6 +22,7 @@ let user;
 let user2;
 let staker;
 let guardians;
+let guardiansVersion;
 
 let targets;
 let values;
@@ -74,7 +75,9 @@ describe('unit - Contract: Governor', function () {
     context('» init testing', () => {
         it('initialized variables check', async function () {
             expect(await governor.avatarAddress()).to.equals(authorizer_adaptor.address);
-            expect(await governor.guardians(0)).to.equals(root.address);
+            //const abi = ethers.utils.defaultAbiCoder;
+            guardiansVersion = 0;
+            expect(await governor.guardians(0, root.address)).to.equals(true);
             expect((await governor.votingDelay())).to.equals(1);
             let weeks = 60 * 60 * 24 * 7 * 2;
             expect(await governor.votingPeriod()).to.equals(weeks);
@@ -98,8 +101,6 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it changes guardians limit from proposal', async function () {
-            expect(await governor.guardians(0)).to.equal(root.address);
-            guardians = [staker.address, operator.address, user.address];
             await governor.connect(authorizer_adaptor).changeGuardiansLimit(3);
             expect(await governor.guardiansLimit()).to.equals(3);
         });
@@ -109,7 +110,6 @@ describe('unit - Contract: Governor', function () {
             let transactionData = governor.interface.encodeFunctionData("setGuardians", [guardians]);
             await expect(governor.connect(authorizer_adaptor).propose([governor.address], [0], [transactionData])).to.be.revertedWith("NotEnoughGuardians()");
             expect(await governor.guardiansLimit()).to.equals(3);
-            await expect(governor.guardians(3)).to.be.reverted;
         });
 
     });
@@ -131,25 +131,27 @@ describe('unit - Contract: Governor', function () {
         it('it sets guardians', async function () {
             guardians = [staker.address, operator.address, user.address];
             await governor.connect(authorizer_adaptor).setGuardians(guardians);
-            expect(await governor.guardians(0)).to.equals(staker.address);
-            expect(await governor.guardians(1)).to.equals(operator.address);
-            expect(await governor.guardians(2)).to.equals(user.address);
+            guardiansVersion++;
+            expect(await governor.guardians(guardiansVersion, guardians[0])).to.be.true;
+            expect(await governor.guardians(guardiansVersion, guardians[1])).to.be.true;
+            expect(await governor.guardians(guardiansVersion, guardians[2])).to.be.true;
+            expect(await governor.guardiansCounter()).to.equal(3);
         });
 
         it('it sets guardians when list of the new guardians is less than before', async function () {
             guardians = [operator.address, staker.address];
             await governor.connect(authorizer_adaptor).setGuardians(guardians);
-            expect(await governor.guardians(0)).to.equals(operator.address);
-            expect(await governor.guardians(1)).to.equals(staker.address);
-            expect(await governor.guardians(2)).to.equals(ZERO_ADDRESS);
+            guardiansVersion++;
+            expect(await governor.guardians(guardiansVersion, guardians[0])).to.be.true;
+            expect(await governor.guardians(guardiansVersion, guardians[1])).to.be.true;
+            expect(await governor.guardiansCounter()).to.equal(2);
 
             // return previous user and guardians variables back
             guardians = [staker.address, operator.address, user.address];
             await governor.connect(authorizer_adaptor).setGuardians(guardians);
+            guardiansVersion++;
         });
     });
-
-
 
     context('» addGuardian testing', () => {
 
@@ -161,32 +163,30 @@ describe('unit - Contract: Governor', function () {
 
         it('it adds guardian', async function () {
             await governor.connect(authorizer_adaptor).addGuardian(user2.address);
-            expect(await governor.guardians(3)).to.equals(user2.address);
+            expect(await governor.guardians(guardiansVersion, user2.address)).to.be.true;
+            expect(await governor.guardiansCounter()).to.equal(4);
         });
 
         it('it fails to add guardian with the same address', async function () {
             await expect(governor.connect(authorizer_adaptor).addGuardian(user2.address)).to.be.revertedWith("InvalidParameters()");
-
-            await expect(governor.guardians(4)).to.be.reverted;
         });
     });
 
     context('» changeGuardian testing', () => {
 
         it('it fails to change guardian if not the avatar', async function () {
-            await expect(governor.connect(user).changeGuardian(1, user2.address)).to.be.revertedWith(
+            await expect(governor.connect(user).changeGuardian(staker.address, user2.address)).to.be.revertedWith(
                 'Unauthorized()'
             );
         });
 
         it('it fails to change guardian if already have guardian with the same address', async function () {
-            await expect(governor.connect(authorizer_adaptor).changeGuardian(1, user2.address)).to.be.revertedWith("InvalidParameters()");
-            expect(await governor.guardians(1)).to.not.equal(user2.address);
+            await expect(governor.connect(authorizer_adaptor).changeGuardian(staker.address, user2.address)).to.be.revertedWith("InvalidParameters()");
         });
 
         it('it changes guardian', async function () {
-            await governor.connect(authorizer_adaptor).changeGuardian(1, root.address);
-            expect(await governor.guardians(1)).to.equals(root.address);
+            await governor.connect(authorizer_adaptor).changeGuardian(operator.address, root.address);
+            expect(await governor.guardians(guardiansVersion, root.address)).to.be.true;
         });
     });
 
@@ -312,13 +312,15 @@ describe('unit - Contract: Governor', function () {
             let unSCalldatas = [mockModule.interface.encodeFunctionData("testRevert", [])];
 
             await mockAvatar.connect(root).proposeAfterVote(unSTargets, unSValues, unSCalldatas);
+
             let proposalHash = await governor.hashProposal(unSTargets, unSValues, unSCalldatas);
-            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(time.duration.days(10));
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             /// Pass the Proposal
             await mockGovernor.castVote(proposalHash, true);
-            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(time.duration.days(5));
+            await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
+
             await expect(mockGovernor.connect(authorizer_adaptor).execute(unSTargets, unSValues, unSCalldatas))
                 .to.be.revertedWith(
                     'UnderlyingTransactionReverted()'
@@ -399,12 +401,9 @@ describe('unit - Contract: Governor', function () {
         });
 
         it('it removes guardian', async function () {
-            expect(await governor.guardians(3)).to.equals(user2.address);
             await governor.connect(authorizer_adaptor).removeGuardian(root.address);
-            expect(await governor.guardians(1)).to.equals(user2.address);
-            await expect(governor.guardians(3)).to.be.reverted;
+            expect(await governor.guardians(guardiansVersion, root.address)).to.be.false;
 
-            transactionData = governor.interface.encodeFunctionData("addGuardian", [root.address]);
             await governor.connect(authorizer_adaptor).addGuardian(root.address);
         });
     });

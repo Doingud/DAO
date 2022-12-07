@@ -90,7 +90,7 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
     // event GuardiansSetted(address[] arrGuardians);
     event GuardianAdded(address newGuardian, address guild);
     event GuardianRemoved(address guardian, address guild);
-    event GuardianChanged(uint256 oldGuardian, address newGuardian, address guild);
+    event GuardianChanged(address oldGuardian, address newGuardian);
     event VoteCasted(uint256 proposalId, bool support, address votedGuardian);
 
     bool private _initialized;
@@ -225,17 +225,16 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
     /// @notice this function changes guardian as a result of the vote (propose function)
     /// @param current Current vote value
     /// @param newGuardian Guardian to be changed
-    function changeGuardian(uint256 current, address newGuardian) external onlyAvatar {
+    function changeGuardian(address current, address newGuardian) external onlyAvatar {
         // check that guardian won't be added twice
         for (uint256 i = 0; i < guardians.length; i++) {
             if (newGuardian == guardians[i]) {
                 revert InvalidParameters();
             }
         }
-        guardians[current] = newGuardian;
-        delete weights[guardians[current]];
+
         weights[newGuardian] = 1;
-        emit GuardianChanged(current, newGuardian, address(this));
+        emit GuardianChanged(current, newGuardian);
     }
 
     /// @notice this function changes guardians limit
