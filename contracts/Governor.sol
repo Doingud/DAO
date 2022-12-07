@@ -33,11 +33,12 @@ pragma solidity 0.8.15;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *
  */
-import "./interfaces/IAvatarxGuild.sol";
-import "./interfaces/IGovernor.sol";
 
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+/// Custom contracts
+import "./interfaces/IAvatarxGuild.sol";
+import "./interfaces/IGovernor.sol";
 
 contract DoinGudGovernor is IDoinGudGovernor {
     using SafeCast for uint256;
@@ -49,10 +50,13 @@ contract DoinGudGovernor is IDoinGudGovernor {
         bool canceled;
     }
 
-    event ProposalCanceled(uint256 proposalId);
-    event ProposalExecuted(uint256 proposalId);
+    IERC20 private AMORxGuild;
+    bool private _initialized;
 
+    uint96 private constant _VOTING_DELAY = 1;
+    uint96 private constant _VOTING_PERIOD = 2 weeks;
     uint256 public constant PROPOSAL_MAX_OPERATIONS = 10;
+
     mapping(uint256 => ProposalCore) private _proposals;
     mapping(uint256 => int256) public proposalCancelApproval;
     mapping(uint256 => address[]) public cancellers; // cancellers mapping(uint proposal => address [] voters)
@@ -65,6 +69,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
     mapping(uint256 => address[]) public voters; // voters mapping(uint proposal => address [] voters)
     mapping(uint256 => int256) public proposalVoting;
     mapping(uint256 => int256) public proposalWeight;
+    // proposal --> user --> voted or not
+    mapping(uint256 => mapping(address => uint256)) public votersCounter; // 0 if no, 1 if yes
 
     uint256 public guardiansLimit; // amount of guardians for contract to function propperly,
     // until this limit is reached, governor contract will only be able to execute decisions to add more guardians to itself.
@@ -73,8 +79,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
     mapping(address => uint256) public weights; // weight of each specific guardian
 
     address public avatarAddress;
-    IERC20 private AMORxGuild;
 
+    /// Events
     event Initialized(address avatarAddress);
     event ProposalCreated(
         uint256 proposalId,
@@ -91,12 +97,10 @@ contract DoinGudGovernor is IDoinGudGovernor {
     event GuardianRemoved(address guardian);
     event GuardianChanged(uint256 oldGuardian, address newGuardian);
     event Voted(uint256 proposalId, bool support, address votedGuardian);
+    event ProposalCanceled(uint256 proposalId);
+    event ProposalExecuted(uint256 proposalId);
 
-    bool private _initialized;
-
-    uint96 private _votingDelay;
-    uint96 private _votingPeriod;
-
+    /// Errors
     error InvalidProposalId();
     error AlreadyInitialized();
     error NotEnoughGuardians();
@@ -118,7 +122,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         address AMORxGuild_,
         address avatarAddress_,
         address initialGuardian
-    ) external returns (bool) {
+    ) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -129,12 +133,9 @@ contract DoinGudGovernor is IDoinGudGovernor {
         avatarAddress = avatarAddress_;
 
         _initialized = true;
-        _votingDelay = 1;
-        _votingPeriod = 2 weeks;
         guardiansLimit = 1;
 
         emit Initialized(avatarAddress_);
-        return true;
     }
 
     /// @notice this modifier is needed to validate that amount of the Guardians is sufficient to vote and approve the “Many” decision
@@ -167,13 +168,14 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert InvalidParameters();
         }
 
+        uint256 guardiansLength = guardians.length;
         if (guardians.length < arrGuardians.length) {
-            for (uint256 i = 0; i < guardians.length; i++) {
+            for (uint256 i = 0; i < guardiansLength; i++) {
                 delete weights[guardians[i]];
                 guardians[i] = arrGuardians[i];
                 weights[arrGuardians[i]] = 1;
             }
-            for (uint256 i = guardians.length; i < arrGuardians.length; i++) {
+            for (uint256 i = guardiansLength; i < arrGuardians.length; i++) {
                 guardians.push(arrGuardians[i]);
                 weights[arrGuardians[i]] = 1;
             }
@@ -183,7 +185,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
                 guardians[i] = arrGuardians[i];
                 weights[arrGuardians[i]] = 1;
             }
-            for (uint256 i = arrGuardians.length; i < guardians.length; i++) {
+            for (uint256 i = arrGuardians.length; i < guardiansLength; i++) {
                 delete guardians[i];
                 delete weights[guardians[i]];
             }
@@ -269,8 +271,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert InvalidState();
         }
 
-        uint96 snapshot = uint96(block.timestamp + _votingDelay);
-        uint96 deadline = snapshot + _votingPeriod;
+        uint96 snapshot = uint96(block.timestamp + _VOTING_DELAY);
+        uint96 deadline = snapshot + _VOTING_PERIOD;
 
         proposal.voteStart = snapshot;
         proposal.voteEnd = deadline;
@@ -304,11 +306,9 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert InvalidState();
         }
 
-        for (uint256 i = 0; i < voters[proposalId].length; i++) {
-            if (voters[proposalId][i] == msg.sender) {
-                // this guardian already voted for this proposal
-                revert AlreadyVoted();
-            }
+        if (votersCounter[proposalId][msg.sender] != 0) {
+            // this guardian already voted for this proposal
+            revert AlreadyVoted();
         }
 
         proposalWeight[proposalId] += 1;
@@ -318,6 +318,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
 
         voters[proposalId].push(msg.sender);
+        votersCounter[proposalId][msg.sender] = 1;
         emit Voted(proposalId, support, msg.sender);
     }
 
@@ -338,12 +339,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
 
         for (uint256 i = 0; i < targets.length; ++i) {
-            bool success = IAvatarxGuild(avatarAddress).executeProposal(
-                targets[i],
-                values[i],
-                calldatas[i],
-                Enum.Operation.Call
-            );
+            bool success = IAvatarxGuild(avatarAddress).executeProposal(targets[i], values[i], calldatas[i]);
             if (!success) {
                 revert UnderlyingTransactionReverted();
             }
@@ -352,6 +348,9 @@ contract DoinGudGovernor is IDoinGudGovernor {
         emit ProposalExecuted(proposalId);
 
         delete _proposals[proposalId];
+        for (uint256 i = 0; i < voters[proposalId].length; i++) {
+            delete votersCounter[proposalId][voters[proposalId][i]];
+        }
         delete voters[proposalId];
         delete proposalVoting[proposalId];
         delete proposalWeight[proposalId];
@@ -427,8 +426,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert CancelNotApproved();
         }
 
-        _proposals[proposalId].canceled = true;
-
         // clear mappings
         for (uint256 i = 0; i < proposals.length; i++) {
             if (proposals[i] == proposalId) {
@@ -439,6 +436,10 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
         delete proposalWeight[proposalId];
         delete proposalVoting[proposalId];
+        for (uint256 i = 0; i < voters[proposalId].length; i++) {
+            delete votersCounter[proposalId][voters[proposalId][i]];
+        }
+        delete voters[proposalId];
         delete voters[proposalId];
         delete cancellers[proposalId];
         delete proposalCancelApproval[proposalId];
@@ -448,11 +449,11 @@ contract DoinGudGovernor is IDoinGudGovernor {
     }
 
     function votingDelay() external view returns (uint256) {
-        return _votingDelay;
+        return _VOTING_DELAY;
     }
 
     function votingPeriod() external view returns (uint256) {
-        return _votingPeriod;
+        return _VOTING_PERIOD;
     }
 
     function hashProposal(

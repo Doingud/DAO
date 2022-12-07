@@ -73,7 +73,7 @@ describe("unit - AMOR Token", function () {
 
   context("function: init()", () => {
     it("initializes the proxy's storage", async function () {
-        await expect(PROXY.init(
+        await expect(PROXY.connect(user3).init(
           AMOR_TOKEN_NAME,
           AMOR_TOKEN_SYMBOL,
           multisig.address,
@@ -181,7 +181,7 @@ describe("unit - AMOR Token", function () {
       });
       it("it fails to transfers from one user to another if not enough tokens", async function () {
         await expect(PROXY.connect(user3).transfer(user1.address, TEST_TRANSFER)).to.be.revertedWith(
-          'InvalidTransfer()'
+          'InvalidAmount()'
         );
       });
       it("it fails to transfers from one user to another if zero address", async function () {

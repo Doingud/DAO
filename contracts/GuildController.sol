@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.15;
 
+/// Advanced math functions for bonding curve
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+/// Custom contracts
 import "./interfaces/IAMORxGuild.sol";
 import "./interfaces/IFXAMORxGuild.sol";
 import "./interfaces/IGuildController.sol";
 import "./interfaces/IMetaDaoController.sol";
-
-/// Advanced math functions for bonding curve
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /// @title GuildController contract
 /// @author Daoism Systems Team
@@ -82,13 +82,19 @@ contract GuildController is IGuildController, Ownable {
     /// Invalid address to transfer. Needed `to` != msg.sender
     error InvalidSender();
 
+    /// @notice Initializes the GuildController contract
+    /// @param  initOwner the address of the Avatar for this Guild
+    /// @param  AMOR_ the address of the AMOR token
+    /// @param  AMORxGuild_ the address of the AMORxGuild token
+    /// @param  FXAMORxGuild_ the address of the FXAMORxGuild token
+    /// @param  MetaDaoController_ the MetaDaoController owning this token
     function init(
-        address initOwner, // The Avatar for this Guild
+        address initOwner,
         address AMOR_,
         address AMORxGuild_,
         address FXAMORxGuild_,
         address MetaDaoController_
-    ) external returns (bool) {
+    ) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -104,7 +110,6 @@ contract GuildController is IGuildController, Ownable {
         percentToConvert = 100;
         _initialized = true;
         emit Initialized(initOwner, AMORxGuild_);
-        return true;
     }
 
     function setVotingPeriod(uint256 newTime) external onlyOwner {
@@ -123,19 +128,20 @@ contract GuildController is IGuildController, Ownable {
     /// @notice called by donate and gatherDonation, distributes amount of tokens between
     /// all of the impact makers based on their weight.
     /// Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers
-    function distribute(uint256 amount, address token) internal returns (uint256) {
+    /// @param amount The amount to distribute
+    /// @param token Token in which to distribute
+    function distribute(uint256 amount, address token) internal {
         // based on the weights distribution, tokens will be automatically marked as claimable for the impact makers
         for (uint256 i = 0; i < impactMakers.length; i++) {
             uint256 amountToSendVoter = (amount * weights[impactMakers[i]]) / totalWeight;
             claimableTokens[impactMakers[i]][token] += amountToSendVoter;
         }
-
-        return amount;
     }
 
     /// @notice gathers donation from MetaDaoController in specific token
     /// and calles distribute function for the whole amount of gathered tokens
-    function gatherDonation(address token) public {
+    /// @param token Token in which to gatherDonation
+    function gatherDonation(address token) external {
         // check if token in the whitelist of the MetaDaoController
         if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
@@ -154,6 +160,7 @@ contract GuildController is IGuildController, Ownable {
     // which are going to be owned by the user.
     // Afterwards, based on the weights distribution, tokens will be automatically redirected to the impact makers.
     // Requires the msg.sender to `approve` amount prior to calling this function
+    /// @return amorxguildAmount The donated to the Guild AMORxGuild
     function donate(uint256 allAmount, address token) external returns (uint256) {
         // check if token in the whitelist of the MetaDaoController
         if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
@@ -164,10 +171,10 @@ contract GuildController is IGuildController, Ownable {
             revert InvalidAmount();
         }
 
-        uint256 amount = (allAmount * percentToConvert) / FEE_DENOMINATOR; // 10% of tokens
+        uint256 amount = (allAmount * percentToConvert) / FEE_DENOMINATOR; // 10% of donated tokens
         uint256 amorxguildAmount = amount;
 
-        // 10% of the tokens in the impact pool are getting:
+        // 10% of donated tokens in the impact pool are getting:
         if (token == AMOR) {
             // convert AMOR to AMORxGuild
             // 2.Exchanged from AMOR to AMORxGuild using staking contract( if it’s not AMORxGuild)
@@ -187,8 +194,7 @@ contract GuildController is IGuildController, Ownable {
             ERC20AMORxGuild.safeTransferFrom(msg.sender, address(this), amorxguildAmount);
         } else {
             // if token != AMORxGuild && token != AMOR
-            // recieve tokens
-            amount = 0;
+            amount = 0; // for second part, decAmount, to be 100%
         }
 
         if (token == AMORxGuild || token == AMOR) {
@@ -197,14 +203,15 @@ contract GuildController is IGuildController, Ownable {
             ERC20AMORxGuild.approve(FXAMORxGuild, amorxguildAmount);
             FXGFXAMORxGuild.stake(msg.sender, amorxguildAmount); // from address(this)
         }
-        uint256 decAmount = allAmount - amount; //decreased amount: other 90%
+        uint256 decAmount = allAmount - amount; //decreased amount: second part of donated tokens
+
         uint256 tokenBefore = IERC20(token).balanceOf(address(this));
 
         IERC20(token).safeTransferFrom(msg.sender, address(this), decAmount);
 
         uint256 decTaxCorrectedAmount = IERC20(token).balanceOf(address(this)) - tokenBefore;
 
-        distribute(decTaxCorrectedAmount, token); // distribute other 90%
+        distribute(decTaxCorrectedAmount, token); // distribute other donated tokens
 
         emit DonatedToGuild(allAmount, token, amorxguildAmount, msg.sender);
         return amorxguildAmount;
@@ -253,7 +260,7 @@ contract GuildController is IGuildController, Ownable {
         uint256 id,
         uint256 amount,
         bool sign
-    ) public {
+    ) external {
         // check if tthe voting for this report has started
         if (trigger == false) {
             revert VotingNotStarted();
@@ -273,11 +280,36 @@ contract GuildController is IGuildController, Ownable {
             revert VotingTimeExpired();
         }
 
-        if (IERC20(FXAMORxGuild).balanceOf(msg.sender) < amount) {
+        uint256 userFXAmount = IERC20(FXAMORxGuild).balanceOf(msg.sender) - FXGFXAMORxGuild.amountDelegated(msg.sender);
+        if (userFXAmount + FXGFXAMORxGuild.amountDelegatedAvailable(msg.sender) < amount) {
             revert InvalidAmount();
         }
 
-        FXGFXAMORxGuild.burn(msg.sender, amount);
+        uint256 delegatedFXUsage;
+        if (userFXAmount < amount) {
+            delegatedFXUsage = amount - userFXAmount;
+            FXGFXAMORxGuild.burn(msg.sender, msg.sender, userFXAmount);
+            address delegator;
+            uint256 i;
+            uint256 burnAmount;
+            while (delegatedFXUsage > 0) {
+                delegator = FXGFXAMORxGuild.delegators(msg.sender, i);
+                burnAmount = FXGFXAMORxGuild.delegations(delegator, msg.sender);
+                if (burnAmount <= delegatedFXUsage) {
+                    FXGFXAMORxGuild.burn(msg.sender, delegator, burnAmount);
+                    delegatedFXUsage -= burnAmount;
+                    i++;
+                } else {
+                    FXGFXAMORxGuild.burn(msg.sender, delegator, delegatedFXUsage);
+                    delegatedFXUsage = 0;
+                }
+            }
+        } else {
+            FXGFXAMORxGuild.burn(msg.sender, msg.sender, amount);
+        }
+
+        FXGFXAMORxGuild.withdraw(amount);
+
         voters[id].push(msg.sender);
 
         reportsWeight[id] += int256(amount);
@@ -470,10 +502,6 @@ contract GuildController is IGuildController, Ownable {
     /// @param impact Impact maker to to claim tokens from
     /// @param token Tokens addresess to claim
     function claim(address impact, address[] memory token) external {
-        if (impact != msg.sender) {
-            revert Unauthorized();
-        }
-
         for (uint256 i = 0; i < token.length; i++) {
             IERC20(token[i]).safeTransfer(impact, claimableTokens[impact][token[i]]);
             emit TokensClaimedByImpactMaker(impact, token[i], claimableTokens[impact][token[i]]);
