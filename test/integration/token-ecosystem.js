@@ -289,8 +289,9 @@ describe("Integration: DoinGud token ecosystem", function () {
   await metaHelper([GUILD_TWO_GOVERNORXGUILD.address], [0], [proposal], [root], authorizer_adaptor, GUILD_TWO_AVATARXGUILD.address, GUILD_TWO_GOVERNORXGUILD.address);
   await metaHelper([GUILD_TWO_CONTROLLERXGUILD.address], [0], [setImpactMakersData], [user1, user2], authorizer_adaptor, GUILD_TWO_AVATARXGUILD.address, GUILD_TWO_GOVERNORXGUILD.address)
   /// Setup the initial Fee Index
-  const abi = ethers.utils.defaultAbiCoder;
-  let encodedIndex = abi.encode(
+  let indexGuilds = [GUILD_ONE_CONTROLLERXGUILD.address, GUILD_TWO_CONTROLLERXGUILD.address];
+  let indexWeights = [100, 100];
+  /*abi.encode(
       ["tuple(address, uint256)"],
       [
       [GUILD_ONE_CONTROLLERXGUILD.address, 100]
@@ -301,10 +302,10 @@ describe("Integration: DoinGud token ecosystem", function () {
       [
       [GUILD_TWO_CONTROLLERXGUILD.address, 100]
       ]
-  );
+  );*/
 
   /// Setup the index for the MetaDAO
-  let transactionData = METADAO.interface.encodeFunctionData("updateIndex", [[encodedIndex, encodedIndex2], 0]);
+  let transactionData = METADAO.interface.encodeFunctionData("updateIndex", [indexGuilds, indexWeights, 0]);
   await metaHelper([DOINGUD_METADAO.address], [0], [transactionData], [user1, user2], authorizer_adaptor, DOINGUD_AVATAR.address, DOINGUD_GOVERNOR.address);
 });
 
@@ -339,6 +340,7 @@ describe("Integration: DoinGud token ecosystem", function () {
             to.emit(GUILD_ONE_FXAMORXGUILD, "Transfer");
         await expect(GUILD_ONE_CONTROLLERXGUILD.connect(user2).claim(user2.address, [DOINGUD_AMOR_TOKEN.address])).
           to.emit(DOINGUD_AMOR_TOKEN, "Transfer");
+
         expect(await DOINGUD_AMOR_TOKEN.balanceOf(user2.address)).to.equal(((FIFTY_ETHER * ((BASIS_POINTS-TAX_RATE)/BASIS_POINTS) * 0.9 * 0.2 * ((BASIS_POINTS-TAX_RATE)/BASIS_POINTS)).toString()));
       });
     });
@@ -385,8 +387,9 @@ describe("Integration: DoinGud token ecosystem", function () {
 
     context('Donate with custom index', () => {
       it("Should allow a user to set their own index", async function () {
-        const abi = ethers.utils.defaultAbiCoder;
-        let encodedIndex = abi.encode(
+        let indexGuilds = [GUILD_ONE_CONTROLLERXGUILD.address, GUILD_TWO_CONTROLLERXGUILD.address];
+        let indexWeights = [50, 100];
+        /*= abi.encode(
             ["tuple(address, uint256)"],
             [
             [GUILD_ONE_CONTROLLERXGUILD.address, 50]
@@ -397,10 +400,9 @@ describe("Integration: DoinGud token ecosystem", function () {
             [
             [GUILD_TWO_CONTROLLERXGUILD.address, 100]
             ]
-        );
-        await DOINGUD_METADAO.addIndex([encodedIndex, encodedIndex2]);
-        let newIndex = await DOINGUD_METADAO.indexHashes(1);
-        let indexDetails = await DOINGUD_METADAO.indexes(newIndex);
+        );*/
+        await DOINGUD_METADAO.addIndex(indexGuilds, indexWeights);
+        let indexDetails = await DOINGUD_METADAO.indexes(1);
         expect(indexDetails.indexDenominator).to.equal(150);
       });
 
@@ -409,7 +411,10 @@ describe("Integration: DoinGud token ecosystem", function () {
         const guildTwoWeight = 150;
         const totalWeight = guildOneWeight + guildTwoWeight;
 
-        const abi = ethers.utils.defaultAbiCoder;
+        let guilds = [GUILD_ONE_CONTROLLERXGUILD.address, GUILD_TWO_CONTROLLERXGUILD.address];
+        let weights = [guildOneWeight, guildTwoWeight];
+
+        /*const abi = ethers.utils.defaultAbiCoder;
         let encodedIndex = abi.encode(
             ["tuple(address, uint256)"],
             [
@@ -421,7 +426,7 @@ describe("Integration: DoinGud token ecosystem", function () {
             [
             [GUILD_TWO_CONTROLLERXGUILD.address, guildTwoWeight]
             ]
-        );
+        );*/
 
         let addWhitelistProposal = METADAO.interface.encodeFunctionData("addWhitelist", [ERC20_TOKEN.address]);
         await metaHelper(
@@ -433,7 +438,7 @@ describe("Integration: DoinGud token ecosystem", function () {
           DOINGUD_AVATAR.address,
           DOINGUD_GOVERNOR.address
         );
-        await DOINGUD_METADAO.addIndex([encodedIndex, encodedIndex2]);
+        await DOINGUD_METADAO.addIndex(guilds, weights);
         await ERC20_TOKEN.approve(DOINGUD_METADAO.address, ONE_HUNDRED_ETHER);
         await DOINGUD_METADAO.donate(ERC20_TOKEN.address, FIFTY_ETHER, 1);
         await GUILD_TWO_CONTROLLERXGUILD.gatherDonation(ERC20_TOKEN.address);
@@ -463,7 +468,7 @@ describe("Integration: DoinGud token ecosystem", function () {
 
         /// Let the guilds gather fees
         expect(await DOINGUD_METADAO.guildFees(GUILD_ONE_CONTROLLERXGUILD.address)).to.be.equal(0);
-        await DOINGUD_METADAO.distributeFees();
+        await DOINGUD_METADAO.distributeFees(DOINGUD_AMOR_TOKEN.address);
         await expect(DOINGUD_METADAO.claimFees(GUILD_ONE_CONTROLLERXGUILD.address)).to.emit(DOINGUD_AMOR_TOKEN, "Transfer");
       });
     })

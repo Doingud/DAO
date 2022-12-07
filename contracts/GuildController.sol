@@ -146,8 +146,10 @@ contract GuildController is IGuildController, Ownable {
         if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
         }
-        uint256 amount = IMetaDaoController(MetaDaoController).guildFunds(address(this), token);
-        IMetaDaoController(MetaDaoController).claimToken(token);
+        uint256 amount = IMetaDaoController(MetaDaoController).claimToken(address(this), token);
+        if (amount == 0) {
+            revert InvalidAmount();
+        }
         // distribute those tokens
         distribute(amount, token);
     }
@@ -499,7 +501,7 @@ contract GuildController is IGuildController, Ownable {
     }
 
     /// @notice allows to claim tokens for specific ImpactMaker address
-    /// @param impact Impact maker to to claim tokens from
+    /// @param impact Impact maker to claim tokens from
     /// @param token Tokens addresess to claim
     function claim(address impact, address[] memory token) external {
         for (uint256 i = 0; i < token.length; i++) {

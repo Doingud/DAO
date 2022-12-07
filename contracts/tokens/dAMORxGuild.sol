@@ -9,7 +9,7 @@ pragma solidity 0.8.15;
  * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
  * @dev Implementation of the dAMORXGuild token for DoinGud
  *
- * The contract houses the token logic for dAMOR and dAMORxGuild.
+ *  The contract houses the token logic for dAMOR and dAMORxGuild.
  *
  * This Token Implementation contract is intended to be referenced by a proxy contract.
  *
@@ -89,7 +89,6 @@ contract dAMORxGuild is IdAMORxGuild, ERC20Base, Ownable {
         if (time < MIN_LOCK_TIME) {
             revert TimeTooSmall();
         }
-
         if (time > MAX_LOCK_TIME) {
             revert TimeTooBig();
         }
@@ -122,8 +121,8 @@ contract dAMORxGuild is IdAMORxGuild, ERC20Base, Ownable {
 
         Stakes storage userStake = _stakes[msg.sender];
 
-        /// Mint AMORxGuild tokens to staker
-        /// msg.sender receives funds, based on the amount of time remaining until the end of his stake
+        // mint AMORxGuild tokens to staker
+        // msg.sender receives funds, based on the amount of time remaining until the end of his stake
         uint256 time = userStake.stakesTimes - block.timestamp;
         uint256 dAMORxGuildAmount = _stake(amount, time);
         userStake.stakesAMOR += amount;
