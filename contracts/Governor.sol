@@ -46,23 +46,25 @@ contract DoinGudGovernor is IDoinGudGovernor {
         uint96 voteStart;
         uint96 voteEnd;
         bool executed;
-        bool canceled;
     }
 
     event ProposalCanceled(uint256 proposalId);
     event ProposalExecuted(uint256 proposalId);
 
     uint256 public constant PROPOSAL_MAX_OPERATIONS = 10;
+    uint96 public constant votingDelay = 1;
+    uint96 public constant votingPeriod = 2 weeks;
+
     mapping(uint256 => ProposalCore) private _proposals;
     mapping(uint256 => uint256) public proposalCancelApproval;
     mapping(uint256 => address[]) public cancellers; // cancellers mapping(uint proposal => address [] voters)
+    uint256 public proposalsCounter;
 
-    // id in array --> Id of passed proposal from _proposals
-    uint256[] public proposals; // it’s an array of proposals hashes to execute.
     // After proposal was voted for, an !executor provides a complete data about the proposal!,
     // which gets hashed and if hashes correspond, then the proposal is executed.
 
-    mapping(uint256 => address[]) public voters; // voters mapping(uint proposal => address [] voters)
+    mapping(uint256 => address[]) public votersInfo; // voters mapping(uint proposal => address [] voters)
+    mapping(uint256 => mapping(address => bool)) public voters;
     mapping(uint256 => uint256) public proposalVoting;
     mapping(uint256 => uint256) public proposalWeight;
 
@@ -91,7 +93,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
         uint256[] values,
         bytes[] calldatas,
         uint256 indexed startBlock,
-        uint256 indexed endBlock
+        uint256 indexed endBlock,
+        uint256 proposalCounter
     );
     event ChangedGuardiansLimit(uint256 indexed newLimit);
     event GuardiansSet(address[] indexed arrGuardians);
@@ -101,9 +104,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
     event Voted(uint256 indexed proposalId, bool indexed support, address votedGuardian);
 
     bool private _initialized;
-
-    uint96 private _votingDelay;
-    uint96 private _votingPeriod;
 
     error InvalidProposalId();
     error AlreadyInitialized();
@@ -162,9 +162,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
         avatarAddress = avatarAddress_;
 
         _initialized = true;
-        _votingDelay = 1;
-        _votingPeriod = 2 weeks;
         guardiansLimit = 1;
+        proposalsCounter = 1;
 
         emit Initialized(avatarAddress_);
     }
@@ -265,17 +264,18 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert InvalidParameters();
         }
 
+        proposalsCounter++;
+
         /// Submit proposals uniquely identified by a proposalId and an array of txHashes,
         /// to create a Reality.eth question that validates the execution of the connected transactions
-        uint256 proposalId = hashProposal(targets, values, calldatas);
-
+        uint256 proposalId = hashProposal(targets, values, calldatas, proposalsCounter);
         ProposalCore storage proposal = _proposals[proposalId];
         if (proposal.voteStart != 0) {
             revert InvalidState();
         }
 
-        uint96 snapshot = uint96(block.timestamp + _votingDelay);
-        uint96 deadline = snapshot + _votingPeriod;
+        uint96 snapshot = uint96(block.timestamp + votingDelay);
+        uint96 deadline = snapshot + votingPeriod;
 
         proposal.voteStart = snapshot;
         proposal.voteEnd = deadline;
@@ -284,7 +284,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
         proposalWeight[proposalId] = 0;
 
         _proposals[proposalId] = proposal;
-        proposals.push(proposalId);
 
         emit ProposalCreated(
             proposalId,
@@ -293,7 +292,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
             values,
             calldatas,
             snapshot,
-            deadline
+            deadline,
+            proposalsCounter
         );
 
         return proposalId;
@@ -309,11 +309,9 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert InvalidState();
         }
 
-        for (uint256 i = 0; i < voters[proposalId].length; i++) {
-            if (voters[proposalId][i] == msg.sender) {
-                // this guardian already voted for this proposal
-                revert AlreadyVoted();
-            }
+        if (voters[proposalId][msg.sender] == true) {
+            // this guardian already voted for this proposal
+            revert AlreadyVoted();
         }
 
         proposalWeight[proposalId] += 1;
@@ -322,7 +320,8 @@ contract DoinGudGovernor is IDoinGudGovernor {
             proposalVoting[proposalId] += 1;
         }
 
-        voters[proposalId].push(msg.sender);
+        voters[proposalId][msg.sender] = true;
+        votersInfo[proposalId].push(msg.sender);
 
         emit Voted(proposalId, support, msg.sender);
     }
@@ -335,9 +334,10 @@ contract DoinGudGovernor is IDoinGudGovernor {
     function execute(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas
+        bytes[] memory calldatas,
+        uint256 proposalCounter
     ) external GuardianLimitReached returns (uint256) {
-        uint256 proposalId = hashProposal(targets, values, calldatas);
+        uint256 proposalId = hashProposal(targets, values, calldatas, proposalCounter);
 
         ProposalState status = state(proposalId);
         if (status != ProposalState.Succeeded) {
@@ -345,7 +345,9 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
 
         delete _proposals[proposalId];
-        delete voters[proposalId];
+        for (uint256 i = 0; i < votersInfo[proposalId].length; i++) {
+            delete voters[proposalId][votersInfo[proposalId][i]];
+        }
         delete proposalVoting[proposalId];
         delete proposalWeight[proposalId];
 
@@ -355,6 +357,9 @@ contract DoinGudGovernor is IDoinGudGovernor {
                 revert UnderlyingTransactionReverted();
             }
         }
+
+        delete cancellers[proposalId];
+        delete proposalCancelApproval[proposalId];
 
         emit ProposalExecuted(proposalId);
 
@@ -429,37 +434,16 @@ contract DoinGudGovernor is IDoinGudGovernor {
             revert CancelNotApproved();
         }
 
-        _proposals[proposalId].canceled = true;
-
-        // Clear mappings
-        for (uint256 i = 0; i < proposals.length; i++) {
-            if (proposals[i] == proposalId) {
-                proposals[i] = proposals[proposals.length - 1];
-                proposals.pop();
-                break;
-            }
-        }
-
         delete proposalWeight[proposalId];
         delete proposalVoting[proposalId];
-        delete voters[proposalId];
+        for (uint256 i = 0; i < votersInfo[proposalId].length; i++) {
+            delete voters[proposalId][votersInfo[proposalId][i]];
+        }
         delete cancellers[proposalId];
         delete proposalCancelApproval[proposalId];
         delete _proposals[proposalId];
 
         emit ProposalCanceled(proposalId);
-    }
-
-    /// @notice Getter function for `_votingDelay` variable
-    /// @return uint256 The time period, in seconds, between `propose` and ability to vote
-    function votingDelay() external view returns (uint256) {
-        return _votingDelay;
-    }
-
-    /// @notice Getter function for `_votingPeriod` variable
-    /// @return uint256 The time period, in seconds, that a proposal is open for voting
-    function votingPeriod() external view returns (uint256) {
-        return _votingPeriod;
     }
 
     /// @notice Returns the unique proposal ID generated by the proposal params
@@ -470,8 +454,9 @@ contract DoinGudGovernor is IDoinGudGovernor {
     function hashProposal(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas
-    ) public pure returns (uint256) {
-        return uint256(keccak256(abi.encode(targets, values, calldatas)));
+        bytes[] memory calldatas,
+        uint256 proposalCounter
+    ) public view returns (uint256) {
+        return uint256(keccak256(abi.encode(targets, values, calldatas, proposalCounter)));
     }
 }

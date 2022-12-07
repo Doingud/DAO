@@ -27,6 +27,7 @@ let guardiansVersion;
 let targets;
 let values;
 let calldatas;
+let proposalsCounter;
 let cancelProposalId;
 
 describe('unit - Contract: Governor', function () {
@@ -206,17 +207,12 @@ describe('unit - Contract: Governor', function () {
             let proposal = mockModule.interface.encodeFunctionData("testInteraction", [2]);
 
             await governor.connect(authorizer_adaptor).propose([mockModule.address], [0], [proposal]);
-            let proposalId = await governor.hashProposal([mockModule.address], [0], [proposal]);
+            proposalsCounter = await governor.proposalsCounter();
+            let proposalId = await governor.hashProposal([mockModule.address], [0], [proposal], proposalsCounter);
             await governor.connect(authorizer_adaptor).state(proposalId);
 
             expect((await governor.proposalVoting(proposalId)).toString()).to.equals("0");
             expect((await governor.proposalWeight(proposalId)).toString()).to.equals("0");
-        });
-
-        it('it fails to propose if proposal already exists', async function () {
-            let proposal = mockModule.interface.encodeFunctionData("testInteraction", [2]);
-
-            await expect(governor.connect(authorizer_adaptor).propose([mockModule.address], [0], [proposal])).to.be.revertedWith("InvalidState()");
         });
 
         it('it fails to propose if proposal function information arity mismatch', async function () {
@@ -253,7 +249,7 @@ describe('unit - Contract: Governor', function () {
     context('» castVote testing', () => {
 
         it('it fails to castVote if not the guardian', async function () {
-            let proposalId = await governor.hashProposal([avatar.address], [0], [user.address]);
+            let proposalId = await governor.hashProposal([avatar.address], [0], [user.address], proposalsCounter);
             await expect(governor.connect(authorizer_adaptor).castVote(proposalId, 1)).to.be.revertedWith(
                 'Unauthorized()'
             );
@@ -268,7 +264,7 @@ describe('unit - Contract: Governor', function () {
 
         it('it casts Vote', async function () {
             let proposal = mockModule.interface.encodeFunctionData("testInteraction", [2]);
-            let proposalId = await governor.hashProposal([mockModule.address], [0], [proposal]);
+            let proposalId = await governor.hashProposal([mockModule.address], [0], [proposal], proposalsCounter);
             await governor.connect(root).castVote(proposalId, true);
             await governor.connect(user).castVote(proposalId, true);
             await governor.connect(user2).castVote(proposalId, false);
@@ -278,7 +274,7 @@ describe('unit - Contract: Governor', function () {
 
         it('it fails to castVote if already voted', async function () {
             let proposal = mockModule.interface.encodeFunctionData("testInteraction", [2]);
-            let proposalId = await governor.hashProposal([mockModule.address], [0], [proposal]);
+            let proposalId = await governor.hashProposal([mockModule.address], [0], [proposal], proposalsCounter);
             await expect(governor.connect(root).castVote(proposalId, false)).to.be.revertedWith(
                 'AlreadyVoted()'
             );
@@ -288,14 +284,14 @@ describe('unit - Contract: Governor', function () {
     context('» execute testing', () => {
 
         it('it fails to execute if unknown proposal id', async function () {
-            await expect(governor.connect(root).execute([user.address], values, calldatas)).to.be.revertedWith(
+            await expect(governor.connect(root).execute([user.address], values, calldatas, proposalsCounter)).to.be.revertedWith(
                 'InvalidProposalId()'
             );
         });
 
         it('it fails to cancel if cancel not approved', async function () {
             let proposal = mockModule.interface.encodeFunctionData("testInteraction", [2]);
-            let proposalId = await governor.hashProposal([mockModule.address], [0], [proposal]);
+            let proposalId = await governor.hashProposal([mockModule.address], [0], [proposal], proposalsCounter);
             await expect(governor.connect(root).cancel(proposalId)).to.be.revertedWith(
                 'CancelNotApproved()'
             );
@@ -312,8 +308,9 @@ describe('unit - Contract: Governor', function () {
             let unSCalldatas = [mockModule.interface.encodeFunctionData("testRevert", [])];
 
             await mockAvatar.connect(root).proposeAfterVote(unSTargets, unSValues, unSCalldatas);
+            proposalsCounter = await governor.proposalsCounter();
 
-            let proposalHash = await governor.hashProposal(unSTargets, unSValues, unSCalldatas);
+            let proposalHash = await governor.hashProposal(unSTargets, unSValues, unSCalldatas, proposalsCounter);
             time.increase(time.duration.days(10));
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             /// Pass the Proposal
@@ -321,7 +318,7 @@ describe('unit - Contract: Governor', function () {
             time.increase(time.duration.days(5));
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
 
-            await expect(mockGovernor.connect(authorizer_adaptor).execute(unSTargets, unSValues, unSCalldatas))
+            await expect(mockGovernor.connect(authorizer_adaptor).execute(unSTargets, unSValues, unSCalldatas, proposalsCounter))
                 .to.be.revertedWith(
                     'UnderlyingTransactionReverted()'
                 );
@@ -333,8 +330,9 @@ describe('unit - Contract: Governor', function () {
 
             let proposal = mockModule.interface.encodeFunctionData("testInteraction", [2]);
             await mockAvatar.proposeAfterVote([mockModule.address], [0], [proposal]);
-            let proposalId = await mockGovernor.proposals(1);
 
+            proposalsCounter = await mockGovernor.proposalsCounter();
+            proposalId = web3.utils.hexToNumberString(ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(["address[]", "uint256[]", "bytes[]", "uint256"], [[mockModule.address], [0], [proposal], proposalsCounter])));
             expect(await mockModule.testValues()).to.equal(0);
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(time.duration.days(10));
@@ -343,7 +341,7 @@ describe('unit - Contract: Governor', function () {
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(time.duration.days(5));
 
-            await expect(mockGovernor.connect(authorizer_adaptor).execute([mockModule.address], [0], [proposal]))
+            await expect(mockGovernor.connect(authorizer_adaptor).execute([mockModule.address], [0], [proposal], proposalsCounter))
                 .to
                 .emit(mockGovernor, "ProposalExecuted").withArgs(proposalId);
             expect(await mockModule.testValues()).to.equal(2);
@@ -357,7 +355,8 @@ describe('unit - Contract: Governor', function () {
             let unSValues = [0];
             let unSCalldatas = [mockModule.interface.encodeFunctionData("testInteraction", [5])];
             await mockAvatar.proposeAfterVote(unSTargets, unSValues, unSCalldatas);
-            let proposalHash = await governor.hashProposal(unSTargets, unSValues, unSCalldatas);
+            proposalsCounter = await mockGovernor.proposalsCounter();
+            let proposalHash = await governor.hashProposal(unSTargets, unSValues, unSCalldatas, proposalsCounter);
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(twoWeeks);
             await expect(mockGovernor.connect(root).castVote(proposalHash, 1)).to.be.revertedWith(
@@ -371,21 +370,22 @@ describe('unit - Contract: Governor', function () {
             let unSValues = [0];
             let unSCalldatas = [mockModule.interface.encodeFunctionData("testInteraction", [1])];
             await mockAvatar.proposeAfterVote(unSTargets, unSValues, unSCalldatas);
-            let proposalHash = await mockGovernor.hashProposal(unSTargets, unSValues, unSCalldatas);
+            proposalsCounter = await mockGovernor.proposalsCounter();
+            let proposalHash = await mockGovernor.hashProposal(unSTargets, unSValues, unSCalldatas, proposalsCounter);
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(time.duration.days(10));
             /// Fail the Proposal
             await mockGovernor.connect(root).castVote(proposalHash, false);
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(time.duration.days(5));
-            await expect(mockGovernor.connect(root).execute(unSTargets, unSValues, unSCalldatas)).to.be.revertedWith(
+            await expect(mockGovernor.connect(root).execute(unSTargets, unSValues, unSCalldatas, proposalsCounter)).to.be.revertedWith(
                 'InvalidState()'
             );
         });
 
         it('it fails to castVote second time to the proposal with the same id', async function () {
             let proposal = mockModule.interface.encodeFunctionData("testInteraction", [2]);
-            let proposalId = await governor.hashProposal([mockModule.address], [0], [proposal]);
+            let proposalId = await governor.hashProposal([mockModule.address], [0], [proposal], proposalsCounter);
             await expect(mockGovernor.connect(root).castVote(proposalId, 1)).to.be.revertedWith(
                 'InvalidProposalId()'
             );
@@ -417,10 +417,11 @@ describe('unit - Contract: Governor', function () {
             let unSValues = [0];
             let unSCalldatas = [mockModule.interface.encodeFunctionData("testInteraction", [15])];
             await governor.connect(authorizer_adaptor).propose(unSTargets, unSValues, unSCalldatas);
+            proposalsCounter = await governor.proposalsCounter();
 
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(time.duration.days(10));
-            proposalId = await governor.hashProposal(unSTargets, unSValues, unSCalldatas);
+            proposalId = await governor.hashProposal(unSTargets, unSValues, unSCalldatas, proposalsCounter);
 
             await expect(governor.connect(authorizer_adaptor).castVoteForCancelling(proposalId)).to.be.revertedWith(
                 'Unauthorized()'
@@ -440,9 +441,10 @@ describe('unit - Contract: Governor', function () {
             let valuesCancel = [0];
             let calldatasCancel = [governor.interface.encodeFunctionData("changeGuardiansLimit", [6])];
             await governor.connect(authorizer_adaptor).propose(targetsCancel, valuesCancel, calldatasCancel);
+            proposalsCounter = await governor.proposalsCounter();
             await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
             time.increase(100);
-            cancelProposalId = await governor.hashProposal(targetsCancel, valuesCancel, calldatasCancel);
+            cancelProposalId = await governor.hashProposal(targetsCancel, valuesCancel, calldatasCancel, proposalsCounter);
 
             await governor.connect(user).castVoteForCancelling(cancelProposalId);
             await governor.connect(user2).castVoteForCancelling(cancelProposalId);
@@ -466,7 +468,7 @@ describe('unit - Contract: Governor', function () {
         });cancelProposalId
 
         it('it fails to execute cancelled proposal', async function () {
-            await expect(governor.connect(root).execute([ZERO_ADDRESS], [0], ["0x"])).to.be.revertedWith(
+            await expect(governor.connect(root).execute([ZERO_ADDRESS], [0], ["0x"], proposalsCounter)).to.be.revertedWith(
                 'InvalidProposalId()'
             );
         });
@@ -474,7 +476,8 @@ describe('unit - Contract: Governor', function () {
         it('it fails to cast vote for cancelling if vote is not active', async function () {
             let transactionData = governor.interface.encodeFunctionData("changeGuardiansLimit", [10]);
             await governor.connect(authorizer_adaptor).propose([governor.address], [0], [transactionData]);
-            proposalId = await governor.hashProposal([governor.address], [0], [transactionData]);
+            proposalsCounter = await governor.proposalsCounter();
+            proposalId = await governor.hashProposal([governor.address], [0], [transactionData], proposalsCounter);
 
             time.increase(time.duration.days(1));
             time.increase(twoWeeks);

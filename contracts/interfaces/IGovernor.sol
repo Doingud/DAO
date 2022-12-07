@@ -94,7 +94,8 @@ interface IDoinGudGovernor {
     function execute(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas
+        bytes[] memory calldatas,
+        uint256 proposalCounter
     ) external returns (uint256);
 
     /// @notice function allows anyone to check state of the proposal
@@ -110,13 +111,10 @@ interface IDoinGudGovernor {
     /// @param proposalId The id of the proposal to cancel
     function cancel(uint256 proposalId) external;
 
-    function votingDelay() external view returns (uint256);
-
-    function votingPeriod() external view returns (uint256);
-
     function hashProposal(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas
+        bytes[] memory calldatas,
+        uint256 proposalCounter
     ) external returns (uint256);
 }
