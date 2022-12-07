@@ -170,7 +170,6 @@ contract AMORxGuildToken is IAmorxGuild, ERC20Base, Pausable, Ownable {
         //  Burn the AMORxGuild of the tx.origin
         _burn(msg.sender, amount);
 
-        currentSupply = tokenAmor.balanceOf(address(this));
         //  Correct for the tax on transfer
         //  Transfer AMOR to the tx.origin, but note: this is taxed!
         tokenAmor.safeTransfer(msg.sender, amorReturned);
