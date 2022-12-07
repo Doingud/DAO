@@ -21,7 +21,7 @@ pragma solidity 0.8.15;
  *
  */
 
-import "@openzeppelin/contracts/proxy/Clones.sol";
+import "./DoinGudProxy.sol";
 
 import "./interfaces/IAMORxGuild.sol";
 import "./interfaces/ICloneFactory.sol";
@@ -49,7 +49,6 @@ contract GuildFactory is ICloneFactory {
     /// The MetaDaoController address
     address public immutable metaDaoController;
     /// The DoinGud generic proxy contract (the target)
-    address public immutable cloneTarget;
     address public immutable avatarxGuild;
     address public immutable dAmorxGuild;
     address public immutable fXAmorxGuild;
@@ -103,8 +102,7 @@ contract GuildFactory is ICloneFactory {
         controllerxGuild = _controllerxGuild;
         governorxGuild = _governor;
         avatarxGuild = _avatarxGuild;
-        /// `_cloneTarget` refers to the DoinGud Proxy
-        cloneTarget = _doinGudProxy;
+
         metaDaoController = _metaDaoController;
     }
 
@@ -174,14 +172,14 @@ contract GuildFactory is ICloneFactory {
     /// @param  guildSymbol symbol of token
     /// @return address of the deployed contract
     function _deployGuildToken(string memory guildName, string memory guildSymbol) internal returns (address) {
-        IAmorxGuild proxyContract = IAmorxGuild(Clones.clone(cloneTarget));
+        DoinGudProxy proxyContract = new DoinGudProxy();
 
         if (address(proxyContract) == address(0)) {
             revert CreationFailed();
         }
 
-        IDoinGudProxy(address(proxyContract)).initProxy(amorxGuildToken);
-        proxyContract.init(guildName, guildSymbol, amorToken, msg.sender);
+        proxyContract.initProxy(amorxGuildToken);
+        IAmorxGuild(address(proxyContract)).init(guildName, guildSymbol, amorToken, msg.sender);
 
         return address(proxyContract);
     }
@@ -197,7 +195,7 @@ contract GuildFactory is ICloneFactory {
         string memory guildSymbol,
         address _implementation
     ) internal returns (address) {
-        IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
+        DoinGudProxy proxyContract = new DoinGudProxy();
         proxyContract.initProxy(_implementation);
 
         /// Check which token contract should be deployed
@@ -225,7 +223,7 @@ contract GuildFactory is ICloneFactory {
     /// @notice Internal function to deploy the Guild Controller
     /// @return address of the deployed guild controller
     function _deployGuildController() internal returns (address) {
-        IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
+        DoinGudProxy proxyContract = new DoinGudProxy();
         proxyContract.initProxy(controllerxGuild);
 
         return address(proxyContract);
@@ -234,7 +232,7 @@ contract GuildFactory is ICloneFactory {
     /// @notice Deploys the guild's AvatarxGuild contract
     /// @return address of the nemwly deployed AvatarxGuild
     function _deployAvatar() internal returns (address) {
-        IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
+        DoinGudProxy proxyContract = new DoinGudProxy();
         proxyContract.initProxy(avatarxGuild);
 
         return address(proxyContract);
@@ -243,7 +241,7 @@ contract GuildFactory is ICloneFactory {
     /// @notice Deploys the GovernorxGuild contract
     /// @return address of the deployed GovernorxGuild
     function _deployGovernor() internal returns (address) {
-        IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
+        DoinGudProxy proxyContract = new DoinGudProxy();
         proxyContract.initProxy(governorxGuild);
 
         return address(proxyContract);
