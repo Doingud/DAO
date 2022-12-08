@@ -17,12 +17,13 @@ import "./interfaces/IMetaDaoController.sol";
 contract GuildController is IGuildController, Ownable {
     using SafeERC20 for IERC20;
 
-    int256[] public reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
+    uint256[] public reportsWeight; // this is an array, which describes the amount of the weight of each report.(So the reports will later receive payments based on this weight)
     mapping(uint256 => mapping(address => int256)) public votes; // votes mapping(uint report => mapping(address voter => int256 vote))
     mapping(uint256 => address[]) public voters; // voters mapping(uint report => address [] voters)
     int256[] public reportsVoting; // results of the vote for the report with spe
     mapping(uint256 => address) public reportsAuthors;
     uint256 public totalReportsWeight; // total Weight of all of reports
+    uint256 public savedFunds;
 
     address[] public impactMakers; // list of impactMakers of this DAO
 
@@ -36,7 +37,6 @@ contract GuildController is IGuildController, Ownable {
     IFXAMORxGuild private FXGFXAMORxGuild;
     address public AMOR;
     address public AMORxGuild;
-    address public dAMORxGuild;
     address public FXAMORxGuild;
     address public MetaDaoController;
 
@@ -197,6 +197,7 @@ contract GuildController is IGuildController, Ownable {
         } else {
             // if token != AMORxGuild && token != AMOR
             amount = 0; // for second part, decAmount, to be 100%
+            amorxguildAmount = 0;
         }
 
         if (token == AMORxGuild || token == AMOR) {
@@ -314,7 +315,7 @@ contract GuildController is IGuildController, Ownable {
 
         voters[id].push(msg.sender);
 
-        reportsWeight[id] += int256(amount);
+        reportsWeight[id] += amount;
         totalReportsWeight += amount;
 
         if (sign == true) {
@@ -339,51 +340,79 @@ contract GuildController is IGuildController, Ownable {
             revert VotingTimeNotFinished();
         }
 
+        uint256[] memory negativeReportsWeight = new uint256[](reportsWeight.length);
+        uint256[] memory negativeReportsId = new uint256[](reportsWeight.length);
+        uint256 negativeArrayPointer = 0;
+        uint256 passedReportsWeight = 0;
+        uint256[] memory positiveReportsId = new uint256[](reportsWeight.length);
+        uint256 positiveArrayPointer = 0;
+
         for (uint256 id = 0; id < reportsWeight.length; id++) {
             // If report has positive voting weight (positive FX tokens) then report is accepted
-            int256 fiftyPercent = (reportsWeight[id] * 50) / 100;
+            uint256 fiftyPercent = (reportsWeight[id] * 50) / 100;
             address[] memory people = voters[id];
-
             if (reportsVoting[id] > 0) {
+                passedReportsWeight += reportsWeight[id];
                 // If report has positive voting weight, then funds go 50-50%,
                 // 50% go to the report creater,
-                ERC20AMORxGuild.safeTransfer(reportsAuthors[id], uint256(fiftyPercent));
+                ERC20AMORxGuild.safeTransfer(reportsAuthors[id], fiftyPercent);
 
                 // and 50% goes to the people who voted positively
                 for (uint256 i = 0; i < voters[id].length; i++) {
                     // if voted positively
                     if (votes[id][people[i]] > 0) {
                         // 50% * user weigth / all 100%
-                        int256 amountToSendVoter = (int256(fiftyPercent) * votes[id][people[i]]) / reportsWeight[id];
-                        ERC20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
+                        uint256 amountToSendVoter = (fiftyPercent * uint256(abs(votes[id][people[i]]))) /
+                            reportsWeight[id];
+                        ERC20AMORxGuild.safeTransfer(people[i], amountToSendVoter);
                     }
                     delete votes[id][people[i]];
                 }
+                positiveReportsId[positiveArrayPointer] = id;
+                positiveArrayPointer += 1;
+
+                delete voters[id];
             } else {
-                // If report has negative voting weight, then
-                // 50% goes to the people who voted negatively,
-                for (uint256 i = 0; i < voters[id].length; i++) {
-                    // if voted negatively
-                    if (votes[id][people[i]] < 0) {
-                        // allAmountToDistribute(50%) * user weigth in % / all 100%
-                        int256 absVotes = abs(votes[id][people[i]]);
-                        int256 amountToSendVoter = (fiftyPercent * absVotes) / reportsWeight[id];
-                        ERC20AMORxGuild.safeTransfer(people[i], uint256(amountToSendVoter));
-                    }
-                    delete votes[id][people[i]];
+                // add to an array to track
+                negativeReportsWeight[negativeArrayPointer] = reportsWeight[id];
+                negativeReportsId[negativeArrayPointer] = id;
+                negativeArrayPointer += 1;
+            }
+        }
+
+        for (uint256 id = 0; id < negativeArrayPointer; id++) {
+            uint256 fiftyPercent = (negativeReportsWeight[id] * 50) / 100;
+            address[] memory people = voters[negativeReportsId[id]];
+
+            // If report has negative voting weight, then
+            // 50% goes to the people who voted negatively,
+            for (uint256 i = 0; i < voters[negativeReportsId[id]].length; i++) {
+                // if voted negatively
+                if (votes[negativeReportsId[id]][people[i]] < 0) {
+                    // allAmountToDistribute(50%) * user weigth in % / all 100%
+                    uint256 absVotes = uint256(abs(votes[negativeReportsId[id]][people[i]]));
+                    uint256 amountToSendVoter = (fiftyPercent * absVotes) / negativeReportsWeight[id];
+                    ERC20AMORxGuild.safeTransfer(people[i], amountToSendVoter);
                 }
-                // and 50% gets redistributed between the passed reports based on their weights
-                for (uint256 i = 0; i < reportsWeight.length; i++) {
-                    // passed reports
-                    if (reportsVoting[i] > 0) {
-                        // allAmountToDistribute(50%) * report weigth in % / all 100%
-                        int256 amountToSendReport = (fiftyPercent * reportsWeight[i]) / int256(totalReportsWeight);
-                        ERC20AMORxGuild.safeTransfer(reportsAuthors[i], uint256(amountToSendReport));
-                    }
-                }
+                delete votes[negativeReportsId[id]][people[i]];
             }
 
+            // and 50% gets redistributed between the passed reports based on their weights
+            savedFunds += fiftyPercent;
             delete voters[id];
+        }
+
+        if (passedReportsWeight != 0) {
+            // passed reports
+            // if there were passed proposals at this round then we also distributing saved funds from previous rounds
+            uint256 amountToSendReport;
+            for (uint256 i = 0; i < positiveArrayPointer; i++) {
+                amountToSendReport = (savedFunds * reportsWeight[positiveReportsId[i]]) / passedReportsWeight;
+                ERC20AMORxGuild.safeTransfer(reportsAuthors[positiveReportsId[i]], amountToSendReport);
+            }
+
+            // empty saved funds if they were distributed
+            savedFunds = 0;
         }
 
         for (uint256 i = 0; i < reportsWeight.length; i++) {
@@ -432,7 +461,11 @@ contract GuildController is IGuildController, Ownable {
         endTime = (endTime / DAY) * DAY;
         endTime += 12 * HOUR;
 
-        for (uint256 i = 0; i < reportsQueue.length; i++) {
+        uint256 length = 100;
+        if (reportsQueue.length < length) {
+            length = reportsQueue.length;
+        }
+        for (uint256 i = 0; i < length; i++) {
             reportsAuthors[i] = queueReportsAuthors[i];
             reportsWeight.push(0);
             reportsVoting.push(0);
@@ -441,19 +474,35 @@ contract GuildController is IGuildController, Ownable {
 
         timeVoting = endTime;
         trigger = true;
-        delete reportsQueue;
+
+        //  delete the reportsQueue only if it is empty
+        if (reportsQueue.length < 100) {
+            delete reportsQueue;
+        } else {
+            uint256[] storage tempReportsQueue = reportsQueue;
+            delete reportsQueue;
+            for (uint256 i = length; i < tempReportsQueue.length; i++) {
+                reportsQueue.push(tempReportsQueue[i]);
+            }
+        }
     }
 
     /// @notice removes impact makers, resets mapping and array, and creates new array, mapping, and sets weights
     /// @param arrImpactMakers The array of impact makers
     /// @param arrWeight The array of weights of impact makers
     function setImpactMakers(address[] memory arrImpactMakers, uint256[] memory arrWeight) external onlyOwner {
+        totalWeight = 0;
+        for (uint256 i = 0; i < impactMakers.length; i++) {
+            delete weights[impactMakers[i]];
+        }
         delete impactMakers;
+
         for (uint256 i = 0; i < arrImpactMakers.length; i++) {
             impactMakers.push(arrImpactMakers[i]);
-            weights[arrImpactMakers[i]] = arrWeight[i];
+            weights[impactMakers[i]] = arrWeight[i];
             totalWeight += arrWeight[i];
         }
+
         emit ImpactMakersSet(arrImpactMakers, arrWeight);
     }
 
