@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: MIT
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
-
 pragma solidity 0.8.15;
 
-/// @title  Interface for CloneFactory.sol
-/// @author Daoism Systems Team
-/// @notice CloneFactory implementation for DoinGudDAO
-
 /**
+ * @title  Interface for CloneFactory.sol
+ * @author Daoism Systems Team
  *
  * MIT License
  * ===========
@@ -41,7 +38,9 @@ interface ICloneFactory {
     /// @param initialGuardian The address responsible for the Guild's first actions
     /// @param _name The full name for the Guild
     /// @param _symbol The symbol for this Guild's token
-    /// @return controller, avatar, governor The addresses for the Guild's control structures
+    /// @return controller The new Guild's Controller address
+    /// @return avatar The new Guild's Avatar address
+    /// @return governor The new Guild's Governor address
     function deployGuildContracts(
         address reality,
         address initialGuardian,
