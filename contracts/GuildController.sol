@@ -8,7 +8,7 @@ pragma solidity 0.8.15;
  * @custom Security-contact security@daoism.systems
  * @dev Implementation of GuildController logic for DoinGud
  *
- * The GuildController enables the `impact maker`, `impact reporting` and 
+ * The GuildController enables the `impact maker`, `impact reporting` and
  * `donate` functionality for guilds.
  *
  * MIT License
