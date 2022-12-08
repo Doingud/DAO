@@ -4,7 +4,7 @@ pragma solidity 0.8.15;
 /**
  * @title DoinGud Guild Controller Interface
  * @author Daoism Systems Team
- * @dev Interface for the DoinGud Guild Controller 
+ * @dev Interface for the DoinGud Guild Controller
  *
  * MIT License
  * ===========
