@@ -49,10 +49,6 @@ import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 contract DoinGudProxy is Proxy, ERC1967Upgrade, Initializable {
-    //error Initialized();
-
-    //bool private _initializedProxy;
-
     /**
      * @dev Initializes the upgradeable proxy with an initial implementation specified by `_logic`.
      *
