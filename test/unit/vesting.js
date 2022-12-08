@@ -58,14 +58,6 @@ describe("unit - Vesting", function () {
 
   });
 
-  context("Constructor", () => {
-    it("Should have deployed the contract with the right parameters", async function () {
-      expect(await VESTING.SENTINEL()).to.equal(ONE_ADDRESS);
-      expect(await VESTING.SENTINELOwner()).to.equal(ZERO_ADDRESS);
-      expect(await VESTING.beneficiaries(ZERO_ADDRESS)).to.equal(ONE_ADDRESS);
-    });
-  });
-
   context("function: vestAMOR()", () => {
     it("Should lock AMOR in the contract", async function () {
       expect(await VESTING.unallocatedAMOR()).to.equal(AMORDeducted);
@@ -74,17 +66,12 @@ describe("unit - Vesting", function () {
 
   context("function: allocateVestedTokens()", () => {
     it("Should allocate vested tokens to a beneficiary", async function () {
-      expect(await VESTING.beneficiaries(user1.address)).equal(ZERO_ADDRESS);
+      expect(await VESTING.beneficiaries(user1.address)).to.be.false;
 
       await VESTING.allocateVestedTokens(user1.address, AMORDeducted, VESTING_START, VESTING_START, VESTING_TIME);
       expect(await VESTING.balanceOf(user1.address)).to.equal(AMORDeducted);
       expect(await VESTING.unallocatedAMOR()).to.equal(0);
-      expect(await VESTING.beneficiaries(user1.address)).equal(ONE_ADDRESS);
-      expect(await VESTING.SENTINELOwner()).to.equal(user1.address);
-
-      // check path when beneficiary exists in the linked list
-      await VESTING.allocateVestedTokens(user1.address, 0, VESTING_START, VESTING_START, VESTING_TIME);
-      expect(await VESTING.beneficiaries(user1.address)).equal(ONE_ADDRESS);
+      expect(await VESTING.beneficiaries(user1.address)).to.be.true;
     });
 
     it("Should fail if unsufficient unallocated AMOR", async function () {
@@ -110,7 +97,7 @@ describe("unit - Vesting", function () {
     it("Should allow the MetaDAO to change allocation details", async function () {
       await VESTING.allocateVestedTokens(user1.address, AMORDeducted, VESTING_START, VESTING_START, VESTING_TIME);
       await AMOR_TOKEN.transfer(VESTING.address, ONE_HUNDRED_ETHER);
-      await VESTING.modifyAllocation(user1.address, AMORDeducted, VESTING_START, VESTING_START, VESTING_TIME);
+      await VESTING.modifyAllocation(user1.address, AMORDeducted);
       expect(await VESTING.balanceOf(user1.address)).
         to.equal(ethers.BigNumber.from((AMORDeducted*2).toString()));
 
@@ -119,7 +106,7 @@ describe("unit - Vesting", function () {
     });
 
     it("Should fail if benenficiary is not found", async function () {
-      await expect(VESTING.modifyAllocation(user2.address, AMORDeducted, VESTING_START, VESTING_START, VESTING_TIME)).
+      await expect(VESTING.modifyAllocation(user2.address, AMORDeducted)).
         to.be.revertedWith("NotFound()");
     });
   });
