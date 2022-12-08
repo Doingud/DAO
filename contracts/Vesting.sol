@@ -138,10 +138,7 @@ contract Vesting is Ownable {
     /// @dev Cannot modify `amount`, `vestingDate` or `cliff` lower (trust concerns)
     /// @param target The beneficiary to which tokens should vest
     /// @param amount The amount of additional AMOR to allocate to the tartget beneficiary
-    function modifyAllocation(
-        address target,
-        uint256 amount
-    ) external onlyOwner {
+    function modifyAllocation(address target, uint256 amount) external onlyOwner {
         if (!beneficiaries[target]) {
             revert NotFound();
         }
@@ -206,10 +203,7 @@ contract Vesting is Ownable {
         }
 
         if (
-            cliff > vestingDate ||
-            vestingStart > vestingDate ||
-            cliff < vestingStart ||
-            vestingStart < block.timestamp
+            cliff > vestingDate || vestingStart > vestingDate || cliff < vestingStart || vestingStart < block.timestamp
         ) {
             revert InvalidDate();
         }

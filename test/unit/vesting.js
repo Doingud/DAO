@@ -2,9 +2,7 @@ const { ethers } = require("hardhat");
 const { time } = require("@openzeppelin/test-helpers");
 const { use, expect } = require("chai");
 const { solidity } = require("ethereum-waffle");
-const { ONE_ADDRESS,
-        ZERO_ADDRESS,
-        FIFTY_ETHER,
+const { FIFTY_ETHER,
         ONE_HUNDRED_ETHER,
         BASIS_POINTS,
         TAX_RATE,
