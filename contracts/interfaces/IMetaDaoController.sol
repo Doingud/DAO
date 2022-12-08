@@ -4,7 +4,7 @@ pragma solidity 0.8.15;
 /**
  * @title  MetaDAO Controller Interface
  * @author Daoism Systems Team
- * @custom security-contact contact@daoism.systems
+ * @custom:security-contact contact@daoism.systems
  *
  * MIT License
  * ===========
