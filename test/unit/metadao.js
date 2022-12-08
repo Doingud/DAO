@@ -44,10 +44,17 @@ describe("unit - MetaDao", function () {
         /// Setup the MetaDao first
         await init.metadao(setup);
         METADAO = setup.metadao;
-        ///   Setup the Controller
+        /// Setup the Controller
         await init.controller(setup);
         CONTROLLER = setup.controller;
-        ///   Setup the guild factory
+        /// Beacons
+        setup.b_amorGuildToken = await init.beacon(AMOR_GUILD_TOKEN.address, METADAO.address);
+        setup.b_fxamor = await init.beacon(setup.tokens.FXAMORxGuild.address, METADAO.address);
+        setup.b_damor = await init.beacon(setup.tokens.dAMORxGuild.address, METADAO.address);
+        setup.b_controller = await init.beacon(setup.controller.address, METADAO.address);
+        setup.b_governor = await init.beacon(setup.governor.address, METADAO.address);
+        setup.b_avatar = await init.beacon(setup.avatars.avatar.address, METADAO.address);
+        /// Setup the guild factory
         await init.getGuildFactory(setup);
         FACTORY = setup.factory;
 
@@ -191,6 +198,14 @@ describe("unit - MetaDao", function () {
             await init.controller(setup);
             await init.avatar(setup);
             await init.governor(setup);
+            /// Beacons
+            setup.b_amorGuildToken = await init.beacon(AMOR_GUILD_TOKEN.address, METADAO.address);
+            setup.b_fxamor = await init.beacon(setup.tokens.FXAMORxGuild.address, METADAO.address);
+            setup.b_damor = await init.beacon(setup.tokens.dAMORxGuild.address, METADAO.address);
+            setup.b_controller = await init.beacon(setup.controller.address, METADAO.address);
+            setup.b_governor = await init.beacon(setup.governor.address, METADAO.address);
+            setup.b_avatar = await init.beacon(setup.avatars.avatar.address, METADAO.address);
+
             await init.getGuildFactory(setup);
             FACTORY2 = setup.factory;
 

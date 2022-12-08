@@ -41,20 +41,19 @@ contract GuildFactory is ICloneFactory {
         address GovernorxGuild;
     }
 
-    /// The Mastercopy/Implementation Addresses
-    /// The AMOR Token address
-    address public immutable amorToken;
-    /// The address for the AMORxGuild Token implementation
-    address public amorxGuildToken;
-    /// The MetaDaoController address
-    address public immutable metaDaoController;
     /// The DoinGud generic proxy contract (the target)
     address public immutable cloneTarget;
+    /// The AMOR Token address
+    address public immutable amorToken;
+
+    /// Beacons
     address public immutable avatarxGuild;
     address public immutable dAmorxGuild;
     address public immutable fXAmorxGuild;
     address public immutable controllerxGuild;
     address public immutable governorxGuild;
+    address public immutable amorxGuildToken;
+    address public immutable metaDaoController;
 
     /// Create a mapping of AvatarxGuild GuildComponents
     mapping(address => GuildComponents) public guilds;

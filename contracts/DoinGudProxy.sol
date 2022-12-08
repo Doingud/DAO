@@ -6,7 +6,7 @@ pragma solidity 0.8.15;
  * @title  DoinGud: DoinGudProxy.sol
  * @author Daoism Systems
  * @notice Data storage contract for the DoingGud contracts.
- * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
+ * @custom Security-contact security@daoism.systems
  * @dev Implementation of a generic proxy contract for DoinGud
  *
  *  The contract houses the logic for proxy deployments through a clone-factory pattern.
