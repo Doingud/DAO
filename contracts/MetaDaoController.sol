@@ -430,7 +430,8 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     }
 
     /// @notice Updates the Beacon
-    /// @param  newImplementation The address containing the new implementation
+    /// @param beacon The target beacon address
+    /// @param newImplementation The address containing the new implementation
     function upgradeBeacon(address beacon, address newImplementation) external onlyOwner {
         IDoinGudBeacon(beacon).upgradeTo(newImplementation);
     }
