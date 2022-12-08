@@ -51,7 +51,7 @@ interface IDoinGudGovernor {
         address AMORxGuild_,
         address avatarAddress_,
         address initialGuardian
-    ) external returns (bool);
+    ) external;
 
     /// @notice this function resets guardians array, and adds new guardian to the system.
     /// @param arrGuardians The array of guardians
@@ -66,9 +66,9 @@ interface IDoinGudGovernor {
     function removeGuardian(address guardian) external;
 
     /// @notice this function changes guardian as a result of the vote (propose function)
-    /// @param current Current vote value
+    /// @param currentGuardian Current Guardian address
     /// @param newGuardian Guardian to be changed
-    function changeGuardian(uint256 current, address newGuardian) external;
+    function changeGuardian(address currentGuardian, address newGuardian) external;
 
     /// @notice this function will add a proposal for a guardians(from the AMORxGuild token) vote.
     /// Only Avatar(as a result of the Snapshot) contract can add a proposal for voting.
@@ -93,7 +93,8 @@ interface IDoinGudGovernor {
     function execute(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas
+        bytes[] memory calldatas,
+        uint256 proposalCounter
     ) external returns (uint256);
 
     /// @notice function allows anyone to check state of the proposal
@@ -109,13 +110,10 @@ interface IDoinGudGovernor {
     /// @param proposalId The id of the proposal to cancel
     function cancel(uint256 proposalId) external;
 
-    function votingDelay() external view returns (uint256);
-
-    function votingPeriod() external view returns (uint256);
-
     function hashProposal(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas
+        bytes[] memory calldatas,
+        uint256 proposalCounter
     ) external returns (uint256);
 }

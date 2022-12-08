@@ -56,6 +56,8 @@ abstract contract ERC20Base is Context, IERC20 {
 
     uint8 public decimals;
 
+    uint256[50] private __GAP; // gap for upgrade safety: reserve storage space for upgrades
+
     /// Errors
     /// Reverts if invalid transfer address
     error InvalidTransfer();

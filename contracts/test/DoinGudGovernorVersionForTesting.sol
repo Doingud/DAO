@@ -90,13 +90,14 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
     // event GuardiansSetted(address[] arrGuardians);
     event GuardianAdded(address newGuardian, address guild);
     event GuardianRemoved(address guardian, address guild);
-    event GuardianChanged(uint256 oldGuardian, address newGuardian, address guild);
+    event GuardianChanged(address oldGuardian, address newGuardian);
     event VoteCasted(uint256 proposalId, bool support, address votedGuardian);
 
     bool private _initialized;
 
     uint96 private _votingDelay;
     uint96 private _votingPeriod;
+    uint256 public proposalsCounter;
 
     error InvalidProposalId();
     error AlreadyInitialized();
@@ -119,7 +120,7 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
         address AMORxGuild_,
         address avatarAddress_,
         address initialGuardian
-    ) external returns (bool) {
+    ) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -135,7 +136,6 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
         guardiansLimit = 1;
 
         emit Initialized(avatarAddress_);
-        return true;
     }
 
     /// @notice this modifier is needed to validate that amount of the Guardians is sufficient to vote and approve the “Many” decision
@@ -226,17 +226,16 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
     /// @notice this function changes guardian as a result of the vote (propose function)
     /// @param current Current vote value
     /// @param newGuardian Guardian to be changed
-    function changeGuardian(uint256 current, address newGuardian) external onlyAvatar {
+    function changeGuardian(address current, address newGuardian) external onlyAvatar {
         // check that guardian won't be added twice
         for (uint256 i = 0; i < guardians.length; i++) {
             if (newGuardian == guardians[i]) {
                 revert InvalidParameters();
             }
         }
-        guardians[current] = newGuardian;
-        delete weights[guardians[current]];
+
         weights[newGuardian] = 1;
-        emit GuardianChanged(current, newGuardian, address(this));
+        emit GuardianChanged(current, newGuardian);
     }
 
     /// @notice this function changes guardians limit
@@ -266,9 +265,11 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
         if (targets.length > PROPOSAL_MAX_OPERATIONS) {
             revert InvalidParameters();
         }
+
+        proposalsCounter++;
         /// Submit proposals uniquely identified by a proposalId and an array of txHashes,
         /// to create a Reality.eth question that validates the execution of the connected transactions
-        uint256 proposalId = hashProposal(targets, values, calldatas);
+        uint256 proposalId = hashProposal(targets, values, calldatas, proposalsCounter);
 
         ProposalCore storage proposal = _proposals[proposalId];
         if (proposal.voteStart != 0) {
@@ -334,9 +335,10 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
     function execute(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas
+        bytes[] memory calldatas,
+        uint256 proposalCounter
     ) external GuardianLimitReached returns (uint256) {
-        uint256 proposalId = hashProposal(targets, values, calldatas);
+        uint256 proposalId = hashProposal(targets, values, calldatas, proposalCounter);
 
         ProposalState status = state(proposalId);
         if (status != ProposalState.Succeeded) {
@@ -347,8 +349,7 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
             bool success = IAvatarxGuild(avatarAddress).executeProposal(
                 targets[i],
                 values[i],
-                calldatas[i],
-                Enum.Operation.Call
+                calldatas[i]
             );
             if (!success) {
                 revert UnderlyingTransactionReverted();
@@ -464,8 +465,9 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
     function hashProposal(
         address[] memory targets,
         uint256[] memory values,
-        bytes[] memory calldatas
+        bytes[] memory calldatas,
+        uint256 proposalCounter
     ) public pure returns (uint256) {
-        return uint256(keccak256(abi.encode(targets, values, calldatas)));
+        return uint256(keccak256(abi.encode(targets, values, calldatas, proposalCounter)));
     }
 }

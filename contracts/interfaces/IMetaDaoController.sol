@@ -51,10 +51,14 @@ interface IMetaDaoController {
         uint256 index
     ) external;
 
-    function claimToken(address token) external;
+    /// @notice Claims specified token for specified guild
+    /// @param guild The address of the target guild controller
+    /// @param token The target token contract address
+    function claimToken(address guild, address token) external returns (uint256);
 
-    /// @notice Apportions collected AMOR fees
-    function distributeFees() external;
+    /// @notice Apportions collected funds
+    /// @param token The address of the token being distributed
+    function distributeFees(address token) external;
 
     /// @notice Transfers apportioned tokens from the metadao to the guild
     /// @param  guild target guild
@@ -93,12 +97,18 @@ interface IMetaDaoController {
     function isWhitelisted(address token) external view returns (bool);
 
     /// @notice Adds a new index to the `Index` array
-    /// @dev    Requires an encoded array of SORTED tuples in (address, uint256) format
-    /// @param  weights an array containing the weighting indexes for different guilds
+    /// @param guilds The array of guild addresses for this index
+    /// @param weights The array containing the weights for different guilds
     /// @return index of the new index in the `Index` array
-    function addIndex(bytes[] calldata weights) external returns (uint256);
+    function addIndex(address[] calldata guilds, uint256[] calldata weights) external returns (uint256);
 
     /// @notice Allows DoinGud to update the fee index used
-    /// @param  weights an array of the guild weights
-    function updateIndex(bytes[] calldata weights, uint256 index) external returns (uint256);
+    /// @param guilds The array of guilds addresses
+    /// @param weights The array of the guild weights
+    /// @param index The key for this index in the `indexes` mapping
+    function updateIndex(
+        address[] calldata guilds,
+        uint256[] calldata weights,
+        uint256 index
+    ) external;
 }

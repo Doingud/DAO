@@ -90,35 +90,43 @@ contract AMORToken is IAmorToken, ERC20Base, Pausable, Ownable {
         _transferOwnership(_multisig);
         //  Set the name and symbol
         _setTokenDetail(_name, _symbol);
-        decimals = 18;
         //  Pre-mint to the multisig address
         _mint(_multisig, 10000000 * 10**decimals);
         //  Set the tax collector address
-        taxController = _initCollector;
+        _updateController(_initCollector);
         //  Set the tax rate
-        if (_initTaxRate > 500) {
-            revert InvalidRate();
-        }
-        taxRate = _initTaxRate;
+        _setTaxRate(_initTaxRate);
         _initialized = true;
         emit Initialized(_initCollector, _initTaxRate);
-        return true;
     }
 
     /// @notice Sets the tax rate for transfer and transferFrom
     /// @dev    Rate is expressed in basis points, this must be divided by 10 000 to equal desired rate
     /// @param  newRate uint256 representing new tax rate, must be <= 500
-    function setTaxRate(uint256 newRate) public onlyOwner {
+    function setTaxRate(uint256 newRate) external onlyOwner {
+        _setTaxRate(newRate);
+    }
+
+    /// @notice Sets the tax rate for transfer and transferFrom
+    /// @dev    Rate is expressed in basis points, this must be divided by 10 000 to equal desired rate
+    /// @param  newRate uint256 representing new tax rate, must be <= 500
+    function _setTaxRate(uint256 newRate) internal {
         if (newRate > 500) {
             revert InvalidRate();
         }
-        emit AmorTaxChanged(newRate);
         taxRate = newRate;
+        emit AmorTaxChanged(newRate);
     }
 
     /// @notice Sets the address which receives taxes
     /// @param  newTaxCollector address which must receive taxes
-    function updateController(address newTaxCollector) public onlyOwner {
+    function updateController(address newTaxCollector) external onlyOwner {
+        _updateController(newTaxCollector);
+    }
+
+    /// @notice Sets the address which receives taxes
+    /// @param  newTaxCollector address which must receive taxes
+    function _updateController(address newTaxCollector) internal {
         if (newTaxCollector == address(this)) {
             revert InvalidTaxCollector();
         }
@@ -133,38 +141,12 @@ contract AMORToken is IAmorToken, ERC20Base, Pausable, Ownable {
         address to,
         uint256 amount
     ) internal override {
-        if (from == address(0) || to == address(0)) {
-            revert InvalidTransfer();
-        }
-
-        _beforeTokenTransfer(from, to, amount);
-
-        uint256 fromBalance = _balances[from];
-        if (fromBalance < amount) {
-            revert InvalidTransfer();
-        }
-
-        unchecked {
-            _balances[from] = fromBalance - amount;
-        }
-
         if (taxRate > 0) {
             uint256 taxAmount = (amount * taxRate) / BASIS_POINTS;
-            uint256 afterTaxAmount = amount - taxAmount;
-            _balances[taxController] += taxAmount;
-
-            emit Transfer(from, taxController, taxAmount);
-
-            _balances[to] += afterTaxAmount;
-
-            emit Transfer(from, to, (amount - taxAmount));
-        } else {
-            _balances[to] += amount;
-
-            emit Transfer(from, to, amount);
+            amount -= taxAmount;
+            super._transfer(from, taxController, taxAmount);
         }
-
-        _afterTokenTransfer(from, to, amount);
+        super._transfer(from, to, amount);
     }
 
     /// @notice Pause functionality for AMOR

@@ -89,7 +89,7 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
         address AMORxGuild_,
         address FXAMORxGuild_,
         address MetaDaoController_
-    ) external returns (bool) {
+    ) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -105,7 +105,6 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
         percentToConvert = 100;
         _initialized = true;
         emit Initialized(initOwner, AMORxGuild_);
-        return true;
     }
 
     function setVotingPeriod(uint256 newTime) external onlyOwner {
@@ -142,7 +141,7 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
             revert NotWhitelistedToken();
         }
         uint256 amount = IMetaDaoController(MetaDaoController).guildFunds(address(this), token);
-        IMetaDaoController(MetaDaoController).claimToken(token);
+        IMetaDaoController(MetaDaoController).claimToken(address(this), token);
 
         // distribute those tokens
         distribute(amount, token);
@@ -281,7 +280,7 @@ contract GuildControllerVersionForTesting is IGuildController, Ownable {
             revert InvalidAmount();
         }
 
-        FXGFXAMORxGuild.burn(msg.sender, amount);
+        FXGFXAMORxGuild.burn(msg.sender, msg.sender, amount);
         voters[id].push(msg.sender);
 
         reportsWeight[id] += int256(amount);

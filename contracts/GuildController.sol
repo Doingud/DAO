@@ -122,14 +122,13 @@ contract GuildController is IGuildController, Ownable {
     /// @param  AMORxGuild_ the address of the AMORxGuild token
     /// @param  FXAMORxGuild_ the address of the FXAMORxGuild token
     /// @param  MetaDaoController_ the MetaDaoController owning this token
-    /// @return bool Initialization successful/unsuccessful
     function init(
         address initOwner,
         address AMOR_,
         address AMORxGuild_,
         address FXAMORxGuild_,
         address MetaDaoController_
-    ) external returns (bool) {
+    ) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -145,7 +144,6 @@ contract GuildController is IGuildController, Ownable {
         percentToConvert = 100;
         _initialized = true;
         emit Initialized(initOwner, AMORxGuild_);
-        return true;
     }
 
     function setVotingPeriod(uint256 newTime) external onlyOwner {
@@ -182,8 +180,10 @@ contract GuildController is IGuildController, Ownable {
         if (!IMetaDaoController(MetaDaoController).isWhitelisted(token)) {
             revert NotWhitelistedToken();
         }
-        uint256 amount = IMetaDaoController(MetaDaoController).guildFunds(address(this), token);
-        IMetaDaoController(MetaDaoController).claimToken(token);
+        uint256 amount = IMetaDaoController(MetaDaoController).claimToken(address(this), token);
+        if (amount == 0) {
+            revert InvalidAmount();
+        }
         // distribute those tokens
         distribute(amount, token);
     }
@@ -316,11 +316,36 @@ contract GuildController is IGuildController, Ownable {
             revert VotingTimeExpired();
         }
 
-        if (IERC20(FXAMORxGuild).balanceOf(msg.sender) < amount) {
+        uint256 userFXAmount = IERC20(FXAMORxGuild).balanceOf(msg.sender) - FXGFXAMORxGuild.amountDelegated(msg.sender);
+        if (userFXAmount + FXGFXAMORxGuild.amountDelegatedAvailable(msg.sender) < amount) {
             revert InvalidAmount();
         }
 
-        FXGFXAMORxGuild.burn(msg.sender, amount);
+        uint256 delegatedFXUsage;
+        if (userFXAmount < amount) {
+            delegatedFXUsage = amount - userFXAmount;
+            FXGFXAMORxGuild.burn(msg.sender, msg.sender, userFXAmount);
+            address delegator;
+            uint256 i;
+            uint256 burnAmount;
+            while (delegatedFXUsage > 0) {
+                delegator = FXGFXAMORxGuild.delegators(msg.sender, i);
+                burnAmount = FXGFXAMORxGuild.delegations(delegator, msg.sender);
+                if (burnAmount <= delegatedFXUsage) {
+                    FXGFXAMORxGuild.burn(msg.sender, delegator, burnAmount);
+                    delegatedFXUsage -= burnAmount;
+                    i++;
+                } else {
+                    FXGFXAMORxGuild.burn(msg.sender, delegator, delegatedFXUsage);
+                    delegatedFXUsage = 0;
+                }
+            }
+        } else {
+            FXGFXAMORxGuild.burn(msg.sender, msg.sender, amount);
+        }
+
+        FXGFXAMORxGuild.withdraw(amount);
+
         voters[id].push(msg.sender);
 
         reportsWeight[id] += int256(amount);
@@ -510,7 +535,7 @@ contract GuildController is IGuildController, Ownable {
     }
 
     /// @notice allows to claim tokens for specific ImpactMaker address
-    /// @param impact Impact maker to to claim tokens from
+    /// @param impact Impact maker to claim tokens from
     /// @param token Tokens addresess to claim
     function claim(address impact, address[] memory token) external {
         for (uint256 i = 0; i < token.length; i++) {
