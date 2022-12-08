@@ -44,10 +44,17 @@ describe("unit - MetaDao", function () {
         /// Setup the MetaDao first
         await init.metadao(setup);
         METADAO = setup.metadao;
-        ///   Setup the Controller
+        /// Setup the Controller
         await init.controller(setup);
         CONTROLLER = setup.controller;
-        ///   Setup the guild factory
+        /// Beacons
+        setup.b_amorGuildToken = await init.beacon(AMOR_GUILD_TOKEN.address, METADAO.address);
+        setup.b_fxamor = await init.beacon(setup.tokens.FXAMORxGuild.address, METADAO.address);
+        setup.b_damor = await init.beacon(setup.tokens.dAMORxGuild.address, METADAO.address);
+        setup.b_controller = await init.beacon(setup.controller.address, METADAO.address);
+        setup.b_governor = await init.beacon(setup.governor.address, METADAO.address);
+        setup.b_avatar = await init.beacon(setup.avatars.avatar.address, METADAO.address);
+        /// Setup the guild factory
         await init.getGuildFactory(setup);
         FACTORY = setup.factory;
 
@@ -67,24 +74,11 @@ describe("unit - MetaDao", function () {
         await METADAO.addWhitelist(USDC.address);
         await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
         await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
-        /*const abi = ethers.utils.defaultAbiCoder;
-        encodedIndex = abi.encode(
-            ["tuple(address, uint256)"],
-            [
-            [GUILD_CONTROLLER_ONE.address, 100]
-            ]
-        );
-        encodedIndex2 = abi.encode(
-            ["tuple(address, uint256)"],
-            [
-            [GUILD_CONTROLLER_TWO.address, 100]
-            ]
-        );*/
+
         let guilds = [GUILD_CONTROLLER_ONE.address, GUILD_CONTROLLER_TWO.address];
         let weights = [100, 100];
 
         await METADAO.updateIndex(guilds, weights, 0);
-        //await METADAO.updateIndex([encodedIndex, encodedIndex2], 0);
     });
 
     context("initialization", () => {
@@ -204,6 +198,14 @@ describe("unit - MetaDao", function () {
             await init.controller(setup);
             await init.avatar(setup);
             await init.governor(setup);
+            /// Beacons
+            setup.b_amorGuildToken = await init.beacon(AMOR_GUILD_TOKEN.address, METADAO.address);
+            setup.b_fxamor = await init.beacon(setup.tokens.FXAMORxGuild.address, METADAO.address);
+            setup.b_damor = await init.beacon(setup.tokens.dAMORxGuild.address, METADAO.address);
+            setup.b_controller = await init.beacon(setup.controller.address, METADAO.address);
+            setup.b_governor = await init.beacon(setup.governor.address, METADAO.address);
+            setup.b_avatar = await init.beacon(setup.avatars.avatar.address, METADAO.address);
+
             await init.getGuildFactory(setup);
             FACTORY2 = setup.factory;
 
@@ -302,20 +304,6 @@ describe("unit - MetaDao", function () {
         it("Should allow a user to set a custom index", async function () {
             let guilds = [GUILD_CONTROLLER_ONE.address, GUILD_CONTROLLER_TWO.address];
             let weights = [50, 150];
-            //const abi = ethers.utils.defaultAbiCoder;
-            /*let newIndex0 = abi.encode(
-                ["tuple(address, uint256)"],
-                [
-                [GUILD_CONTROLLER_ONE.address, 50]
-                ]
-            );
-            let newIndex1 = abi.encode(
-                ["tuple(address, uint256)"],
-                [
-                [GUILD_CONTROLLER_TWO.address, 150]
-                ]
-            );*/
-
             let index = await METADAO.addIndex(guilds, weights);
             index = await METADAO.indexes(1);
             expect(index.indexDenominator).to.equal(200);
@@ -324,19 +312,6 @@ describe("unit - MetaDao", function () {
 
     context("function: donate()", () => {
         it("Should allow a user to donate according to a custom index", async function () {
-            /*const abi = ethers.utils.defaultAbiCoder;
-            let newIndex0 = abi.encode(
-                ["tuple(address, uint256)"],
-                [
-                [GUILD_CONTROLLER_ONE.address, 50]
-                ]
-            );
-            let newIndex1 = abi.encode(
-                ["tuple(address, uint256)"],
-                [
-                [GUILD_CONTROLLER_TWO.address, 150]
-                ]
-            );*/
             let guilds = [GUILD_CONTROLLER_ONE.address, GUILD_CONTROLLER_TWO.address];
             let weights = [50, 150];
 
@@ -351,19 +326,6 @@ describe("unit - MetaDao", function () {
 
     context('function: updateIndex()', () => {
         it('Should updateIndex if index = 0', async function () {
-            /*const abi = ethers.utils.defaultAbiCoder;
-            let newIndex0 = abi.encode(
-                ["tuple(address, uint256)"],
-                [
-                [GUILD_CONTROLLER_ONE.address, 500]
-                ]
-            );
-            let newIndex1 = abi.encode(
-                ["tuple(address, uint256)"],
-                [
-                [GUILD_CONTROLLER_TWO.address, 150]
-                ]
-            );*/
             let guilds = [GUILD_CONTROLLER_ONE.address, GUILD_CONTROLLER_TWO.address];
             let weights = [500, 150];
 
@@ -374,20 +336,6 @@ describe("unit - MetaDao", function () {
         });
 
         it('Should updateIndex if index > 0', async function () {
-            /*const abi = ethers.utils.defaultAbiCoder;
-            let newIndex0 = abi.encode(
-                ["tuple(address, uint256)"],
-                [
-                [GUILD_CONTROLLER_ONE.address, 500]
-                ]
-            );
-            let newIndex1 = abi.encode(
-                ["tuple(address, uint256)"],
-                [
-                [GUILD_CONTROLLER_TWO.address, 200]
-                ]
-            );*/
-
             let guilds = [GUILD_CONTROLLER_ONE.address, GUILD_CONTROLLER_TWO.address];
             let weights = [500, 200];
 

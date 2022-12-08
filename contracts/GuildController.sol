@@ -49,7 +49,7 @@ contract GuildController is IGuildController, Ownable {
     uint256 public constant DAY = 1 days;
     uint256 public constant HOUR = 1 hours;
     uint256 public constant FEE_DENOMINATOR = 1000;
-    uint256 public percentToConvert; //10% // FEE_DENOMINATOR/100*10
+    uint256 public percentToConvert; //10%
 
     event Initialized(address owner, address AMORxGuild);
     event DonatedToGuild(uint256 amount, address token, uint256 givenAmorxguild, address sender);

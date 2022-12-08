@@ -14,6 +14,8 @@ use(solidity);
 
   let AMOR_TOKEN;
   let AMOR_GUILD_TOKEN;
+  let AMOR_BEACON;
+  let AMOR_TOKEN_PROXY
 
 describe("unit - DoinGudProxy", function () {
 
@@ -22,15 +24,15 @@ describe("unit - DoinGudProxy", function () {
     const setup = await init.initialize(signers);
     await init.getTokens(setup);
 
-    AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
-    AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
-    AMOR_TOKEN_PROXY = setup.tokens.AmorTokenProxy;
-
     root = setup.roles.root;
     multisig = setup.roles.doingud_multisig;
     user1 = setup.roles.user1;
     user2 = setup.roles.user2;
 
+    AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
+    AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
+    AMOR_TOKEN_PROXY = await init.proxy();
+    AMOR_BEACON = await init.beacon(AMOR_TOKEN.address, root.address);
   });
 
   before('Setup', async function() {
@@ -46,34 +48,34 @@ describe("unit - DoinGudProxy", function () {
 
   context("function: initProxy()", () => {
       it("Should initialize the proxy", async function () {
-        expect(await AMOR_TOKEN_PROXY.initProxy(AMOR_GUILD_TOKEN.address)).
-          to.emit(AMOR_TOKEN_PROXY, "Upgraded").
-            withArgs(AMOR_GUILD_TOKEN.address);
+        await expect(AMOR_TOKEN_PROXY.initProxy(AMOR_BEACON.address)).
+          to.emit(AMOR_TOKEN_PROXY, "BeaconUpgraded").
+            withArgs(AMOR_BEACON.address);
       });
 
       it("Should fail if called more than once", async function () {
         await expect(AMOR_TOKEN_PROXY.initProxy(AMOR_GUILD_TOKEN.address)).
-          to.be.revertedWith("Initialized");
+          to.be.revertedWith("Initializable: contract is already initialized");
       });
     });
 
   context("function: viewImplementation()", () => {
     it("Should return the correct implementation address", async function () {
-      expect(await AMOR_TOKEN_PROXY.viewImplementation()).
-        to.equal(AMOR_GUILD_TOKEN.address);
+      expect(await AMOR_TOKEN_PROXY.implementation()).
+        to.equal(AMOR_TOKEN.address);
     });
   });
 
-  context("function: upgradeImplenentation()", () => {
+  context("function: upgradeTo()", () => {
       it("Should upgrade the implementation address", async function () {
-        expect(await AMOR_TOKEN_PROXY.upgradeImplementation(AMOR_TOKEN.address)).
-          to.emit(AMOR_TOKEN_PROXY, "Upgraded")
-            .withArgs(AMOR_TOKEN.address);
+        await expect(AMOR_BEACON.upgradeTo(AMOR_GUILD_TOKEN.address)).
+          to.emit(AMOR_BEACON, "Upgraded")
+            .withArgs(AMOR_GUILD_TOKEN.address);
       });
 
       it("Should return the upgraded implementation address", async function () {
-        expect(await AMOR_TOKEN_PROXY.viewImplementation()).
-          to.equal(AMOR_TOKEN.address);
+        expect(await AMOR_TOKEN_PROXY.implementation()).
+          to.equal(AMOR_GUILD_TOKEN.address);
       });
   });
 

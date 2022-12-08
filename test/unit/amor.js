@@ -21,6 +21,7 @@ let MOCK_UPGRADE_IMPLEMENTATION;
 let PROXY_CONTRACT;
 //  The PROXY_CONTRACT with the implemenation
 let PROXY;
+let AMOR_BEACON;
 
 let root;
 let multisig;
@@ -44,6 +45,9 @@ describe("unit - AMOR Token", function () {
     user1 = setup.roles.user1;
     user2 = setup.roles.user2;
     user3 = setup.roles.user3;
+
+    AMOR_BEACON = await init.beacon(IMPLEMENTATION.address, root.address);
+    PROXY_CONTRACT = await init.proxy();
     
   });
 
@@ -63,7 +67,7 @@ describe("unit - AMOR Token", function () {
 
   context("function: initProxy()", () => {
     it("initializes the proxy's logic", async function () {
-      await PROXY_CONTRACT.initProxy(IMPLEMENTATION.address,[]);
+      await PROXY_CONTRACT.initProxy(AMOR_BEACON.address);
     });
   });
 
@@ -93,7 +97,7 @@ describe("unit - AMOR Token", function () {
 
     context("function: viewImplementation()", () => {
         it("retrieves the correct contract address", async function () {
-          expect(await PROXY_CONTRACT.viewImplementation()).
+          expect(await PROXY_CONTRACT.implementation()).
             to.equal(IMPLEMENTATION.address);
         });
     });
@@ -203,12 +207,12 @@ describe("unit - AMOR Token", function () {
 
     context("function: upgradeTo()", () => {
       it("upgrades the implementation used for the proxy", async function () {
-        expect(await PROXY_CONTRACT.upgradeImplementation(MOCK_UPGRADE_IMPLEMENTATION.address)).
-          to.emit(PROXY_CONTRACT, "Upgraded").
+        expect(await AMOR_BEACON.upgradeTo(MOCK_UPGRADE_IMPLEMENTATION.address)).
+          to.emit(AMOR_BEACON, "Upgraded").
             withArgs(MOCK_UPGRADE_IMPLEMENTATION.address);
       });
       it("returns the new implementation address", async function () {
-        expect(await PROXY_CONTRACT.viewImplementation()).
+        expect(await PROXY_CONTRACT.implementation()).
           to.equal(MOCK_UPGRADE_IMPLEMENTATION.address);
       });
     })

@@ -3,13 +3,13 @@
 pragma solidity 0.8.15;
 
 /**
- * @title  DoinGud: DoinGudProxy.sol
+ * @title  DoinGud: DoinGudBeacon.sol
  * @author Daoism Systems
- * @notice Data storage contract for the DoingGud contracts.
- * @custom Security-contact security@daoism.systems
+ * @notice Beacon Proxy contract for the DoingGud contracts.
+ * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
  * @dev Implementation of a generic proxy contract for DoinGud
  *
- *  The contract houses the logic for proxy deployments through a clone-factory pattern.
+ *  The contract houses the logic for beacon proxy deployments through a clone-factory pattern.
  *
  * This Proxy Implementation contract is intended to be referenced by the
  * GuildFactory.sol contract.
@@ -43,35 +43,10 @@ pragma solidity 0.8.15;
  *
  */
 
-import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import "@openzeppelin/contracts/proxy/Proxy.sol";
-import "@openzeppelin/contracts/proxy/beacon/IBeacon.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/proxy/beacon/UpgradeableBeacon.sol";
 
-contract DoinGudProxy is Proxy, ERC1967Upgrade, Initializable {
-    /**
-     * @dev Initializes the upgradeable proxy with an initial implementation specified by `_logic`.
-     *
-     * If `_data` is nonempty, it's used as data in a delegate call to `_logic`. This will typically be an encoded
-     * function call, and allows initializing the storage of the proxy like a Solidity constructor.
-     */
-    function initProxy(address logic) external initializer {
-        _upgradeBeaconToAndCall(logic, "", false);
-    }
-
-    //  View the current implementation
-    function viewBeacon() external view returns (address) {
-        return _getBeacon();
-    }
-
-    function implementation() external view returns (address) {
-        return _implementation();
-    }
-
-    /**
-     * @dev Returns the current implementation address of the associated beacon.
-     */
-    function _implementation() internal view virtual override returns (address) {
-        return IBeacon(_getBeacon()).implementation();
+contract DoinGudBeacon is UpgradeableBeacon {
+    constructor(address logic, address metadao) UpgradeableBeacon(logic) {
+        _transferOwnership(metadao);
     }
 }

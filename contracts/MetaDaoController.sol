@@ -44,6 +44,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./interfaces/ICloneFactory.sol";
 import "./interfaces/IGuildController.sol";
 import "./interfaces/IMetaDaoController.sol";
+import "./interfaces/IDoinGudBeacon.sol";
 
 contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -426,5 +427,12 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
             index.indexWeights[_guilds[i]] = _weights[i];
             index.indexDenominator += _weights[i];
         }
+    }
+
+    /// @notice Updates the Beacon
+    /// @param beacon The target beacon address
+    /// @param newImplementation The address containing the new implementation
+    function upgradeBeacon(address beacon, address newImplementation) external onlyOwner {
+        IDoinGudBeacon(beacon).upgradeTo(newImplementation);
     }
 }

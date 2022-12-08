@@ -186,17 +186,24 @@ const governor = async (setup) => {
 const getGuildFactory = async (setup) => {
   const cloneFactory = await ethers.getContractFactory("GuildFactory");
   const amorStorage = setup.amor_storage ? setup.amor_storage.address : setup.tokens.AmorTokenImplementation.address;
+  const amorGuildToken = setup.b_amorGuildToken ? setup.b_amorGuildToken.address : setup.tokens.AmorGuildToken.address;
+  const fxamor =  setup.b_fxamor ? setup.b_fxamor.address : setup.tokens.FXAMORxGuild.address;
+  const damor =  setup.b_damor ? setup.b_damor.address : setup.tokens.dAMORxGuild.address;
+  const controller = setup.b_controller ? setup.b_controller.address : setup.controller.address;
+  const governor = setup.b_governor ? setup.b_governor.address : setup.governor.address;
+  const avatar = setup.b_avatar ? setup.b_avatar.address : setup.avatars.avatar.address;
+  const metadao = setup.metadao_proxy ? setup.metadao_proxy.address : setup.metadao.address;
 
   const guildFactory = await cloneFactory.deploy(
     amorStorage,
-    setup.tokens.AmorGuildToken.address,
-    setup.tokens.FXAMORxGuild.address,
-    setup.tokens.dAMORxGuild.address,
+    amorGuildToken,
+    fxamor,
+    damor,
     setup.tokens.AmorTokenProxy.address,
-    setup.controller.address,
-    setup.governor.address,
-    setup.avatars.avatar.address,
-    setup.metadao.address // metaDaoController
+    controller,
+    governor,
+    avatar,
+    metadao // metaDaoController
   );
 
   setup.factory = guildFactory;
@@ -228,8 +235,16 @@ const vestingContract = async (setup) => {
   return vesting;
 }
 
+const beacon = async(logic, metadao) => {
+  const beaconFactory = await ethers.getContractFactory("DoinGudBeacon");
+  const beacon = await beaconFactory.deploy(logic, metadao);
+
+  return beacon;
+}
+
 module.exports = {
   avatar,
+  beacon,
   controller,
   getGuildFactory,
   getTokens,
