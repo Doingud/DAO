@@ -7,10 +7,10 @@ pragma solidity 0.8.15;
  * @notice MetaDaoController implementation for DoinGudDAO
  * @custom Security-contact security@daoism.systems
  *
- *  The MetaDAO creates new guilds and collects fees from AMOR token transfers.
- *  The collected funds can then be distributed and claimed by guilds.
- *  The MetaDAO governs high level donations and is intended to be used in
- *  conjunction with a Governor and Avatar contract.
+ * The MetaDAO creates new guilds and collects fees from AMOR token transfers.
+ * The collected funds can then be distributed and claimed by guilds.
+ * The MetaDAO governs high level donations and is intended to be used in
+ * conjunction with a Governor and Avatar contract.
  *
  * MIT License
  * ===========

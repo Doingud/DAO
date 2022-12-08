@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: MIT
-
-/// @title  DoinGud Guild Token Interface
-/// @author Daoism Systems Team
-/// @notice FXAMOR interface for DoinGudDAO
 pragma solidity 0.8.15;
 
 /**
+ * @title  DoinGud FXAMORxGuild Interface
+ * @author Daoism Systems Team
+ * @notice FXAMORxGuild interface for DoinGudDAO
  *
  * MIT License
  * ===========

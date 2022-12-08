@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
-
-/// @title  MetaDAO Controller Interface
-/// @author Daoism Systems Team
-/// @custom security-contact contact@daoism.systems
-
 pragma solidity 0.8.15;
 
-/*
+/**
+ * @title  MetaDAO Controller Interface
+ * @author Daoism Systems Team
+ * @custom security-contact contact@daoism.systems
+ *
  * MIT License
  * ===========
  *

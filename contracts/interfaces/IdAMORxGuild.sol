@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: MIT
-
-/// @title  DoinGud dAMORxGuild Interface
-/// @author Daoism Systems Team
-
 pragma solidity 0.8.15;
 
 /**
+ * @title  DoinGud dAMORxGuild Interface
+ * @author Daoism Systems Team
  *
  * MIT License
  * ===========

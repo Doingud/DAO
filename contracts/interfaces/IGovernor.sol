@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
-
-/// @title   DoinGud: IGovernor.sol
-/// @author  Daoism Systems
-/// @notice  Governor Interface for DoinGud Guilds
-/// @custom:security-contact security@daoism.systems
-/// @dev     IGovernor IERC165 Pattern
-
 pragma solidity 0.8.15;
 
-/*
+/**
+ * @title   DoinGud: IGovernor.sol
+ * @author  Daoism Systems
+ * @notice  Governor Interface for DoinGud Guilds
+ * @custom:security-contact security@daoism.systems
+ * @dev     IGovernor IERC165 Pattern
+ *
  * MIT License
  * ===========
  *

@@ -1,15 +1,9 @@
 // SPDX-License-Identifier: MIT
-
-/// @title  DoinGud Proxy Interface
-/// @author Daoism Systems Team
-/// @notice ERC20 implementation for DoinGudDAO
-
-/**
- *  @dev Interface for the DoinGud Proxy
- */
 pragma solidity 0.8.15;
 
 /**
+ * @title  DoinGud Proxy Interface
+ * @author Daoism Systems Team
  *
  * MIT License
  * ===========
