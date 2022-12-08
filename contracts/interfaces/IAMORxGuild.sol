@@ -1,20 +1,10 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.15;
 
-/// @title  DoinGud Guild Token Interface
-/// @author Daoism Systems Team
-/// @notice ERC20 implementation for DoinGudDAO
-
 /**
- *  @dev Implementation of the AMORxGuild token for DoinGud
- *
- *  The contract houses the token logic for AMORxGuild.
- *
- *  It varies from traditional ERC20 implementations by:
- *  1) Allowing the token name to be set with an `init()` function
- *  2) Allowing the token symbol to be set with an `init()` function
- *  3) Enables upgrades through updating the proxy
+ * @title  DoinGud AmorxGuild Token Interface
+ * @author Daoism Systems Team
+ * @notice ERC20 implementation for DoinGudDAO
  *
  * MIT License
  * ===========

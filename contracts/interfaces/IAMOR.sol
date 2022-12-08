@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 // Derived from OpenZeppelin Contracts (last updated v4.6.0) (token/ERC20/ERC20.sol)
-
-/// @title  DoinGud Guild AMOR Token Interface
-/// @author Daoism Systems Team
-/// @notice ERC20 implementation for DoinGudDAO
-
 pragma solidity 0.8.15;
 
-/*
+/**
+ * @title DoinGud AMOR Token Interface
+ * @author Daoism Systems Team
+ * @notice ERC20 implementation for DoinGudDAO
+ *
  * MIT License
  * ===========
  *

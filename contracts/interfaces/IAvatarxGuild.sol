@@ -7,7 +7,7 @@ pragma solidity 0.8.15;
  * @notice Avatar interface for DoinGudDAO
  * @custom Security-contact security@daoism.systems
  *
- *  The IAvatarxGuild follows the IAvatar.sol structure popularized by Zodiac, but is initializable.
+ * The IAvatarxGuild follows the IAvatar.sol structure popularized by Zodiac, but is initializable.
  *
  * MIT License
  * ===========
