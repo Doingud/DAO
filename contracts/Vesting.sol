@@ -135,7 +135,7 @@ contract Vesting is Ownable {
     }
 
     /// @notice Modifies an existing allocation
-    /// @dev Cannot modify `amount`, `vestingDate` or `cliff` lower (trust concerns)
+    /// @dev Cannot modify `amount` lower (trust concerns)
     /// @param target The beneficiary to which tokens should vest
     /// @param amount The amount of additional AMOR to allocate to the tartget beneficiary
     function modifyAllocation(address target, uint256 amount) external onlyOwner {
