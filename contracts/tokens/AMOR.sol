@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.15;
 
 /**
  * @title  DoinGud: AMOR.sol
  * @author Daoism Systems
  * @notice ERC20 implementation for DoinGudDAO
- * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
+ * @custom Security-contact security@daoism.systems
  * @dev Implementation of the AMOR Token Logic for DoinGud MetaDAO
  *
  * This token implementation contract is referenced by a proxy contract.

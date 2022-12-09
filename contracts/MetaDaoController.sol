@@ -7,10 +7,10 @@ pragma solidity 0.8.15;
  * @notice MetaDaoController implementation for DoinGudDAO
  * @custom Security-contact security@daoism.systems
  *
- *  The MetaDAO creates new guilds and collects fees from AMOR token transfers.
- *  The collected funds can then be distributed and claimed by guilds.
- *  The MetaDAO governs high level donations and is intended to be used in
- *  conjunction with a Governor and Avatar contract.
+ * The MetaDAO creates new guilds and collects fees from AMOR token transfers.
+ * The collected funds can then be distributed and claimed by guilds.
+ * The MetaDAO governs high level donations and is intended to be used in
+ * conjunction with a Governor and Avatar contract.
  *
  * MIT License
  * ===========
@@ -363,7 +363,7 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     }
 
     /// @notice Checks that a token is whitelisted
-    /// @param token Tddress of the ERC20 token being checked
+    /// @param token The address of the ERC20 token being checked
     /// @return bool True if token whitelisted, false if not whitelisted
     function isWhitelisted(address token) public view returns (bool) {
         return whitelist[token] != address(0);

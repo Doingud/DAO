@@ -7,7 +7,7 @@ pragma solidity 0.8.15;
  * @notice Avatar interface for DoinGudDAO
  * @custom Security-contact security@daoism.systems
  *
- *  The IAvatarxGuild follows the IAvatar.sol structure popularized by Zodiac, but is initializable.
+ * The IAvatarxGuild follows the IAvatar.sol structure popularized by Zodiac, but is initializable.
  *
  * MIT License
  * ===========
@@ -53,8 +53,8 @@ interface IAvatarxGuild is IAvatar {
     error Unauthorized();
 
     /// @notice Initializes the AvatarxGuild module
-    /// @param  initOwner the address that owns this AvatarxGuild
-    /// @param  governorAddress_ the guild's governor
+    /// @param  initOwner The address that owns this AvatarxGuild
+    /// @param  governorAddress_ The guild's governor
     function init(address initOwner, address governorAddress_) external;
 
     /// @notice Changes Governor address

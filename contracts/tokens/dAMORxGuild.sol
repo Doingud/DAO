@@ -6,10 +6,10 @@ pragma solidity 0.8.15;
  * @title  DoinGud: dAMORxGuild.sol
  * @author Daoism Systems
  * @notice ERC20 implementation for DoinGudDAO
- * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
+ * @custom Security-contact security@daoism.systems
  * @dev Implementation of the dAMORXGuild token for DoinGud
  *
- *  The contract houses the token logic for dAMOR and dAMORxGuild.
+ * The contract houses the token logic for dAMOR and dAMORxGuild.
  *
  * This Token Implementation contract is intended to be referenced by a proxy contract.
  *

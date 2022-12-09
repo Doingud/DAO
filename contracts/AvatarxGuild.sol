@@ -8,9 +8,12 @@ pragma solidity 0.8.15;
  * @custom:security-contact security@daoism.systems
  * @dev Implementation of an Avatar Interface for DoinGud
  *
- * AvatarxGuild contract is needed to manage the funds of the guild,
- * receive and execute the proposals, attach modules and interact with
- * external voting contracts
+ * AvatarxGuild contract is needed to manage the funds of the guild, receive and
+ * execute the proposals, attach modules and interact with external voting contracts.
+ *
+ * It also enables the functionality for an approved Reality module address to propose transactions.
+ * If used in your own contracts, please note the implemented Guardian Governance mechanisms (`Governor.sol`)
+ * This provides an extra layer of protection against malicious Reality.eth actions.
  *
  * MIT License
  * ===========

@@ -5,7 +5,7 @@ pragma solidity 0.8.15;
  * @title  DoinGud: Vesting.sol
  * @author Daoism Systems
  * @notice Vesting Contract Implementation for DoinGudDAO
- * @custom:security-contact arseny@daoism.systems || konstantin@daoism.systems
+ * @custom:security-contact security@daoism.systems
  * @dev Implementation of the Vesting Mechanics for DoinGud
  *
  * The Vesting Contract allows DoinGud to reward early contributors with staked dAMOR.
