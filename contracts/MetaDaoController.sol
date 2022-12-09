@@ -362,7 +362,7 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     }
 
     /// @notice Checks that a token is whitelisted
-    /// @param token The ddress of the ERC20 token being checked
+    /// @param token The address of the ERC20 token being checked
     /// @return bool True if token whitelisted, false if not whitelisted
     function isWhitelisted(address token) public view returns (bool) {
         return whitelist[token] != address(0);
