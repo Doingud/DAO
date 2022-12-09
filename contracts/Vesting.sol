@@ -52,9 +52,7 @@ contract Vesting is Ownable {
     uint256 public tokensAllocated;
     uint256 public tokensWithdrawn;
 
-    /// Address mapping to keep track of the SENTINEL owner
-    /// Initialized as `SENTINEL`, updated in `allocateVestedTokens`
-    /// Linked list of all the beneficiaries
+    /// Mapping of beneficiaries
     mapping(address => bool) public beneficiaries;
     /// Mapping of beneficiary address to Allocation
     mapping(address => Allocation) public allocations;
