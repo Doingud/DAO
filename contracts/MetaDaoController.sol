@@ -103,6 +103,7 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     event GuildAdded(address indexed guildController, uint256 guildCounter);
     event GuildRemoved(address indexed guildController, uint256 guildCounter);
     event TokenWhitelisted(address indexed token);
+    event TokenUnwhitelisted(address indexed token);
     event DonatedToIndex(uint256 indexed amount, address indexed token, uint256 index, address indexed sender);
     event FeesClaimed(address indexed guild, uint256 indexed guildFees);
     event FeesDistributed(address indexed guild, uint256 indexed guildFees);
@@ -122,6 +123,8 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     error NoIndex();
     /// The address already exists in the mapping
     error Exists();
+    /// The address doesn't exist in the mapping
+    error NotExists();
 
     /// @notice Initializes the MetaDaoController contract
     /// @param amor The address of the AMOR token
@@ -327,6 +330,27 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
         emit TokenWhitelisted(_token);
     }
 
+    /// @notice Removes a token from whitelist
+    /// @dev MetaDAO Guardians are expected to evaluate proposed tokens
+    /// @param _token Address of the token to be whitelisted
+    function removeWhitelist(address _token) external onlyOwner {
+        if (whitelist[_token] == address(0)) {
+            revert NotExists();
+        }
+        // We are searching for the token that is the parent of the amorToken in linked list
+        address parent = SENTINEL;
+        while(whitelist[parent] != _token){
+            parent = whitelist[parent];
+        }
+        whitelist[parent] = whitelist[_token];
+        if(sentinelWhitelist == _token){
+            sentinelWhitelist = parent;
+        }
+        delete whitelist[_token];
+
+        emit TokenWhitelisted(_token);
+    }
+
     /// @notice Removes a guild from the `guilds` mapping
     /// @param controller The address of the guild controller to remove
     function removeGuild(address controller) external onlyOwner {
@@ -390,6 +414,9 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
         uint256[] calldata weights,
         uint256 indexPosition
     ) external {
+        if(indexPosition > indexCounter){
+            revert Unauthorized();
+        }
         _updateIndex(guilds, weights, indexPosition);
 
         emit IndexUpdated(indexPosition, msg.sender);

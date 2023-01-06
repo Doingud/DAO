@@ -156,6 +156,52 @@ describe("unit - MetaDao", function () {
         });
     });
 
+
+    context('function: removeWhitelist()', () => {
+
+        it('Should remove token from whitelist', async function () {
+            await METADAO.addWhitelist(AMOR_GUILD_TOKEN.address);
+            /// Test linked list assumptions
+            expect(await METADAO.isWhitelisted(AMOR_GUILD_TOKEN.address)).to.be.true;
+            expect(await METADAO.whitelist(ONE_ADDRESS)).to.equal(AMOR_TOKEN.address);
+            expect(await METADAO.whitelist(AMOR_TOKEN.address)).to.equal(USDC.address);
+            expect(await METADAO.whitelist(USDC.address)).to.equal(AMOR_GUILD_TOKEN.address);
+            expect(await METADAO.whitelist(AMOR_GUILD_TOKEN.address)).to.equal(ONE_ADDRESS);
+            expect(await METADAO.sentinelWhitelist()).to.equal(AMOR_GUILD_TOKEN.address);
+
+            await METADAO.removeWhitelist(AMOR_GUILD_TOKEN.address);
+            expect(await METADAO.isWhitelisted(AMOR_GUILD_TOKEN.address)).to.be.false;
+            expect(await METADAO.whitelist(USDC.address)).to.equal(ONE_ADDRESS);
+            expect(await METADAO.sentinelWhitelist()).to.equal(USDC.address);
+        });
+
+        it('Should remove token from inside of whitelist', async function () {
+            await METADAO.addWhitelist(AMOR_GUILD_TOKEN.address);
+            /// Test linked list assumptions
+            expect(await METADAO.isWhitelisted(AMOR_GUILD_TOKEN.address)).to.be.true;
+            expect(await METADAO.whitelist(ONE_ADDRESS)).to.equal(AMOR_TOKEN.address);
+            expect(await METADAO.whitelist(AMOR_TOKEN.address)).to.equal(USDC.address);
+            expect(await METADAO.whitelist(USDC.address)).to.equal(AMOR_GUILD_TOKEN.address);
+            expect(await METADAO.whitelist(AMOR_GUILD_TOKEN.address)).to.equal(ONE_ADDRESS);
+            expect(await METADAO.sentinelWhitelist()).to.equal(AMOR_GUILD_TOKEN.address);
+
+            await METADAO.removeWhitelist(USDC.address);
+            expect(await METADAO.isWhitelisted(USDC.address)).to.be.false;
+            expect(await METADAO.whitelist(AMOR_TOKEN.address)).to.equal(AMOR_GUILD_TOKEN.address);
+            expect(await METADAO.whitelist(AMOR_GUILD_TOKEN.address)).to.equal(ONE_ADDRESS);
+            expect(await METADAO.sentinelWhitelist()).to.equal(AMOR_GUILD_TOKEN.address);
+        });
+
+        it('Should fail if not called by admin', async function () {
+            await expect(METADAO.connect(user1).removeWhitelist(USDC.address)).to.be.revertedWith("Ownable");
+        });
+
+
+        it('Should fail if not exists', async function () {
+            await expect(METADAO.connect(user1).removeWhitelist(AMOR_GUILD_TOKEN.address)).to.be.revertedWith("Ownable");
+        });
+    });
+
     context('function: donate()', () => {
         it("Should fail if token not whitelisted", async function () {
             await expect(METADAO.donate(AMOR_GUILD_TOKEN.address, ONE_HUNDRED_ETHER, 0)).to.be.revertedWith("NotListed()");
@@ -337,8 +383,10 @@ describe("unit - MetaDao", function () {
 
         it('Should updateIndex if index > 0', async function () {
             let guilds = [GUILD_CONTROLLER_ONE.address, GUILD_CONTROLLER_TWO.address];
-            let weights = [500, 200];
+            let weights = [300, 200];
+            await METADAO.addIndex(guilds, weights);
 
+            weights = [500, 200];
             await METADAO.updateIndex(guilds, weights, 1);
 
             let index = await METADAO.indexes(1);
