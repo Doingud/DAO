@@ -6,8 +6,7 @@ const init = require('../test-init.js');
 
 const twoWeeks = time.duration.days(14);
 
-// let AMOR; // need for AMORxGuild
-let AMORxGuild; // need for testing propose() function
+// let AMOR;
 let avatar;
 let governor;
 let mockModule;
@@ -46,7 +45,6 @@ describe('unit - Contract: Governor', function () {
         avatar = await init.proxy();
         governor = await init.proxy();
         await init.getTokens(setup);
-        AMORxGuild = setup.tokens.AmorGuildToken;
         await init.avatar(setup);
         let AVATAR = setup.avatars.avatar;
         beaconAvatar = await init.beacon(AVATAR.address, root.address);
