@@ -181,7 +181,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
 
         if (whoUsedDelegated != account) {
             // if the delegatee is the one who using tokens
-            if (delegations[account][whoUsedDelegated] > amount) {
+            if (delegations[account][whoUsedDelegated] < amount) {
                 revert InvalidAmount();
             }
             _undelegate(account, whoUsedDelegated, amount);
@@ -263,7 +263,7 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
         if (delegations[owner][account] > amount) {
             delegations[owner][account] -= amount;
             amountDelegated[owner] -= amount;
-            amountDelegatedAvailable[owner] -= amount;
+            amountDelegatedAvailable[account] -= amount;
         } else {
             amountDelegated[owner] -= delegations[owner][account];
             amountDelegatedAvailable[account] -= delegations[owner][account];
@@ -279,16 +279,30 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
             }
         }
 
+        address[] memory _delegators = delegators[account];
+        uint256 last = delegators[account].length - 1;
+        for (uint8 i = 0; i < _delegators.length; i++) {
+            if (_delegators[i] == owner) {
+                delegators[account][i] = delegators[account][last];
+                delegators[account].pop();
+                break;
+            }
+        }
+
         emit FXAMORxGuildUndelegated(account, owner, amount);
     }
 
     /// @notice This token is non-transferable
-    function transfer() public pure returns (bool) {
+    function transfer(address to, uint256 amount) public override returns (bool) {
         return false;
     }
 
     /// @notice This token is non-transferable
-    function transferFrom() public pure returns (bool) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public override returns (bool) {
         return false;
     }
 }
