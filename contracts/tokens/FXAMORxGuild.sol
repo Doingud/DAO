@@ -91,6 +91,8 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     error AddressZero();
     /// Invalid address to transfer. Needed `to` != msg.sender
     error InvalidSender();
+    /// Invalid address to transfer. Needed `to` != msg.sender
+    error NotSufficientDelegation();
 
     /*  @dev    The init() function takes the place of the constructor.
      *          It can only be run once.
@@ -205,6 +207,9 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     /// @param  to address to which delegate users FXAMORxGuild
     /// @param  amount uint256 representing amount of delegating tokens
     function delegate(address to, uint256 amount) external {
+//        if (amount < 10^15) {
+//            revert NotSufficientDelegation();
+//        }
         if (to == msg.sender) {
             revert InvalidSender();
         }
