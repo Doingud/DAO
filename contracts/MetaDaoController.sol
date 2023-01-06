@@ -339,11 +339,11 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
         }
         // We are searching for the token that is the parent of the amorToken in linked list
         address parent = SENTINEL;
-        while(whitelist[parent] != _token){
+        while (whitelist[parent] != _token) {
             parent = whitelist[parent];
         }
         whitelist[parent] = whitelist[_token];
-        if(sentinelWhitelist == _token){
+        if (sentinelWhitelist == _token) {
             sentinelWhitelist = parent;
         }
         delete whitelist[_token];
@@ -414,7 +414,7 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
         uint256[] calldata weights,
         uint256 indexPosition
     ) external {
-        if(indexPosition > indexCounter){
+        if (indexPosition > indexCounter) {
             revert Unauthorized();
         }
         _updateIndex(guilds, weights, indexPosition);
