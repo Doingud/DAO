@@ -104,6 +104,7 @@ contract GuildController is IGuildController, Ownable {
     error EmptyArray();
     error InvalidParameters();
     error VotingTimeExpired();
+    error VotingFinished();
     error VotingTimeNotFinished();
     error ReportNotExists();
     error InvalidAmount();
@@ -305,6 +306,10 @@ contract GuildController is IGuildController, Ownable {
 
         if (amount == 0 && msg.sender != address(this)) {
             revert InvalidAmount();
+        }
+
+        if (voters[id].length > 100){
+            revert VotingFinished();
         }
 
         // check if report with that id exists
