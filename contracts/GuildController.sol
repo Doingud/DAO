@@ -308,7 +308,7 @@ contract GuildController is IGuildController, Ownable {
             revert InvalidAmount();
         }
 
-        if (voters[id].length > 100){
+        if (voters[id].length > 100) {
             revert VotingFinished();
         }
 
