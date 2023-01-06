@@ -173,7 +173,6 @@ const governor = async (setup) => {
   const governor = await governorFactory.deploy();
 
   await governor.init(
-    setup.tokens.AmorGuildToken.address, //AMORxGuild
     setup.avatars.avatar.address, // Avatar Address
     setup.roles.root.address
   );

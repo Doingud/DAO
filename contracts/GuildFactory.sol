@@ -292,7 +292,6 @@ contract GuildFactory is ICloneFactory {
 
         /// Init the GovernorxGuild
         IDoinGudGovernor(guilds[controller].GovernorxGuild).init(
-            guilds[controller].AmorGuildToken,
             guilds[controller].AvatarxGuild,
             initialGuardian
         );

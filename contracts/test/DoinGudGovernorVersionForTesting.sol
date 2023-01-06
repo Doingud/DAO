@@ -73,7 +73,6 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
     mapping(address => uint256) public weights; // weight of each specific guardian
 
     address public avatarAddress;
-    IERC20 private AMORxGuild;
 
     event Initialized(address avatarAddress);
     event ProposalCreated(
@@ -113,11 +112,9 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
     error UnderlyingTransactionReverted();
 
     /// @notice Initializes the Governor contract
-    /// @param  AMORxGuild_ the address of the AMORxGuild token
     /// @param  avatarAddress_ the address of the Avatar
     /// @param  initialGuardian the user responsible for the guardian actions
     function init(
-        address AMORxGuild_,
         address avatarAddress_,
         address initialGuardian
     ) external {
@@ -127,7 +124,6 @@ contract DoinGudGovernorVersionForTesting is IDoinGudGovernor {
         // person who inflicted the creation of the contract is set as the only guardian of the system
         guardians.push(initialGuardian);
         weights[initialGuardian] = 1;
-        AMORxGuild = IERC20(AMORxGuild_);
         avatarAddress = avatarAddress_;
 
         _initialized = true;

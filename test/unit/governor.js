@@ -60,7 +60,7 @@ describe('unit - Contract: Governor', function () {
         governor = GOVERNOR.attach(governor.address);
 
         await avatar.init(setup.roles.root.address, governor.address);
-        await governor.init(AMORxGuild.address, setup.roles.authorizer_adaptor.address, setup.roles.root.address);
+        await governor.init( setup.roles.authorizer_adaptor.address, setup.roles.root.address);
         mockModule = setup.avatars.module;
 
         mockAvatar = await init.proxy();
@@ -71,7 +71,7 @@ describe('unit - Contract: Governor', function () {
         await mockGovernor.initProxy(beaconGovernor.address);
         mockGovernor = GOVERNOR.attach(mockGovernor.address);
         await mockAvatar.init(root.address, mockGovernor.address);
-        await mockGovernor.init(AMORxGuild.address, mockAvatar.address, root.address);
+        await mockGovernor.init( mockAvatar.address, root.address);
     });
 
     before('>>> setup', async function () {
@@ -91,7 +91,6 @@ describe('unit - Contract: Governor', function () {
 
         it("Should fail if called more than once", async function () {
             await expect(governor.init(
-                AMORxGuild.address, //AMORxGuild
                 authorizer_adaptor.address, // Avatar Address
                 user2.address
             )).to.be.revertedWith("AlreadyInitialized()");
