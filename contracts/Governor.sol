@@ -145,10 +145,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @notice Initializes the Governor contract
     /// @param  avatarAddress_ The address of the Avatar
     /// @param  initialGuardian The user responsible for the guardian actions
-    function init(
-        address avatarAddress_,
-        address initialGuardian
-    ) external {
+    function init(address avatarAddress_, address initialGuardian) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -211,7 +208,7 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @notice Removes target guardian from the system
     /// @param guardian Guardian to be removed
     function removeGuardian(address guardian) external onlyAvatar {
-        if(guardians[currentGuardianVersion][guardian]){
+        if (guardians[currentGuardianVersion][guardian]) {
             delete guardians[currentGuardianVersion][guardian];
             guardiansCounter--;
 
