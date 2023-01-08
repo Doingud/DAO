@@ -207,9 +207,6 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
     /// @param  to address to which delegate users FXAMORxGuild
     /// @param  amount uint256 representing amount of delegating tokens
     function delegate(address to, uint256 amount) external {
-//        if (amount < 10^15) {
-//            revert NotSufficientDelegation();
-//        }
         if (to == msg.sender) {
             revert InvalidSender();
         }
