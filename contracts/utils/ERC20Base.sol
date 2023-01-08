@@ -3,7 +3,7 @@ pragma solidity 0.8.15;
 
 /**
  * @title  Daoism Systems: ERC20Base.sol
- * @author Daoism Systems
+ * @author Daoism Systems & OpenZeppelin
  * @notice Custom ERC20 implementation
  * @custom Security-contact arseny@daoism.systems || konstantin@daoism.systems
  * @dev Implementation of a clone-friendly, ERC20 Token Standard
