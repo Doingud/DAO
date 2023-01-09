@@ -189,7 +189,10 @@ contract GuildFactory is ICloneFactory {
     /// @param  guildName name of token
     /// @param  guildSymbol symbol of token
     /// @return proxyContract address of the deployed contract
-    function _deployGuildToken(string memory guildName, string memory guildSymbol) internal returns (address proxyContract) {
+    function _deployGuildToken(string memory guildName, string memory guildSymbol)
+        internal
+        returns (address proxyContract)
+    {
         proxyContract = address(new BeaconProxy(amorxGuildToken, ""));
 
         if (proxyContract == address(0)) {
