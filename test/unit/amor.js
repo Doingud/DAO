@@ -152,6 +152,7 @@ describe("unit - AMOR Token", function () {
         await IMPLEMENTATION.setTaxRate(TAX_RATE);
       });
       it("it fails to transfers from one user to another if not enough tokens", async function () {
+        await IMPLEMENTATION.connect(user3).transfer(user1.address, TEST_TRANSFER);
         await expect(IMPLEMENTATION.connect(user3).transfer(user1.address, TEST_TRANSFER)).to.be.revertedWith(
           'InvalidAmount()'
         );
