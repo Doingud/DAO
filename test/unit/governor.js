@@ -43,19 +43,17 @@ describe('unit - Contract: Governor', function () {
         user = setup.roles.user3;
         user2 = setup.roles.user2;
 
-        avatar = await init.proxy();
-        governor = await init.proxy();
         await init.getTokens(setup);
         AMORxGuild = setup.tokens.AmorGuildToken;
         await init.avatar(setup);
         let AVATAR = setup.avatars.avatar;
         beaconAvatar = await init.beacon(AVATAR.address, root.address);
+        avatar = await init.proxy(beaconAvatar.address);
 
-        await avatar.initProxy(beaconAvatar.address);
         await init.governor(setup);
         let GOVERNOR = setup.governor;
         beaconGovernor = await init.beacon(GOVERNOR.address, root.address);
-        await governor.initProxy(beaconGovernor.address);
+        governor = await init.proxy(beaconGovernor.address);
         avatar = AVATAR.attach(avatar.address);
         governor = GOVERNOR.attach(governor.address);
 
@@ -63,12 +61,10 @@ describe('unit - Contract: Governor', function () {
         await governor.init(AMORxGuild.address, setup.roles.authorizer_adaptor.address, setup.roles.root.address);
         mockModule = setup.avatars.module;
 
-        mockAvatar = await init.proxy();
-        await mockAvatar.initProxy(beaconAvatar.address);
+        mockAvatar = await init.proxy(beaconAvatar.address);
         mockAvatar = AVATAR.attach(mockAvatar.address);
 
-        mockGovernor = await init.proxy();
-        await mockGovernor.initProxy(beaconGovernor.address);
+        mockGovernor = await init.proxy(beaconGovernor.address);
         mockGovernor = GOVERNOR.attach(mockGovernor.address);
         await mockAvatar.init(root.address, mockGovernor.address);
         await mockGovernor.init(AMORxGuild.address, mockAvatar.address, root.address);

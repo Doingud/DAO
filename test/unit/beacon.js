@@ -31,8 +31,6 @@ describe("unit - DoinGudBeacon", function () {
 
     AMOR_TOKEN = setup.tokens.AmorTokenImplementation;
     AMOR_GUILD_TOKEN = setup.tokens.AmorGuildToken;
-    /// Init the beacon and the proxy
-    AMOR_TOKEN_PROXY = await init.proxy();
 
     root = setup.roles.root;
     multisig = setup.roles.doingud_multisig;
@@ -40,7 +38,9 @@ describe("unit - DoinGudBeacon", function () {
     user2 = setup.roles.user2;
 
     AMOR_TOKEN_BEACON = await init.beacon(AMOR_TOKEN.address, root.address);
-    await AMOR_TOKEN_PROXY.initProxy(AMOR_TOKEN_BEACON.address);
+    /// Init the beacon and the proxy
+    AMOR_TOKEN_PROXY = await init.proxy(AMOR_TOKEN_BEACON.address);
+    //await AMOR_TOKEN_PROXY.initProxy(AMOR_TOKEN_BEACON.address);
     PROXIED_AMOR_TOKEN = AMOR_TOKEN.attach(AMOR_TOKEN_PROXY.address);
   });
 
@@ -52,11 +52,6 @@ describe("unit - DoinGudBeacon", function () {
   context("Init implementation contract", () => {
       it("Should have set the implementation in the beacon", async function () {
         expect(await AMOR_TOKEN_BEACON.implementation()).to.equal(AMOR_TOKEN.address);
-      });
-
-      it("Should have set the proxy beacon", async function () {
-        expect(await AMOR_TOKEN_PROXY.viewBeacon()).to.equal(AMOR_TOKEN_BEACON.address);
-        expect(AMOR_TOKEN_PROXY.address).to.equal(PROXIED_AMOR_TOKEN.address);
       });
     });
 

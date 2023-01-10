@@ -74,9 +74,9 @@ const getTokens = async (setup) => {
     return tokens;
 };
 
-const proxy = async () => {
-  const proxyFactory = await ethers.getContractFactory("DoinGudProxy");
-  const proxy = await proxyFactory.deploy();
+const proxy = async (implementation) => {
+  const proxyFactory = await ethers.getContractFactory("BeaconProxy");
+  const proxy = await proxyFactory.deploy(implementation, []);
 
   return proxy;
 }

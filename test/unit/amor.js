@@ -15,13 +15,6 @@ use(solidity);
 
 //  The contract with the execution logic
 let IMPLEMENTATION;
-//  Mock upgrade contract for proxy tests
-let MOCK_UPGRADE_IMPLEMENTATION;
-//  The contract with exposed ABI for proxy specific functions
-let PROXY_CONTRACT;
-//  The PROXY_CONTRACT with the implemenation
-let PROXY;
-let AMOR_BEACON;
 
 let root;
 let multisig;
@@ -152,7 +145,6 @@ describe("unit - AMOR Token", function () {
         await IMPLEMENTATION.setTaxRate(TAX_RATE);
       });
       it("it fails to transfers from one user to another if not enough tokens", async function () {
-        await IMPLEMENTATION.connect(user3).transfer(user1.address, TEST_TRANSFER);
         await expect(IMPLEMENTATION.connect(user3).transfer(user1.address, TEST_TRANSFER)).to.be.revertedWith(
           'InvalidAmount()'
         );

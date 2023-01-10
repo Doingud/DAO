@@ -55,7 +55,8 @@ const metaHelper = async function (TARGETS, VALUES, PROPOSALS, guardians, realit
   let GOVERNOR_CONTRACT = await ethers.getContractFactory("DoinGudGovernor");
   GOVERNOR_CONTRACT = GOVERNOR_CONTRACT.attach(GOVERNOR);
   await AVATAR_CONTRACT.connect(reality).proposeAfterVote(TARGETS, VALUES, PROPOSALS);
-  let proposalId = await GOVERNOR_CONTRACT.hashProposal(TARGETS, VALUES, PROPOSALS);
+  let proposalsCounter = await GOVERNOR_CONTRACT.proposalsCounter();
+  let proposalId = await GOVERNOR_CONTRACT.hashProposal(TARGETS, VALUES, PROPOSALS, proposalsCounter);
   await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
   time.increase(time.duration.days(5));
   await GOVERNOR_CONTRACT.connect(guardians[0]).castVote(proposalId, true);
@@ -64,7 +65,7 @@ const metaHelper = async function (TARGETS, VALUES, PROPOSALS, guardians, realit
   }
   await hre.network.provider.send("hardhat_mine", ["0xFA00"]);
   time.increase(time.duration.days(10));
-  await GOVERNOR_CONTRACT.execute(TARGETS, VALUES, PROPOSALS);
+  await GOVERNOR_CONTRACT.execute(TARGETS, VALUES, PROPOSALS, proposalsCounter);
 }
 
 module.exports = {
