@@ -151,9 +151,9 @@ contract GuildController is IGuildController, Ownable {
         emit Initialized(initOwner, AMORxGuild_);
     }
 
-   function setReportLimit(uint8 _reportLimit) external onlyOwner {
-       reportLimit = _reportLimit;
-   }
+    function setReportLimit(uint8 _reportLimit) external onlyOwner {
+        reportLimit = _reportLimit;
+    }
 
     function setVotingPeriod(uint256 newTime) external onlyOwner {
         if (newTime < 2 days) {
