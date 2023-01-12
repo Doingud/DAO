@@ -348,7 +348,7 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
         }
         delete whitelist[_token];
 
-        emit TokenWhitelisted(_token);
+        emit TokenUnwhitelisted(_token);
     }
 
     /// @notice Removes a guild from the `guilds` mapping
@@ -445,6 +445,13 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
         Index storage index = indexes[_indexPosition];
         /// Reset the owner
         index.creator = msg.sender;
+
+
+        address iterator = SENTINEL;
+        while (guilds[iterator] != SENTINEL) {
+            delete index.indexWeights[guilds[iterator]];
+            iterator = guilds[iterator];
+        }
 
         for (uint256 i; i < _guilds.length; i++) {
             if (guilds[_guilds[i]] == address(0) || _weights[i] == 0) {
