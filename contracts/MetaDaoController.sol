@@ -82,6 +82,7 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     struct Index {
         address creator;
         uint256 indexDenominator;
+        uint256 update;
         mapping(address => uint256) indexWeights;
     }
 
@@ -125,6 +126,8 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     error Exists();
     /// The address doesn't exist in the mapping
     error NotExists();
+    /// The index array has not been set yet
+    error IndexChanged();
 
     /// @notice Initializes the MetaDaoController contract
     /// @param amor The address of the AMOR token
@@ -162,7 +165,8 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     function donate(
         address token,
         uint256 amount,
-        uint256 index
+        uint256 index,
+        uint256 update
     ) external nonReentrant {
         if (!isWhitelisted(token)) {
             revert NotListed();
@@ -171,6 +175,11 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
         /// Check that the index exists
         if (indexes[index].indexDenominator == 0) {
             revert NoIndex();
+        }
+
+        /// Check that the index is the latest
+        if (indexes[index].update != update) {
+            revert IndexChanged();
         }
 
         IERC20 tokenDonated = IERC20(token);
@@ -459,6 +468,7 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
 
             index.indexWeights[_guilds[i]] = _weights[i];
             index.indexDenominator += _weights[i];
+            index.update += 1;
         }
     }
 
