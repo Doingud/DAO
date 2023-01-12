@@ -682,18 +682,23 @@ describe('unit - Contract: GuildController', function () {
         it('it starts reports voting if finalizeVoting was not called', async function () {
             const timestamp = Date.now();
 
+            weigths = [887, 44, 234];
+            impactMakers = [staker.address, operator.address, impactMaker.address];
+            await controller.connect(root).setImpactMakers(impactMakers, weigths);
+
+
             // building hash has to come from system address
             // 32 bytes of data
             let messageHash = ethers.utils.solidityKeccak256(
                 ["address", "uint", "string"],
-                [impactMaker.address, timestamp, "next report info"]
+                [staker.address, timestamp, "next report info"]
             );
 
             // 32 bytes of data in Uint8Array
             let messageHashBinary = ethers.utils.arrayify(messageHash);
             
             // To sign the 32 bytes of data, make sure you pass in the data
-            let signature = await impactMaker.signMessage(messageHashBinary);
+            let signature = await staker.signMessage(messageHashBinary);
 
             // split signature
             r = signature.slice(0, 66);
@@ -701,18 +706,18 @@ describe('unit - Contract: GuildController', function () {
             v = parseInt(signature.slice(130, 132), 16);
             report = messageHash;
 
-            await AMORxGuild.connect(impactMaker).approve(controller.address, TEST_TRANSFER);
-            await controller.connect(impactMaker).addReport(report, v, r, s); // 0
-            await controller.connect(impactMaker).addReport(report, v, r, s); // 1
-            await controller.connect(impactMaker).addReport(report, v, r, s); // 2
-            await controller.connect(impactMaker).addReport(report, v, r, s); // 3
-            await controller.connect(impactMaker).addReport(report, v, r, s); // 4
-            await controller.connect(impactMaker).addReport(report, v, r, s); // 5
-            await controller.connect(impactMaker).addReport(report, v, r, s); // 6
-            await controller.connect(impactMaker).addReport(report, v, r, s); // 7
-            await controller.connect(impactMaker).addReport(report, v, r, s); // 8
-            await controller.connect(impactMaker).addReport(report, v, r, s); // 9
-            expect((await controller.queueReportsAuthors(9))).to.equal(impactMaker.address);
+            await AMORxGuild.connect(staker).approve(controller.address, TEST_TRANSFER);
+            await controller.connect(staker).addReport(report, v, r, s); // 0
+            await controller.connect(staker).addReport(report, v, r, s); // 1
+            await controller.connect(staker).addReport(report, v, r, s); // 2
+            await controller.connect(staker).addReport(report, v, r, s); // 3
+            await controller.connect(staker).addReport(report, v, r, s); // 4
+            await controller.connect(staker).addReport(report, v, r, s); // 5
+            await controller.connect(staker).addReport(report, v, r, s); // 6
+            await controller.connect(staker).addReport(report, v, r, s); // 7
+            await controller.connect(staker).addReport(report, v, r, s); // 8
+            await controller.connect(staker).addReport(report, v, r, s); // 9
+            expect((await controller.queueReportsAuthors(9))).to.equal(staker.address);
 
             // 0 2 3 4 5 6 days in a week
             // test another else-path in SUNDAY-CHECK
