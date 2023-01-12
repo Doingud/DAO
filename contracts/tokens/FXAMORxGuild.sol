@@ -71,6 +71,8 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
 
     IERC20 public AMORxGuild;
 
+    uint256 public MIN_AMOUNT = 10**15;
+
     /// Events
     event AMORxGuildStakedToFXAMOR(address to, uint256 amount, uint256 timeOfStake);
     event AMORxGuildWithdrawnFromFXAMOR(address to, uint256 amount, uint256 timeOfWithdraw);
@@ -220,6 +222,10 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
 
         if (delegators[to].length >= 100) {
             revert InvalidAmount();
+        }
+
+        if (amount < MIN_AMOUNT) {
+            revert NotSufficientDelegation();
         }
 
         uint256 availableAmount = balanceOf(msg.sender) - amountDelegated[msg.sender];
