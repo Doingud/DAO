@@ -43,6 +43,7 @@ import "./interfaces/IAMORxGuild.sol";
 import "./interfaces/IFXAMORxGuild.sol";
 import "./interfaces/IGuildController.sol";
 import "./interfaces/IMetaDaoController.sol";
+import "./interfaces/IGovernor.sol";
 
 /// @title GuildController contract
 /// @author Daoism Systems Team
@@ -265,6 +266,9 @@ contract GuildController is IGuildController, Ownable {
         bytes32 r,
         bytes32 s
     ) external {
+        if (weights[msg.sender] == 0) {
+            revert Unauthorized();
+        }
         // each report is an NFT (maybe hash-id of NFT and sign this NFT-hash)
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, report));
