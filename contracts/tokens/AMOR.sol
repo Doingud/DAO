@@ -81,7 +81,7 @@ contract AMORToken is IAmorToken, ERC20Base, Pausable, Ownable {
         address _initCollector,
         uint256 _initTaxRate,
         address _multisig
-    ) external returns (bool) {
+    ) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
