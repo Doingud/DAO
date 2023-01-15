@@ -656,17 +656,17 @@ describe('unit - Contract: GuildController', function () {
 
             let messageHash = ethers.utils.solidityKeccak256(
                 ["address", "uint", "string"],
-                [user.address, timestamp, "next report info"]
+                [impactMaker.address, timestamp, "next report info"]
             );
             let messageHashBinary = ethers.utils.arrayify(messageHash);
-            let signature = await user.signMessage(messageHashBinary);
+            let signature = await impactMaker.signMessage(messageHashBinary);
             let r = signature.slice(0, 66);
             let s = "0x" + signature.slice(66, 130);
             let v = parseInt(signature.slice(130, 132), 16);
             let report = messageHash;
 
-            await controller.connect(user).addReport(report, v, r, s);
-            expect((await controller.queueReportsAuthors(0))).to.equal(user.address);
+            await controller.connect(impactMaker).addReport(report, v, r, s);
+            expect((await controller.queueReportsAuthors(0))).to.equal(impactMaker.address);
             expect((await controller.reportsQueue(0))).to.equal(0);
         });
 
@@ -682,18 +682,23 @@ describe('unit - Contract: GuildController', function () {
         it('it starts reports voting if finalizeVoting was not called', async function () {
             const timestamp = Date.now();
 
+            weigths = [887, 44, 234];
+            impactMakers = [staker.address, operator.address, impactMaker.address];
+            await controller.connect(root).setImpactMakers(impactMakers, weigths);
+
+
             // building hash has to come from system address
             // 32 bytes of data
             let messageHash = ethers.utils.solidityKeccak256(
                 ["address", "uint", "string"],
-                [user2.address, timestamp, "next report info"]
+                [staker.address, timestamp, "next report info"]
             );
 
             // 32 bytes of data in Uint8Array
             let messageHashBinary = ethers.utils.arrayify(messageHash);
             
             // To sign the 32 bytes of data, make sure you pass in the data
-            let signature = await user2.signMessage(messageHashBinary);
+            let signature = await staker.signMessage(messageHashBinary);
 
             // split signature
             r = signature.slice(0, 66);
@@ -701,18 +706,18 @@ describe('unit - Contract: GuildController', function () {
             v = parseInt(signature.slice(130, 132), 16);
             report = messageHash;
 
-            await AMORxGuild.connect(user2).approve(controller.address, TEST_TRANSFER);
-            await controller.connect(user2).addReport(report, v, r, s); // 0
-            await controller.connect(user2).addReport(report, v, r, s); // 1
-            await controller.connect(user2).addReport(report, v, r, s); // 2
-            await controller.connect(user2).addReport(report, v, r, s); // 3
-            await controller.connect(user2).addReport(report, v, r, s); // 4
-            await controller.connect(user2).addReport(report, v, r, s); // 5
-            await controller.connect(user2).addReport(report, v, r, s); // 6
-            await controller.connect(user2).addReport(report, v, r, s); // 7
-            await controller.connect(user2).addReport(report, v, r, s); // 8
-            await controller.connect(user2).addReport(report, v, r, s); // 9
-            expect((await controller.queueReportsAuthors(9))).to.equal(user2.address);
+            await AMORxGuild.connect(staker).approve(controller.address, TEST_TRANSFER);
+            await controller.connect(staker).addReport(report, v, r, s); // 0
+            await controller.connect(staker).addReport(report, v, r, s); // 1
+            await controller.connect(staker).addReport(report, v, r, s); // 2
+            await controller.connect(staker).addReport(report, v, r, s); // 3
+            await controller.connect(staker).addReport(report, v, r, s); // 4
+            await controller.connect(staker).addReport(report, v, r, s); // 5
+            await controller.connect(staker).addReport(report, v, r, s); // 6
+            await controller.connect(staker).addReport(report, v, r, s); // 7
+            await controller.connect(staker).addReport(report, v, r, s); // 8
+            await controller.connect(staker).addReport(report, v, r, s); // 9
+            expect((await controller.queueReportsAuthors(9))).to.equal(staker.address);
 
             // 0 2 3 4 5 6 days in a week
             // test another else-path in SUNDAY-CHECK
@@ -725,30 +730,30 @@ describe('unit - Contract: GuildController', function () {
 
             messageHash = ethers.utils.solidityKeccak256(
                 ["address", "uint", "string"],
-                [user.address, timestamp, "next report info"]
+                [impactMaker.address, timestamp, "next report info"]
             );
             messageHashBinary = ethers.utils.arrayify(messageHash);
-            signature = await user.signMessage(messageHashBinary);
+            signature = await impactMaker.signMessage(messageHashBinary);
             r = signature.slice(0, 66);
             s = "0x" + signature.slice(66, 130);
             v = parseInt(signature.slice(130, 132), 16);
             report = messageHash;
 
-            await controller.connect(user).addReport(report, v, r, s); // 0
-            await controller.connect(user).addReport(report, v, r, s); // 1
-            await controller.connect(user).addReport(report, v, r, s); // 2
-            await controller.connect(user).addReport(report, v, r, s); // 3
-            await controller.connect(user).addReport(report, v, r, s); // 4
-            await controller.connect(user).addReport(report, v, r, s); // 5
-            await controller.connect(user).addReport(report, v, r, s); // 6
-            await controller.connect(user).addReport(report, v, r, s); // 7
-            await controller.connect(user).addReport(report, v, r, s); // 8
-            await controller.connect(user).addReport(report, v, r, s); // 9
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 0
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 1
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 2
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 3
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 4
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 5
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 6
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 7
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 8
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 9
 
             // test another else-path in SUNDAY-CHECK
             time.increase(time.duration.days(5));
             await controller.connect(authorizer_adaptor).startVoting();
-            expect((await controller.reportsAuthors(9))).to.equal(user.address);
+            expect((await controller.reportsAuthors(9))).to.equal(impactMaker.address);
         });
 
         it('savedFunds usage', async function () {
@@ -775,34 +780,34 @@ describe('unit - Contract: GuildController', function () {
             await controller.connect(operator).voteForReport(id, amount, sign);
             await controller.connect(user).voteForReport(id, 8, true);
 
-            let balanceBefore = await AMORxGuild.balanceOf(user.address);
+            let balanceBefore = await AMORxGuild.balanceOf(impactMaker.address);
             time.increase(twoWeeks);
             await controller.connect(operator).finalizeVoting();
             // check that none was distributed
-            expect((await AMORxGuild.balanceOf(user.address)).toString()).to.equal(balanceBefore.toString());
+            expect((await AMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal(balanceBefore.toString());
 
             const timestamp = Date.now();
             let messageHash1 = ethers.utils.solidityKeccak256(
                 ["address", "uint", "string"],
-                [user2.address, timestamp, "next report info"]
+                [impactMaker.address, timestamp, "next report info"]
             );
             let messageHashBinary1 = ethers.utils.arrayify(messageHash1);
-            let signature1 = await user2.signMessage(messageHashBinary1);
+            let signature1 = await impactMaker.signMessage(messageHashBinary1);
             let r1 = signature1.slice(0, 66);
             let s1 = "0x" + signature1.slice(66, 130);
             let v1 = parseInt(signature1.slice(130, 132), 16);
             let report1 = messageHash1;
 
-            await controller.connect(user).addReport(report, v, r, s); // 0
-            await controller.connect(user).addReport(report, v, r, s); // 1
-            await controller.connect(user).addReport(report, v, r, s); // 2
-            await controller.connect(user).addReport(report, v, r, s); // 3
-            await controller.connect(user).addReport(report, v, r, s); // 4
-            await controller.connect(user).addReport(report, v, r, s); // 5
-            await controller.connect(user).addReport(report, v, r, s); // 6
-            await controller.connect(user).addReport(report, v, r, s); // 7
-            await controller.connect(user2).addReport(report1, v1, r1, s1); // 8
-            await controller.connect(user).addReport(report, v, r, s); // 9
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 0
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 1
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 2
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 3
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 4
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 5
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 6
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 7
+            await controller.connect(impactMaker).addReport(report1, v1, r1, s1); // 8
+            await controller.connect(impactMaker).addReport(report, v, r, s); // 9
 
             // test another else-path in SUNDAY-CHECK
             time.increase(time.duration.days(5));
@@ -820,12 +825,12 @@ describe('unit - Contract: GuildController', function () {
             await controller.connect(user).voteForReport(id, 2, true);
 
             time.increase(twoWeeks);
-            balanceBefore = await AMORxGuild.balanceOf(user2.address);
+            balanceBefore = await AMORxGuild.balanceOf(impactMaker.address);
 
             await controller.connect(operator).finalizeVoting();
 
             const balanceAfter = balanceBefore.add(43);
-            expect((await AMORxGuild.balanceOf(user2.address)).toString()).to.equal(balanceAfter.toString());           
+            expect((await AMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal(balanceAfter.toString());
         });
     });
 

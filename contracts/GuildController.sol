@@ -43,6 +43,7 @@ import "./interfaces/IAMORxGuild.sol";
 import "./interfaces/IFXAMORxGuild.sol";
 import "./interfaces/IGuildController.sol";
 import "./interfaces/IMetaDaoController.sol";
+import "./interfaces/IGovernor.sol";
 
 /// @title GuildController contract
 /// @author Daoism Systems Team
@@ -58,8 +59,10 @@ contract GuildController is IGuildController, Ownable {
     mapping(uint256 => address) public reportsAuthors;
     uint256 public totalReportsWeight; // total Weight of all of reports
     uint256 public savedFunds;
+    uint8 public reportLimit;
 
     address[] public impactMakers; // list of impactMakers of this DAO
+    mapping(address => uint8) activeReports;
 
     // user --> token --> amount
     mapping(address => mapping(address => uint256)) public claimableTokens; // amount of tokens each specific address(impactMaker) can claim
@@ -104,6 +107,7 @@ contract GuildController is IGuildController, Ownable {
     error EmptyArray();
     error InvalidParameters();
     error VotingTimeExpired();
+    error VotingFinished();
     error VotingTimeNotFinished();
     error ReportNotExists();
     error InvalidAmount();
@@ -143,7 +147,12 @@ contract GuildController is IGuildController, Ownable {
 
         percentToConvert = 100;
         _initialized = true;
+        reportLimit = 10;
         emit Initialized(initOwner, AMORxGuild_);
+    }
+
+    function setReportLimit(uint8 _reportLimit) external onlyOwner {
+        reportLimit = _reportLimit;
     }
 
     function setVotingPeriod(uint256 newTime) external onlyOwner {
@@ -264,6 +273,10 @@ contract GuildController is IGuildController, Ownable {
         bytes32 r,
         bytes32 s
     ) external {
+        if (weights[msg.sender] == 0 || activeReports[msg.sender] > reportLimit) {
+            revert Unauthorized();
+        }
+        activeReports[msg.sender] += 1;
         // each report is an NFT (maybe hash-id of NFT and sign this NFT-hash)
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
         bytes32 prefixedHashMessage = keccak256(abi.encodePacked(prefix, report));
@@ -305,6 +318,10 @@ contract GuildController is IGuildController, Ownable {
 
         if (amount == 0 && msg.sender != address(this)) {
             revert InvalidAmount();
+        }
+
+        if (voters[id].length > 100) {
+            revert VotingFinished();
         }
 
         // check if report with that id exists
@@ -385,6 +402,7 @@ contract GuildController is IGuildController, Ownable {
             // If report has positive voting weight (positive FX tokens) then report is accepted
             uint256 fiftyPercent = (reportsWeight[id] * 50) / 100;
             address[] memory people = voters[id];
+            activeReports[reportsAuthors[id]] -= 1;
             if (reportsVoting[id] > 0) {
                 passedReportsWeight += reportsWeight[id];
                 // If report has positive voting weight, then funds go 50-50%,
