@@ -6,8 +6,7 @@ const init = require('../test-init.js');
 
 const twoWeeks = time.duration.days(14);
 
-// let AMOR; // need for AMORxGuild
-let AMORxGuild; // need for testing propose() function
+// let AMOR;
 let avatar;
 let governor;
 let mockModule;
@@ -44,7 +43,6 @@ describe('unit - Contract: Governor', function () {
         user2 = setup.roles.user2;
 
         await init.getTokens(setup);
-        AMORxGuild = setup.tokens.AmorGuildToken;
         await init.avatar(setup);
         let AVATAR = setup.avatars.avatar;
         beaconAvatar = await init.beacon(AVATAR.address, root.address);
@@ -58,7 +56,7 @@ describe('unit - Contract: Governor', function () {
         governor = GOVERNOR.attach(governor.address);
 
         await avatar.init(setup.roles.root.address, governor.address);
-        await governor.init(AMORxGuild.address, setup.roles.authorizer_adaptor.address, setup.roles.root.address);
+        await governor.init( setup.roles.authorizer_adaptor.address, setup.roles.root.address);
         mockModule = setup.avatars.module;
 
         mockAvatar = await init.proxy(beaconAvatar.address);
@@ -67,7 +65,7 @@ describe('unit - Contract: Governor', function () {
         mockGovernor = await init.proxy(beaconGovernor.address);
         mockGovernor = GOVERNOR.attach(mockGovernor.address);
         await mockAvatar.init(root.address, mockGovernor.address);
-        await mockGovernor.init(AMORxGuild.address, mockAvatar.address, root.address);
+        await mockGovernor.init( mockAvatar.address, root.address);
     });
 
     before('>>> setup', async function () {
@@ -87,7 +85,6 @@ describe('unit - Contract: Governor', function () {
 
         it("Should fail if called more than once", async function () {
             await expect(governor.init(
-                AMORxGuild.address, //AMORxGuild
                 authorizer_adaptor.address, // Avatar Address
                 user2.address
             )).to.be.revertedWith("AlreadyInitialized()");

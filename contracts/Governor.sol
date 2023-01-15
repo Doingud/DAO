@@ -63,7 +63,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
     // After proposal was voted for, an !executor provides a complete data about the proposal!,
     // which gets hashed and if hashes correspond, then the proposal is executed.
 
-    mapping(uint256 => address[]) public votersInfo; // voters mapping(uint proposal => address [] voters)
     mapping(uint256 => mapping(address => bool)) public voters;
     mapping(uint256 => uint256) public proposalVoting;
     mapping(uint256 => uint256) public proposalWeight;
@@ -144,14 +143,9 @@ contract DoinGudGovernor is IDoinGudGovernor {
     }
 
     /// @notice Initializes the Governor contract
-    /// @param  AMORxGuild_ The address of the AMORxGuild token
     /// @param  avatarAddress_ The address of the Avatar
     /// @param  initialGuardian The user responsible for the guardian actions
-    function init(
-        address AMORxGuild_,
-        address avatarAddress_,
-        address initialGuardian
-    ) external {
+    function init(address avatarAddress_, address initialGuardian) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
@@ -214,10 +208,12 @@ contract DoinGudGovernor is IDoinGudGovernor {
     /// @notice Removes target guardian from the system
     /// @param guardian Guardian to be removed
     function removeGuardian(address guardian) external onlyAvatar {
-        delete guardians[currentGuardianVersion][guardian];
-        guardiansCounter--;
+        if (guardians[currentGuardianVersion][guardian]) {
+            delete guardians[currentGuardianVersion][guardian];
+            guardiansCounter--;
 
-        emit GuardianRemoved(guardian);
+            emit GuardianRemoved(guardian);
+        }
     }
 
     /// @notice Swaps one guardian for another
@@ -270,18 +266,12 @@ contract DoinGudGovernor is IDoinGudGovernor {
         /// to create a Reality.eth question that validates the execution of the connected transactions
         uint256 proposalId = hashProposal(targets, values, calldatas, proposalsCounter);
         ProposalCore storage proposal = _proposals[proposalId];
-        if (proposal.voteStart != 0) {
-            revert InvalidState();
-        }
 
         uint96 snapshot = uint96(block.timestamp + votingDelay);
         uint96 deadline = snapshot + votingPeriod;
 
         proposal.voteStart = snapshot;
         proposal.voteEnd = deadline;
-
-        proposalVoting[proposalId] = 0;
-        proposalWeight[proposalId] = 0;
 
         _proposals[proposalId] = proposal;
 
@@ -321,7 +311,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
 
         voters[proposalId][msg.sender] = true;
-        votersInfo[proposalId].push(msg.sender);
 
         emit Voted(proposalId, support, msg.sender);
     }
@@ -345,9 +334,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
         }
 
         delete _proposals[proposalId];
-        for (uint256 i = 0; i < votersInfo[proposalId].length; i++) {
-            delete voters[proposalId][votersInfo[proposalId][i]];
-        }
         delete proposalVoting[proposalId];
         delete proposalWeight[proposalId];
 
@@ -436,9 +422,6 @@ contract DoinGudGovernor is IDoinGudGovernor {
 
         delete proposalWeight[proposalId];
         delete proposalVoting[proposalId];
-        for (uint256 i = 0; i < votersInfo[proposalId].length; i++) {
-            delete voters[proposalId][votersInfo[proposalId][i]];
-        }
         delete cancellers[proposalId];
         delete proposalCancelApproval[proposalId];
         delete _proposals[proposalId];
