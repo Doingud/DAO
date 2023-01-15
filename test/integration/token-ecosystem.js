@@ -111,20 +111,7 @@ describe("Integration: DoinGud token ecosystem", function () {
     GOVERNORXGUILD = setup.governor;
     AVATARXGUILD = setup.avatars.avatar;
     METADAO = setup.metadao;
-  
-    ///   STEP 3: Deploy the proxies for the tokens and the control structures
-    ///   `amor_proxy` is declared earlier to allow upgrade testing
-    amor_proxy = await init.proxy();
-    /// For testing we need to use proxy address of the implementation contract
-    setup.amor_storage = amor_proxy;
-    amor_guild_token_proxy = await init.proxy();
-    setup.amorxGuild_storage = amor_guild_token_proxy;
-    let dAmor_proxy = await init.proxy();
-    let fxAmor_proxy = await init.proxy();
-    let controller_proxy = await init.proxy();
-    let avatar_proxy = await init.proxy();
-    let governor_proxy = await init.proxy();
-  
+
     /// STEP 4: Setup the Beacons
     BEACON_AMOR = await init.beacon(AMOR_TOKEN.address, METADAO.address);
     let BEACON_AMOR_GUILD_TOKEN = await init.beacon(AMOR_GUILD_TOKEN.address, METADAO.address);
@@ -133,6 +120,18 @@ describe("Integration: DoinGud token ecosystem", function () {
     let BEACON_CONTROLLER = await init.beacon(CONTROLLERXGUILD.address, METADAO.address);
     let BEACON_GOVERNOR = await init.beacon(GOVERNORXGUILD.address, METADAO.address);
     let BEACON_AVATAR = await init.beacon(AVATARXGUILD.address, METADAO.address);
+
+        ///   STEP 3: Deploy the proxies for the tokens and the control structures
+    ///   `amor_proxy` is declared earlier to allow upgrade testing
+    amor_proxy = await init.proxy(BEACON_AMOR.address);
+    /// For testing we need to use proxy address of the implementation contract
+    setup.amor_storage = amor_proxy;
+    amor_guild_token_proxy = await init.proxy(BEACON_AMOR_GUILD_TOKEN.address);
+    setup.amorxGuild_storage = amor_guild_token_proxy;
+    let dAmor_proxy = await init.proxy(BEACON_DAMOR.address);
+    let fxAmor_proxy = await init.proxy(BEACON_FXAMOR.address);
+    let avatar_proxy = await init.proxy(BEACON_AVATAR.address);
+    let governor_proxy = await init.proxy(BEACON_GOVERNOR.address);
   
     setup.b_amorGuildToken = BEACON_AMOR_GUILD_TOKEN;
     setup.b_damor = BEACON_DAMOR;
@@ -140,15 +139,6 @@ describe("Integration: DoinGud token ecosystem", function () {
     setup.b_controller = BEACON_CONTROLLER;
     setup.b_governor = BEACON_GOVERNOR;
     setup.b_avatar = BEACON_AVATAR;
-  
-    ///   STEP 5: Init the proxies to point to the correct beacon addresses
-    await amor_proxy.initProxy(BEACON_AMOR.address);
-    await amor_guild_token_proxy.initProxy(BEACON_AMOR_GUILD_TOKEN.address);
-    await dAmor_proxy.initProxy(BEACON_DAMOR.address);
-    await fxAmor_proxy.initProxy(BEACON_FXAMOR.address);
-    await controller_proxy.initProxy(BEACON_CONTROLLER.address);
-    await avatar_proxy.initProxy(BEACON_AVATAR.address);
-    await governor_proxy.initProxy(BEACON_GOVERNOR.address);
   
     ///   STEP 6: Init the storage of the tokens and control contracts
     DOINGUD_AMOR_TOKEN = AMOR_TOKEN.attach(amor_proxy.address);
@@ -178,7 +168,7 @@ describe("Integration: DoinGud token ecosystem", function () {
       DOINGUD_AMOR_TOKEN.address,
       DOINGUD_METADAO.address
     );
-  
+
     await DOINGUD_DAMOR.init(
       "DoinGud dAMOR", 
       "DAMOR", 
@@ -193,24 +183,24 @@ describe("Integration: DoinGud token ecosystem", function () {
       DOINGUD_METADAO.address, //controller
       DOINGUD_AMOR_GUILD_TOKEN.address
     );
-  
+
     await DOINGUD_AVATAR.init(
       authorizer_adaptor.address, // owner
       DOINGUD_GOVERNOR.address // governor Address
     );
-  
+
     await DOINGUD_GOVERNOR.init(
       DOINGUD_AMOR_GUILD_TOKEN.address, //AMORxGuild
       DOINGUD_AVATAR.address, // Avatar Address
       root.address
     );
-  
+
     await DOINGUD_METADAO.init(
       DOINGUD_AMOR_TOKEN.address,
       CLONE_FACTORY.address,
       DOINGUD_AVATAR.address
     );
-  
+
   /// Step 7: Set the Guardians for the MetaDAO
   /// Probably the first step after any new guild
   let proposal = DOINGUD_GOVERNOR.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
@@ -247,10 +237,11 @@ describe("Integration: DoinGud token ecosystem", function () {
   /// Setup the Impact Makers for the GuildController
   proposal = GUILD_ONE_GOVERNORXGUILD.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
   await metaHelper([GUILD_ONE_GOVERNORXGUILD.address], [0], [proposal], [root], authorizer_adaptor, GUILD_ONE_AVATARXGUILD.address, GUILD_ONE_GOVERNORXGUILD.address);
+
   IMPACT_MAKERS = [user2.address, user3.address, staker.address];
   IMPACT_MAKERS_WEIGHTS = [20, 20, 60];
   let setImpactMakersData = CONTROLLERXGUILD.interface.encodeFunctionData("setImpactMakers", [IMPACT_MAKERS, IMPACT_MAKERS_WEIGHTS]);
-  await metaHelper([GUILD_ONE_CONTROLLERXGUILD.address], [0], [setImpactMakersData], [user1, user2], authorizer_adaptor, GUILD_ONE_AVATARXGUILD.address, GUILD_ONE_GOVERNORXGUILD.address)
+  await metaHelper([GUILD_ONE_CONTROLLERXGUILD.address], [0], [setImpactMakersData], [user1, user2], authorizer_adaptor, GUILD_ONE_AVATARXGUILD.address, GUILD_ONE_GOVERNORXGUILD.address);
 
   /// Setup Guild Two
   proposal = METADAO.interface.encodeFunctionData("createGuild", [authorizer_adaptor.address, root.address, MOCK_GUILD_NAMES[0], MOCK_GUILD_SYMBOLS[0]]);
@@ -269,40 +260,19 @@ describe("Integration: DoinGud token ecosystem", function () {
   guildTwo = await CLONE_FACTORY.guilds(ControllerxTwo);
   let AvatarxTwo = guildTwo.AvatarxGuild;
   let GovernorxTwo = guildTwo.GovernorxGuild;
-  /* The below objects are required in later integration testing PRs
-  let AmorxTwo = guildTwo.AmorGuildToken;
-  let DAmorxTwo = guildTwo.DAmorxGuild;
-  let FXAmorxTwo = guildTwo.FXAMORxGuild;
-  */
 
   /// Attach the implementations to the deployed proxies
   GUILD_TWO_CONTROLLERXGUILD = CONTROLLERXGUILD.attach(ControllerxTwo);
   GUILD_TWO_AVATARXGUILD = AVATARXGUILD.attach(AvatarxTwo); 
   GUILD_TWO_GOVERNORXGUILD = GOVERNORXGUILD.attach(GovernorxTwo);
-  /* The below GUILD_TWO objects will be required later on
-  GUILD_TWO_AMORXGUILD = AMOR_GUILD_TOKEN.attach(AmorxTwo);
-  GUILD_TWO_DAMORXGUILD = DAMOR_GUILD_TOKEN.attach(DAmorxTwo);
-  GUILD_TWO_FXAMORXGUILD = FX_AMOR_TOKEN.attach(FXAmorxTwo);
-  */
 
   proposal = GUILD_TWO_GOVERNORXGUILD.interface.encodeFunctionData("setGuardians", [[user1.address, user2.address, user3.address]]);
   await metaHelper([GUILD_TWO_GOVERNORXGUILD.address], [0], [proposal], [root], authorizer_adaptor, GUILD_TWO_AVATARXGUILD.address, GUILD_TWO_GOVERNORXGUILD.address);
+
   await metaHelper([GUILD_TWO_CONTROLLERXGUILD.address], [0], [setImpactMakersData], [user1, user2], authorizer_adaptor, GUILD_TWO_AVATARXGUILD.address, GUILD_TWO_GOVERNORXGUILD.address)
   /// Setup the initial Fee Index
   let indexGuilds = [GUILD_ONE_CONTROLLERXGUILD.address, GUILD_TWO_CONTROLLERXGUILD.address];
   let indexWeights = [100, 100];
-  /*abi.encode(
-      ["tuple(address, uint256)"],
-      [
-      [GUILD_ONE_CONTROLLERXGUILD.address, 100]
-      ]
-  );
-  let encodedIndex2 = abi.encode(
-      ["tuple(address, uint256)"],
-      [
-      [GUILD_TWO_CONTROLLERXGUILD.address, 100]
-      ]
-  );*/
 
   /// Setup the index for the MetaDAO
   let transactionData = METADAO.interface.encodeFunctionData("updateIndex", [indexGuilds, indexWeights, 0]);
@@ -357,6 +327,7 @@ describe("Integration: DoinGud token ecosystem", function () {
           DOINGUD_AVATAR.address,
           DOINGUD_GOVERNOR.address
         );
+
         await ERC20_TOKEN.approve(GUILD_ONE_CONTROLLERXGUILD.address, ONE_HUNDRED_ETHER);
         await expect(GUILD_ONE_CONTROLLERXGUILD.donate(FIFTY_ETHER, ERC20_TOKEN.address)).
           to.emit(ERC20_TOKEN, "Transfer").
@@ -378,6 +349,7 @@ describe("Integration: DoinGud token ecosystem", function () {
           DOINGUD_AVATAR.address,
           DOINGUD_GOVERNOR.address
         );
+
         await ERC20_TOKEN.approve(DOINGUD_METADAO.address, ONE_HUNDRED_ETHER);
         await DOINGUD_METADAO.donate(ERC20_TOKEN.address, FIFTY_ETHER, 0);
         await GUILD_ONE_CONTROLLERXGUILD.gatherDonation(ERC20_TOKEN.address);
@@ -389,18 +361,7 @@ describe("Integration: DoinGud token ecosystem", function () {
       it("Should allow a user to set their own index", async function () {
         let indexGuilds = [GUILD_ONE_CONTROLLERXGUILD.address, GUILD_TWO_CONTROLLERXGUILD.address];
         let indexWeights = [50, 100];
-        /*= abi.encode(
-            ["tuple(address, uint256)"],
-            [
-            [GUILD_ONE_CONTROLLERXGUILD.address, 50]
-            ]
-        );
-        let encodedIndex2 = abi.encode(
-            ["tuple(address, uint256)"],
-            [
-            [GUILD_TWO_CONTROLLERXGUILD.address, 100]
-            ]
-        );*/
+
         await DOINGUD_METADAO.addIndex(indexGuilds, indexWeights);
         let indexDetails = await DOINGUD_METADAO.indexes(1);
         expect(indexDetails.indexDenominator).to.equal(150);
@@ -414,20 +375,6 @@ describe("Integration: DoinGud token ecosystem", function () {
         let guilds = [GUILD_ONE_CONTROLLERXGUILD.address, GUILD_TWO_CONTROLLERXGUILD.address];
         let weights = [guildOneWeight, guildTwoWeight];
 
-        /*const abi = ethers.utils.defaultAbiCoder;
-        let encodedIndex = abi.encode(
-            ["tuple(address, uint256)"],
-            [
-            [GUILD_ONE_CONTROLLERXGUILD.address, guildOneWeight]
-            ]
-        );
-        let encodedIndex2 = abi.encode(
-            ["tuple(address, uint256)"],
-            [
-            [GUILD_TWO_CONTROLLERXGUILD.address, guildTwoWeight]
-            ]
-        );*/
-
         let addWhitelistProposal = METADAO.interface.encodeFunctionData("addWhitelist", [ERC20_TOKEN.address]);
         await metaHelper(
           [DOINGUD_METADAO.address],
@@ -438,6 +385,7 @@ describe("Integration: DoinGud token ecosystem", function () {
           DOINGUD_AVATAR.address,
           DOINGUD_GOVERNOR.address
         );
+
         await DOINGUD_METADAO.addIndex(guilds, weights);
         await ERC20_TOKEN.approve(DOINGUD_METADAO.address, ONE_HUNDRED_ETHER);
         await DOINGUD_METADAO.donate(ERC20_TOKEN.address, FIFTY_ETHER, 1);
@@ -451,16 +399,10 @@ describe("Integration: DoinGud token ecosystem", function () {
     context("Change the AMOR implementation address", () => {
       it("Should allow the owner to change the implementation address", async function () {
         /// Assert the current Beacon status
-        expect(await amor_proxy.viewBeacon()).to.equal(BEACON_AMOR.address);
-        expect(await amor_proxy.implementation()).to.equal(AMOR_TOKEN.address);
         let proposal = METADAO.interface.encodeFunctionData("upgradeBeacon", [BEACON_AMOR.address, AMOR_TOKEN_UPGRADE.address]);
 
         await metaHelper([DOINGUD_METADAO.address], [0], [proposal], [user1, user2, user3], authorizer_adaptor, DOINGUD_AVATAR.address, DOINGUD_GOVERNOR.address);
 
-        /// Assert the Beacon's `Upgraded` status
-        expect(await amor_proxy.viewBeacon()).to.equal(BEACON_AMOR.address);
-        expect(await amor_proxy.implementation()).to.equal(AMOR_TOKEN_UPGRADE.address);
-        
         /// Let user 1 stake AMOR into AMORxOne
         await DOINGUD_AMOR_TOKEN.transfer(user1.address, ONE_HUNDRED_ETHER);
         await DOINGUD_AMOR_TOKEN.connect(user1).approve(GUILD_ONE_AMORXGUILD.address, FIFTY_ETHER);

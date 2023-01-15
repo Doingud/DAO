@@ -44,15 +44,18 @@ const getTokens = async (setup) => {
 
     const AmorTokenFactory = await ethers.getContractFactory('AMORToken', setup.roles.root);
 
-    const AmorTokenProxyFactory = await ethers.getContractFactory('DoinGudProxy', setup.roles.root);
+    const AmorTokenProxyFactory = await ethers.getContractFactory('BeaconProxy', setup.roles.root);
 
     // Constants for AmorGuild tokens - Still to be merged
     const AmorGuildTokenFactory = await ethers.getContractFactory('AMORxGuildToken', setup.roles.root);
+    const AmorBeaconFactory = await ethers.getContractFactory("DoinGudBeacon", setup.roles.root);
 
     //  Amor Tokens
     const AmorTokenImplementation = await AmorTokenFactory.deploy();
     const AmorTokenMockUpgrade = await AmorTokenFactory.deploy();
-    const AmorTokenProxy = await AmorTokenProxyFactory.deploy();
+    const AmorBeacon = await AmorBeaconFactory.deploy(AmorTokenImplementation.address, setup.roles.root.address)
+    const AmorTokenProxy = await AmorTokenProxyFactory.deploy(AmorBeacon.address, []);
+
     
     //  AmorGuild Tokens
     const AmorGuildToken = await AmorGuildTokenFactory.deploy();
@@ -71,9 +74,9 @@ const getTokens = async (setup) => {
     return tokens;
 };
 
-const proxy = async () => {
-  const proxyFactory = await ethers.getContractFactory("DoinGudProxy");
-  const proxy = await proxyFactory.deploy();
+const proxy = async (implementation) => {
+  const proxyFactory = await ethers.getContractFactory("BeaconProxy");
+  const proxy = await proxyFactory.deploy(implementation, []);
 
   return proxy;
 }

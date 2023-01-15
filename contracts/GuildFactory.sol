@@ -42,7 +42,7 @@ pragma solidity 0.8.15;
  *
  */
 
-import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/proxy/beacon/BeaconProxy.sol";
 
 import "./interfaces/IAMORxGuild.sol";
 import "./interfaces/ICloneFactory.sol";
@@ -62,8 +62,6 @@ contract GuildFactory is ICloneFactory {
         address GovernorxGuild;
     }
 
-    /// The DoinGud generic proxy contract (the target)
-    address public immutable cloneTarget;
     /// The AMOR Token address
     address public immutable amorToken;
 
@@ -123,8 +121,6 @@ contract GuildFactory is ICloneFactory {
         controllerxGuild = _controllerxGuild;
         governorxGuild = _governor;
         avatarxGuild = _avatarxGuild;
-        /// `_cloneTarget` refers to the DoinGud Proxy
-        cloneTarget = _doinGudProxy;
         metaDaoController = _metaDaoController;
     }
 
@@ -192,16 +188,18 @@ contract GuildFactory is ICloneFactory {
     /// @notice Internal function to deploy clone of an implementation contract
     /// @param  guildName name of token
     /// @param  guildSymbol symbol of token
-    /// @return address of the deployed contract
-    function _deployGuildToken(string memory guildName, string memory guildSymbol) internal returns (address) {
-        IAmorxGuild proxyContract = IAmorxGuild(Clones.clone(cloneTarget));
+    /// @return proxyContract address of the deployed contract
+    function _deployGuildToken(string memory guildName, string memory guildSymbol)
+        internal
+        returns (address proxyContract)
+    {
+        proxyContract = address(new BeaconProxy(amorxGuildToken, ""));
 
-        if (address(proxyContract) == address(0)) {
+        if (proxyContract == address(0)) {
             revert CreationFailed();
         }
 
-        IDoinGudProxy(address(proxyContract)).initProxy(amorxGuildToken);
-        proxyContract.init(guildName, guildSymbol, amorToken, msg.sender);
+        IAmorxGuild(proxyContract).init(guildName, guildSymbol, amorToken, msg.sender);
 
         return address(proxyContract);
     }
@@ -210,19 +208,18 @@ contract GuildFactory is ICloneFactory {
     /// @param  guildName name of token
     /// @param  guildSymbol symbol of token
     /// @param  _implementation address of the contract to be cloned
-    /// @return address of the deployed contract
+    /// @return proxyContract address of the deployed contract
     function _deployTokenContracts(
         address guildTokenAddress,
         string memory guildName,
         string memory guildSymbol,
         address _implementation
-    ) internal returns (address) {
-        IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
-        proxyContract.initProxy(_implementation);
+    ) internal returns (address proxyContract) {
+        proxyContract = address(new BeaconProxy(_implementation, ""));
 
         /// Check which token contract should be deployed
         if (guilds[guildTokenAddress].FXAmorxGuild != address(0)) {
-            IdAMORxGuild(address(proxyContract)).init(
+            IdAMORxGuild(proxyContract).init(
                 guildName,
                 guildSymbol,
                 guilds[guildTokenAddress].AvatarxGuild,
@@ -231,42 +228,31 @@ contract GuildFactory is ICloneFactory {
             );
         } else {
             /// FXAMOR uses the same `init` layout as IAMORxGuild
-            IAmorxGuild(address(proxyContract)).init(
+            IAmorxGuild(proxyContract).init(
                 guildName,
                 guildSymbol,
                 guildTokenAddress,
                 guilds[guildTokenAddress].AmorGuildToken
             );
         }
-
-        return address(proxyContract);
     }
 
     /// @notice Internal function to deploy the Guild Controller
     /// @return address of the deployed guild controller
     function _deployGuildController() internal returns (address) {
-        IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
-        proxyContract.initProxy(controllerxGuild);
-
-        return address(proxyContract);
+        return address(new BeaconProxy(controllerxGuild, ""));
     }
 
     /// @notice Deploys the guild's AvatarxGuild contract
     /// @return address of the nemwly deployed AvatarxGuild
     function _deployAvatar() internal returns (address) {
-        IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
-        proxyContract.initProxy(avatarxGuild);
-
-        return address(proxyContract);
+        return address(new BeaconProxy(avatarxGuild, ""));
     }
 
     /// @notice Deploys the GovernorxGuild contract
     /// @return address of the deployed GovernorxGuild
     function _deployGovernor() internal returns (address) {
-        IDoinGudProxy proxyContract = IDoinGudProxy(Clones.clone(cloneTarget));
-        proxyContract.initProxy(governorxGuild);
-
-        return address(proxyContract);
+        return address(new BeaconProxy(governorxGuild, ""));
     }
 
     /// @notice Initializes the Guild Control Structures
