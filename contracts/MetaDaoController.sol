@@ -82,6 +82,7 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     struct Index {
         address creator;
         uint256 indexDenominator;
+        uint256 update;
         mapping(address => uint256) indexWeights;
     }
 
@@ -103,6 +104,7 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     event GuildAdded(address indexed guildController, uint256 guildCounter);
     event GuildRemoved(address indexed guildController, uint256 guildCounter);
     event TokenWhitelisted(address indexed token);
+    event TokenUnwhitelisted(address indexed token);
     event DonatedToIndex(uint256 indexed amount, address indexed token, uint256 index, address indexed sender);
     event FeesClaimed(address indexed guild, uint256 indexed guildFees);
     event FeesDistributed(address indexed guild, uint256 indexed guildFees);
@@ -122,6 +124,10 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     error NoIndex();
     /// The address already exists in the mapping
     error Exists();
+    /// The address doesn't exist in the mapping
+    error NotExists();
+    /// The index array has not been set yet
+    error IndexChanged();
 
     /// @notice Initializes the MetaDaoController contract
     /// @param amor The address of the AMOR token
@@ -159,7 +165,8 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
     function donate(
         address token,
         uint256 amount,
-        uint256 index
+        uint256 index,
+        uint256 update
     ) external nonReentrant {
         if (!isWhitelisted(token)) {
             revert NotListed();
@@ -168,6 +175,11 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
         /// Check that the index exists
         if (indexes[index].indexDenominator == 0) {
             revert NoIndex();
+        }
+
+        /// Check that the index is the latest
+        if (indexes[index].update != update) {
+            revert IndexChanged();
         }
 
         IERC20 tokenDonated = IERC20(token);
@@ -327,6 +339,27 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
         emit TokenWhitelisted(_token);
     }
 
+    /// @notice Removes a token from whitelist
+    /// @dev MetaDAO Guardians are expected to evaluate proposed tokens
+    /// @param _token Address of the token to be whitelisted
+    function removeWhitelist(address _token) external onlyOwner {
+        if (whitelist[_token] == address(0)) {
+            revert NotExists();
+        }
+        // We are searching for the token that is the parent of the amorToken in linked list
+        address parent = SENTINEL;
+        while (whitelist[parent] != _token) {
+            parent = whitelist[parent];
+        }
+        whitelist[parent] = whitelist[_token];
+        if (sentinelWhitelist == _token) {
+            sentinelWhitelist = parent;
+        }
+        delete whitelist[_token];
+
+        emit TokenUnwhitelisted(_token);
+    }
+
     /// @notice Removes a guild from the `guilds` mapping
     /// @param controller The address of the guild controller to remove
     function removeGuild(address controller) external onlyOwner {
@@ -390,6 +423,9 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
         uint256[] calldata weights,
         uint256 indexPosition
     ) external {
+        if (indexPosition > indexCounter) {
+            revert Unauthorized();
+        }
         _updateIndex(guilds, weights, indexPosition);
 
         emit IndexUpdated(indexPosition, msg.sender);
@@ -419,6 +455,12 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
         /// Reset the owner
         index.creator = msg.sender;
 
+        address iterator = SENTINEL;
+        while (guilds[iterator] != SENTINEL) {
+            delete index.indexWeights[guilds[iterator]];
+            iterator = guilds[iterator];
+        }
+
         for (uint256 i; i < _guilds.length; i++) {
             if (guilds[_guilds[i]] == address(0) || _weights[i] == 0) {
                 revert InvalidGuild();
@@ -426,6 +468,7 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
 
             index.indexWeights[_guilds[i]] = _weights[i];
             index.indexDenominator += _weights[i];
+            index.update += 1;
         }
     }
 

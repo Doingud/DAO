@@ -331,7 +331,7 @@ describe('unit - Contract: GuildController', function () {
 
             // add some funds to MetaDaoController
             await AMOR.approve(metadao.address, TEST_TRANSFER);
-            await metadao.donate(AMOR.address, TEST_TRANSFER, 0);
+            await metadao.donate(AMOR.address, TEST_TRANSFER, 0, 1);
 
             const amountOfAMOR = await AMOR.balanceOf(metadao.address);
             let AMORDeducted = ethers.BigNumber.from((amountOfAMOR*(BASIS_POINTS-TAX_RATE)/BASIS_POINTS).toString());
@@ -387,7 +387,7 @@ describe('unit - Contract: GuildController', function () {
         it('gathers donation in USDC', async function () {
             // add some funds to MetaDaoController
             await USDC.connect(root).approve(metadao.address, TEST_TRANSFER);
-            await metadao.donate(USDC.address, TEST_TRANSFER, 0);
+            await metadao.donate(USDC.address, TEST_TRANSFER, 0, 1);
             
             await USDC.connect(root).transfer(metadao.address, TEST_TRANSFER);
 
@@ -416,7 +416,7 @@ describe('unit - Contract: GuildController', function () {
             // test
             let AMORxGuildAmount = await AMORxGuild.connect(user).balanceOf(user.address);
             await AMORxGuild.connect(user).approve(metadao.address, AMORxGuildAmount);
-            await metadao.connect(user).donate(AMORxGuild.address, AMORxGuildAmount, 0);
+            await metadao.connect(user).donate(AMORxGuild.address, AMORxGuildAmount, 0, 1);
             let amount = await metadao.guildFunds(controller.address, AMORxGuild.address);
             await controller.connect(user).gatherDonation(AMORxGuild.address);
 

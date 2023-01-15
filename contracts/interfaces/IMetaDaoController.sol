@@ -47,7 +47,8 @@ interface IMetaDaoController {
     function donate(
         address token,
         uint256 amount,
-        uint256 index
+        uint256 index,
+        uint256 update
     ) external;
 
     /// @notice Claims specified token for specified guild
