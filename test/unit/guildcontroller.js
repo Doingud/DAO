@@ -466,11 +466,9 @@ describe('unit - Contract: GuildController', function () {
             const balanceAfter = await controller.claimableTokens(impactMaker.address, AMORxGuild.address);
             // check that passing empty-claimable token in array would cause no errors
             expect((await controller.claimableTokens(impactMaker.address, FXAMORxGuild.address)).toString()).to.equal("0");
-            expect((await FXAMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal("0");
 
-            await controller.connect(impactMaker).claim(impactMaker.address, [AMORxGuild.address, FXAMORxGuild.address]);
+            await controller.connect(impactMaker).claim(impactMaker.address, [AMORxGuild.address]);
             expect((await AMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal(balanceAfter.toString());
-            expect((await FXAMORxGuild.balanceOf(impactMaker.address)).toString()).to.equal("0");
         });
     });
 

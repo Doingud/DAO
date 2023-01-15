@@ -185,4 +185,11 @@ describe('unit - Contract: FXAMORxGuild Token', function () {
         });
     });
 
+    context('» transfer testing', () => {
+        it('it fails to transfer FXAMORxGuild tokens', async function () {
+            await FXAMORxGuild.connect(staker).transfer(operator.address, FIFTY_ETHER.toString());
+            expect((await FXAMORxGuild.balanceOf(operator.address)).toString()).to.equal('0');
+        });
+    });
+
 });

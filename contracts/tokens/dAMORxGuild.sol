@@ -211,12 +211,16 @@ contract dAMORxGuild is IdAMORxGuild, ERC20Base, Ownable {
     }
 
     /// @notice This token is non-transferable
-    function transfer() public pure returns (bool) {
+    function transfer(address to, uint256 amount) public override returns (bool) {
         return false;
     }
 
     /// @notice This token is non-transferable
-    function transferFrom() public pure returns (bool) {
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public override returns (bool) {
         return false;
     }
 
