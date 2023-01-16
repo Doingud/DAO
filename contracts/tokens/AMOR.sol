@@ -74,14 +74,13 @@ contract AMORToken is IAmorToken, ERC20Base, Pausable, Ownable {
     /// @param  _symbol the token symbol
     /// @param  _initCollector the tax/fee collector (DoinGud MetaDAO)
     /// @param  _multisig the multisig address of the MetaDAO, which owns the token
-    /// @return bool value, true if successful
     function init(
         string memory _name,
         string memory _symbol,
         address _initCollector,
         uint256 _initTaxRate,
         address _multisig
-    ) external returns (bool) {
+    ) external {
         if (_initialized) {
             revert AlreadyInitialized();
         }
