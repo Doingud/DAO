@@ -453,6 +453,7 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
         Index storage index = indexes[_indexPosition];
         /// Reset the owner
         index.creator = msg.sender;
+        index.indexDenominator = 0;
 
         address iterator = SENTINEL;
         while (guilds[iterator] != SENTINEL) {
