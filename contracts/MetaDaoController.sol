@@ -449,7 +449,6 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
             revert InvalidArray();
         }
 
-        delete indexes[_indexPosition];
         /// Set the storage pointer
         Index storage index = indexes[_indexPosition];
         /// Reset the owner
@@ -468,8 +467,8 @@ contract MetaDaoController is IMetaDaoController, Ownable, ReentrancyGuard {
 
             index.indexWeights[_guilds[i]] = _weights[i];
             index.indexDenominator += _weights[i];
-            index.update += 1;
         }
+        index.update += 1;
     }
 
     /// @notice Updates the Beacon
