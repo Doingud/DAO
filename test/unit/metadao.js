@@ -137,7 +137,7 @@ describe("unit - MetaDao", function () {
 
     context('function: addWhitelist()', () => {
         it('Should revert to donate if called for not listed token', async function () {
-            await expect(METADAO.donate(AMOR_GUILD_TOKEN.address, ONE_HUNDRED_ETHER, 1, 0)).
+            await expect(METADAO.donate(AMOR_GUILD_TOKEN.address, ONE_HUNDRED_ETHER, 1, 1)).
                 to.be.revertedWith("NotListed()");
         });
     
@@ -204,14 +204,14 @@ describe("unit - MetaDao", function () {
 
     context('function: donate()', () => {
         it("Should fail if token not whitelisted", async function () {
-            await expect(METADAO.donate(AMOR_GUILD_TOKEN.address, ONE_HUNDRED_ETHER, 0, 0)).to.be.revertedWith("NotListed()");
+            await expect(METADAO.donate(AMOR_GUILD_TOKEN.address, ONE_HUNDRED_ETHER, 0, 1)).to.be.revertedWith("NotListed()");
         });
 
         it('Should succeed if tokens are successfully donated to the metadao', async function () {
             await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
             await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
-            await METADAO.donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER, 0, 2);
-            await METADAO.donate(USDC.address, ONE_HUNDRED_ETHER, 0, 2);
+            await METADAO.donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER, 0, 1);
+            await METADAO.donate(USDC.address, ONE_HUNDRED_ETHER, 0, 1);
             expect(await METADAO.donations(USDC.address)).to.equal((ONE_HUNDRED_ETHER).toString());
             expect(await METADAO.guildFunds(GUILD_CONTROLLER_ONE.address, USDC.address)).to.equal(FIFTY_ETHER);
         });
@@ -278,8 +278,8 @@ describe("unit - MetaDao", function () {
         it('it succeeds if amor tokens are distributed to the guild according to fee index weight', async function () {
             await AMOR_TOKEN.approve(METADAO.address, ONE_HUNDRED_ETHER);
             await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
-            await METADAO.donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER, 0, 2);
-            await METADAO.donate(USDC.address, ONE_HUNDRED_ETHER, 0, 2);
+            await METADAO.donate(AMOR_TOKEN.address, ONE_HUNDRED_ETHER, 0, 1);
+            await METADAO.donate(USDC.address, ONE_HUNDRED_ETHER, 0, 1);
             /// Here we need to call `gatherDonation` from the GuildController
             /// Check AMOR claims
             let amorMetaDaoBefore = await AMOR_TOKEN.balanceOf(METADAO.address);
@@ -363,7 +363,7 @@ describe("unit - MetaDao", function () {
 
             await METADAO.addIndex(guilds, weights);
             await USDC.approve(METADAO.address, ONE_HUNDRED_ETHER);
-            await METADAO.donate(USDC.address, ONE_HUNDRED_ETHER, 1, 2);
+            await METADAO.donate(USDC.address, ONE_HUNDRED_ETHER, 1, 1);
 
             expect(await METADAO.guildFunds(GUILD_CONTROLLER_ONE.address, USDC.address)).to.equal((ONE_HUNDRED_ETHER/4).toString());
             expect(await METADAO.guildFunds(GUILD_CONTROLLER_TWO.address, USDC.address)).to.equal((ONE_HUNDRED_ETHER * 0.75).toString());

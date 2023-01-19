@@ -285,15 +285,14 @@ contract FXAMORxGuild is IFXAMORxGuild, ERC20Base, Ownable {
                     break;
                 }
             }
-        }
-
-        address[] memory _delegators = delegators[account];
-        uint256 last = delegators[account].length - 1;
-        for (uint8 i = 0; i < _delegators.length; i++) {
-            if (_delegators[i] == owner) {
-                delegators[account][i] = delegators[account][last];
-                delegators[account].pop();
-                break;
+            address[] memory _delegators = delegators[account];
+            uint256 last = delegators[account].length - 1;
+            for (uint8 i = 0; i < _delegators.length; i++) {
+                if (_delegators[i] == owner) {
+                    delegators[account][i] = delegators[account][last];
+                    delegators[account].pop();
+                    break;
+                }
             }
         }
 
